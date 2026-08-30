@@ -1,0 +1,718 @@
+{
+  "$defs": {
+    "CostConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "failure_cost": {
+          "minimum": 0.0,
+          "title": "Failure Cost",
+          "type": "number"
+        },
+        "replacement_cost": {
+          "minimum": 0.0,
+          "title": "Replacement Cost",
+          "type": "number"
+        },
+        "unused_life_cost_per_step": {
+          "minimum": 0.0,
+          "title": "Unused Life Cost Per Step",
+          "type": "number"
+        },
+        "waiting_cost_per_step": {
+          "minimum": 0.0,
+          "title": "Waiting Cost Per Step",
+          "type": "number"
+        }
+      },
+      "required": [
+        "replacement_cost",
+        "failure_cost",
+        "waiting_cost_per_step",
+        "unused_life_cost_per_step"
+      ],
+      "title": "CostConfig",
+      "type": "object"
+    },
+    "CuttingCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "condition_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "load_class": {
+          "enum": [
+            "LIGHT",
+            "NOMINAL",
+            "HEAVY"
+          ],
+          "title": "Load Class",
+          "type": "string"
+        }
+      },
+      "required": [
+        "condition_id",
+        "load_class"
+      ],
+      "title": "CuttingCondition",
+      "type": "object"
+    },
+    "EnvironmentConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "costs": {
+          "$ref": "#/$defs/CostConfig"
+        },
+        "environment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Environment Id",
+          "type": "string"
+        },
+        "failure_threshold_um": {
+          "exclusiveMinimum": 0.0,
+          "title": "Failure Threshold Um",
+          "type": "number"
+        },
+        "horizon_steps": {
+          "minimum": 1,
+          "title": "Horizon Steps",
+          "type": "integer"
+        },
+        "initial_spares": {
+          "minimum": 0,
+          "title": "Initial Spares",
+          "type": "integer"
+        },
+        "number_of_machines": {
+          "minimum": 1,
+          "title": "Number Of Machines",
+          "type": "integer"
+        },
+        "risk": {
+          "$ref": "#/$defs/RiskConfig"
+        },
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seed": {
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "spare_capacity": {
+          "minimum": 0,
+          "title": "Spare Capacity",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "environment_id",
+        "number_of_machines",
+        "spare_capacity",
+        "initial_spares",
+        "horizon_steps",
+        "failure_threshold_um",
+        "seed",
+        "costs",
+        "risk"
+      ],
+      "title": "EnvironmentConfig",
+      "type": "object"
+    },
+    "EpisodeSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "episode_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Episode Id",
+          "type": "string"
+        },
+        "failure_count": {
+          "minimum": 0,
+          "title": "Failure Count",
+          "type": "integer"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "replacement_count": {
+          "minimum": 0,
+          "title": "Replacement Count",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seed": {
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "steps_completed": {
+          "minimum": 0,
+          "title": "Steps Completed",
+          "type": "integer"
+        },
+        "total_cost": {
+          "minimum": 0.0,
+          "title": "Total Cost",
+          "type": "number"
+        },
+        "waiting_steps": {
+          "minimum": 0,
+          "title": "Waiting Steps",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "episode_id",
+        "policy_id",
+        "seed",
+        "steps_completed",
+        "total_cost",
+        "failure_count",
+        "replacement_count",
+        "waiting_steps"
+      ],
+      "title": "EpisodeSummary",
+      "type": "object"
+    },
+    "ExecutionOutcome": {
+      "enum": [
+        "CONTINUED",
+        "REPLACED",
+        "WAITING_FOR_SPARE",
+        "FAILED"
+      ],
+      "title": "ExecutionOutcome",
+      "type": "string"
+    },
+    "FleetObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "episode_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Episode Id",
+          "type": "string"
+        },
+        "inventory": {
+          "$ref": "#/$defs/SharedInventoryState"
+        },
+        "machines": {
+          "items": {
+            "$ref": "#/$defs/MachineObservation"
+          },
+          "minItems": 1,
+          "title": "Machines",
+          "type": "array"
+        },
+        "observation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "step": {
+          "minimum": 0,
+          "title": "Step",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "observation_id",
+        "episode_id",
+        "step",
+        "machines",
+        "inventory"
+      ],
+      "title": "FleetObservation",
+      "type": "object"
+    },
+    "JointAction": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "items": {
+            "$ref": "#/$defs/MachineAction"
+          },
+          "minItems": 1,
+          "title": "Actions",
+          "type": "array"
+        },
+        "observation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "observation_id",
+        "actions"
+      ],
+      "title": "JointAction",
+      "type": "object"
+    },
+    "MachineAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/ToolAction"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "machine_id",
+        "action"
+      ],
+      "title": "MachineAction",
+      "type": "object"
+    },
+    "MachineObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "cutting_condition": {
+          "$ref": "#/$defs/CuttingCondition"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Job Id"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "tool_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Tool Id",
+          "type": "string"
+        },
+        "tool_state": {
+          "$ref": "#/$defs/ToolBeliefState"
+        }
+      },
+      "required": [
+        "machine_id",
+        "tool_id",
+        "cutting_condition",
+        "tool_state"
+      ],
+      "title": "MachineObservation",
+      "type": "object"
+    },
+    "MachineStepOutcome": {
+      "additionalProperties": false,
+      "properties": {
+        "incurred_cost": {
+          "minimum": 0.0,
+          "title": "Incurred Cost",
+          "type": "number"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/ExecutionOutcome"
+        },
+        "requested_action": {
+          "$ref": "#/$defs/ToolAction"
+        },
+        "tool_id_after": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Id After"
+        },
+        "tool_id_before": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Tool Id Before",
+          "type": "string"
+        }
+      },
+      "required": [
+        "machine_id",
+        "requested_action",
+        "outcome",
+        "tool_id_before",
+        "incurred_cost"
+      ],
+      "title": "MachineStepOutcome",
+      "type": "object"
+    },
+    "PolicyRecommendation": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "$ref": "#/$defs/JointAction"
+        },
+        "estimated_cvar_cost": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimated Cvar Cost"
+        },
+        "estimated_expected_cost": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimated Expected Cost"
+        },
+        "observation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "policy_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "observation_id",
+        "policy_id",
+        "policy_version",
+        "actions"
+      ],
+      "title": "PolicyRecommendation",
+      "type": "object"
+    },
+    "RULDistribution": {
+      "additionalProperties": false,
+      "description": "Discrete RUL distribution consumed by a policy, measured in simulator steps.",
+      "properties": {
+        "model_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Model Version",
+          "type": "string"
+        },
+        "probability_mass": {
+          "items": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "type": "number"
+          },
+          "minItems": 2,
+          "title": "Probability Mass",
+          "type": "array"
+        },
+        "support_steps": {
+          "items": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minItems": 2,
+          "title": "Support Steps",
+          "type": "array"
+        },
+        "survival_beyond_horizon": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Survival Beyond Horizon",
+          "type": "number"
+        }
+      },
+      "required": [
+        "support_steps",
+        "probability_mass",
+        "survival_beyond_horizon",
+        "model_version"
+      ],
+      "title": "RULDistribution",
+      "type": "object"
+    },
+    "RiskConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "cvar_alpha": {
+          "default": 0.95,
+          "exclusiveMaximum": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Cvar Alpha",
+          "type": "number"
+        },
+        "objective": {
+          "$ref": "#/$defs/RiskObjective"
+        }
+      },
+      "required": [
+        "objective"
+      ],
+      "title": "RiskConfig",
+      "type": "object"
+    },
+    "RiskObjective": {
+      "enum": [
+        "EXPECTED_COST",
+        "CVAR"
+      ],
+      "title": "RiskObjective",
+      "type": "string"
+    },
+    "SharedInventoryState": {
+      "additionalProperties": false,
+      "properties": {
+        "capacity": {
+          "minimum": 0,
+          "title": "Capacity",
+          "type": "integer"
+        },
+        "spares_available": {
+          "minimum": 0,
+          "title": "Spares Available",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "spares_available",
+        "capacity"
+      ],
+      "title": "SharedInventoryState",
+      "type": "object"
+    },
+    "StepResult": {
+      "additionalProperties": false,
+      "properties": {
+        "episode_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Episode Id",
+          "type": "string"
+        },
+        "episode_terminated": {
+          "title": "Episode Terminated",
+          "type": "boolean"
+        },
+        "inventory_after": {
+          "$ref": "#/$defs/SharedInventoryState"
+        },
+        "observation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "outcomes": {
+          "items": {
+            "$ref": "#/$defs/MachineStepOutcome"
+          },
+          "minItems": 1,
+          "title": "Outcomes",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "step": {
+          "minimum": 0,
+          "title": "Step",
+          "type": "integer"
+        },
+        "total_cost": {
+          "minimum": 0.0,
+          "title": "Total Cost",
+          "type": "number"
+        }
+      },
+      "required": [
+        "observation_id",
+        "episode_id",
+        "step",
+        "outcomes",
+        "inventory_after",
+        "total_cost",
+        "episode_terminated"
+      ],
+      "title": "StepResult",
+      "type": "object"
+    },
+    "ToolAction": {
+      "enum": [
+        "CONTINUE",
+        "REPLACE"
+      ],
+      "title": "ToolAction",
+      "type": "string"
+    },
+    "ToolBeliefState": {
+      "additionalProperties": false,
+      "description": "Observable wear and inferred belief only; simulator latent state is forbidden.",
+      "properties": {
+        "observed_wear_um": {
+          "minimum": 0.0,
+          "title": "Observed Wear Um",
+          "type": "number"
+        },
+        "posterior_median_wear_um": {
+          "minimum": 0.0,
+          "title": "Posterior Median Wear Um",
+          "type": "number"
+        },
+        "posterior_std_wear_um": {
+          "minimum": 0.0,
+          "title": "Posterior Std Wear Um",
+          "type": "number"
+        },
+        "rul_distribution": {
+          "$ref": "#/$defs/RULDistribution"
+        },
+        "tool_age_steps": {
+          "minimum": 0,
+          "title": "Tool Age Steps",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "tool_age_steps",
+        "observed_wear_um",
+        "posterior_median_wear_um",
+        "posterior_std_wear_um",
+        "rul_distribution"
+      ],
+      "title": "ToolBeliefState",
+      "type": "object"
+    }
+  },
+  "$id": "https://pdm-marl.local/contracts/v2/cnc-domain.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Canonical schema catalog for the CNC tool replacement research domain. The catalog wrapper is not a wire payload; consumers use the models in $defs.",
+  "properties": {
+    "environment_config": {
+      "$ref": "#/$defs/EnvironmentConfig"
+    },
+    "episode_summary": {
+      "$ref": "#/$defs/EpisodeSummary"
+    },
+    "fleet_observation": {
+      "$ref": "#/$defs/FleetObservation"
+    },
+    "joint_action": {
+      "$ref": "#/$defs/JointAction"
+    },
+    "policy_recommendation": {
+      "$ref": "#/$defs/PolicyRecommendation"
+    },
+    "step_result": {
+      "$ref": "#/$defs/StepResult"
+    }
+  },
+  "required": [
+    "environment_config",
+    "fleet_observation",
+    "joint_action",
+    "policy_recommendation",
+    "step_result",
+    "episode_summary"
+  ],
+  "title": "CNC Tool Replacement Contract Catalog v2",
+  "type": "object"
+}

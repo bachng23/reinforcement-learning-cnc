@@ -1,0 +1,13 @@
+.env
+.env.local
+data/
+ai_services/logs/
+ai_services/audit/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+.mypy_cache/
+
+.DS_Store

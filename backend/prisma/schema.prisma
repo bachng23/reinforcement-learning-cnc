@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Experiment {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  experimentKey     String           @unique @map("experiment_key")
+  name              String
+  schemaVersion     String           @default("2.0") @map("schema_version")
+  status            ExperimentStatus @default(DRAFT)
+  environmentConfig Json             @map("environment_config")
+  createdById       String?          @map("created_by_id") @db.Uuid
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy         User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  episodes          Episode[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@map("experiments")
+}
+
+model Policy {
+  id              String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policyKey       String                 @map("policy_key")
+  version         String
+  name            String
+  configJson      Json?                  @map("config_json")
+  createdById     String?                @map("created_by_id") @db.Uuid
+  createdAt       DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy       User?                  @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  episodes        Episode[]
+  recommendations PolicyRecommendation[]
+
+  @@unique([policyKey, version])
+  @@map("policies")
+}
+
+model Episode {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  episodeKey       String             @unique @map("episode_key")
+  experimentId     String             @map("experiment_id") @db.Uuid
+  policyId         String             @map("policy_id") @db.Uuid
+  seed             Int
+  status           EpisodeStatus      @default(PENDING)
+  stepsCompleted   Int                @default(0) @map("steps_completed")
+  totalCost        Float?             @map("total_cost")
+  failureCount     Int?               @map("failure_count")
+  replacementCount Int?               @map("replacement_count")
+  waitingSteps     Int?               @map("waiting_steps")
+  startedAt        DateTime?          @map("started_at") @db.Timestamptz(6)
+  completedAt      DateTime?          @map("completed_at") @db.Timestamptz(6)
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  experiment       Experiment         @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  policy           Policy             @relation(fields: [policyId], references: [id], onDelete: Restrict)
+  observations     FleetObservation[]
+
+  @@unique([experimentId, policyId, seed])
+  @@index([experimentId, status])
+  @@map("episodes")
+}
+
+model FleetObservation {
+  id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  observationKey String                @unique @map("observation_key")
+  episodeId      String                @map("episode_id") @db.Uuid
+  step           Int
+  schemaVersion  String                @default("2.0") @map("schema_version")
+  payloadJson    Json                  @map("payload_json")
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  episode        Episode               @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  recommendation PolicyRecommendation?
+  stepResult     StepResult?
+
+  @@unique([episodeId, step])
+  @@map("fleet_observations")
+}
+
+model PolicyRecommendation {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  observationId String           @unique @map("observation_id") @db.Uuid
+  policyId      String           @map("policy_id") @db.Uuid
+  schemaVersion String           @default("2.0") @map("schema_version")
+  payloadJson   Json             @map("payload_json")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  observation   FleetObservation @relation(fields: [observationId], references: [id], onDelete: Cascade)
+  policy        Policy           @relation(fields: [policyId], references: [id], onDelete: Restrict)
+
+  @@index([policyId, createdAt(sort: Desc)])
+  @@map("policy_recommendations")
+}
+
+model StepResult {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  observationId     String           @unique @map("observation_id") @db.Uuid
+  schemaVersion     String           @default("2.0") @map("schema_version")
+  payloadJson       Json             @map("payload_json")
+  totalCost         Float            @map("total_cost")
+  episodeTerminated Boolean          @map("episode_terminated")
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  observation       FleetObservation @relation(fields: [observationId], references: [id], onDelete: Cascade)
+
+  @@map("step_results")
+}
+
+model User {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username     String       @unique
+  fullName     String?      @map("full_name")
+  email        String?
+  passwordHash String       @map("password_hash")
+  role         UserRole     @default(VIEWER)
+  active       Boolean      @default(true)
+  lastLoginAt  DateTime?    @map("last_login_at") @db.Timestamptz(6)
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  auditLogs    AuditLog[]
+  experiments  Experiment[]
+  policies     Policy[]
+
+  @@map("users")
+}
+
+model AuditLog {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityType  EntityType @map("entity_type")
+  entityId    String     @map("entity_id")
+  action      String
+  actorUserId String?    @map("actor_user_id") @db.Uuid
+  payloadJson Json?      @map("payload_json")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  actor       User?      @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([entityType, entityId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+enum ExperimentStatus {
+  DRAFT
+  READY
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum EpisodeStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum UserRole {
+  VIEWER
+  OPERATOR
+  ENGINEER
+  ADMIN
+}
+
+enum EntityType {
+  AUTH
+  EXPERIMENT
+  POLICY
+  EPISODE
+  SYSTEM
+}

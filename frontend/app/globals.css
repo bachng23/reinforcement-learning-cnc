@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-cloud-white: #ffffff;
+  --color-canvas-fog: #fafaf9;
+  --color-slate-text: #0c0a09;
+  --color-ash-gray: #78716c;
+  --color-stone-border: #e5e7eb;
+  --color-platinum-outline: #d6d3d1;
+  --color-steel-gray: #a8a29e;
+  --color-hover-stone: #c9c5c2;
+  --color-ghost-ink: #1c1917;
+  --color-chartwell-blue: #3ba6f1;
+  --color-sky-tint: #c1e1f7;
+
+  --color-emerald: #10b981;
+  --color-emerald-tint: #ecfdf5;
+  --color-amber: #f59e0b;
+  --color-amber-tint: #fffbeb;
+  --color-rose: #f43f5e;
+  --color-rose-tint: #fff1f2;
+  --color-blue-tint: #eff6ff;
+
+  --shadow-md: rgba(0, 0, 0, 0.05) 0px 4px 16px 0px;
+  --shadow-sm: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
+  --shadow-subtle: rgba(0, 0, 0, 0.05) 0px 1px 2px 0px;
+
+  --border: 215 25% 90%;
+  --input: 215 25% 90%;
+  --ring: 205 87% 58%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-canvas-fog);
+}
+
+body {
+  min-height: 100vh;
+  background: var(--color-canvas-fog);
+  color: var(--color-slate-text);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
