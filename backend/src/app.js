@@ -1,9 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const routes = require('./routes');
+const requestLogger = require('./middlewares/request-logger.middleware');
 
 const app = express();
 
@@ -24,12 +24,19 @@ const corsOptions = {
   preflightContinue: false,
   optionsSuccessStatus: 204,
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Idempotency-Replayed', 'X-Request-Id'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'Idempotency-Key',
+    'X-Request-Id',
+    'X-Requested-With',
+  ],
 };
 app.use(cors(corsOptions));
 
 app.use(cookieParser());
-app.use(morgan('dev'));
+app.use(requestLogger);
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
@@ -38,18 +45,27 @@ app.use('/api', routes);
 app.use((req, res, next) => {
   res.status(404).json({
     success: false,
-    message: `Route ${req.originalUrl} not found!`
+    error: {
+      code: 'ROUTE_NOT_FOUND',
+      message: `Route ${req.originalUrl} was not found`,
+    },
+    requestId: req.requestId,
   });
 });
 
 app.use((err, req, res, next) => {
-  let statusCode = 500;
-  let errorCode = 'INTERNAL_ERROR';
+  let statusCode = Number.isInteger(err?.statusCode) ? err.statusCode : 500;
+  let errorCode = err?.statusCode && typeof err?.code === 'string'
+    ? err.code
+    : 'INTERNAL_ERROR';
+  let details = err?.details;
 
   // Rejected non-Error values may not expose a message.
   const msg = typeof err?.message === 'string' ? err.message : '';
 
-  if (msg === 'UNAUTHORIZED') {
+  if (err?.statusCode) {
+    // ApiError already carries its public status and code.
+  } else if (msg === 'UNAUTHORIZED') {
     statusCode = 401;
     errorCode = 'UNAUTHORIZED';
   } else if (msg === 'FORBIDDEN') {
@@ -80,21 +96,57 @@ app.use((err, req, res, next) => {
     }
   }
 
-  if (errorCode === 'DB_UNAVAILABLE') {
-    console.warn(`[api] Database unavailable while handling ${req.method} ${req.originalUrl}: ${msg}`);
-  } else {
-    console.error(err.stack || err);
+  if (err?.type === 'entity.parse.failed') {
+    statusCode = 400;
+    errorCode = 'INVALID_JSON';
+    details = undefined;
+  } else if (err?.type === 'entity.too.large') {
+    statusCode = 413;
+    errorCode = 'PAYLOAD_TOO_LARGE';
+    details = undefined;
   }
+
+  if (process.env.NODE_ENV !== 'test') {
+    if (errorCode === 'DB_UNAVAILABLE') {
+      console.warn(JSON.stringify({
+        type: 'api_error',
+        requestId: req.requestId,
+        code: errorCode,
+        method: req.method,
+        path: req.originalUrl,
+      }));
+    } else {
+      console.error(JSON.stringify({
+        type: 'api_error',
+        requestId: req.requestId,
+        code: errorCode,
+        method: req.method,
+        path: req.originalUrl,
+        message: statusCode >= 500 ? 'Internal error' : msg,
+      }));
+    }
+  }
+
+  const publicMessages = {
+    DB_UNAVAILABLE: 'Database unavailable. Check DATABASE_URL and make sure Postgres is running.',
+    DUPLICATE_ENTRY: 'A record with the same unique value already exists',
+    RECORD_NOT_FOUND: 'The requested record was not found',
+    UNAUTHORIZED: 'Authentication is required',
+    FORBIDDEN: 'You do not have permission to perform this operation',
+    NOT_FOUND: 'The requested resource was not found',
+    INTERNAL_ERROR: 'An unexpected error occurred',
+    INVALID_JSON: 'Request body must contain valid JSON',
+    PAYLOAD_TOO_LARGE: 'Request payload is too large',
+  };
 
   res.status(statusCode).json({
     success: false,
     error: {
       code: errorCode,
-      message: errorCode === 'DB_UNAVAILABLE'
-        ? 'Database unavailable. Check DATABASE_URL and make sure Postgres is running.'
-        : err.message || 'An unexpected error occurred',
-      detail: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    }
+      message: publicMessages[errorCode] || msg || 'An unexpected error occurred',
+      details,
+    },
+    requestId: req.requestId,
   });
 });
 
