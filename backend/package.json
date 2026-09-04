@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "worker": "node src/worker/index.js",
+    "worker:dev": "nodemon src/worker/index.js",
     "test": "jest",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev",
