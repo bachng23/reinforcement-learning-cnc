@@ -8,6 +8,7 @@ COPY prisma.config.js ./
 RUN npm ci
 
 COPY src ./src
+COPY openapi.yaml ./openapi.yaml
 
 ENV NODE_ENV=production
 ENV PORT=5000

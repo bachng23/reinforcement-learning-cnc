@@ -42,3 +42,13 @@ test('returns 404 for an unknown domain route', async () => {
 
   expect(response.status).toBe(404);
 });
+
+test('serves the versioned OpenAPI contract', async () => {
+  const response = await fetch(`${baseUrl}/api/v1/openapi.yaml`);
+  const document = await response.text();
+
+  expect(response.status).toBe(200);
+  expect(response.headers.get('content-type')).toContain('application/yaml');
+  expect(document).toContain('openapi: 3.1.0');
+  expect(document).toContain('/experiments/{experimentId}/run:');
+});

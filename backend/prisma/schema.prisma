@@ -11,16 +11,25 @@ model Experiment {
   id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   experimentKey     String           @unique @map("experiment_key")
   name              String
+  description       String?
   schemaVersion     String           @default("2.0") @map("schema_version")
   status            ExperimentStatus @default(DRAFT)
   environmentConfig Json             @map("environment_config")
+  policyId          String           @map("policy_id") @db.Uuid
+  episodeCount      Int              @map("episode_count")
+  runIdempotencyKey String?          @map("run_idempotency_key")
+  runRequestedAt    DateTime?        @map("run_requested_at") @db.Timestamptz(6)
   createdById       String?          @map("created_by_id") @db.Uuid
   createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   createdBy         User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  policy            Policy           @relation(fields: [policyId], references: [id], onDelete: Restrict)
   episodes          Episode[]
 
+  @@unique([id, policyId])
+  @@unique([createdById, runIdempotencyKey])
   @@index([status, createdAt(sort: Desc)])
+  @@index([createdById, createdAt(sort: Desc), id(sort: Desc)])
   @@map("experiments")
 }
 
@@ -29,11 +38,14 @@ model Policy {
   policyKey       String                 @map("policy_key")
   version         String
   name            String
+  description     String?
+  active          Boolean                @default(true)
   configJson      Json?                  @map("config_json")
   createdById     String?                @map("created_by_id") @db.Uuid
   createdAt       DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   createdBy       User?                  @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  experiments     Experiment[]
   episodes        Episode[]
   recommendations PolicyRecommendation[]
 
@@ -46,6 +58,8 @@ model Episode {
   episodeKey       String             @unique @map("episode_key")
   experimentId     String             @map("experiment_id") @db.Uuid
   policyId         String             @map("policy_id") @db.Uuid
+  episodeIndex     Int                @map("episode_index")
+  attempt          Int                @default(1)
   seed             Int
   status           EpisodeStatus      @default(PENDING)
   stepsCompleted   Int                @default(0) @map("steps_completed")
@@ -53,16 +67,25 @@ model Episode {
   failureCount     Int?               @map("failure_count")
   replacementCount Int?               @map("replacement_count")
   waitingSteps     Int?               @map("waiting_steps")
+  queuedAt         DateTime           @default(now()) @map("queued_at") @db.Timestamptz(6)
   startedAt        DateTime?          @map("started_at") @db.Timestamptz(6)
   completedAt      DateTime?          @map("completed_at") @db.Timestamptz(6)
+  failedAt         DateTime?          @map("failed_at") @db.Timestamptz(6)
+  cancelledAt      DateTime?          @map("cancelled_at") @db.Timestamptz(6)
+  errorCode        String?            @map("error_code")
+  errorMessage     String?            @map("error_message")
   createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  experiment       Experiment         @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  experiment       Experiment         @relation(fields: [experimentId, policyId], references: [id, policyId], onDelete: Cascade, map: "episodes_experiment_policy_consistent_fkey")
   policy           Policy             @relation(fields: [policyId], references: [id], onDelete: Restrict)
   observations     FleetObservation[]
+  summaries        EpisodeSummary[]
 
   @@unique([experimentId, policyId, seed])
+  @@unique([experimentId, episodeIndex])
   @@index([experimentId, status])
+  @@index([status, queuedAt])
+  @@index([experimentId, episodeIndex, id])
   @@map("episodes")
 }
 
@@ -70,6 +93,7 @@ model FleetObservation {
   id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   observationKey String                @unique @map("observation_key")
   episodeId      String                @map("episode_id") @db.Uuid
+  attempt        Int                   @default(1)
   step           Int
   schemaVersion  String                @default("2.0") @map("schema_version")
   payloadJson    Json                  @map("payload_json")
@@ -78,8 +102,22 @@ model FleetObservation {
   recommendation PolicyRecommendation?
   stepResult     StepResult?
 
-  @@unique([episodeId, step])
+  @@unique([episodeId, attempt, step])
+  @@index([episodeId, attempt, step, id])
   @@map("fleet_observations")
+}
+
+model EpisodeSummary {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  episodeId     String   @map("episode_id") @db.Uuid
+  attempt       Int      @default(1)
+  schemaVersion String   @default("2.0") @map("schema_version")
+  payloadJson   Json     @map("payload_json")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  episode       Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@unique([episodeId, attempt])
+  @@map("episode_summaries")
 }
 
 model PolicyRecommendation {
