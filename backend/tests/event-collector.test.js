@@ -45,3 +45,31 @@ test('propagates unexpected engine failure', async () => {
   const runner = { async *execute() { throw new Error('engine crashed'); } };
   await expect(collectEngineEvents(runner, request)).rejects.toThrow('engine crashed');
 });
+
+test('rejects a trailing event after summary before completing', async () => {
+  const runner = { async *execute() {
+    const events = await collectEngineEvents(new FakeEngineRunner(), request);
+    yield* events;
+    yield events[0];
+  } };
+  await expect(collectEngineEvents(runner, request)).rejects.toMatchObject({ code: 'ENGINE_PROTOCOL_ERROR' });
+});
+test('episode may exceed timeout in total while every event arrives in time', async () => {
+  const runner = { async *execute() {
+    for await (const event of new FakeEngineRunner().execute(request)) {
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      yield event;
+    }
+  } };
+  await expect(collectEngineEvents(runner, request, { timeoutMs: 80 })).resolves.toHaveLength(7);
+});
+test('rejects a stream that ends halfway through the next step', async () => {
+  const runner = { async *execute() {
+    let count = 0;
+    for await (const event of new FakeEngineRunner().execute(request)) {
+      yield event;
+      if (++count === 4) return;
+    }
+  } };
+  await expect(collectEngineEvents(runner, request)).rejects.toMatchObject({ code: 'ENGINE_SUMMARY_MISSING' });
+});

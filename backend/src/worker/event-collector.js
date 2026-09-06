@@ -1,87 +1,92 @@
-const { validateEngineEvent } = require('../engine/contracts');
-
+const { validateEngineEvent, validateEngineRequest } = require('../engine/contracts');
 class EngineProtocolError extends Error {
-  constructor(message, code = 'ENGINE_PROTOCOL_ERROR') {
-    super(message);
-    this.name = 'EngineProtocolError';
-    this.code = code;
-  }
+  constructor(message, code = 'ENGINE_PROTOCOL_ERROR') { super(message); this.name = 'EngineProtocolError'; this.code = code; }
 }
-
-async function nextWithTimeout(iterator, timeoutMs, signal) {
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => {
-      const error = new Error(`Engine exceeded ${timeoutMs}ms timeout`);
-      error.name = 'EngineTimeoutError';
-      error.code = 'ENGINE_TIMEOUT';
-      reject(error);
-    }, timeoutMs);
-  });
-  try {
-    return await Promise.race([iterator.next(), timeout]);
-  } finally {
-    clearTimeout(timer);
-    if (signal?.aborted && iterator.return) await iterator.return();
-  }
-}
-
-async function collectEngineEvents(runner, request, { timeoutMs = 30000 } = {}) {
-  const controller = new AbortController();
-  const iterator = runner.execute(request, { signal: controller.signal })[Symbol.asyncIterator]();
-  const events = [];
-  const deadline = Date.now() + timeoutMs;
-  try {
-    while (true) {
-      const remaining = deadline - Date.now();
-      if (remaining <= 0) {
-        const error = new Error(`Engine exceeded ${timeoutMs}ms timeout`);
-        error.name = 'EngineTimeoutError';
-        error.code = 'ENGINE_TIMEOUT';
-        throw error;
+function sequence(episodeId) {
+  let step = 0;
+  let pending = [];
+  let summary;
+  let terminated = false;
+  return {
+    accept(event) {
+      if (event.episodeId !== episodeId || summary) throw new EngineProtocolError('Unexpected event episodeId or event after summary');
+      if (event.type === 'EpisodeSummary') {
+        if (pending.length || !step || event.stepsCompleted !== step) throw new EngineProtocolError('Summary stepsCompleted does not match complete steps');
+        summary = event;
+        return null;
       }
-      const item = await nextWithTimeout(iterator, remaining, controller.signal);
-      if (item.done) break;
-      events.push(validateEngineEvent(item.value));
+      if (terminated || event.step !== step || event.type !== ['FleetObservation', 'PolicyRecommendation', 'StepResult'][pending.length]) {
+        throw new EngineProtocolError(`Step ${step} must contain one ordered observation, recommendation, and result`);
+      }
+      pending.push(event);
+      if (pending.length !== 3) return null;
+      const complete = pending;
+      pending = [];
+      terminated = event.episodeTerminated;
+      step += 1;
+      return complete;
+    },
+    finish() {
+      if (!summary) throw new EngineProtocolError('Exactly one final EpisodeSummary is required', 'ENGINE_SUMMARY_MISSING');
+      return summary;
+    },
+  };
+}
+
+// Backpressure: request the next engine event only after the current step commits.
+async function consumeEngineEvents(runner, request, { timeoutMs = 30000, signal, onStep = async () => {} } = {}) {
+  validateEngineRequest(request);
+  const controller = new AbortController();
+  const abort = () => controller.abort(signal.reason);
+  signal?.addEventListener('abort', abort, { once: true });
+  if (signal?.aborted) abort();
+  let iterator;
+  let timer;
+  let rejectAbort;
+  const aborted = new Promise((_, reject) => { rejectAbort = reject; });
+  aborted.catch(() => {});
+  // Install before starting the adapter; cancellation also bounds an unresponsive iterator.
+  const onAbort = () => rejectAbort(controller.signal.reason || new Error('Engine aborted'));
+  controller.signal.addEventListener('abort', onAbort, { once: true });
+  try {
+    controller.signal.throwIfAborted();
+    iterator = runner.execute(request, { signal: controller.signal })[Symbol.asyncIterator]();
+    const state = sequence(request.episodeId);
+    while (true) {
+      // Timeout measures a single engine read, not total episode runtime or DB latency.
+      timer = setTimeout(() => controller.abort(Object.assign(new Error(`Engine idle for ${timeoutMs}ms`), { code: 'ENGINE_TIMEOUT' })), timeoutMs);
+      const item = await Promise.race([iterator.next(), aborted]);
+      clearTimeout(timer);
+      controller.signal.throwIfAborted();
+      if (item.done) return state.finish();
+      const step = state.accept(validateEngineEvent(item.value));
+      if (step) {
+        await onStep(step);
+        controller.signal.throwIfAborted();
+      }
     }
   } catch (error) {
     controller.abort(error);
+    // Never await return(): generators can be stuck in an uncooperative next().
+    if (iterator?.return) Promise.resolve().then(() => iterator.return()).catch(() => {});
     throw error;
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', abort);
+    controller.signal.removeEventListener('abort', onAbort);
+    aborted.catch(() => {});
   }
-
-  validateSequence(events, request.episodeId);
-  return events;
 }
 
+// Compatibility helper for fixture tests only. Workers use consumeEngineEvents.
+async function collectEngineEvents(runner, request, options) {
+  const events = [];
+  const summary = await consumeEngineEvents(runner, request, { ...options, onStep: async (step) => { events.push(...step); } });
+  return [...events, summary];
+}
 function validateSequence(events, episodeId) {
-  const summaries = events.filter((event) => event.type === 'EpisodeSummary');
-  if (summaries.length !== 1 || events.at(-1)?.type !== 'EpisodeSummary') {
-    throw new EngineProtocolError('Exactly one final EpisodeSummary is required', 'ENGINE_SUMMARY_MISSING');
-  }
-  if (events.some((event) => event.episodeId !== episodeId)) {
-    throw new EngineProtocolError('Engine event episodeId does not match request');
-  }
-  const perStep = new Map();
-  for (const event of events.slice(0, -1)) {
-    if (event.type === 'EpisodeSummary') continue;
-    const bucket = perStep.get(event.step) || [];
-    bucket.push(event.type);
-    perStep.set(event.step, bucket);
-  }
-  const steps = [...perStep.keys()].sort((a, b) => a - b);
-  if (!steps.length || steps.some((step, index) => step !== index)) {
-    throw new EngineProtocolError('Simulation steps must be contiguous and start at zero');
-  }
-  const expected = 'FleetObservation,PolicyRecommendation,StepResult';
-  for (const step of steps) {
-    if (perStep.get(step).join(',') !== expected) {
-      throw new EngineProtocolError(`Step ${step} must contain one ordered observation, recommendation, and result`);
-    }
-  }
-  const summary = summaries[0];
-  if (summary.stepsCompleted !== steps.length) {
-    throw new EngineProtocolError('Summary stepsCompleted does not match event stream');
-  }
+  const state = sequence(episodeId);
+  events.forEach((event) => state.accept(event));
+  state.finish();
 }
-
-module.exports = { EngineProtocolError, collectEngineEvents, validateSequence };
+module.exports = { EngineProtocolError, consumeEngineEvents, collectEngineEvents, validateSequence };

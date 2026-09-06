@@ -49,6 +49,11 @@ model Episode {
   seed             Int
   status           EpisodeStatus      @default(PENDING)
   stepsCompleted   Int                @default(0) @map("steps_completed")
+  leaseToken       String?            @map("lease_token") @db.Uuid
+  leaseExpiresAt   DateTime?          @map("lease_expires_at") @db.Timestamptz(6)
+  failureCode      String?            @map("failure_code")
+  failureMessage   String?            @map("failure_message")
+  summary          EpisodeSummary?
   totalCost        Float?             @map("total_cost")
   failureCount     Int?               @map("failure_count")
   replacementCount Int?               @map("replacement_count")
@@ -63,7 +68,18 @@ model Episode {
 
   @@unique([experimentId, policyId, seed])
   @@index([experimentId, status])
+  @@index([status, leaseExpiresAt])
   @@map("episodes")
+}
+
+model EpisodeSummary {
+  episodeId     String   @id @map("episode_id") @db.Uuid
+  schemaVersion String   @map("schema_version")
+  payloadJson   Json     @map("payload_json")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  episode       Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@map("episode_summaries")
 }
 
 model FleetObservation {

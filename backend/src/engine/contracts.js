@@ -29,7 +29,7 @@ const fleetObservationSchema = z.object({
   schemaVersion: z.literal('2.0'),
   episodeId: z.string().min(1),
   step: z.number().int().nonnegative(),
-  fixture: z.literal(true),
+  fixture: z.boolean(),
   machines: z.array(z.object({
     machineId: z.string().min(1),
     toolAge: z.number().int().nonnegative(),
@@ -44,7 +44,7 @@ const recommendationSchema = z.object({
   schemaVersion: z.literal('2.0'),
   episodeId: z.string().min(1),
   step: z.number().int().nonnegative(),
-  fixture: z.literal(true),
+  fixture: z.boolean(),
   recommendations: z.array(z.object({
     machineId: z.string().min(1),
     action: z.enum(['CONTINUE', 'REPLACE']),
@@ -58,7 +58,7 @@ const stepResultSchema = z.object({
   schemaVersion: z.literal('2.0'),
   episodeId: z.string().min(1),
   step: z.number().int().nonnegative(),
-  fixture: z.literal(true),
+  fixture: z.boolean(),
   outcomes: z.array(z.object({
     machineId: z.string().min(1),
     outcome: z.enum(['CONTINUED', 'REPLACED', 'WAITING_FOR_SPARE', 'FAILED']),
@@ -73,7 +73,7 @@ const episodeSummarySchema = z.object({
   type: z.literal('EpisodeSummary'),
   schemaVersion: z.literal('2.0'),
   episodeId: z.string().min(1),
-  fixture: z.literal(true),
+  fixture: z.boolean(),
   stepsCompleted: z.number().int().positive(),
   totalCost: nonNegativeNumber,
   failureCount: z.number().int().nonnegative(),
