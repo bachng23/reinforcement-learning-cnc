@@ -269,7 +269,11 @@ export function normalizeEpisodeListItem(
   const failureCount = optionalNumber(first(record, "failure_count", "failureCount"));
   const replacementCount = optionalNumber(first(record, "replacement_count", "replacementCount"));
   const waitingSteps = optionalNumber(first(record, "waiting_steps", "waitingSteps"));
-  const failure = normalizeFailure(first(record, "failure", "failure_info", "failureInfo", "error"));
+  const normalizedFailure = normalizeFailure(first(record, "failure", "failure_info", "failureInfo", "error"));
+  const failedAt = optionalString(first(record, "failed_at", "failedAt"));
+  const failure = normalizedFailure && !normalizedFailure.occurred_at && failedAt
+    ? { ...normalizedFailure, occurred_at: failedAt }
+    : normalizedFailure;
 
   return {
     id: requiredString(first(record, "id", "episode_id", "episodeId", "episode_key", "episodeKey"), "episode id"),
@@ -279,6 +283,9 @@ export function normalizeEpisodeListItem(
     ),
     status: normalizeEpisodeStatus(record.status),
     seed: requiredNumber(record.seed, "episode seed"),
+    ...(optionalInteger(record.attempt) !== undefined
+      ? { attempt: optionalInteger(record.attempt) }
+      : {}),
     policy,
     ...(optionalString(first(record, "key", "episode_key", "episodeKey"))
       ? { key: optionalString(first(record, "key", "episode_key", "episodeKey")) }
@@ -326,13 +333,20 @@ export function normalizeExperimentListItem(value: unknown): ExperimentListItem 
   const record = requiredRecord(value, "experiment");
   const episodes = first(record, "episodes", "episode_items", "episodeItems");
   const numberOfEpisodes = optionalInteger(
-    first(record, "number_of_episodes", "numberOfEpisodes", "requested_episode_count", "requestedEpisodeCount"),
+    first(
+      record,
+      "number_of_episodes",
+      "numberOfEpisodes",
+      "episodeCount",
+      "requested_episode_count",
+      "requestedEpisodeCount",
+    ),
   );
   const counts = normalizeEpisodeCounts(
     first(record, "episode_counts", "episodeCounts", "counts"),
     numberOfEpisodes ?? (Array.isArray(episodes) ? episodes.length : undefined),
   );
-  const owner = normalizeOwner(first(record, "owner", "created_by", "createdBy"));
+  const owner = normalizeOwner(first(record, "owner", "created_by", "createdBy", "createdById"));
   const description = record.description;
   const updatedAt = optionalString(first(record, "updated_at", "updatedAt"));
   const key = optionalString(first(record, "key", "experiment_key", "experimentKey"));

@@ -9,8 +9,8 @@ let activeMode: ProductApiMode | undefined;
 
 export function getProductApiMode(): ProductApiMode {
   const configured = process.env.NEXT_PUBLIC_PRODUCT_API_MODE?.trim().toLowerCase();
-  if (!configured || configured === "mock") return "mock";
-  if (configured === "real") return "real";
+  if (!configured || configured === "real") return "real";
+  if (configured === "mock") return "mock";
   throw new Error(
     `Unsupported NEXT_PUBLIC_PRODUCT_API_MODE "${configured}". Use "mock" or "real".`,
   );

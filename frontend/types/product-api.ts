@@ -13,11 +13,6 @@ export type EpisodeStatus =
   | "FAILED"
   | "CANCELLED";
 
-/**
- * Integration assumption: these values mirror the current persistence model.
- * The Product API contract must confirm them before they become a hard backend
- * compatibility guarantee.
- */
 export type ExperimentStatus =
   | "DRAFT"
   | "READY"
@@ -56,11 +51,6 @@ export interface PaginatedResponse<T> extends PaginationMetadata {
   items: T[];
 }
 
-/**
- * Product API integration model. `id`, `name`, and `version` are the minimum
- * fields needed by the policy selector; the remaining catalog metadata is
- * optional until the Product API response contract is finalized.
- */
 export interface PolicyCatalogItem {
   id: string;
   name: string;
@@ -126,6 +116,7 @@ export interface EpisodeListItem {
   experiment_id: string;
   status: EpisodeStatus;
   seed: number;
+  attempt?: number;
   policy: PolicyReference;
   key?: string;
   steps_completed?: number;
@@ -170,17 +161,13 @@ export interface EpisodeDetail extends EpisodeListItem {
   steps: EpisodeStepRecord[];
 }
 
-/**
- * Integration assumption for POST /api/v1/experiments. The CNC seed remains
- * inside EnvironmentConfig; the frontend does not invent separate seed modes.
- */
 export interface CreateExperimentRequest {
   name: string;
-  policy_id: string;
-  number_of_episodes: number;
-  environment_config: EnvironmentConfig;
-  description?: string;
-  policy_version?: string;
+  policyKey: string;
+  policyVersion: string;
+  episodeCount: number;
+  environmentConfig: EnvironmentConfig;
+  description?: string | null;
 }
 
 export interface ListExperimentsParams {
@@ -204,6 +191,11 @@ export interface ProductApiClient {
     payload: CreateExperimentRequest,
     options?: ProductApiRequestOptions,
   ): Promise<ExperimentDetail>;
+  runExperiment(
+    id: string,
+    idempotencyKey: string,
+    options?: ProductApiRequestOptions,
+  ): Promise<void>;
   getExperiment(
     id: string,
     options?: ProductApiRequestOptions,

@@ -143,11 +143,11 @@ function toRequest(
 ): CreateExperimentRequest {
   return {
     name: values.name.trim(),
-    description: values.description.trim() || undefined,
-    policy_id: policy.id,
-    policy_version: policy.version,
-    number_of_episodes: Number(values.number_of_episodes),
-    environment_config: {
+    description: values.description.trim() || null,
+    policyKey: policy.key ?? policy.id,
+    policyVersion: policy.version,
+    episodeCount: Number(values.number_of_episodes),
+    environmentConfig: {
       schema_version: "2.0",
       environment_id: values.environment_id.trim(),
       number_of_machines: Number(values.number_of_machines),
@@ -179,9 +179,13 @@ function backendErrors(error: unknown): FieldErrors {
   const normalized: FieldErrors = {};
   for (const [field, messages] of Object.entries(value as Record<string, unknown>)) {
     const key = field
+      .replace(/^environmentConfig\./, "")
       .replace(/^environment_config\./, "")
       .replace(/^costs\./, "")
       .replace(/^risk\./, "risk_")
+      .replace("episodeCount", "number_of_episodes")
+      .replace("policyKey", "policy_id")
+      .replace("policyVersion", "policy_id")
       .replace("risk_objective", "risk_objective")
       .replace("risk_cvar_alpha", "cvar_alpha");
     normalized[key] = Array.isArray(messages)

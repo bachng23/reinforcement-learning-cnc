@@ -103,10 +103,10 @@ describe("CreateExperimentForm", () => {
     expect(createExperiment.mock.calls[0][0]).toStrictEqual({
       name: "Week 1 validation",
       description: "Payload remains contract shaped",
-      policy_id: "policy-risk-aware-v2",
-      policy_version: "2.1.0",
-      number_of_episodes: 3,
-      environment_config: {
+      policyKey: "risk-aware",
+      policyVersion: "2.1.0",
+      episodeCount: 3,
+      environmentConfig: {
         schema_version: "2.0",
         environment_id: "cnc-shared-spares",
         number_of_machines: 3,
@@ -147,7 +147,7 @@ describe("CreateExperimentForm", () => {
       throw new ProductApiError("Backend validation failed.", {
         status: 422,
         fieldErrors: {
-          "environment_config.initial_spares": [
+          "environmentConfig.initial_spares": [
             "Initial inventory was rejected by the Product API.",
           ],
         },

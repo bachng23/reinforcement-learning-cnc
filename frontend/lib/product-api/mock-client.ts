@@ -80,12 +80,15 @@ function countsFor(episodes: EpisodeDetail[]) {
   };
 }
 
-function experimentStatusFor(episodes: EpisodeDetail[]): ExperimentDetail["status"] {
+function experimentStatusFor(
+  episodes: EpisodeDetail[],
+  currentStatus: ExperimentDetail["status"],
+): ExperimentDetail["status"] {
   if (episodes.some((episode) => episode.status === "RUNNING")) return "RUNNING";
-  if (episodes.some((episode) => episode.status === "PENDING")) return "READY";
+  if (episodes.some((episode) => episode.status === "PENDING")) return "RUNNING";
   if (episodes.some((episode) => episode.status === "FAILED")) return "FAILED";
   if (episodes.length > 0) return "COMPLETED";
-  return "DRAFT";
+  return currentStatus === "READY" ? "READY" : "DRAFT";
 }
 
 function policyReference(policy: PolicyCatalogItem): PolicyReference {
@@ -120,21 +123,21 @@ function validateCreatePayload(payload: CreateExperimentRequest): void {
   };
 
   if (!payload.name.trim()) add("name", "Experiment name is required.");
-  if (!payload.policy_id.trim()) add("policy_id", "A policy is required.");
-  if (!Number.isInteger(payload.number_of_episodes) || payload.number_of_episodes < 1) {
-    add("number_of_episodes", "Number of episodes must be a positive integer.");
+  if (!payload.policyKey.trim()) add("policyKey", "A policy is required.");
+  if (!Number.isInteger(payload.episodeCount) || payload.episodeCount < 1) {
+    add("episodeCount", "Number of episodes must be a positive integer.");
   }
-  if (!Number.isInteger(payload.environment_config.number_of_machines) || payload.environment_config.number_of_machines < 1) {
-    add("environment_config.number_of_machines", "Number of machines must be at least 1.");
+  if (!Number.isInteger(payload.environmentConfig.number_of_machines) || payload.environmentConfig.number_of_machines < 1) {
+    add("environmentConfig.number_of_machines", "Number of machines must be at least 1.");
   }
-  if (!Number.isInteger(payload.environment_config.horizon_steps) || payload.environment_config.horizon_steps < 1) {
-    add("environment_config.horizon_steps", "Simulation horizon must be at least 1 step.");
+  if (!Number.isInteger(payload.environmentConfig.horizon_steps) || payload.environmentConfig.horizon_steps < 1) {
+    add("environmentConfig.horizon_steps", "Simulation horizon must be at least 1 step.");
   }
-  if (!Number.isInteger(payload.environment_config.seed) || payload.environment_config.seed < 0) {
-    add("environment_config.seed", "Seed must be a non-negative integer.");
+  if (!Number.isInteger(payload.environmentConfig.seed) || payload.environmentConfig.seed < 0) {
+    add("environmentConfig.seed", "Seed must be a non-negative integer.");
   }
-  if (!(payload.environment_config.failure_threshold_um > 0)) {
-    add("environment_config.failure_threshold_um", "Failure threshold must be greater than 0.");
+  if (!(payload.environmentConfig.failure_threshold_um > 0)) {
+    add("environmentConfig.failure_threshold_um", "Failure threshold must be greater than 0.");
   }
   if (details.length) {
     throw validationError("Please correct the highlighted fields.", fieldErrors, details);
@@ -147,6 +150,7 @@ export class MockProductApiClient implements ProductApiClient {
   private readonly experiments = new Map<string, ExperimentDetail>();
   private readonly episodes = new Map<string, EpisodeDetail>();
   private readonly pollCounts = new Map<string, number>();
+  private readonly runKeys = new Map<string, string>();
   private readonly latencyMs: number;
   private readonly simulatePolling: boolean;
   private sequence = 100;
@@ -185,9 +189,9 @@ export class MockProductApiClient implements ProductApiClient {
     }
     const episodes = this.episodesForExperiment(experimentId);
     experiment.episodes = episodes.map(asEpisodeListItem);
-    experiment.number_of_episodes = episodes.length;
+    experiment.number_of_episodes ??= episodes.length;
     experiment.episode_counts = countsFor(episodes);
-    experiment.status = experimentStatusFor(episodes);
+    experiment.status = experimentStatusFor(episodes, experiment.status);
     return experiment;
   }
 
@@ -272,7 +276,10 @@ export class MockProductApiClient implements ProductApiClient {
   ): Promise<ExperimentDetail> {
     await this.wait(options);
     validateCreatePayload(payload);
-    const selectedPolicy = this.policies.find((policy) => policy.id === payload.policy_id);
+    const selectedPolicy = this.policies.find((policy) => (
+      (policy.key ?? policy.id) === payload.policyKey
+      && policy.version === payload.policyVersion
+    ));
     if (!selectedPolicy) {
       throw validationError(
         "The selected policy is not available.",
@@ -285,24 +292,11 @@ export class MockProductApiClient implements ProductApiClient {
         }],
       );
     }
-    if (payload.policy_version && payload.policy_version !== selectedPolicy.version) {
-      throw validationError(
-        "The selected policy version is not available.",
-        { policy_version: ["Select the version returned by the policy catalog."] },
-        [{
-          field: "policy_version",
-          path: ["policy_version"],
-          code: "not_found",
-          message: "Select the version returned by the policy catalog.",
-        }],
-      );
-    }
-
     this.sequence += 1;
     const id = `mock-experiment-${this.sequence}`;
     const createdAt = new Date().toISOString();
     const policy = policyReference(selectedPolicy);
-    const environmentConfig: EnvironmentConfig = clone(payload.environment_config);
+    const environmentConfig: EnvironmentConfig = clone(payload.environmentConfig);
     const experiment: ExperimentDetail = {
       id,
       key: id,
@@ -317,28 +311,53 @@ export class MockProductApiClient implements ProductApiClient {
         username: "mock.engineer",
         display_name: "Mock Engineer",
       },
-      number_of_episodes: payload.number_of_episodes,
-      episode_counts: { total: payload.number_of_episodes, pending: payload.number_of_episodes },
+      number_of_episodes: payload.episodeCount,
+      episode_counts: { total: 0, pending: 0 },
       episodes: [],
     };
     this.experiments.set(id, experiment);
+    return clone(this.refreshExperiment(id));
+  }
 
-    for (let index = 0; index < payload.number_of_episodes; index += 1) {
-      // Mock-only deterministic seed sequence. This is not a Product API
-      // contract assumption and the frontend never applies it to real data.
-      const seed = environmentConfig.seed + index;
+  async runExperiment(
+    id: string,
+    idempotencyKey: string,
+    options: ProductApiRequestOptions = {},
+  ): Promise<void> {
+    await this.wait(options);
+    const experiment = this.experiments.get(id);
+    if (!experiment) {
+      throw new ProductApiError("Experiment not found.", {
+        status: 404,
+        statusText: "Not Found",
+        code: "EXPERIMENT_NOT_FOUND",
+      });
+    }
+    const priorKey = this.runKeys.get(id);
+    if (priorKey && priorKey !== idempotencyKey) {
+      throw new ProductApiError("The experiment has already been run.", {
+        status: 409,
+        statusText: "Conflict",
+        code: "EXPERIMENT_ALREADY_RUN",
+      });
+    }
+    if (priorKey === idempotencyKey) return;
+
+    this.runKeys.set(id, idempotencyKey);
+    const episodeCount = experiment.number_of_episodes ?? 0;
+    for (let index = 0; index < episodeCount; index += 1) {
       const episode = createPendingEpisodeFixture({
         id: `${id}.episode-${index + 1}`,
         experimentId: id,
-        seed,
-        policy,
-        environmentConfig,
-        createdAt,
+        seed: experiment.environment_config.seed + index,
+        policy: experiment.policy,
+        environmentConfig: experiment.environment_config,
+        createdAt: experiment.created_at,
       });
       this.episodes.set(episode.id, episode);
     }
-
-    return clone(this.refreshExperiment(id));
+    experiment.status = "RUNNING";
+    this.refreshExperiment(id);
   }
 
   async getExperiment(

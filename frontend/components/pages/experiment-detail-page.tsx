@@ -10,10 +10,11 @@ import {
   GitBranch,
   Hash,
   ListChecks,
+  Play,
   RefreshCw,
   UserRound,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { AsyncState } from "@/components/research/async-state";
@@ -55,6 +56,10 @@ function requestErrorMessage(error: unknown): string {
   return error instanceof Error && error.message
     ? error.message
     : "The experiment could not be loaded.";
+}
+
+function createRunIdempotencyKey(): string {
+  return `frontend-run:${crypto.randomUUID()}`;
 }
 
 function formatTimestamp(value: string | null | undefined): string {
@@ -243,12 +248,18 @@ function ExperimentContent({
   pollingError,
   lastRefreshedAt,
   pollIntervalMs,
+  isStarting,
+  runError,
+  onRun,
 }: {
   experiment: ExperimentDetail;
   isRefreshing: boolean;
   pollingError: string | null;
   lastRefreshedAt: Date | null;
   pollIntervalMs: number;
+  isStarting: boolean;
+  runError: string | null;
+  onRun: () => void;
 }) {
   const pollingActive = shouldPollEpisodes(experiment.episodes);
   const allEpisodesTerminal =
@@ -276,7 +287,29 @@ function ExperimentContent({
           { label: experiment.name },
         ]}
         eyebrow={<StatusBadge status={experiment.status} />}
+        actions={experiment.status === "READY" ? (
+          <button
+            type="button"
+            onClick={onRun}
+            disabled={isStarting}
+            className="inline-flex h-9 items-center gap-2 rounded-md bg-[var(--color-chartwell-blue)] px-3 text-sm font-semibold text-white transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isStarting ? (
+              <RefreshCw className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+            ) : (
+              <Play className="h-4 w-4" aria-hidden="true" />
+            )}
+            {isStarting ? "Starting…" : "Run experiment"}
+          </button>
+        ) : undefined}
       />
+
+      {runError ? (
+        <div className="mt-4 flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm text-rose-900" role="alert">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <p>{runError}</p>
+        </div>
+      ) : null}
 
       <section className="mt-6 min-w-0 rounded-lg border border-[var(--color-stone-border)] bg-white p-4 sm:p-5" aria-labelledby="experiment-metadata-heading">
         <h2 id="experiment-metadata-heading" className="text-sm font-semibold text-[var(--color-slate-text)]">
@@ -420,12 +453,16 @@ export function ExperimentDetailPage({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
   const [requestVersion, setRequestVersion] = useState(0);
+  const [isStarting, setIsStarting] = useState(false);
+  const [runError, setRunError] = useState<string | null>(null);
+  const runKey = useRef<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     setExperiment(null);
     setInitialError(null);
     setPollingError(null);
+    setRunError(null);
     setLastRefreshedAt(null);
 
     if (!experimentId) {
@@ -507,6 +544,25 @@ export function ExperimentDetailPage({
     };
   }, [client, effectivePollInterval, experimentId, pollingActive]);
 
+  const runExperiment = async () => {
+    if (!experiment || experiment.status !== "READY" || isStarting) return;
+    const idempotencyKey = runKey.current ?? createRunIdempotencyKey();
+    runKey.current = idempotencyKey;
+    setIsStarting(true);
+    setRunError(null);
+    try {
+      await client.runExperiment(experiment.id, idempotencyKey);
+      const response = await client.getExperiment(experiment.id);
+      setExperiment(response);
+      setLastRefreshedAt(new Date());
+      runKey.current = null;
+    } catch (error) {
+      setRunError(requestErrorMessage(error));
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
   return (
     <AppShell title="Experiment details">
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -539,6 +595,9 @@ export function ExperimentDetailPage({
             pollingError={pollingError}
             lastRefreshedAt={lastRefreshedAt}
             pollIntervalMs={effectivePollInterval}
+            isStarting={isStarting}
+            runError={runError}
+            onRun={() => void runExperiment()}
           />
         )}
       </main>

@@ -41,6 +41,9 @@ function nonEmptyString(value: unknown): string | undefined {
 }
 
 function normalizePath(value: unknown): Array<number | string> | undefined {
+  if (typeof value === "string" && value.trim()) {
+    return value.split(".").filter(Boolean);
+  }
   if (!Array.isArray(value)) return undefined;
   const path = value.filter(
     (part): part is number | string =>
@@ -61,7 +64,7 @@ function normalizeDetail(value: unknown): ApiErrorDetail | null {
   const path = normalizePath(value.path ?? value.loc);
   const field =
     nonEmptyString(value.field) ??
-    (path?.length ? String(path[path.length - 1]) : undefined);
+    (path?.length ? path.join(".") : undefined);
 
   return {
     message,

@@ -11,6 +11,7 @@ export function createProductApiStub(
     listPolicies: () => notConfigured("listPolicies"),
     listExperiments: () => notConfigured("listExperiments"),
     createExperiment: () => notConfigured("createExperiment"),
+    runExperiment: () => notConfigured("runExperiment"),
     getExperiment: () => notConfigured("getExperiment"),
     getEpisode: () => notConfigured("getEpisode"),
     ...overrides,
