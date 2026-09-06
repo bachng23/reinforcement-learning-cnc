@@ -25,11 +25,11 @@ class EpisodeWorker {
     const context = { experimentId: episode.experimentId, episodeId: episode.id, engineVersion: this.runner.version || 'unknown' };
     this.logger.info('episode_claimed', context);
     try {
-      await this.repository.prepareRetry(episode.id);
       const request = {
         episodeId: episode.id,
+        attempt: episode.attempt,
         environmentConfig: episode.experiment.environmentConfig,
-        policyId: episode.policyId,
+        policyId: episode.policy.policyKey,
         policyVersion: episode.policy.version,
         seed: episode.seed,
       };
@@ -37,7 +37,10 @@ class EpisodeWorker {
       const events = await collectEngineEvents(this.runner, request, { timeoutMs: this.timeoutMs });
       await this.repository.persistCompleted(episode, events);
       this.health.completed();
-      this.logger.info('episode_completed', { ...context, simulationStep: events.at(-1).stepsCompleted - 1 });
+      this.logger.info('episode_completed', {
+        ...context,
+        simulationStep: events.at(-1).payload.steps_completed - 1,
+      });
       return true;
     } catch (error) {
       this.health.failed();

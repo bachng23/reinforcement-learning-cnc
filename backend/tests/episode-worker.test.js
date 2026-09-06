@@ -2,9 +2,21 @@ const { EpisodeWorker } = require('../src/worker/episode-worker');
 const { FakeEngineRunner } = require('../src/engine/fake-engine');
 
 const episode = {
-  id: 'episode-1', episodeKey: 'ep-key', experimentId: 'experiment-1', policyId: 'policy-1', seed: 3,
-  experiment: { environmentConfig: { machineCount: 3, steps: 2, spareCount: 1 } },
-  policy: { version: '1' },
+  id: 'episode-1', episodeKey: 'ep-key', experimentId: 'experiment-1', policyId: 'policy-1',
+  attempt: 1, seed: 3,
+  experiment: {
+    environmentConfig: {
+      schema_version: '2.0', environment_id: 'fixture-environment', number_of_machines: 3,
+      spare_capacity: 1, initial_spares: 1, horizon_steps: 2, failure_threshold_um: 300,
+      seed: 3,
+      costs: {
+        replacement_cost: 25, failure_cost: 500, waiting_cost_per_step: 7,
+        unused_life_cost_per_step: 1,
+      },
+      risk: { objective: 'EXPECTED_COST', cvar_alpha: 0.95 },
+    },
+  },
+  policy: { policyKey: 'fixture-policy', version: '1.0.0' },
 };
 
 const silentLogger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
@@ -13,21 +25,22 @@ function repository(overrides = {}) {
   return {
     recoverStale: jest.fn().mockResolvedValue({ count: 0 }),
     claimNext: jest.fn().mockResolvedValue(episode),
-    prepareRetry: jest.fn().mockResolvedValue(),
     persistCompleted: jest.fn().mockResolvedValue(),
     markFailed: jest.fn().mockResolvedValue(),
     ...overrides,
   };
 }
 
-test('successful execution cleans retries then persists summary and completed data', async () => {
+test('successful execution preserves retries and persists canonical summary data', async () => {
   const repo = repository();
   const worker = new EpisodeWorker({ repository: repo, runner: new FakeEngineRunner(), logger: silentLogger });
   await expect(worker.processNext()).resolves.toBe(true);
-  expect(repo.prepareRetry).toHaveBeenCalledWith('episode-1');
   expect(repo.persistCompleted).toHaveBeenCalledTimes(1);
   const events = repo.persistCompleted.mock.calls[0][1];
   expect(events.at(-1).type).toBe('EpisodeSummary');
+  expect(events.at(-1).payload).toMatchObject({
+    episode_id: 'episode-1', policy_id: 'fixture-policy', seed: 3,
+  });
   expect(repo.markFailed).not.toHaveBeenCalled();
   expect(worker.health.snapshot().state).toBe('HEALTHY');
 });

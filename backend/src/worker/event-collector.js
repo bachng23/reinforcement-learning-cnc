@@ -46,6 +46,13 @@ async function collectEngineEvents(runner, request, { timeoutMs = 30000 } = {}) 
     }
   } catch (error) {
     controller.abort(error);
+    if (iterator.return) {
+      try {
+        await iterator.return();
+      } catch (_cancellationError) {
+        // Preserve the original engine or timeout error.
+      }
+    }
     throw error;
   }
 
@@ -58,29 +65,41 @@ function validateSequence(events, episodeId) {
   if (summaries.length !== 1 || events.at(-1)?.type !== 'EpisodeSummary') {
     throw new EngineProtocolError('Exactly one final EpisodeSummary is required', 'ENGINE_SUMMARY_MISSING');
   }
-  if (events.some((event) => event.episodeId !== episodeId)) {
-    throw new EngineProtocolError('Engine event episodeId does not match request');
+  const stepEvents = events.slice(0, -1);
+  if (!stepEvents.length || stepEvents.length % 3 !== 0) {
+    throw new EngineProtocolError('Each step must contain one ordered observation, recommendation, and result');
   }
-  const perStep = new Map();
-  for (const event of events.slice(0, -1)) {
-    if (event.type === 'EpisodeSummary') continue;
-    const bucket = perStep.get(event.step) || [];
-    bucket.push(event.type);
-    perStep.set(event.step, bucket);
-  }
-  const steps = [...perStep.keys()].sort((a, b) => a - b);
-  if (!steps.length || steps.some((step, index) => step !== index)) {
-    throw new EngineProtocolError('Simulation steps must be contiguous and start at zero');
-  }
-  const expected = 'FleetObservation,PolicyRecommendation,StepResult';
-  for (const step of steps) {
-    if (perStep.get(step).join(',') !== expected) {
+
+  const stepCount = stepEvents.length / 3;
+  for (let step = 0; step < stepCount; step += 1) {
+    const [observationEvent, recommendationEvent, resultEvent] = stepEvents.slice(step * 3, step * 3 + 3);
+    if (observationEvent.type !== 'FleetObservation'
+      || recommendationEvent.type !== 'PolicyRecommendation'
+      || resultEvent.type !== 'StepResult') {
       throw new EngineProtocolError(`Step ${step} must contain one ordered observation, recommendation, and result`);
     }
+    const observation = observationEvent.payload;
+    const recommendation = recommendationEvent.payload;
+    const result = resultEvent.payload;
+    if (observation.step !== step || result.step !== step) {
+      throw new EngineProtocolError('Simulation steps must be contiguous and start at zero');
+    }
+    if (observation.episode_id !== episodeId || result.episode_id !== episodeId) {
+      throw new EngineProtocolError('Engine event episode_id does not match request');
+    }
+    if (recommendation.observation_id !== observation.observation_id
+      || recommendation.actions.observation_id !== observation.observation_id
+      || result.observation_id !== observation.observation_id) {
+      throw new EngineProtocolError(`Step ${step} events must reference the same observation`);
+    }
   }
-  const summary = summaries[0];
-  if (summary.stepsCompleted !== steps.length) {
-    throw new EngineProtocolError('Summary stepsCompleted does not match event stream');
+
+  const summary = summaries[0].payload;
+  if (summary.episode_id !== episodeId) {
+    throw new EngineProtocolError('Episode summary episode_id does not match request');
+  }
+  if (summary.steps_completed !== stepCount) {
+    throw new EngineProtocolError('Summary steps_completed does not match event stream');
   }
 }
 

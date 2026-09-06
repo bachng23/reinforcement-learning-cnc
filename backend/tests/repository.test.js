@@ -1,47 +1,105 @@
 const { EpisodeRepository } = require('../src/worker/repository');
 
 test('atomic claim only returns an episode after conditional PENDING update wins', async () => {
-  const tx = {
+  const prisma = {
     episode: {
-      findFirst: jest.fn().mockResolvedValue({ id: 'episode-1' }),
+      findMany: jest.fn().mockResolvedValue([{ id: 'episode-1' }]),
       updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       findUnique: jest.fn(),
     },
   };
-  const prisma = { $transaction: (callback) => callback(tx) };
   await expect(new EpisodeRepository(prisma).claimNext()).resolves.toBeNull();
-  expect(tx.episode.findUnique).not.toHaveBeenCalled();
-  expect(tx.episode.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+  expect(prisma.episode.findUnique).not.toHaveBeenCalled();
+  expect(prisma.episode.updateMany).toHaveBeenCalledWith(expect.objectContaining({
     where: { id: 'episode-1', status: 'PENDING' },
   }));
 });
 
-test('event persistence uses idempotent unique-key upserts and completes last', async () => {
+test('event persistence is attempt-aware, immutable, and completes last', async () => {
   const calls = [];
   const tx = {
-    fleetObservation: { upsert: jest.fn(async (args) => { calls.push('observation'); return { id: 'observation-1', ...args }; }) },
+    fleetObservation: {
+      upsert: jest.fn(async (args) => {
+        calls.push('observation');
+        return { id: 'observation-1', ...args };
+      }),
+    },
     policyRecommendation: { upsert: jest.fn(async () => { calls.push('recommendation'); }) },
     stepResult: { upsert: jest.fn(async () => { calls.push('result'); }) },
-    episode: { update: jest.fn(async () => { calls.push('completed'); }) },
+    episodeSummary: { upsert: jest.fn(async () => { calls.push('summary'); }) },
+    episode: { updateMany: jest.fn(async () => { calls.push('completed'); return { count: 1 }; }) },
   };
   const prisma = { $transaction: (callback) => callback(tx) };
   const repo = new EpisodeRepository(prisma);
-  const ep = { id: 'episode-1', episodeKey: 'key', policyId: 'policy-1' };
+  const episode = { id: 'episode-1', attempt: 2, policyId: 'policy-db-id' };
   const events = [
-    { type: 'FleetObservation', schemaVersion: '2.0', step: 0 },
-    { type: 'PolicyRecommendation', schemaVersion: '2.0', step: 0 },
-    { type: 'StepResult', schemaVersion: '2.0', step: 0, stepCost: 1, episodeTerminated: true },
-    { type: 'EpisodeSummary', stepsCompleted: 1, totalCost: 1, failureCount: 0, replacementCount: 0, waitingSteps: 0 },
+    {
+      type: 'FleetObservation',
+      payload: {
+        schema_version: '2.0', observation_id: 'obs-attempt-2-step-0', episode_id: 'episode-1', step: 0,
+      },
+    },
+    {
+      type: 'PolicyRecommendation',
+      payload: { schema_version: '2.0', observation_id: 'obs-attempt-2-step-0' },
+    },
+    {
+      type: 'StepResult',
+      payload: {
+        schema_version: '2.0', observation_id: 'obs-attempt-2-step-0', total_cost: 1,
+        episode_terminated: true,
+      },
+    },
+    {
+      type: 'EpisodeSummary',
+      payload: {
+        schema_version: '2.0', steps_completed: 1, total_cost: 1, failure_count: 0,
+        replacement_count: 0, waiting_steps: 0,
+      },
+    },
   ];
-  await repo.persistCompleted(ep, events);
-  await repo.persistCompleted(ep, events);
+
+  await repo.persistCompleted(episode, events);
+  await repo.persistCompleted(episode, events);
+
   expect(tx.fleetObservation.upsert).toHaveBeenCalledTimes(2);
-  expect(tx.fleetObservation.upsert.mock.calls[0][0].where).toEqual({ episodeId_step: { episodeId: 'episode-1', step: 0 } });
-  expect(calls.slice(0, 4)).toEqual(['observation', 'recommendation', 'result', 'completed']);
+  expect(tx.fleetObservation.upsert.mock.calls[0][0]).toMatchObject({
+    where: { episodeId_attempt_step: { episodeId: 'episode-1', attempt: 2, step: 0 } },
+    create: { observationKey: 'obs-attempt-2-step-0', attempt: 2 },
+    update: {},
+  });
+  expect(tx.episodeSummary.upsert.mock.calls[0][0]).toMatchObject({
+    where: { episodeId_attempt: { episodeId: 'episode-1', attempt: 2 } },
+    update: {},
+  });
+  expect(calls.slice(0, 5)).toEqual(['observation', 'recommendation', 'result', 'summary', 'completed']);
 });
 
-test('retry preparation deletes the old execution root so cascading children cannot mix', async () => {
-  const prisma = { fleetObservation: { deleteMany: jest.fn().mockResolvedValue({ count: 2 }) } };
-  await new EpisodeRepository(prisma).prepareRetry('episode-1');
-  expect(prisma.fleetObservation.deleteMany).toHaveBeenCalledWith({ where: { episodeId: 'episode-1' } });
+test('stale recovery marks interrupted work failed without deleting research events', async () => {
+  const prisma = {
+    episode: { updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
+    fleetObservation: { deleteMany: jest.fn() },
+  };
+  const staleBefore = new Date('2026-01-01T00:00:00.000Z');
+  const now = new Date('2026-01-01T01:00:00.000Z');
+  await expect(new EpisodeRepository(prisma).recoverStale(staleBefore, now)).resolves.toEqual({ count: 2 });
+  expect(prisma.episode.updateMany).toHaveBeenCalledWith({
+    where: { status: 'RUNNING', updatedAt: { lt: staleBefore } },
+    data: expect.objectContaining({ status: 'FAILED', failedAt: now, errorCode: 'WORKER_STALE' }),
+  });
+  expect(prisma.fleetObservation.deleteMany).not.toHaveBeenCalled();
+});
+
+test('failure status is conditional on the worker still owning the attempt', async () => {
+  const tx = {
+    episode: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    auditLog: { create: jest.fn().mockResolvedValue({}) },
+  };
+  const prisma = { $transaction: (callback) => callback(tx) };
+  const error = Object.assign(new Error('engine stopped'), { code: 'ENGINE_TIMEOUT' });
+  await new EpisodeRepository(prisma).markFailed({ id: 'episode-1', attempt: 2 }, error);
+  expect(tx.episode.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+    where: { id: 'episode-1', status: 'RUNNING', attempt: 2 },
+  }));
+  expect(tx.auditLog.create).toHaveBeenCalledTimes(1);
 });
