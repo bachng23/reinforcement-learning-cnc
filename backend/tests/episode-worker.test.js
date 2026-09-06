@@ -1,7 +1,7 @@
 const { EpisodeWorker } = require('../src/worker/episode-worker');
 const { FakeEngineRunner } = require('../src/engine/fake-engine');
-const episode = { id: 'episode-1', episodeKey: 'ep-key', leaseToken: 'token', experimentId: 'experiment-1', policyId: 'policy-1', seed: 3,
-  experiment: { environmentConfig: { machineCount: 3, steps: 2, spareCount: 1 } }, policy: { version: '1' } };
+const episode = { id: 'episode-1', episodeKey: 'ep-key', leaseToken: 'token', attempt: 1, experimentId: 'experiment-1', policyId: 'policy-1', seed: 3,
+  experiment: { environmentConfig: require('./helpers/worker-fixtures').environmentConfig }, policy: { policyKey: 'policy-1', version: '1' } };
 const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
 function repository(overrides = {}) {
   return { recoverStale: jest.fn().mockResolvedValue({ count: 0 }), claimNext: jest.fn().mockResolvedValue(episode),
@@ -23,7 +23,7 @@ test('each validated step commits before requesting another event; summary is la
   } };
   await worker(repo, runner).processNext();
   expect(repo.persistStep).toHaveBeenCalledTimes(2);
-  expect(repo.persistSummary).toHaveBeenCalledWith(episode, expect.objectContaining({ type: 'EpisodeSummary', stepsCompleted: 2 }));
+  expect(repo.persistSummary).toHaveBeenCalledWith(episode, expect.objectContaining({ type: 'EpisodeSummary', payload: expect.objectContaining({ steps_completed: 2 }) }));
   expect(repo.markFailed).not.toHaveBeenCalled();
 });
 test('step DB failure stops consumption and prevents summary completion', async () => {

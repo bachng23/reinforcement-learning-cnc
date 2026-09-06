@@ -51,8 +51,8 @@ class EpisodeWorker {
     schedule();
     try {
       if (this.stopping) throw Object.assign(new Error('Worker stopped during claim'), { code: 'WORKER_SHUTDOWN' });
-      const request = { episodeId: episode.id, environmentConfig: episode.experiment.environmentConfig,
-        policyId: episode.policyId, policyVersion: episode.policy.version, seed: episode.seed };
+      const request = { episodeId: episode.id, attempt: episode.attempt, environmentConfig: episode.experiment.environmentConfig,
+        policyId: episode.policy.policyKey, policyVersion: episode.policy.version, seed: episode.seed };
       const summary = await consumeEngineEvents(this.runner, request, {
         timeoutMs: this.timeoutMs, signal: this.controller.signal,
         onStep: (step) => this.repository.persistStep(episode, step),
@@ -61,7 +61,7 @@ class EpisodeWorker {
       this.controller.signal.throwIfAborted();
       await this.repository.persistSummary(episode, summary);
       this.health.completed();
-      this.logger.info('episode_completed', { ...context, simulationStep: summary.stepsCompleted - 1 });
+      this.logger.info('episode_completed', { ...context, simulationStep: summary.payload.steps_completed - 1 });
     } catch (error) {
       await stopHeartbeat();
       this.health.failed();

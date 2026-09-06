@@ -14,8 +14,21 @@ function mulberry32(seed) {
 
 const rounded = (number, digits = 4) => Number(number.toFixed(digits));
 
+const makeRulDistribution = (risk) => {
+  const nearFailure = rounded(risk * 0.25, 6);
+  const mediumTerm = rounded(risk * 0.35, 6);
+  const longTerm = rounded(risk - nearFailure - mediumTerm, 6);
+  const survival = rounded(1 - nearFailure - mediumTerm - longTerm, 6);
+  return {
+    support_steps: [0, 1, 2],
+    probability_mass: [nearFailure, mediumTerm, longTerm],
+    survival_beyond_horizon: survival,
+    model_version: 'fake-rul-v1',
+  };
+};
+
 class FakeEngineRunner extends EngineRunner {
-  constructor({ version = 'fake-fixture-v1' } = {}) {
+  constructor({ version = 'fake-fixture-v2' } = {}) {
     super();
     if (!['development', 'test'].includes(process.env.NODE_ENV)) {
       throw new Error('FakeEngineRunner is restricted to development/test');
@@ -25,68 +38,145 @@ class FakeEngineRunner extends EngineRunner {
 
   async *execute(rawRequest, { signal } = {}) {
     const request = validateEngineRequest(rawRequest);
+    const config = request.environmentConfig;
     const random = mulberry32(request.seed);
-    const machineCount = Math.max(2, Math.min(20, Number(request.environmentConfig.machineCount) || 3));
-    const stepCount = Math.max(2, Math.min(1000, Number(request.environmentConfig.steps) || 4));
-    const spareCount = Math.max(1, Number(request.environmentConfig.spareCount) || 1);
+    const machines = Array.from({ length: config.number_of_machines }, (_, index) => ({
+      machineId: `fixture-machine-${index + 1}`,
+      toolId: `fixture-tool-${index + 1}-generation-1`,
+      generation: 1,
+      age: 0,
+    }));
+    let sparesAvailable = config.initial_spares;
     let totalCost = 0;
     let failureCount = 0;
     let replacementCount = 0;
     let waitingSteps = 0;
 
-    for (let step = 0; step < stepCount; step += 1) {
+    for (let step = 0; step < config.horizon_steps; step += 1) {
       if (signal?.aborted) throw signal.reason || new Error('Engine execution aborted');
-      const machines = Array.from({ length: machineCount }, (_, index) => {
-        const risk = rounded(Math.min(0.99, 0.08 + step * 0.13 + index * 0.09 + random() * 0.12));
-        const center = Math.max(0, Math.round((1 - risk) * 10));
-        const probabilities = [rounded(0.2 + random() * 0.1), rounded(0.35 + random() * 0.1)];
-        probabilities.push(rounded(1 - probabilities[0] - probabilities[1]));
+      const observationId = `observation:${request.episodeId}:attempt:${request.attempt}:step:${step}`;
+      const machineObservations = machines.map((machine, index) => {
+        const risk = rounded(Math.min(0.95, 0.08 + step * 0.13 + index * 0.09 + random() * 0.12), 6);
+        const observedWear = rounded(Math.min(
+          config.failure_threshold_um,
+          (machine.age + 1) * (config.failure_threshold_um / Math.max(2, config.horizon_steps))
+            * (0.8 + random() * 0.2),
+        ));
         return {
-          machineId: `fixture-machine-${index + 1}`,
-          toolAge: step,
-          risk,
-          waitingForSpare: false,
-          rulDistribution: { bins: [Math.max(0, center - 2), center, center + 2], probabilities },
+          machine_id: machine.machineId,
+          tool_id: machine.toolId,
+          job_id: `fixture-job-${step + 1}`,
+          cutting_condition: {
+            condition_id: index % 2 === 0 ? 'fixture-nominal' : 'fixture-heavy',
+            load_class: index % 2 === 0 ? 'NOMINAL' : 'HEAVY',
+          },
+          tool_state: {
+            tool_age_steps: machine.age,
+            observed_wear_um: observedWear,
+            posterior_median_wear_um: rounded(observedWear * 0.95),
+            posterior_std_wear_um: rounded(Math.max(1, observedWear * 0.08)),
+            rul_distribution: makeRulDistribution(risk),
+          },
         };
       });
 
-      yield { type: 'FleetObservation', schemaVersion: '2.0', episodeId: request.episodeId, step, fixture: true, machines };
+      const observation = {
+        schema_version: '2.0',
+        observation_id: observationId,
+        episode_id: request.episodeId,
+        step,
+        machines: machineObservations,
+        inventory: { spares_available: sparesAvailable, capacity: config.spare_capacity },
+      };
+      yield { type: 'FleetObservation', payload: observation };
 
-      const recommendations = machines.map((machine, index) => ({
-        machineId: machine.machineId,
+      const actions = machineObservations.map((machine, index) => ({
+        machine_id: machine.machine_id,
         action: (step + index) % 2 === 1 ? 'REPLACE' : 'CONTINUE',
-        estimatedRisk: machine.risk,
-        estimatedCost: (step + index) % 2 === 1 ? 25 : rounded(machine.risk * 8, 2),
       }));
-      yield { type: 'PolicyRecommendation', schemaVersion: '2.0', episodeId: request.episodeId, step, fixture: true, recommendations };
-
-      let sparesUsed = 0;
-      const outcomes = recommendations.map((recommendation) => {
-        let outcome = 'CONTINUED';
-        let cost = rounded(recommendation.estimatedRisk * 5, 2);
-        if (recommendation.action === 'REPLACE' && sparesUsed < spareCount) {
-          outcome = 'REPLACED';
-          cost = 25;
-          sparesUsed += 1;
-          replacementCount += 1;
-        } else if (recommendation.action === 'REPLACE') {
-          outcome = 'WAITING_FOR_SPARE';
-          cost = 7;
-          waitingSteps += 1;
-        }
-        totalCost += cost;
-        return { machineId: recommendation.machineId, outcome, cost, failed: false };
-      });
-      const stepCost = rounded(outcomes.reduce((sum, outcome) => sum + outcome.cost, 0), 2);
+      const expectedCost = rounded(actions.reduce((sum, action) => (
+        sum + (action.action === 'REPLACE' ? config.costs.replacement_cost : 0)
+      ), 0));
       yield {
-        type: 'StepResult', schemaVersion: '2.0', episodeId: request.episodeId, step, fixture: true,
-        outcomes, stepCost, episodeTerminated: step === stepCount - 1,
+        type: 'PolicyRecommendation',
+        payload: {
+          schema_version: '2.0',
+          observation_id: observationId,
+          policy_id: request.policyId,
+          policy_version: request.policyVersion,
+          actions: { schema_version: '2.0', observation_id: observationId, actions },
+          estimated_expected_cost: expectedCost,
+          estimated_cvar_cost: config.risk.objective === 'CVAR'
+            ? rounded(expectedCost / config.risk.cvar_alpha)
+            : null,
+        },
+      };
+
+      const outcomes = actions.map((action, index) => {
+        const machine = machines[index];
+        const toolIdBefore = machine.toolId;
+        let outcome = 'CONTINUED';
+        let toolIdAfter = null;
+        let incurredCost = 0;
+
+        if (action.action === 'REPLACE' && sparesAvailable > 0) {
+          outcome = 'REPLACED';
+          incurredCost = config.costs.replacement_cost;
+          sparesAvailable -= 1;
+          replacementCount += 1;
+          machine.generation += 1;
+          machine.toolId = `fixture-tool-${index + 1}-generation-${machine.generation}`;
+          machine.age = 0;
+          toolIdAfter = machine.toolId;
+        } else if (action.action === 'REPLACE') {
+          outcome = 'WAITING_FOR_SPARE';
+          incurredCost = config.costs.waiting_cost_per_step;
+          waitingSteps += 1;
+          machine.age += 1;
+        } else {
+          machine.age += 1;
+        }
+
+        totalCost += incurredCost;
+        if (outcome === 'FAILED') failureCount += 1;
+        return {
+          machine_id: action.machine_id,
+          requested_action: action.action,
+          outcome,
+          tool_id_before: toolIdBefore,
+          tool_id_after: toolIdAfter,
+          incurred_cost: rounded(incurredCost),
+        };
+      });
+      const stepCost = rounded(outcomes.reduce((sum, outcome) => sum + outcome.incurred_cost, 0));
+      yield {
+        type: 'StepResult',
+        payload: {
+          schema_version: '2.0',
+          observation_id: observationId,
+          episode_id: request.episodeId,
+          step,
+          outcomes,
+          inventory_after: { spares_available: sparesAvailable, capacity: config.spare_capacity },
+          total_cost: stepCost,
+          episode_terminated: step === config.horizon_steps - 1,
+        },
       };
     }
 
     yield {
-      type: 'EpisodeSummary', schemaVersion: '2.0', episodeId: request.episodeId, fixture: true,
-      stepsCompleted: stepCount, totalCost: rounded(totalCost, 2), failureCount, replacementCount, waitingSteps,
+      type: 'EpisodeSummary',
+      payload: {
+        schema_version: '2.0',
+        episode_id: request.episodeId,
+        policy_id: request.policyId,
+        seed: request.seed,
+        steps_completed: config.horizon_steps,
+        total_cost: rounded(totalCost),
+        failure_count: failureCount,
+        replacement_count: replacementCount,
+        waiting_steps: waitingSteps,
+      },
     };
   }
 }

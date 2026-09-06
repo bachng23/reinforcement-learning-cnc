@@ -1,0 +1,1726 @@
+openapi: 3.1.0
+info:
+  title: CNC Research Platform Product API
+  version: 1.0.0
+  description: |
+    Authenticated Product API for creating CNC research experiments, queueing
+    episodes, polling their lifecycle, and reading persisted contract-v2 events.
+
+    Starting or retrying an episode only queues database work. Product API
+    request handlers never execute the research engine.
+
+    Clients may send `X-Request-Id` using 1-128 letters, numbers, dots,
+    underscores, colons, or hyphens. The API echoes it in the response; when
+    omitted or invalid, the API generates a UUID request id.
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local backend
+tags:
+  - name: Policies
+  - name: Experiments
+  - name: Episodes
+security:
+  - cookieAuth: []
+  - bearerAuth: []
+paths:
+  /policies:
+    get:
+      tags: [Policies]
+      summary: List available policies
+      operationId: listPolicies
+      responses:
+        "200":
+          description: Available policy catalog, ordered by policy key and version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyListResponse"
+              example:
+                success: true
+                data:
+                  - id: 4e822e39-4b5b-497f-b3ec-864f9c41967b
+                    policyKey: threshold-uncertainty
+                    version: 1.0.0
+                    name: Threshold uncertainty policy
+                    description: Replaces tools when configured risk limits are exceeded.
+                    config:
+                      strategy: THRESHOLD_UNCERTAINTY
+                      decision_signal: POSTERIOR_RUL
+                meta:
+                  total: 1
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+  /experiments:
+    post:
+      tags: [Experiments]
+      summary: Create an experiment
+      description: |
+        Creates a validated experiment owned by the authenticated user. The
+        embedded environment configuration is stored without changing its
+        contract-v2 meaning. This operation does not create engine results.
+
+        ADMIN, ENGINEER, and OPERATOR roles may create experiments.
+      operationId: createExperiment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExperimentRequest"
+            example:
+              name: Four-machine CVaR baseline
+              description: Compare one policy over three deterministic seeds.
+              policyKey: threshold-uncertainty
+              policyVersion: 1.0.0
+              episodeCount: 3
+              environmentConfig:
+                schema_version: "2.0"
+                environment_id: cnc-fleet-v0.1
+                number_of_machines: 4
+                spare_capacity: 3
+                initial_spares: 2
+                horizon_steps: 480
+                failure_threshold_um: 300
+                seed: 42
+                costs:
+                  replacement_cost: 100
+                  failure_cost: 5000
+                  waiting_cost_per_step: 20
+                  unused_life_cost_per_step: 2
+                risk:
+                  objective: CVAR
+                  cvar_alpha: 0.95
+      responses:
+        "201":
+          description: Experiment created in READY state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentResponse"
+              example:
+                success: true
+                data:
+                  id: b83c24df-ad54-442e-a399-9dc31708f157
+                  experimentKey: experiment:b83c24df-ad54-442e-a399-9dc31708f157
+                  name: Four-machine CVaR baseline
+                  description: Compare one policy over three deterministic seeds.
+                  schemaVersion: "2.0"
+                  status: READY
+                  episodeCount: 3
+                  policy:
+                    id: 4e822e39-4b5b-497f-b3ec-864f9c41967b
+                    policyKey: threshold-uncertainty
+                    version: 1.0.0
+                    name: Threshold uncertainty policy
+                  environmentConfig:
+                    schema_version: "2.0"
+                    environment_id: cnc-fleet-v0.1
+                    number_of_machines: 4
+                    spare_capacity: 3
+                    initial_spares: 2
+                    horizon_steps: 480
+                    failure_threshold_um: 300
+                    seed: 42
+                    costs:
+                      replacement_cost: 100
+                      failure_cost: 5000
+                      waiting_cost_per_step: 20
+                      unused_life_cost_per_step: 2
+                    risk:
+                      objective: CVAR
+                      cvar_alpha: 0.95
+                  createdById: 1ef61fe2-41e7-47c6-94ee-3be1f7065f48
+                  runRequestedAt: null
+                  createdAt: "2026-09-02T08:00:00.000Z"
+                  updatedAt: "2026-09-02T08:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: The policy key or selected version does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                policyNotFound:
+                  value:
+                    success: false
+                    error:
+                      code: POLICY_NOT_FOUND
+                      message: Policy not found
+                versionNotFound:
+                  value:
+                    success: false
+                    error:
+                      code: POLICY_VERSION_NOT_FOUND
+                      message: Policy version not found
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+    get:
+      tags: [Experiments]
+      summary: List experiments
+      operationId: listExperiments
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ExperimentStatus"
+      responses:
+        "200":
+          description: Paginated experiments, ordered by creation time then id descending.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentListResponse"
+              example:
+                success: true
+                data:
+                  - id: b83c24df-ad54-442e-a399-9dc31708f157
+                    experimentKey: experiment:b83c24df-ad54-442e-a399-9dc31708f157
+                    name: Four-machine CVaR baseline
+                    description: Compare one policy over three deterministic seeds.
+                    schemaVersion: "2.0"
+                    status: READY
+                    episodeCount: 3
+                    policy:
+                      id: 4e822e39-4b5b-497f-b3ec-864f9c41967b
+                      policyKey: threshold-uncertainty
+                      version: 1.0.0
+                      name: Threshold uncertainty policy
+                    createdById: 1ef61fe2-41e7-47c6-94ee-3be1f7065f48
+                    createdAt: "2026-09-02T08:00:00.000Z"
+                    updatedAt: "2026-09-02T08:00:00.000Z"
+                meta:
+                  page: 1
+                  limit: 20
+                  total: 1
+                  totalPages: 1
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+  /experiments/{experimentId}:
+    parameters:
+      - $ref: "#/components/parameters/ExperimentId"
+    get:
+      tags: [Experiments]
+      summary: Retrieve an experiment
+      operationId: getExperiment
+      responses:
+        "200":
+          description: Experiment detail, including its complete environment configuration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+  /experiments/{experimentId}/run:
+    parameters:
+      - $ref: "#/components/parameters/ExperimentId"
+    post:
+      tags: [Experiments]
+      summary: Queue an experiment run
+      description: |
+        Atomically creates PENDING episodes and returns immediately. Episode
+        seeds are deterministic: environmentConfig.seed + episode index.
+        Replaying the same Idempotency-Key returns the same queued episodes.
+      operationId: runExperiment
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: Episodes have been queued, or the identical request was replayed.
+          headers:
+            Idempotency-Replayed:
+              description: True when this response replays an earlier successful request.
+              schema:
+                type: boolean
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunExperimentResponse"
+              example:
+                success: true
+                data:
+                  experimentId: b83c24df-ad54-442e-a399-9dc31708f157
+                  status: RUNNING
+                  episodeCount: 3
+                  episodes:
+                    - id: 4dd4f09f-d099-4e11-827f-1ad32906d640
+                      episodeKey: experiment:b83c24df-ad54-442e-a399-9dc31708f157:episode:0
+                      seed: 42
+                      status: PENDING
+                      queuedAt: "2026-09-02T08:03:00.000Z"
+                    - id: a09efff2-157a-48fd-bf3a-08817f48dc0b
+                      episodeKey: experiment:b83c24df-ad54-442e-a399-9dc31708f157:episode:1
+                      seed: 43
+                      status: PENDING
+                      queuedAt: "2026-09-02T08:03:00.000Z"
+                    - id: 6aceab25-e7e0-4aec-9747-500731532011
+                      episodeKey: experiment:b83c24df-ad54-442e-a399-9dc31708f157:episode:2
+                      seed: 44
+                      status: PENDING
+                      queuedAt: "2026-09-02T08:03:00.000Z"
+        "400":
+          description: Invalid experiment id or missing/invalid Idempotency-Key.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error:
+                  code: IDEMPOTENCY_KEY_REQUIRED
+                  message: Idempotency-Key header is required
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Experiment was already run with a different key or is not READY.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error:
+                  code: EXPERIMENT_ALREADY_RUN
+                  message: Experiment has already been queued
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+  /experiments/{experimentId}/episodes:
+    parameters:
+      - $ref: "#/components/parameters/ExperimentId"
+    get:
+      tags: [Experiments, Episodes]
+      summary: List episodes belonging to an experiment
+      operationId: listExperimentEpisodes
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/EpisodeStatus"
+      responses:
+        "200":
+          description: Paginated episodes, ordered by episode index then id ascending.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpisodeListResponse"
+              example:
+                success: true
+                data:
+                  - id: 4dd4f09f-d099-4e11-827f-1ad32906d640
+                    episodeKey: experiment:b83c24df-ad54-442e-a399-9dc31708f157:episode:0
+                    experimentId: b83c24df-ad54-442e-a399-9dc31708f157
+                    episodeIndex: 0
+                    policyId: 4e822e39-4b5b-497f-b3ec-864f9c41967b
+                    seed: 42
+                    attempt: 1
+                    status: PENDING
+                    stepsCompleted: 0
+                    totalCost: null
+                    failureCount: null
+                    replacementCount: null
+                    waitingSteps: null
+                    queuedAt: "2026-09-02T08:03:00.000Z"
+                    startedAt: null
+                    completedAt: null
+                    failedAt: null
+                    cancelledAt: null
+                    error: null
+                    createdAt: "2026-09-02T08:03:00.000Z"
+                    updatedAt: "2026-09-02T08:03:00.000Z"
+                meta:
+                  page: 1
+                  limit: 20
+                  total: 1
+                  totalPages: 1
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+  /episodes/{episodeId}:
+    parameters:
+      - $ref: "#/components/parameters/EpisodeId"
+    get:
+      tags: [Episodes]
+      summary: Retrieve an episode and its status
+      operationId: getEpisode
+      responses:
+        "200":
+          description: Episode detail and persisted lifecycle fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpisodeResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+  /episodes/{episodeId}/observations:
+    parameters:
+      - $ref: "#/components/parameters/EpisodeId"
+    get:
+      tags: [Episodes]
+      summary: Retrieve fleet observations for an episode
+      operationId: listEpisodeObservations
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Attempt"
+      responses:
+        "200":
+          description: Persisted observations ordered by step then id ascending. Empty sets return data as an empty array.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObservationListResponse"
+              example:
+                success: true
+                data:
+                  - id: 6ae37db0-f05f-4238-961b-2c88d890e6dd
+                    observationKey: obs-episode-42-step-0
+                    step: 0
+                    attempt: 1
+                    schemaVersion: "2.0"
+                    payload:
+                      schema_version: "2.0"
+                      observation_id: obs-episode-42-step-0
+                      episode_id: experiment:b83c24df-ad54-442e-a399-9dc31708f157:episode:0
+                      step: 0
+                      machines:
+                        - machine_id: machine-01
+                          tool_id: tool-01
+                          job_id: job-01
+                          cutting_condition:
+                            condition_id: nominal
+                            load_class: NOMINAL
+                          tool_state:
+                            tool_age_steps: 0
+                            observed_wear_um: 0
+                            posterior_median_wear_um: 0
+                            posterior_std_wear_um: 1
+                            rul_distribution:
+                              support_steps: [0, 1]
+                              probability_mass: [0.01, 0.09]
+                              survival_beyond_horizon: 0.9
+                              model_version: m4-compact-v0.1
+                      inventory:
+                        spares_available: 2
+                        capacity: 3
+                    createdAt: "2026-09-02T08:04:00.000Z"
+                meta:
+                  page: 1
+                  limit: 20
+                  total: 1
+                  totalPages: 1
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+  /episodes/{episodeId}/recommendations:
+    parameters:
+      - $ref: "#/components/parameters/EpisodeId"
+    get:
+      tags: [Episodes]
+      summary: Retrieve policy recommendations for an episode
+      operationId: listEpisodeRecommendations
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Attempt"
+      responses:
+        "200":
+          description: Persisted policy recommendations ordered by observation step then id ascending.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationListResponse"
+              example:
+                success: true
+                data:
+                  - id: 09bc17df-baba-4663-82d4-8ad4e18c38ca
+                    observationId: 6ae37db0-f05f-4238-961b-2c88d890e6dd
+                    policyId: 4e822e39-4b5b-497f-b3ec-864f9c41967b
+                    step: 0
+                    attempt: 1
+                    schemaVersion: "2.0"
+                    payload:
+                      schema_version: "2.0"
+                      observation_id: obs-episode-42-step-0
+                      policy_id: threshold-uncertainty
+                      policy_version: 1.0.0
+                      actions:
+                        schema_version: "2.0"
+                        observation_id: obs-episode-42-step-0
+                        actions:
+                          - machine_id: machine-01
+                            action: CONTINUE
+                      estimated_expected_cost: 12.5
+                      estimated_cvar_cost: 40
+                    createdAt: "2026-09-02T08:04:01.000Z"
+                meta:
+                  page: 1
+                  limit: 20
+                  total: 1
+                  totalPages: 1
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+  /episodes/{episodeId}/results:
+    parameters:
+      - $ref: "#/components/parameters/EpisodeId"
+    get:
+      tags: [Episodes]
+      summary: Retrieve step results for an episode
+      operationId: listEpisodeResults
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Attempt"
+      responses:
+        "200":
+          description: Persisted step results ordered by observation step then id ascending.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StepResultListResponse"
+              example:
+                success: true
+                data:
+                  - id: b088a01a-1a45-44ed-8d21-4a066c6c1c42
+                    observationId: 6ae37db0-f05f-4238-961b-2c88d890e6dd
+                    step: 0
+                    attempt: 1
+                    schemaVersion: "2.0"
+                    totalCost: 0
+                    episodeTerminated: false
+                    payload:
+                      schema_version: "2.0"
+                      observation_id: obs-episode-42-step-0
+                      episode_id: experiment:b83c24df-ad54-442e-a399-9dc31708f157:episode:0
+                      step: 0
+                      outcomes:
+                        - machine_id: machine-01
+                          requested_action: CONTINUE
+                          outcome: CONTINUED
+                          tool_id_before: tool-01
+                          tool_id_after: null
+                          incurred_cost: 0
+                      inventory_after:
+                        spares_available: 2
+                        capacity: 3
+                      total_cost: 0
+                      episode_terminated: false
+                    createdAt: "2026-09-02T08:04:02.000Z"
+                meta:
+                  page: 1
+                  limit: 20
+                  total: 1
+                  totalPages: 1
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+  /episodes/{episodeId}/summary:
+    parameters:
+      - $ref: "#/components/parameters/EpisodeId"
+    get:
+      tags: [Episodes]
+      summary: Retrieve the persisted final episode summary
+      description: Returns a summary produced and persisted by the worker. The Product API does not calculate it.
+      operationId: getEpisodeSummary
+      parameters:
+        - $ref: "#/components/parameters/Attempt"
+      responses:
+        "200":
+          description: Persisted contract-v2 episode summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpisodeSummaryResponse"
+              example:
+                success: true
+                data:
+                  id: 97153227-00c5-4074-ad87-a675260e063d
+                  attempt: 1
+                  payload:
+                    schema_version: "2.0"
+                    episode_id: experiment:b83c24df-ad54-442e-a399-9dc31708f157:episode:0
+                    policy_id: threshold-uncertainty
+                    seed: 42
+                    steps_completed: 480
+                    total_cost: 840
+                    failure_count: 0
+                    replacement_count: 6
+                    waiting_steps: 2
+                  createdAt: "2026-09-02T08:12:00.000Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The worker has not persisted a final summary for this attempt.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error:
+                  code: SUMMARY_NOT_AVAILABLE
+                  message: Episode summary is not available
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+  /episodes/{episodeId}/retry:
+    parameters:
+      - $ref: "#/components/parameters/EpisodeId"
+    post:
+      tags: [Episodes]
+      summary: Retry a failed episode
+      description: Atomically transitions FAILED to PENDING, increments the attempt, and queues the same deterministic seed.
+      operationId: retryEpisode
+      responses:
+        "202":
+          description: Episode queued for another attempt.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpisodeResponse"
+              example:
+                success: true
+                data:
+                  id: 4dd4f09f-d099-4e11-827f-1ad32906d640
+                  episodeKey: experiment:b83c24df-ad54-442e-a399-9dc31708f157:episode:0
+                  experimentId: b83c24df-ad54-442e-a399-9dc31708f157
+                  episodeIndex: 0
+                  policyId: 4e822e39-4b5b-497f-b3ec-864f9c41967b
+                  seed: 42
+                  attempt: 2
+                  status: PENDING
+                  stepsCompleted: 0
+                  totalCost: null
+                  failureCount: null
+                  replacementCount: null
+                  waitingSteps: null
+                  queuedAt: "2026-09-02T09:00:00.000Z"
+                  startedAt: null
+                  completedAt: null
+                  failedAt: null
+                  cancelledAt: null
+                  error: null
+                  createdAt: "2026-09-02T08:03:00.000Z"
+                  updatedAt: "2026-09-02T09:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/InvalidEpisodeTransition"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+  /episodes/{episodeId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/EpisodeId"
+    post:
+      tags: [Episodes]
+      summary: Cancel a pending episode
+      description: |
+        Atomically transitions PENDING to CANCELLED. RUNNING cancellation is not
+        exposed until the worker supports cooperative cancellation.
+      operationId: cancelEpisode
+      responses:
+        "200":
+          description: Pending episode cancelled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpisodeResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Invalid transition, including unsupported cancellation of a RUNNING episode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidTransition:
+                  value:
+                    success: false
+                    error:
+                      code: INVALID_EPISODE_TRANSITION
+                      message: Only a pending episode can be cancelled
+                runningUnsupported:
+                  value:
+                    success: false
+                    error:
+                      code: RUNNING_CANCELLATION_UNSUPPORTED
+                      message: Running episode cancellation is not supported
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: pdm_token
+      description: HttpOnly browser session cookie issued by POST /auth/login.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ExperimentId:
+      name: experimentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    EpisodeId:
+      name: episodeId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Attempt:
+      name: attempt
+      in: query
+      required: false
+      description: Episode attempt to read. Defaults to the current attempt.
+      schema:
+        type: integer
+        minimum: 1
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Opaque client-generated key. Reuse it when retrying the same run request.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+        pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+
+  responses:
+    Unauthorized:
+      description: Missing, malformed, expired, or inactive-user authentication.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            error:
+              code: UNAUTHORIZED
+              message: Authentication required
+    Forbidden:
+      description: The authenticated role does not permit this mutation. Ownership mismatches are intentionally returned as 404.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            error:
+              code: FORBIDDEN
+              message: You do not have permission to access this resource
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            error:
+              code: NOT_FOUND
+              message: Resource not found
+    ValidationError:
+      description: Request body, path, or query validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            error:
+              code: VALIDATION_ERROR
+              message: horizon_steps must be greater than or equal to 1
+              details:
+                - path: environmentConfig.horizon_steps
+                  code: too_small
+                  message: Must be greater than or equal to 1
+    Conflict:
+      description: A uniqueness or resource-state conflict prevented the operation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            error:
+              code: CONFLICT
+              message: The requested operation conflicts with current state
+    InvalidEpisodeTransition:
+      description: The episode is not in the state required by this operation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            error:
+              code: INVALID_EPISODE_TRANSITION
+              message: Episode must be FAILED before it can be retried
+    DatabaseUnavailable:
+      description: PostgreSQL is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            error:
+              code: DB_UNAVAILABLE
+              message: Database unavailable. Check DATABASE_URL and make sure Postgres is running.
+
+  schemas:
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required: [path, code, message]
+                properties:
+                  path:
+                    type: string
+                  code:
+                    type: string
+                  message:
+                    type: string
+        requestId:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: "^[A-Za-z0-9._:-]+$"
+
+    PaginationMeta:
+      type: object
+      additionalProperties: false
+      required: [page, limit, total, totalPages]
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+        attempt:
+          type: integer
+          minimum: 1
+
+    ExperimentStatus:
+      type: string
+      enum: [DRAFT, READY, RUNNING, COMPLETED, FAILED, CANCELLED]
+    EpisodeStatus:
+      type: string
+      enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED]
+    PolicySummary:
+      type: object
+      required: [id, policyKey, version, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        policyKey:
+          $ref: "#/components/schemas/Identifier"
+        version:
+          $ref: "#/components/schemas/Identifier"
+        name:
+          type: string
+        description:
+          type: [string, "null"]
+    Policy:
+      allOf:
+        - $ref: "#/components/schemas/PolicySummary"
+        - type: object
+          properties:
+            config:
+              type: [object, "null"]
+              additionalProperties: true
+      unevaluatedProperties: false
+    PolicyListResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data, meta]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Policy"
+        meta:
+          type: object
+          additionalProperties: false
+          required: [total]
+          properties:
+            total:
+              type: integer
+              minimum: 0
+
+    CreateExperimentRequest:
+      type: object
+      additionalProperties: false
+      required: [name, policyKey, policyVersion, episodeCount, environmentConfig]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: [string, "null"]
+          maxLength: 2000
+        policyKey:
+          $ref: "#/components/schemas/Identifier"
+        policyVersion:
+          $ref: "#/components/schemas/Identifier"
+        episodeCount:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        environmentConfig:
+          $ref: "#/components/schemas/EnvironmentConfig"
+
+    ExperimentSummary:
+      type: object
+      required:
+        - id
+        - experimentKey
+        - name
+        - schemaVersion
+        - status
+        - episodeCount
+        - policy
+        - createdById
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        experimentKey:
+          $ref: "#/components/schemas/Identifier"
+        name:
+          type: string
+        description:
+          type: [string, "null"]
+        schemaVersion:
+          type: string
+          const: "2.0"
+        status:
+          $ref: "#/components/schemas/ExperimentStatus"
+        episodeCount:
+          type: integer
+          minimum: 1
+        policy:
+          $ref: "#/components/schemas/PolicySummary"
+        createdById:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Experiment:
+      allOf:
+        - $ref: "#/components/schemas/ExperimentSummary"
+        - type: object
+          required: [environmentConfig]
+          properties:
+            environmentConfig:
+              $ref: "#/components/schemas/EnvironmentConfig"
+            runRequestedAt:
+              type: [string, "null"]
+              format: date-time
+            episodesCreated:
+              type: integer
+              minimum: 0
+      unevaluatedProperties: false
+    ExperimentResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: "#/components/schemas/Experiment"
+    ExperimentListResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data, meta]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentSummary"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    QueuedEpisode:
+      type: object
+      additionalProperties: false
+      required: [id, episodeKey, seed, status, queuedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        episodeKey:
+          $ref: "#/components/schemas/Identifier"
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+        status:
+          $ref: "#/components/schemas/EpisodeStatus"
+        queuedAt:
+          type: string
+          format: date-time
+    RunExperimentResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          additionalProperties: false
+          required: [experimentId, status, episodeCount, episodes]
+          properties:
+            experimentId:
+              type: string
+              format: uuid
+            status:
+              $ref: "#/components/schemas/ExperimentStatus"
+            episodeCount:
+              type: integer
+              minimum: 1
+            episodes:
+              type: array
+              items:
+                $ref: "#/components/schemas/QueuedEpisode"
+
+    EpisodeError:
+      type: [object, "null"]
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+          description: Safe public error message; internal engine details are excluded.
+    Episode:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - episodeKey
+        - experimentId
+        - episodeIndex
+        - policyId
+        - seed
+        - attempt
+        - status
+        - stepsCompleted
+        - queuedAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        episodeKey:
+          $ref: "#/components/schemas/Identifier"
+        experimentId:
+          type: string
+          format: uuid
+        episodeIndex:
+          type: integer
+          minimum: 0
+        policyId:
+          type: string
+          format: uuid
+        policy:
+          $ref: "#/components/schemas/PolicySummary"
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+        attempt:
+          type: integer
+          minimum: 1
+        status:
+          $ref: "#/components/schemas/EpisodeStatus"
+        stepsCompleted:
+          type: integer
+          minimum: 0
+        totalCost:
+          type: [number, "null"]
+          minimum: 0
+        failureCount:
+          type: [integer, "null"]
+          minimum: 0
+        replacementCount:
+          type: [integer, "null"]
+          minimum: 0
+        waitingSteps:
+          type: [integer, "null"]
+          minimum: 0
+        queuedAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: [string, "null"]
+          format: date-time
+        completedAt:
+          type: [string, "null"]
+          format: date-time
+        failedAt:
+          type: [string, "null"]
+          format: date-time
+        cancelledAt:
+          type: [string, "null"]
+          format: date-time
+        error:
+          $ref: "#/components/schemas/EpisodeError"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    EpisodeResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: "#/components/schemas/Episode"
+    EpisodeListResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data, meta]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Episode"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    ObservationRecord:
+      type: object
+      additionalProperties: false
+      required: [id, observationKey, step, attempt, schemaVersion, payload, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        observationKey:
+          $ref: "#/components/schemas/Identifier"
+        step:
+          type: integer
+          minimum: 0
+        attempt:
+          type: integer
+          minimum: 1
+        schemaVersion:
+          type: string
+          const: "2.0"
+        payload:
+          $ref: "#/components/schemas/FleetObservation"
+        createdAt:
+          type: string
+          format: date-time
+    RecommendationRecord:
+      type: object
+      additionalProperties: false
+      required: [id, observationId, policyId, step, attempt, schemaVersion, payload, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        observationId:
+          type: string
+          format: uuid
+        policyId:
+          type: string
+          format: uuid
+        step:
+          type: integer
+          minimum: 0
+        attempt:
+          type: integer
+          minimum: 1
+        schemaVersion:
+          type: string
+          const: "2.0"
+        payload:
+          $ref: "#/components/schemas/PolicyRecommendation"
+        createdAt:
+          type: string
+          format: date-time
+    StepResultRecord:
+      type: object
+      additionalProperties: false
+      required: [id, observationId, step, attempt, schemaVersion, totalCost, episodeTerminated, payload, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        observationId:
+          type: string
+          format: uuid
+        step:
+          type: integer
+          minimum: 0
+        attempt:
+          type: integer
+          minimum: 1
+        schemaVersion:
+          type: string
+          const: "2.0"
+        totalCost:
+          type: number
+          minimum: 0
+        episodeTerminated:
+          type: boolean
+        payload:
+          $ref: "#/components/schemas/StepResult"
+        createdAt:
+          type: string
+          format: date-time
+    ObservationListResponse:
+      $ref: "#/components/schemas/ObservationPage"
+    ObservationPage:
+      type: object
+      additionalProperties: false
+      required: [success, data, meta]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObservationRecord"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    RecommendationListResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data, meta]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecommendationRecord"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    StepResultListResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data, meta]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/StepResultRecord"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    EpisodeSummaryResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          additionalProperties: false
+          required: [id, attempt, payload, createdAt]
+          properties:
+            id:
+              type: string
+              format: uuid
+            attempt:
+              type: integer
+              minimum: 1
+            payload:
+              $ref: "#/components/schemas/EpisodeSummary"
+            createdAt:
+              type: string
+              format: date-time
+
+    Identifier:
+      type: string
+      minLength: 1
+      maxLength: 128
+      pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    EnvironmentConfig:
+      type: object
+      additionalProperties: false
+      required:
+        - environment_id
+        - number_of_machines
+        - spare_capacity
+        - initial_spares
+        - horizon_steps
+        - failure_threshold_um
+        - seed
+        - costs
+        - risk
+      properties:
+        schema_version:
+          type: string
+          const: "2.0"
+        environment_id:
+          $ref: "#/components/schemas/Identifier"
+        number_of_machines:
+          type: integer
+          minimum: 1
+        spare_capacity:
+          type: integer
+          minimum: 0
+        initial_spares:
+          type: integer
+          minimum: 0
+          description: Must not exceed spare_capacity.
+        horizon_steps:
+          type: integer
+          minimum: 1
+        failure_threshold_um:
+          type: number
+          exclusiveMinimum: 0
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          description: Base seed; episode i uses seed + i without exceeding the maximum.
+        costs:
+          $ref: "#/components/schemas/CostConfig"
+        risk:
+          $ref: "#/components/schemas/RiskConfig"
+    CostConfig:
+      type: object
+      additionalProperties: false
+      required: [replacement_cost, failure_cost, waiting_cost_per_step, unused_life_cost_per_step]
+      properties:
+        replacement_cost:
+          type: number
+          minimum: 0
+        failure_cost:
+          type: number
+          minimum: 0
+        waiting_cost_per_step:
+          type: number
+          minimum: 0
+        unused_life_cost_per_step:
+          type: number
+          minimum: 0
+    RiskConfig:
+      type: object
+      additionalProperties: false
+      required: [objective]
+      properties:
+        objective:
+          type: string
+          enum: [EXPECTED_COST, CVAR]
+        cvar_alpha:
+          type: number
+          exclusiveMinimum: 0
+          exclusiveMaximum: 1
+          default: 0.95
+    SharedInventoryState:
+      type: object
+      additionalProperties: false
+      required: [spares_available, capacity]
+      properties:
+        spares_available:
+          type: integer
+          minimum: 0
+          description: Must not exceed capacity.
+        capacity:
+          type: integer
+          minimum: 0
+    RULDistribution:
+      type: object
+      additionalProperties: false
+      required: [support_steps, probability_mass, survival_beyond_horizon, model_version]
+      properties:
+        support_steps:
+          type: array
+          minItems: 2
+          items:
+            type: integer
+            minimum: 0
+        probability_mass:
+          type: array
+          minItems: 2
+          items:
+            type: number
+            minimum: 0
+            maximum: 1
+        survival_beyond_horizon:
+          type: number
+          minimum: 0
+          maximum: 1
+        model_version:
+          $ref: "#/components/schemas/Identifier"
+    ToolBeliefState:
+      type: object
+      additionalProperties: false
+      required: [tool_age_steps, observed_wear_um, posterior_median_wear_um, posterior_std_wear_um, rul_distribution]
+      properties:
+        tool_age_steps:
+          type: integer
+          minimum: 0
+        observed_wear_um:
+          type: number
+          minimum: 0
+        posterior_median_wear_um:
+          type: number
+          minimum: 0
+        posterior_std_wear_um:
+          type: number
+          minimum: 0
+        rul_distribution:
+          $ref: "#/components/schemas/RULDistribution"
+    MachineObservation:
+      type: object
+      additionalProperties: false
+      required: [machine_id, tool_id, cutting_condition, tool_state]
+      properties:
+        machine_id:
+          $ref: "#/components/schemas/Identifier"
+        tool_id:
+          $ref: "#/components/schemas/Identifier"
+        job_id:
+          anyOf:
+            - $ref: "#/components/schemas/Identifier"
+            - type: "null"
+        cutting_condition:
+          type: object
+          additionalProperties: false
+          required: [condition_id, load_class]
+          properties:
+            condition_id:
+              $ref: "#/components/schemas/Identifier"
+            load_class:
+              type: string
+              enum: [LIGHT, NOMINAL, HEAVY]
+        tool_state:
+          $ref: "#/components/schemas/ToolBeliefState"
+    FleetObservation:
+      type: object
+      additionalProperties: false
+      required: [schema_version, observation_id, episode_id, step, machines, inventory]
+      properties:
+        schema_version:
+          type: string
+          const: "2.0"
+        observation_id:
+          $ref: "#/components/schemas/Identifier"
+        episode_id:
+          $ref: "#/components/schemas/Identifier"
+        step:
+          type: integer
+          minimum: 0
+        machines:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/MachineObservation"
+        inventory:
+          $ref: "#/components/schemas/SharedInventoryState"
+    MachineAction:
+      type: object
+      additionalProperties: false
+      required: [machine_id, action]
+      properties:
+        machine_id:
+          $ref: "#/components/schemas/Identifier"
+        action:
+          type: string
+          enum: [CONTINUE, REPLACE]
+    JointAction:
+      type: object
+      additionalProperties: false
+      required: [schema_version, observation_id, actions]
+      properties:
+        schema_version:
+          type: string
+          const: "2.0"
+        observation_id:
+          $ref: "#/components/schemas/Identifier"
+        actions:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/MachineAction"
+    PolicyRecommendation:
+      type: object
+      additionalProperties: false
+      required: [schema_version, observation_id, policy_id, policy_version, actions]
+      properties:
+        schema_version:
+          type: string
+          const: "2.0"
+        observation_id:
+          $ref: "#/components/schemas/Identifier"
+        policy_id:
+          $ref: "#/components/schemas/Identifier"
+        policy_version:
+          $ref: "#/components/schemas/Identifier"
+        actions:
+          $ref: "#/components/schemas/JointAction"
+        estimated_expected_cost:
+          type: [number, "null"]
+          minimum: 0
+        estimated_cvar_cost:
+          type: [number, "null"]
+          minimum: 0
+    MachineStepOutcome:
+      type: object
+      additionalProperties: false
+      required: [machine_id, requested_action, outcome, tool_id_before, incurred_cost]
+      properties:
+        machine_id:
+          $ref: "#/components/schemas/Identifier"
+        requested_action:
+          type: string
+          enum: [CONTINUE, REPLACE]
+        outcome:
+          type: string
+          enum: [CONTINUED, REPLACED, WAITING_FOR_SPARE, FAILED]
+        tool_id_before:
+          $ref: "#/components/schemas/Identifier"
+        tool_id_after:
+          anyOf:
+            - $ref: "#/components/schemas/Identifier"
+            - type: "null"
+        incurred_cost:
+          type: number
+          minimum: 0
+    StepResult:
+      type: object
+      additionalProperties: false
+      required: [schema_version, observation_id, episode_id, step, outcomes, inventory_after, total_cost, episode_terminated]
+      properties:
+        schema_version:
+          type: string
+          const: "2.0"
+        observation_id:
+          $ref: "#/components/schemas/Identifier"
+        episode_id:
+          $ref: "#/components/schemas/Identifier"
+        step:
+          type: integer
+          minimum: 0
+        outcomes:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/MachineStepOutcome"
+        inventory_after:
+          $ref: "#/components/schemas/SharedInventoryState"
+        total_cost:
+          type: number
+          minimum: 0
+        episode_terminated:
+          type: boolean
+    EpisodeSummary:
+      type: object
+      additionalProperties: false
+      required: [schema_version, episode_id, policy_id, seed, steps_completed, total_cost, failure_count, replacement_count, waiting_steps]
+      properties:
+        schema_version:
+          type: string
+          const: "2.0"
+        episode_id:
+          $ref: "#/components/schemas/Identifier"
+        policy_id:
+          $ref: "#/components/schemas/Identifier"
+        seed:
+          type: integer
+          minimum: 0
+        steps_completed:
+          type: integer
+          minimum: 0
+        total_cost:
+          type: number
+          minimum: 0
+        failure_count:
+          type: integer
+          minimum: 0
+        replacement_count:
+          type: integer
+          minimum: 0
+        waiting_steps:
+          type: integer
+          minimum: 0

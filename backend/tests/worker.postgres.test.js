@@ -8,10 +8,12 @@ describeDb('PostgreSQL worker durability (dedicated migrated database)', () => {
   let db, repo, experiment, policy;
   beforeAll(async () => {
     db = new PrismaClient({ datasources: { db: { url: process.env.WORKER_TEST_DATABASE_URL } } });
+    if (await db.episode.count()) throw new Error('Worker integration tests require a dedicated database with no episodes');
     repo = new EpisodeRepository(db);
     const key = randomUUID();
-    experiment = await db.experiment.create({ data: { experimentKey: key, name: 'worker test', environmentConfig: {} } });
+
     policy = await db.policy.create({ data: { policyKey: key, version: 'test', name: 'worker test' } });
+    experiment = await db.experiment.create({ data: { experimentKey: key, name: 'worker test', policyId: policy.id, episodeCount: 10, runIdempotencyKey: key, environmentConfig: require('./helpers/worker-fixtures').environmentConfig } });
   });
   afterAll(async () => {
     if (experiment) await db.experiment.delete({ where: { id: experiment.id } });
@@ -19,10 +21,10 @@ describeDb('PostgreSQL worker durability (dedicated migrated database)', () => {
     await db?.$disconnect();
   });
   async function pending(seed) {
-    return db.episode.create({ data: { episodeKey: randomUUID(), experimentId: experiment.id, policyId: policy.id, seed } });
+    return db.episode.create({ data: { episodeKey: randomUUID(), experimentId: experiment.id, policyId: policy.id, episodeIndex: seed, seed } });
   }
   async function events(ep) {
-    return collectEngineEvents(new FakeEngineRunner(), { episodeId: ep.id, environmentConfig: { steps: 2 }, policyId: policy.id, policyVersion: 'test', seed: ep.seed });
+    return collectEngineEvents(new FakeEngineRunner(), { episodeId: ep.id, attempt: ep.attempt, environmentConfig: require('./helpers/worker-fixtures').environmentConfig, policyId: policy.policyKey, policyVersion: 'test', seed: ep.seed });
   }
   test('two competing transactions claim a single pending episode once', async () => {
     const pendingEp = await pending(1);
@@ -41,26 +43,36 @@ describeDb('PostgreSQL worker durability (dedicated migrated database)', () => {
     expect(await db.fleetObservation.count({ where: { episodeId: ep.id } })).toBe(0);
     expect((await db.episode.findUnique({ where: { id: ep.id } })).stepsCompleted).toBe(0);
     await repo.persistStep(ep, stream.slice(0, 3));
+    await repo.persistStep(ep, stream.slice(0, 3));
+    expect(await db.fleetObservation.count({ where: { episodeId: ep.id } })).toBe(1);
     await repo.persistStep(ep, stream.slice(3, 6));
     // A duplicate summary forces a DB error before completion.
-    await db.episodeSummary.create({ data: { episodeId: ep.id, schemaVersion: '2.0', payloadJson: stream.at(-1) } });
+    await db.episodeSummary.create({ data: { episodeId: ep.id, attempt: ep.attempt, schemaVersion: '2.0', payloadJson: stream.at(-1).payload } });
     await expect(repo.persistSummary(ep, stream.at(-1))).rejects.toThrow();
     expect((await db.episode.findUnique({ where: { id: ep.id } })).status).toBe('RUNNING');
-    await db.episodeSummary.delete({ where: { episodeId: ep.id } });
+    await db.episodeSummary.deleteMany({ where: { episodeId: ep.id } });
     await repo.persistSummary(ep, stream.at(-1));
-    expect((await db.episode.findUnique({ where: { id: ep.id }, include: { summary: true } }))).toMatchObject({ status: 'COMPLETED', stepsCompleted: 2, summary: { payloadJson: stream.at(-1) } });
+    expect((await db.episode.findUnique({ where: { id: ep.id }, include: { summaries: true } }))).toMatchObject({ status: 'COMPLETED', stepsCompleted: 2, summaries: [{ payloadJson: stream.at(-1).payload }] });
   });
   test('renewed lease survives recovery; expired owner cannot write or fail a replacement', async () => {
     await pending(3);
     const ep = await repo.claimNext();
     const stream = await events(ep);
     await repo.heartbeat(ep, 120000);
+    await repo.persistStep(ep, stream.slice(0, 3));
     await repo.recoverStale();
     expect((await db.episode.findUnique({ where: { id: ep.id } })).status).toBe('RUNNING');
     await db.episode.update({ where: { id: ep.id }, data: { leaseExpiresAt: new Date(0) } });
     await repo.recoverStale();
     await expect(repo.persistStep(ep, stream.slice(0, 3))).rejects.toMatchObject({ code: 'WORKER_LEASE_LOST' });
-    await db.episode.update({ where: { id: ep.id }, data: { status: 'RUNNING', leaseToken: randomUUID(), leaseExpiresAt: new Date(Date.now() + 120000) } });
+    await require('../src/services/episode-lifecycle.service').transitionEpisode({ client: db, episodeId: ep.id, from: 'FAILED', to: 'PENDING' });
+    const replacement = await repo.claimNext();
+    expect(replacement.attempt).toBe(ep.attempt + 1);
+    const replay = await events(replacement);
+    await repo.persistStep(replacement, replay.slice(0, 3));
+    const history = await db.fleetObservation.findMany({ where: { episodeId: ep.id }, orderBy: { attempt: 'asc' } });
+    expect(history.map((row) => row.attempt)).toEqual([1, 2]);
+    expect(history[0].observationKey).not.toBe(history[1].observationKey);
     await expect(repo.markFailed(ep, new Error('old owner'))).rejects.toMatchObject({ code: 'WORKER_LEASE_LOST' });
     expect((await db.episode.findUnique({ where: { id: ep.id } })).status).toBe('RUNNING');
   });
