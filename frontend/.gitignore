@@ -3,5 +3,6 @@ node_modules
 out
 dist
 *.log
+*.tsbuildinfo
 .env*
 !.env.local.example
