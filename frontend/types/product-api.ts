@@ -179,6 +179,17 @@ export interface ProductApiRequestOptions {
   signal?: AbortSignal;
 }
 
+export interface GetEpisodeOptions extends ProductApiRequestOptions {
+  /** Attempt whose persisted events and summary should be returned. */
+  attempt?: number;
+}
+
+export interface EpisodeMutationResult {
+  id: string;
+  status: EpisodeStatus;
+  attempt: number;
+}
+
 export interface ProductApiClient {
   listPolicies(
     options?: ProductApiRequestOptions,
@@ -202,6 +213,14 @@ export interface ProductApiClient {
   ): Promise<ExperimentDetail>;
   getEpisode(
     id: string,
-    options?: ProductApiRequestOptions,
+    options?: GetEpisodeOptions,
   ): Promise<EpisodeDetail>;
+  retryEpisode(
+    id: string,
+    options?: ProductApiRequestOptions,
+  ): Promise<EpisodeMutationResult>;
+  cancelEpisode(
+    id: string,
+    options?: ProductApiRequestOptions,
+  ): Promise<EpisodeMutationResult>;
 }

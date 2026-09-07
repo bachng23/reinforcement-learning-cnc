@@ -57,7 +57,7 @@ bash scripts/dev-web.sh
 bash scripts/dev-ai.sh
 ```
 
-The web script runs the backend on port `8080` and frontend on port `3000`. The AI script runs the minimal FastAPI service on port `8001`.
+The web script runs the backend on port `8080`, the episode worker, and the frontend on port `3000`. The worker must remain running for queued episodes to progress from `PENDING` to a terminal status. The AI script runs the minimal FastAPI service on port `8001`.
 
 Check all processes:
 

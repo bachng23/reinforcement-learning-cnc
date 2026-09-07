@@ -1,6 +1,7 @@
 import { AuthRedirectError, authFetch, endpoint } from "@/lib/auth";
 import {
   ProductApiError,
+  isProductApiError,
   malformedProductApiResponse,
   productApiErrorFromPayload,
 } from "@/lib/product-api/errors";
@@ -14,8 +15,11 @@ import {
 import type {
   CreateExperimentRequest,
   EpisodeDetail,
+  EpisodeMutationResult,
+  EpisodeStatus,
   ExperimentDetail,
   ExperimentListItem,
+  GetEpisodeOptions,
   ListExperimentsParams,
   PaginatedResponse,
   PolicyCatalogItem,
@@ -29,6 +33,13 @@ type UnknownRecord = Record<string, unknown>;
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
+const EPISODE_STATUSES: ReadonlySet<EpisodeStatus> = new Set([
+  "PENDING",
+  "RUNNING",
+  "COMPLETED",
+  "FAILED",
+  "CANCELLED",
+]);
 
 function isRecord(value: unknown): value is UnknownRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -61,6 +72,29 @@ function responseList(payload: unknown, label: string): unknown[] {
     throw malformedProductApiResponse(`Product API returned malformed ${label}.`);
   }
   return data;
+}
+
+function episodeMutationResult(
+  payload: unknown,
+  label: string,
+): EpisodeMutationResult {
+  const data = responseRecord(payload, label);
+  if (
+    typeof data.id !== "string" ||
+    !data.id ||
+    typeof data.attempt !== "number" ||
+    !Number.isInteger(data.attempt) ||
+    data.attempt < 1 ||
+    typeof data.status !== "string" ||
+    !EPISODE_STATUSES.has(data.status as EpisodeStatus)
+  ) {
+    throw malformedProductApiResponse(`Product API returned malformed ${label}.`);
+  }
+  return {
+    id: data.id,
+    attempt: data.attempt,
+    status: data.status as EpisodeStatus,
+  };
 }
 
 function responseTotalPages(payload: unknown): number {
@@ -212,7 +246,7 @@ export class HttpProductApiClient implements ProductApiClient {
 
   async getEpisode(
     id: string,
-    options: ProductApiRequestOptions = {},
+    options: GetEpisodeOptions = {},
   ): Promise<EpisodeDetail> {
     const encodedId = encodeURIComponent(id);
     const episodePayload = await this.request(`/api/v1/episodes/${encodedId}`, {
@@ -233,46 +267,55 @@ export class HttpProductApiClient implements ProductApiClient {
       );
     }
 
-    let steps: UnknownRecord[] = [];
-    let summary: unknown = null;
-    if (episode.status === "COMPLETED") {
-      const attempt = episode.attempt;
-      if (!attempt) {
-        throw malformedProductApiResponse("Product API episode response is missing attempt.");
-      }
-      const attemptQuery = `?attempt=${attempt}`;
-      const [observations, recommendations, results, summaryPayload] = await Promise.all([
-        this.requestAll(`/api/v1/episodes/${encodedId}/observations${attemptQuery}`, options),
-        this.requestAll(`/api/v1/episodes/${encodedId}/recommendations${attemptQuery}`, options),
-        this.requestAll(`/api/v1/episodes/${encodedId}/results${attemptQuery}`, options),
-        this.request(`/api/v1/episodes/${encodedId}/summary${attemptQuery}`, {
-          method: "GET",
-          signal: options.signal,
-        }),
-      ]);
-      const byStep = new Map<number, UnknownRecord>();
-      const mergeRecords = (records: unknown[], key: "observation" | "recommendation" | "result") => {
-        for (const value of records) {
-          if (!isRecord(value) || typeof value.step !== "number" || !isRecord(value.payload)) {
-            throw malformedProductApiResponse("Product API returned a malformed episode event.");
-          }
-          const current = byStep.get(value.step) ?? { step: value.step };
-          current[key] = value.payload;
-          if (typeof value.createdAt === "string" && current.persisted_at === undefined) {
-            current.persisted_at = value.createdAt;
-          }
-          if (key === "result" && typeof value.totalCost === "number") {
-            current.step_cost = value.totalCost;
-          }
-          byStep.set(value.step, current);
-        }
-      };
-      mergeRecords(observations, "observation");
-      mergeRecords(recommendations, "recommendation");
-      mergeRecords(results, "result");
-      steps = [...byStep.values()].sort((left, right) => Number(left.step) - Number(right.step));
-      summary = responseRecord(summaryPayload, "episode summary response").payload;
+    const currentAttempt = episode.attempt;
+    if (!currentAttempt) {
+      throw malformedProductApiResponse("Product API episode response is missing attempt.");
     }
+    const attempt = options.attempt ?? currentAttempt;
+    const attemptQuery = `?attempt=${attempt}`;
+    const summaryRequest = this.request(
+      `/api/v1/episodes/${encodedId}/summary${attemptQuery}`,
+      { method: "GET", signal: options.signal },
+    ).then((payload) => responseRecord(payload, "episode summary response").payload)
+      .catch((error: unknown) => {
+        if (
+          isProductApiError(error) &&
+          error.status === 409 &&
+          error.code === "SUMMARY_NOT_AVAILABLE"
+        ) {
+          return null;
+        }
+        throw error;
+      });
+    const [observations, recommendations, results, summary] = await Promise.all([
+      this.requestAll(`/api/v1/episodes/${encodedId}/observations${attemptQuery}`, options),
+      this.requestAll(`/api/v1/episodes/${encodedId}/recommendations${attemptQuery}`, options),
+      this.requestAll(`/api/v1/episodes/${encodedId}/results${attemptQuery}`, options),
+      summaryRequest,
+    ]);
+    const byStep = new Map<number, UnknownRecord>();
+    const mergeRecords = (records: unknown[], key: "observation" | "recommendation" | "result") => {
+      for (const value of records) {
+        if (!isRecord(value) || typeof value.step !== "number" || !isRecord(value.payload)) {
+          throw malformedProductApiResponse("Product API returned a malformed episode event.");
+        }
+        const current = byStep.get(value.step) ?? { step: value.step };
+        current[key] = value.payload;
+        if (typeof value.createdAt === "string" && current.persisted_at === undefined) {
+          current.persisted_at = value.createdAt;
+        }
+        if (key === "result" && typeof value.totalCost === "number") {
+          current.cumulative_cost = value.totalCost;
+        }
+        byStep.set(value.step, current);
+      }
+    };
+    mergeRecords(observations, "observation");
+    mergeRecords(recommendations, "recommendation");
+    mergeRecords(results, "result");
+    const steps = [...byStep.values()].sort(
+      (left, right) => Number(left.step) - Number(right.step),
+    );
 
     return normalizeEpisodeDetail({
       success: true,
@@ -283,6 +326,28 @@ export class HttpProductApiClient implements ProductApiClient {
         steps,
       },
     });
+  }
+
+  async retryEpisode(
+    id: string,
+    options: ProductApiRequestOptions = {},
+  ): Promise<EpisodeMutationResult> {
+    const payload = await this.request(
+      `/api/v1/episodes/${encodeURIComponent(id)}/retry`,
+      { method: "POST", signal: options.signal },
+    );
+    return episodeMutationResult(payload, "episode retry response");
+  }
+
+  async cancelEpisode(
+    id: string,
+    options: ProductApiRequestOptions = {},
+  ): Promise<EpisodeMutationResult> {
+    const payload = await this.request(
+      `/api/v1/episodes/${encodeURIComponent(id)}/cancel`,
+      { method: "POST", signal: options.signal },
+    );
+    return episodeMutationResult(payload, "episode cancellation response");
   }
 }
 

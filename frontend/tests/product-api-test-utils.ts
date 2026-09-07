@@ -14,6 +14,8 @@ export function createProductApiStub(
     runExperiment: () => notConfigured("runExperiment"),
     getExperiment: () => notConfigured("getExperiment"),
     getEpisode: () => notConfigured("getEpisode"),
+    retryEpisode: () => notConfigured("retryEpisode"),
+    cancelEpisode: () => notConfigured("cancelEpisode"),
     ...overrides,
   };
 }

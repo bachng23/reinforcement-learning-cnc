@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { AuthRedirectError } from "@/lib/auth";
 import { HttpProductApiClient } from "@/lib/product-api/client";
+import { getProductApiClient, resetProductApiClient } from "@/lib/product-api";
 import type { CreateExperimentRequest } from "@/types/product-api";
 
 const environmentConfig = {
@@ -195,8 +197,101 @@ describe("HttpProductApiClient", () => {
         observation,
         recommendation,
         result,
-        step_cost: 25,
+        cumulative_cost: 25,
       }),
     ]);
+  });
+
+  it("uses the retry and cancel episode mutation endpoints", async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/retry")) {
+        return json({
+          success: true,
+          data: { id: episode.id, status: "PENDING", attempt: 2 },
+        }, 202);
+      }
+      return json({
+        success: true,
+        data: { id: episode.id, status: "CANCELLED", attempt: 2 },
+      });
+    });
+    const client = new HttpProductApiClient(fetcher);
+
+    await expect(client.retryEpisode(episode.id)).resolves.toEqual({
+      id: episode.id,
+      status: "PENDING",
+      attempt: 2,
+    });
+    await expect(client.cancelEpisode(episode.id)).resolves.toEqual({
+      id: episode.id,
+      status: "CANCELLED",
+      attempt: 2,
+    });
+
+    expect(String(fetcher.mock.calls[0][0])).toBe(`/api/v1/episodes/${episode.id}/retry`);
+    expect(fetcher.mock.calls[0][1]?.method).toBe("POST");
+    expect(String(fetcher.mock.calls[1][0])).toBe(`/api/v1/episodes/${episode.id}/cancel`);
+    expect(fetcher.mock.calls[1][1]?.method).toBe("POST");
+  });
+
+  it("loads persisted events for an explicit attempt and tolerates a missing summary", async () => {
+    const pendingEpisode = { ...episode, status: "PENDING", attempt: 2 };
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === `/api/v1/episodes/${episode.id}`) {
+        return json({ success: true, data: pendingEpisode });
+      }
+      if (url === `/api/v1/experiments/${experiment.id}`) {
+        return json({ success: true, data: experiment });
+      }
+      if (url.includes("/summary?attempt=1")) {
+        return json({
+          success: false,
+          error: { code: "SUMMARY_NOT_AVAILABLE", message: "Summary is not available" },
+        }, 409);
+      }
+      if (url.includes("?attempt=1")) {
+        return json({ success: true, data: [], meta: { totalPages: 1 } });
+      }
+      return json({ success: false, error: { message: "Unexpected URL" } }, 404);
+    });
+
+    const detail = await new HttpProductApiClient(fetcher).getEpisode(
+      episode.id,
+      { attempt: 1 },
+    );
+
+    expect(detail.attempt).toBe(2);
+    expect(detail.summary).toBeNull();
+    expect(detail.steps).toEqual([]);
+    expect(fetcher.mock.calls.filter(([input]) => String(input).includes("?attempt=1")))
+      .toHaveLength(4);
+  });
+
+  it("normalizes network errors and preserves authentication redirects", async () => {
+    const offline = new HttpProductApiClient(vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    }));
+    await expect(offline.listPolicies()).rejects.toMatchObject({
+      status: 0,
+      code: "NETWORK_ERROR",
+    });
+
+    const unauthorized = new HttpProductApiClient(vi.fn(async () => {
+      throw new AuthRedirectError();
+    }));
+    await expect(unauthorized.listPolicies()).rejects.toBeInstanceOf(AuthRedirectError);
+  });
+
+  it("selects the HTTP adapter in real mode without falling back to fixtures", () => {
+    vi.stubEnv("NEXT_PUBLIC_PRODUCT_API_MODE", "real");
+    resetProductApiClient();
+    try {
+      expect(getProductApiClient()).toBeInstanceOf(HttpProductApiClient);
+    } finally {
+      resetProductApiClient();
+      vi.unstubAllEnvs();
+    }
   });
 });

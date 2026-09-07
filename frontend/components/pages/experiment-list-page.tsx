@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge } from "@/components/research/status-badge";
-import { getProductApiClient } from "@/lib/product-api";
+import { getProductApiClient, productApiErrorMessage } from "@/lib/product-api";
 import type {
   ExperimentListItem,
   PaginatedResponse,
@@ -25,9 +25,7 @@ function formatDate(value: string) {
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error && error.message
-    ? error.message
-    : "Unable to load experiments.";
+  return productApiErrorMessage(error, "Unable to load experiments.");
 }
 
 function ownerLabel(experiment: ExperimentListItem) {
