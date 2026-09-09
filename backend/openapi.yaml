@@ -13,7 +13,7 @@ info:
     underscores, colons, or hyphens. The API echoes it in the response; when
     omitted or invalid, the API generates a UUID request id.
 servers:
-  - url: http://localhost:8080/api/v1
+  - url: http://localhost:5000/api/v1
     description: Local backend
 tags:
   - name: Policies
@@ -115,6 +115,7 @@ paths:
                     policyKey: threshold-uncertainty
                     version: 1.0.0
                     name: Threshold uncertainty policy
+                    description: Replaces tools when configured risk limits are exceeded.
                   environmentConfig:
                     schema_version: "2.0"
                     environment_id: cnc-fleet-v0.1
@@ -199,6 +200,7 @@ paths:
                       policyKey: threshold-uncertainty
                       version: 1.0.0
                       name: Threshold uncertainty policy
+                      description: Replaces tools when configured risk limits are exceeded.
                     createdById: 1ef61fe2-41e7-47c6-94ee-3be1f7065f48
                     createdAt: "2026-09-02T08:00:00.000Z"
                     updatedAt: "2026-09-02T08:00:00.000Z"
@@ -232,8 +234,6 @@ paths:
           $ref: "#/components/responses/ValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -372,8 +372,6 @@ paths:
           $ref: "#/components/responses/ValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -397,8 +395,6 @@ paths:
           $ref: "#/components/responses/ValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -461,12 +457,11 @@ paths:
                   limit: 20
                   total: 1
                   totalPages: 1
+                  attempt: 1
         "400":
           $ref: "#/components/responses/ValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -518,12 +513,11 @@ paths:
                   limit: 20
                   total: 1
                   totalPages: 1
+                  attempt: 1
         "400":
           $ref: "#/components/responses/ValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -580,12 +574,11 @@ paths:
                   limit: 20
                   total: 1
                   totalPages: 1
+                  attempt: 1
         "400":
           $ref: "#/components/responses/ValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -628,8 +621,6 @@ paths:
           $ref: "#/components/responses/ValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -705,8 +696,8 @@ paths:
       tags: [Episodes]
       summary: Cancel a pending episode
       description: |
-        Atomically transitions PENDING to CANCELLED. RUNNING cancellation is not
-        exposed until the worker supports cooperative cancellation.
+        Atomically transitions PENDING to CANCELLED. Every other state is
+        rejected with INVALID_EPISODE_TRANSITION.
       operationId: cancelEpisode
       responses:
         "200":
@@ -724,24 +715,16 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Invalid transition, including unsupported cancellation of a RUNNING episode.
+          description: The episode is not PENDING.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                invalidTransition:
-                  value:
-                    success: false
-                    error:
-                      code: INVALID_EPISODE_TRANSITION
-                      message: Only a pending episode can be cancelled
-                runningUnsupported:
-                  value:
-                    success: false
-                    error:
-                      code: RUNNING_CANCELLATION_UNSUPPORTED
-                      message: Running episode cancellation is not supported
+              example:
+                success: false
+                error:
+                  code: INVALID_EPISODE_TRANSITION
+                  message: Episode is RUNNING; expected PENDING
         "503":
           $ref: "#/components/responses/DatabaseUnavailable"
 
@@ -946,6 +929,24 @@ components:
         totalPages:
           type: integer
           minimum: 0
+    EventPaginationMeta:
+      type: object
+      additionalProperties: false
+      required: [page, limit, total, totalPages, attempt]
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
         attempt:
           type: integer
           minimum: 1
@@ -958,7 +959,7 @@ components:
       enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED]
     PolicySummary:
       type: object
-      required: [id, policyKey, version, name]
+      required: [id, policyKey, version, name, description]
       properties:
         id:
           type: string
@@ -975,6 +976,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/PolicySummary"
         - type: object
+          required: [config]
           properties:
             config:
               type: [object, "null"]
@@ -1030,6 +1032,7 @@ components:
         - id
         - experimentKey
         - name
+        - description
         - schemaVersion
         - status
         - episodeCount
@@ -1058,7 +1061,7 @@ components:
         policy:
           $ref: "#/components/schemas/PolicySummary"
         createdById:
-          type: string
+          type: [string, "null"]
           format: uuid
         createdAt:
           type: string
@@ -1070,7 +1073,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/ExperimentSummary"
         - type: object
-          required: [environmentConfig]
+          required: [environmentConfig, runRequestedAt]
           properties:
             environmentConfig:
               $ref: "#/components/schemas/EnvironmentConfig"
@@ -1174,7 +1177,16 @@ components:
         - attempt
         - status
         - stepsCompleted
+        - totalCost
+        - failureCount
+        - replacementCount
+        - waitingSteps
         - queuedAt
+        - startedAt
+        - completedAt
+        - failedAt
+        - cancelledAt
+        - error
         - createdAt
         - updatedAt
       properties:
@@ -1363,7 +1375,7 @@ components:
           items:
             $ref: "#/components/schemas/ObservationRecord"
         meta:
-          $ref: "#/components/schemas/PaginationMeta"
+          $ref: "#/components/schemas/EventPaginationMeta"
     RecommendationListResponse:
       type: object
       additionalProperties: false
@@ -1377,7 +1389,7 @@ components:
           items:
             $ref: "#/components/schemas/RecommendationRecord"
         meta:
-          $ref: "#/components/schemas/PaginationMeta"
+          $ref: "#/components/schemas/EventPaginationMeta"
     StepResultListResponse:
       type: object
       additionalProperties: false
@@ -1391,7 +1403,7 @@ components:
           items:
             $ref: "#/components/schemas/StepResultRecord"
         meta:
-          $ref: "#/components/schemas/PaginationMeta"
+          $ref: "#/components/schemas/EventPaginationMeta"
     EpisodeSummaryResponse:
       type: object
       additionalProperties: false
