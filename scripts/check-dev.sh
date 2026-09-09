@@ -72,7 +72,7 @@ check_tcp "Postgres" localhost 5432
 
 echo ""
 echo "Checking source services..."
-check_http "Backend" http://localhost:8080/api/health
+check_http "Backend" http://localhost:5000/api/health
 check_http "AI API" http://localhost:8001/health
 
 if curl -fsS http://localhost:3000 >/dev/null 2>&1; then

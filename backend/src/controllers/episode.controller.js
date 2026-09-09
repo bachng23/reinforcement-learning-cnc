@@ -193,15 +193,6 @@ const retryEpisode = async (req, res) => {
 const cancelEpisode = async (req, res) => {
   const episode = await prisma.$transaction(async (tx) => {
     const current = await findAccessibleEpisode(tx, req);
-    if (current.status === 'RUNNING') {
-      // Keep this explicit until the worker exposes cooperative cancellation.
-      await transitionEpisode({
-        client: tx,
-        episodeId: current.id,
-        from: 'RUNNING',
-        to: 'CANCELLED',
-      });
-    }
     if (current.status !== 'PENDING') {
       throw new ApiError(
         409,

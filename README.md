@@ -53,12 +53,12 @@ npm run prisma:seed
 The Product API contract, including authenticated request and response examples, is documented in [backend/openapi.yaml](backend/openapi.yaml). Worker claiming, lifecycle, retry-history, and event persistence rules are documented in [backend/WORKER-PERSISTENCE.md](backend/WORKER-PERSISTENCE.md). After starting the backend, verify health, authenticate, and query the policy catalog:
 
 ```bash
-curl http://localhost:8080/api/health
+curl http://localhost:5000/api/health
 curl -i -c /tmp/cnc-api-cookie.txt \
   -H 'Content-Type: application/json' \
   -d '{"username":"admin","password":"<ADMIN_PASSWORD>"}' \
-  http://localhost:8080/api/v1/auth/login
-curl -b /tmp/cnc-api-cookie.txt http://localhost:8080/api/v1/policies
+  http://localhost:5000/api/v1/auth/login
+curl -b /tmp/cnc-api-cookie.txt http://localhost:5000/api/v1/policies
 ```
 
 Run the automated backend checks from `backend`:
@@ -66,6 +66,17 @@ Run the automated backend checks from `backend`:
 ```bash
 npm test
 ```
+
+Run the Product API integration suite against a real PostgreSQL database:
+
+```bash
+cd backend
+TEST_DATABASE_URL="postgresql://admin:password@localhost:5432/cnc_research_test" npm run test:integration
+```
+
+The command creates a uniquely named schema, applies every committed Prisma
+migration, runs the API tests serially, and drops only that schema afterward.
+The configured PostgreSQL user must be allowed to create and drop schemas.
 
 Start the source services from the repository root:
 
@@ -75,7 +86,7 @@ bash scripts/dev-ai.sh
 ```
 
 - Frontend: `http://localhost:3000`
-- Backend: `http://localhost:8080/api/health`
+- Backend: `http://localhost:5000/api/health`
 - AI API: `http://localhost:8001/health`
 
 See [DEV-LOCAL.md](DEV-LOCAL.md) for the complete workflow and [contracts/v2/README.md](contracts/v2/README.md) for the research contract boundary.
