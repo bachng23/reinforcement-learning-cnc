@@ -3,7 +3,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ?
 /** Signals that authFetch already started a login redirect. */
 export class AuthRedirectError extends Error {
   constructor() {
-    super("Auth required — redirecting to login");
+    super("Authentication required. Redirecting to sign in.");
     this.name = "AuthRedirectError";
   }
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { FlaskConical, LayoutDashboard, LogOut, Users } from "lucide-react";
+import { FlaskConical, LogOut, Users } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -20,14 +20,15 @@ function NavItem({
 }: {
   href: string;
   label: string;
-  icon: typeof LayoutDashboard;
+  icon: typeof FlaskConical;
 }) {
   const pathname = usePathname();
-  const active = href === "/" ? pathname === href : pathname.startsWith(href);
+  const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
 
   return (
     <Link
       href={href}
+      aria-current={active ? "page" : undefined}
       className="flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors"
       style={{
         background: active ? "var(--color-sky-tint)" : "transparent",
@@ -61,7 +62,16 @@ export function AppShell({ children, title = "Research overview" }: AppShellProp
     };
   }, [router]);
 
-  if (!ready || !user) return null;
+  if (!ready || !user) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[var(--color-canvas-fog)] px-4">
+        <div role="status" className="flex items-center gap-3 text-sm text-[var(--color-ash-gray)]">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-stone-border)] border-t-[var(--color-chartwell-blue)]" />
+          Opening the research workspace…
+        </div>
+      </div>
+    );
+  }
 
   const displayName = user.fullName || user.username || user.role;
 
@@ -79,7 +89,7 @@ export function AppShell({ children, title = "Research overview" }: AppShellProp
         </Link>
 
         <nav className="flex flex-1 flex-col gap-1 px-3 py-3" aria-label="Primary navigation">
-          <NavItem href="/" label="Overview" icon={LayoutDashboard} />
+          <NavItem href="/experiments" label="Experiments" icon={FlaskConical} />
           {user.role === "ADMIN" && <NavItem href="/admin" label="Users" icon={Users} />}
         </nav>
 
@@ -113,8 +123,8 @@ export function AppShell({ children, title = "Research overview" }: AppShellProp
             <h1 className="truncate text-base font-semibold text-[var(--color-slate-text)]">{title}</h1>
           </div>
           <div className="flex items-center gap-1 lg:hidden">
-            <Link href="/" aria-label="Overview" title="Overview" className="grid h-9 w-9 place-items-center rounded-md">
-              <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+            <Link href="/experiments" aria-label="Experiments" title="Experiments" className="grid h-9 w-9 place-items-center rounded-md">
+              <FlaskConical className="h-4 w-4" aria-hidden="true" />
             </Link>
             {user.role === "ADMIN" && (
               <Link href="/admin" aria-label="Users" title="Users" className="grid h-9 w-9 place-items-center rounded-md">

@@ -63,6 +63,8 @@ model Episode {
   seed             Int
   status           EpisodeStatus      @default(PENDING)
   stepsCompleted   Int                @default(0) @map("steps_completed")
+  leaseToken       String?            @map("lease_token") @db.Uuid
+  leaseExpiresAt   DateTime?          @map("lease_expires_at") @db.Timestamptz(6)
   totalCost        Float?             @map("total_cost")
   failureCount     Int?               @map("failure_count")
   replacementCount Int?               @map("replacement_count")
@@ -85,6 +87,7 @@ model Episode {
   @@unique([experimentId, episodeIndex])
   @@index([experimentId, status])
   @@index([status, queuedAt])
+  @@index([status, leaseExpiresAt])
   @@index([experimentId, episodeIndex, id])
   @@map("episodes")
 }

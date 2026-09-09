@@ -54,6 +54,10 @@ PIDS+=($!)
 
 sleep 2
 
+log "Starting the episode worker."
+(cd "$BACKEND" && npm run worker:dev) &
+PIDS+=($!)
+
 log "Starting frontend on http://localhost:3000."
 (cd "$FRONTEND" && npm run dev) &
 PIDS+=($!)
@@ -62,7 +66,8 @@ echo ""
 log "Source web stack is up:"
 echo "  Frontend: http://localhost:3000"
 echo "  Backend:  http://localhost:5000"
+echo "  Worker:   polling queued episodes"
 echo ""
-warn "Press Ctrl+C to stop backend and frontend."
+warn "Press Ctrl+C to stop backend, worker, and frontend."
 
 wait

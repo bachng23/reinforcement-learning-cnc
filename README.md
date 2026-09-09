@@ -12,7 +12,7 @@ The repository is intentionally at a clean research-platform baseline:
 - `frontend`: authenticated research console and user administration.
 - PostgreSQL 16 is the only infrastructure dependency.
 
-Simulation, M4 adaptation, policy execution, and research visualizations are not implemented yet. Experiment run requests only queue episodes; a separate worker executes them asynchronously.
+Simulation, M4 adaptation, policy execution, and research visualizations are not implemented yet. Experiment run requests only queue episodes; a separate worker executes them asynchronously. The local web script starts that worker with the backend and frontend.
 
 ## Local development
 
