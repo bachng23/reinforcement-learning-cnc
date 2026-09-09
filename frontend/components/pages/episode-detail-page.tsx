@@ -6,16 +6,18 @@ import {
   Activity,
   AlertTriangle,
   ArrowLeft,
+  Ban,
   Boxes,
   CheckCircle2,
   Clock3,
   Coins,
   Cpu,
   RefreshCw,
+  RotateCcw,
   ShieldAlert,
   Wrench,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { AsyncState } from "@/components/research/async-state";
@@ -23,7 +25,11 @@ import { EnvironmentConfigView } from "@/components/research/environment-config-
 import { PageHeader } from "@/components/research/page-header";
 import { RulDistributionChart } from "@/components/research/rul-distribution-chart";
 import { StatusBadge } from "@/components/research/status-badge";
-import { getProductApiClient } from "@/lib/product-api";
+import {
+  getProductApiClient,
+  isProductApiError,
+  productApiErrorMessage,
+} from "@/lib/product-api";
 import type { MachineObservation } from "@/types/cnc";
 import type {
   EpisodeDetail,
@@ -43,9 +49,7 @@ function formatDate(value?: string | null) {
 }
 
 function requestError(error: unknown) {
-  return error instanceof Error && error.message
-    ? error.message
-    : "The episode could not be loaded.";
+  return productApiErrorMessage(error, "The episode could not be loaded.");
 }
 
 function ReturnedValue({ label, value }: { label: string; value: string | number | null | undefined }) {
@@ -80,18 +84,30 @@ function FailurePanel({ failure, title = "Failure information" }: { failure: Epi
   );
 }
 
-function EpisodeSummaryView({ episode }: { episode: EpisodeDetail }) {
+function EpisodeSummaryView({
+  episode,
+  viewedAttempt,
+  currentAttempt,
+}: {
+  episode: EpisodeDetail;
+  viewedAttempt: number;
+  currentAttempt: number;
+}) {
   const summary = episode.summary;
   if (!summary) {
-    const terminal = ["COMPLETED", "FAILED", "CANCELLED"].includes(episode.status);
+    const terminal =
+      viewedAttempt === currentAttempt &&
+      ["COMPLETED", "FAILED", "CANCELLED"].includes(episode.status);
     return (
       <AsyncState
         kind="empty"
         compact
-        title="Final summary not available"
-        description={terminal
-          ? "The backend did not return a persisted final summary for this episode. No values were reconstructed in the browser."
-          : "A final summary may become available after the worker reaches a terminal state."}
+        title={`Attempt ${viewedAttempt} summary not available`}
+        description={viewedAttempt !== currentAttempt
+          ? "The backend did not persist a final summary for this historical attempt. No values were reconstructed in the browser."
+          : terminal
+            ? "The backend did not return a persisted final summary for this episode. No values were reconstructed in the browser."
+            : "A final summary may become available after the worker reaches a terminal state."}
       />
     );
   }
@@ -100,7 +116,7 @@ function EpisodeSummaryView({ episode }: { episode: EpisodeDetail }) {
     <section className="rounded-lg border border-[var(--color-stone-border)] bg-white p-4 sm:p-5" aria-labelledby="summary-heading">
       <div className="flex items-center gap-2">
         <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-        <h2 id="summary-heading" className="text-sm font-semibold text-[var(--color-slate-text)]">Final episode summary</h2>
+        <h2 id="summary-heading" className="text-sm font-semibold text-[var(--color-slate-text)]">Attempt {viewedAttempt} final summary</h2>
       </div>
       <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <ReturnedValue label="episode_id" value={summary.episode_id} />
@@ -299,11 +315,23 @@ export function EpisodeDetailPage({ api, pollIntervalMs = 4000 }: { api?: Produc
   const [retryKey, setRetryKey] = useState(0);
   const [pollError, setPollError] = useState("");
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const [selectedAttempt, setSelectedAttempt] = useState<number | null>(null);
+  const [activeAction, setActiveAction] = useState<"retry" | "cancel" | null>(null);
+  const [actionError, setActionError] = useState("");
+  const selectedAttemptRef = useRef<number | null>(null);
+  const loadedEpisodeIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!episodeId) {
       setState({ kind: "error", message: "Episode identifier is missing." });
       return;
+    }
+
+    if (loadedEpisodeIdRef.current !== episodeId) {
+      loadedEpisodeIdRef.current = episodeId;
+      selectedAttemptRef.current = null;
+      setSelectedAttempt(null);
+      setActionError("");
     }
 
     let disposed = false;
@@ -315,8 +343,17 @@ export function EpisodeDetailPage({ api, pollIntervalMs = 4000 }: { api?: Produc
       controller = new AbortController();
       if (initial) setState({ kind: "loading" });
       try {
-        const episode = await client.getEpisode(episodeId, { signal: controller.signal });
+        const requestedAttempt = selectedAttemptRef.current;
+        const episode = await client.getEpisode(episodeId, {
+          signal: controller.signal,
+          ...(requestedAttempt === null ? {} : { attempt: requestedAttempt }),
+        });
         if (disposed) return;
+        if (selectedAttemptRef.current === null) {
+          const currentAttempt = episode.attempt ?? 1;
+          selectedAttemptRef.current = currentAttempt;
+          setSelectedAttempt(currentAttempt);
+        }
         setState({ kind: "ready", episode });
         setPollError("");
         setLastRefreshed(new Date());
@@ -344,6 +381,69 @@ export function EpisodeDetailPage({ api, pollIntervalMs = 4000 }: { api?: Produc
     };
   }, [client, episodeId, pollIntervalMs, retryKey]);
 
+  const selectAttempt = (attempt: number) => {
+    if (!Number.isInteger(attempt) || attempt < 1 || attempt === selectedAttemptRef.current) {
+      return;
+    }
+    selectedAttemptRef.current = attempt;
+    setSelectedAttempt(attempt);
+    setActionError("");
+    setRetryKey((value) => value + 1);
+  };
+
+  const mutateEpisode = async (action: "retry" | "cancel") => {
+    if (!episodeId || state.kind !== "ready" || activeAction) return;
+    if (action === "retry" && state.episode.status !== "FAILED") return;
+    if (action === "cancel" && state.episode.status !== "PENDING") return;
+
+    setActiveAction(action);
+    setActionError("");
+    try {
+      const result = action === "retry"
+        ? await client.retryEpisode(episodeId)
+        : await client.cancelEpisode(episodeId);
+      selectedAttemptRef.current = result.attempt;
+      setSelectedAttempt(result.attempt);
+      setState((current) => current.kind === "ready"
+        ? {
+            kind: "ready",
+            episode: {
+              ...current.episode,
+              status: result.status,
+              attempt: result.attempt,
+              ...(action === "retry" ? { summary: null, steps: [] } : {}),
+            },
+          }
+        : current);
+      setRetryKey((value) => value + 1);
+    } catch (error) {
+      setActionError(productApiErrorMessage(
+        error,
+        action === "retry"
+          ? "The episode could not be retried."
+          : "The episode could not be cancelled.",
+      ));
+      if (
+        isProductApiError(error) &&
+        (error.status === 409 || error.status === 0 || error.code === "NETWORK_ERROR")
+      ) {
+        // A lost response or a concurrent worker transition can make local state stale.
+        selectedAttemptRef.current = null;
+        setSelectedAttempt(null);
+        setRetryKey((value) => value + 1);
+      }
+    } finally {
+      setActiveAction(null);
+    }
+  };
+
+  const currentAttempt = state.kind === "ready" ? state.episode.attempt ?? 1 : 1;
+  const viewedAttempt = selectedAttempt ?? currentAttempt;
+  const attemptOptions = Array.from(
+    { length: currentAttempt },
+    (_, index) => index + 1,
+  );
+
   return (
     <AppShell title="Episode detail">
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -356,8 +456,62 @@ export function EpisodeDetailPage({ api, pollIntervalMs = 4000 }: { api?: Produc
               description={`Episode identifier: ${state.episode.id}`}
               breadcrumbs={[{ label: "Experiments", href: "/experiments" }, { label: state.episode.experiment_id, href: `/experiments/${encodeURIComponent(state.episode.experiment_id)}` }, { label: state.episode.id }]}
               eyebrow="Persisted episode output"
-              actions={<><StatusBadge status={state.episode.status} /><Link href={`/experiments/${encodeURIComponent(state.episode.experiment_id)}`} className="inline-flex h-9 items-center gap-2 rounded-md border border-[var(--color-stone-border)] bg-white px-3 text-sm font-medium text-[var(--color-slate-text)]"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Experiment</Link></>}
+              actions={<>
+                <StatusBadge status={state.episode.status} />
+                <label className="inline-flex h-9 items-center gap-2 rounded-md border border-[var(--color-stone-border)] bg-white px-3 text-xs font-medium text-[var(--color-slate-text)]">
+                  <span>Attempt</span>
+                  <select
+                    aria-label="View attempt"
+                    value={viewedAttempt}
+                    onChange={(event) => selectAttempt(Number(event.target.value))}
+                    disabled={activeAction !== null}
+                    className="bg-transparent font-mono font-semibold outline-none disabled:cursor-not-allowed"
+                  >
+                    {attemptOptions.map((attempt) => (
+                      <option key={attempt} value={attempt}>{attempt}</option>
+                    ))}
+                  </select>
+                  <span className="text-[var(--color-ash-gray)]">of {currentAttempt}</span>
+                </label>
+                {state.episode.status === "FAILED" ? (
+                  <button
+                    type="button"
+                    onClick={() => void mutateEpisode("retry")}
+                    disabled={activeAction !== null}
+                    className="inline-flex h-9 items-center gap-2 rounded-md bg-[var(--color-chartwell-blue)] px-3 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <RotateCcw className={`h-4 w-4 ${activeAction === "retry" ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden="true" />
+                    {activeAction === "retry" ? "Retrying…" : "Retry episode"}
+                  </button>
+                ) : null}
+                {state.episode.status === "PENDING" ? (
+                  <button
+                    type="button"
+                    onClick={() => void mutateEpisode("cancel")}
+                    disabled={activeAction !== null}
+                    className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 bg-white px-3 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {activeAction === "cancel" ? <RefreshCw className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Ban className="h-4 w-4" aria-hidden="true" />}
+                    {activeAction === "cancel" ? "Cancelling…" : "Cancel episode"}
+                  </button>
+                ) : null}
+                <Link href={`/experiments/${encodeURIComponent(state.episode.experiment_id)}`} className="inline-flex h-9 items-center gap-2 rounded-md border border-[var(--color-stone-border)] bg-white px-3 text-sm font-medium text-[var(--color-slate-text)]"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Experiment</Link>
+              </>}
             />
+
+            {actionError ? (
+              <div className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm text-rose-900" role="alert">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <p>{actionError}</p>
+              </div>
+            ) : null}
+
+            <div className="rounded-md border border-[var(--color-stone-border)] bg-[var(--color-canvas-fog)] px-3 py-2.5 text-sm text-[var(--color-slate-text)]" aria-live="polite">
+              <span className="font-semibold">Attempt {viewedAttempt} of {currentAttempt}.</span>{" "}
+              {viewedAttempt === currentAttempt
+                ? "Showing the current attempt returned by the Product API."
+                : `Viewing persisted results from historical attempt ${viewedAttempt}; status and lifecycle timestamps below describe the current attempt ${currentAttempt}.`}
+            </div>
 
             {(state.episode.status === "PENDING" || state.episode.status === "RUNNING" || pollError) ? (
               <div className={`flex flex-col gap-2 rounded-md border px-3 py-2.5 text-xs sm:flex-row sm:items-center sm:justify-between ${pollError ? "border-amber-200 bg-amber-50 text-amber-900" : "border-sky-200 bg-sky-50 text-sky-900"}`}>
@@ -366,20 +520,21 @@ export function EpisodeDetailPage({ api, pollIntervalMs = 4000 }: { api?: Produc
               </div>
             ) : null}
 
-            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Episode metadata">
+            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Episode metadata">
               <div className="rounded-lg border border-[var(--color-stone-border)] bg-white p-4"><p className="flex items-center gap-2 text-xs text-[var(--color-ash-gray)]"><Activity className="h-4 w-4" aria-hidden="true" /> Policy</p><p className="mt-2 break-words text-sm font-medium">{state.episode.policy.name}</p><p className="font-mono text-xs text-[var(--color-ash-gray)]">{state.episode.policy.id} · v{state.episode.policy.version}</p></div>
               <div className="rounded-lg border border-[var(--color-stone-border)] bg-white p-4"><p className="flex items-center gap-2 text-xs text-[var(--color-ash-gray)]"><Cpu className="h-4 w-4" aria-hidden="true" /> Seed</p><p className="mt-2 font-mono text-lg font-semibold tabular-nums">{state.episode.seed}</p></div>
+              <div className="rounded-lg border border-[var(--color-stone-border)] bg-white p-4"><p className="flex items-center gap-2 text-xs text-[var(--color-ash-gray)]"><RotateCcw className="h-4 w-4" aria-hidden="true" /> Current attempt</p><p className="mt-2 font-mono text-lg font-semibold tabular-nums">{currentAttempt}</p></div>
               <div className="rounded-lg border border-[var(--color-stone-border)] bg-white p-4"><p className="flex items-center gap-2 text-xs text-[var(--color-ash-gray)]"><Clock3 className="h-4 w-4" aria-hidden="true" /> Started</p><p className="mt-2 text-sm font-medium">{formatDate(state.episode.started_at)}</p></div>
               <div className="rounded-lg border border-[var(--color-stone-border)] bg-white p-4"><p className="flex items-center gap-2 text-xs text-[var(--color-ash-gray)]"><Clock3 className="h-4 w-4" aria-hidden="true" /> Completed</p><p className="mt-2 text-sm font-medium">{formatDate(state.episode.completed_at)}</p></div>
             </section>
 
-            {state.episode.failure ? <FailurePanel failure={state.episode.failure} /> : null}
-            <EpisodeSummaryView episode={state.episode} />
+            {viewedAttempt === currentAttempt && state.episode.failure ? <FailurePanel failure={state.episode.failure} /> : null}
+            <EpisodeSummaryView episode={state.episode} viewedAttempt={viewedAttempt} currentAttempt={currentAttempt} />
             <EnvironmentConfigView config={state.episode.environment_config} />
 
             <section className="space-y-4" aria-labelledby="timeline-heading">
               <div className="flex flex-col gap-1 border-b border-[var(--color-stone-border)] pb-4 sm:flex-row sm:items-end sm:justify-between">
-                <div><h2 id="timeline-heading" className="text-lg font-semibold text-[var(--color-slate-text)]">Simulation step timeline</h2><p className="mt-1 text-sm text-[var(--color-ash-gray)]">Chronological observations, recommendations, selected actions, and returned results.</p></div>
+                <div><h2 id="timeline-heading" className="text-lg font-semibold text-[var(--color-slate-text)]">Attempt {viewedAttempt} simulation step timeline</h2><p className="mt-1 text-sm text-[var(--color-ash-gray)]">Chronological observations, recommendations, selected actions, and returned results from the Product API.</p></div>
                 <span className="text-xs text-[var(--color-ash-gray)]">{state.episode.steps.length} persisted records</span>
               </div>
               <StepTimeline steps={state.episode.steps} />

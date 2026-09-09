@@ -21,7 +21,11 @@ import { AsyncState } from "@/components/research/async-state";
 import { EnvironmentConfigView } from "@/components/research/environment-config-view";
 import { PageHeader } from "@/components/research/page-header";
 import { StatusBadge } from "@/components/research/status-badge";
-import { getProductApiClient } from "@/lib/product-api";
+import {
+  getProductApiClient,
+  isProductApiError,
+  productApiErrorMessage,
+} from "@/lib/product-api";
 import type {
   EpisodeListItem,
   EpisodeStatus,
@@ -53,9 +57,7 @@ function normalizeRouteParam(value: string | string[] | undefined): string {
 }
 
 function requestErrorMessage(error: unknown): string {
-  return error instanceof Error && error.message
-    ? error.message
-    : "The experiment could not be loaded.";
+  return productApiErrorMessage(error, "The experiment could not be loaded.");
 }
 
 function createRunIdempotencyKey(): string {
@@ -195,9 +197,16 @@ function EpisodeCard({ episode }: { episode: EpisodeListItem }) {
         </Link>
       </div>
 
-      <dl className="mt-4 grid min-w-0 gap-3 border-t border-[var(--color-stone-border)] pt-4 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="mt-4 grid min-w-0 gap-3 border-t border-[var(--color-stone-border)] pt-4 sm:grid-cols-2 lg:grid-cols-5">
         <MetadataItem label="Seed" icon={<Hash className="h-3.5 w-3.5" aria-hidden="true" />}>
           <span className="font-mono tabular-nums">{episode.seed}</span>
+        </MetadataItem>
+        <MetadataItem label="Current attempt" icon={<RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />}>
+          {episode.attempt === undefined ? (
+            <span className="text-[var(--color-ash-gray)]">Not provided</span>
+          ) : (
+            <span className="font-mono tabular-nums">{episode.attempt}</span>
+          )}
         </MetadataItem>
         <MetadataItem label="Policy" icon={<GitBranch className="h-3.5 w-3.5" aria-hidden="true" />}>
           <PolicyReferenceView episode={episode} />
@@ -558,6 +567,19 @@ export function ExperimentDetailPage({
       runKey.current = null;
     } catch (error) {
       setRunError(requestErrorMessage(error));
+      if (
+        isProductApiError(error) &&
+        (error.status === 409 || error.status === 0 || error.code === "NETWORK_ERROR")
+      ) {
+        try {
+          const response = await client.getExperiment(experiment.id);
+          setExperiment(response);
+          setLastRefreshedAt(new Date());
+          if (response.status !== "READY") runKey.current = null;
+        } catch {
+          // Preserve the actionable Run error; the normal page retry remains available.
+        }
+      }
     } finally {
       setIsStarting(false);
     }

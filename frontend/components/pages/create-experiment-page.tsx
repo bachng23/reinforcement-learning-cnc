@@ -13,7 +13,7 @@ import {
 } from "react";
 
 import { AppShell } from "@/components/app-shell";
-import { getProductApiClient } from "@/lib/product-api";
+import { getProductApiClient, productApiErrorMessage } from "@/lib/product-api";
 import type {
   CreateExperimentRequest,
   FieldErrors,
@@ -196,9 +196,7 @@ function backendErrors(error: unknown): FieldErrors {
 }
 
 function requestErrorMessage(error: unknown) {
-  return error instanceof Error && error.message
-    ? error.message
-    : "The experiment could not be created.";
+  return productApiErrorMessage(error, "The experiment could not be created.");
 }
 
 function Field({

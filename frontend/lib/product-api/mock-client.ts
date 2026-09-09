@@ -11,9 +11,11 @@ import type {
   CreateExperimentRequest,
   EpisodeDetail,
   EpisodeListItem,
+  EpisodeMutationResult,
   ExperimentDetail,
   ExperimentListItem,
   FieldErrors,
+  GetEpisodeOptions,
   ListExperimentsParams,
   PaginatedResponse,
   PolicyCatalogItem,
@@ -87,6 +89,9 @@ function experimentStatusFor(
   if (episodes.some((episode) => episode.status === "RUNNING")) return "RUNNING";
   if (episodes.some((episode) => episode.status === "PENDING")) return "RUNNING";
   if (episodes.some((episode) => episode.status === "FAILED")) return "FAILED";
+  if (episodes.length > 0 && episodes.every((episode) => episode.status === "CANCELLED")) {
+    return "CANCELLED";
+  }
   if (episodes.length > 0) return "COMPLETED";
   return currentStatus === "READY" ? "READY" : "DRAFT";
 }
@@ -151,6 +156,7 @@ export class MockProductApiClient implements ProductApiClient {
   private readonly episodes = new Map<string, EpisodeDetail>();
   private readonly pollCounts = new Map<string, number>();
   private readonly runKeys = new Map<string, string>();
+  private readonly attemptHistory = new Map<string, Map<number, EpisodeDetail>>();
   private readonly latencyMs: number;
   private readonly simulatePolling: boolean;
   private sequence = 100;
@@ -378,7 +384,7 @@ export class MockProductApiClient implements ProductApiClient {
 
   async getEpisode(
     id: string,
-    options: ProductApiRequestOptions = {},
+    options: GetEpisodeOptions = {},
   ): Promise<EpisodeDetail> {
     await this.wait(options);
     const existing = this.episodes.get(id);
@@ -400,7 +406,100 @@ export class MockProductApiClient implements ProductApiClient {
         code: "EPISODE_NOT_FOUND",
       });
     }
+    const currentAttempt = episode.attempt ?? 1;
+    const requestedAttempt = options.attempt ?? currentAttempt;
+    if (requestedAttempt > currentAttempt || requestedAttempt < 1) {
+      throw new ProductApiError("Episode attempt not found.", {
+        status: 404,
+        statusText: "Not Found",
+        code: "EPISODE_ATTEMPT_NOT_FOUND",
+      });
+    }
+    if (requestedAttempt < currentAttempt) {
+      const historical = this.attemptHistory.get(id)?.get(requestedAttempt);
+      if (!historical) {
+        throw new ProductApiError("Episode attempt not found.", {
+          status: 404,
+          statusText: "Not Found",
+          code: "EPISODE_ATTEMPT_NOT_FOUND",
+        });
+      }
+      return clone({
+        ...historical,
+        status: episode.status,
+        attempt: currentAttempt,
+      });
+    }
     return clone(episode);
+  }
+
+  async retryEpisode(
+    id: string,
+    options: ProductApiRequestOptions = {},
+  ): Promise<EpisodeMutationResult> {
+    await this.wait(options);
+    const episode = this.episodes.get(id);
+    if (!episode) {
+      throw new ProductApiError("Episode not found.", {
+        status: 404,
+        statusText: "Not Found",
+        code: "EPISODE_NOT_FOUND",
+      });
+    }
+    if (episode.status !== "FAILED") {
+      throw new ProductApiError(`Episode is ${episode.status}; expected FAILED.`, {
+        status: 409,
+        statusText: "Conflict",
+        code: "INVALID_EPISODE_TRANSITION",
+      });
+    }
+
+    const currentAttempt = episode.attempt ?? 1;
+    const history = this.attemptHistory.get(id) ?? new Map<number, EpisodeDetail>();
+    history.set(currentAttempt, clone(episode));
+    this.attemptHistory.set(id, history);
+
+    episode.attempt = currentAttempt + 1;
+    episode.status = "PENDING";
+    episode.steps_completed = 0;
+    episode.total_cost = null;
+    episode.failure_count = null;
+    episode.replacement_count = null;
+    episode.waiting_steps = null;
+    episode.failure = null;
+    episode.started_at = null;
+    episode.completed_at = null;
+    episode.summary = null;
+    episode.steps = [];
+    episode.updated_at = new Date().toISOString();
+    this.refreshExperiment(episode.experiment_id);
+    return { id: episode.id, status: episode.status, attempt: episode.attempt };
+  }
+
+  async cancelEpisode(
+    id: string,
+    options: ProductApiRequestOptions = {},
+  ): Promise<EpisodeMutationResult> {
+    await this.wait(options);
+    const episode = this.episodes.get(id);
+    if (!episode) {
+      throw new ProductApiError("Episode not found.", {
+        status: 404,
+        statusText: "Not Found",
+        code: "EPISODE_NOT_FOUND",
+      });
+    }
+    if (episode.status !== "PENDING") {
+      throw new ProductApiError(`Episode is ${episode.status}; expected PENDING.`, {
+        status: 409,
+        statusText: "Conflict",
+        code: "INVALID_EPISODE_TRANSITION",
+      });
+    }
+    episode.status = "CANCELLED";
+    episode.updated_at = new Date().toISOString();
+    this.refreshExperiment(episode.experiment_id);
+    return { id: episode.id, status: episode.status, attempt: episode.attempt ?? 1 };
   }
 }
 

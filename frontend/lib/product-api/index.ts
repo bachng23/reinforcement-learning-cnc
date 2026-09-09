@@ -39,6 +39,7 @@ export {
   ProductApiError,
   isProductApiError,
   malformedProductApiResponse,
+  productApiErrorMessage,
   productApiErrorFromPayload,
 } from "@/lib/product-api/errors";
 export {
@@ -60,6 +61,7 @@ export type {
   EpisodeDetail,
   EpisodeFailureInformation,
   EpisodeListItem,
+  EpisodeMutationResult,
   EpisodeStatus,
   EpisodeStepRecord,
   ExperimentDetail,
@@ -67,6 +69,7 @@ export type {
   ExperimentOwner,
   ExperimentStatus,
   FieldErrors,
+  GetEpisodeOptions,
   ListExperimentsParams,
   PaginatedResponse,
   PaginationMetadata,

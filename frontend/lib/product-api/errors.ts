@@ -32,6 +32,32 @@ export function isProductApiError(error: unknown): error is ProductApiError {
   return error instanceof ProductApiError;
 }
 
+/** Human-readable request feedback without hiding the backend's safe message. */
+export function productApiErrorMessage(
+  error: unknown,
+  fallback: string,
+): string {
+  if (error instanceof Error && error.name === "AuthRedirectError") {
+    return "Your session has expired. Redirecting to sign in.";
+  }
+  if (isProductApiError(error)) {
+    if (error.status === 401) {
+      return "Your session has expired. Please sign in again.";
+    }
+    if (error.status === 403) {
+      return "You are not authorized to perform this action.";
+    }
+    if (error.status === 0 || error.code === "NETWORK_ERROR") {
+      return `Network error: ${error.message}`;
+    }
+    if (error.status === 409) {
+      return `Conflict: ${error.message}`;
+    }
+    return error.message || fallback;
+  }
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
