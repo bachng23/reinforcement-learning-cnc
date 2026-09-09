@@ -63,6 +63,8 @@ const transitionData = ({ from, to, now, errorCode, errorMessage }) => {
   // A retry starts a new attempt while preserving prior attempt event rows.
   return {
     status: 'PENDING',
+    leaseToken: null,
+    leaseExpiresAt: null,
     attempt: { increment: 1 },
     queuedAt: now,
     startedAt: null,
@@ -161,6 +163,7 @@ const claimNextPendingEpisode = async ({ client = prisma, candidateLimit = 10 } 
 };
 
 module.exports = {
+  transitionData,
   TRANSITIONS,
   claimNextPendingEpisode,
   transitionEpisode,

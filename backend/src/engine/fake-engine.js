@@ -30,6 +30,9 @@ const makeRulDistribution = (risk) => {
 class FakeEngineRunner extends EngineRunner {
   constructor({ version = 'fake-fixture-v2' } = {}) {
     super();
+    if (!['development', 'test'].includes(process.env.NODE_ENV)) {
+      throw new Error('FakeEngineRunner is restricted to development/test');
+    }
     this.version = version;
   }
 

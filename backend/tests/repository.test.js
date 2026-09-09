@@ -1,105 +1,97 @@
 const { EpisodeRepository } = require('../src/worker/repository');
-
-test('atomic claim only returns an episode after conditional PENDING update wins', async () => {
-  const prisma = {
-    episode: {
-      findMany: jest.fn().mockResolvedValue([{ id: 'episode-1' }]),
-      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-      findUnique: jest.fn(),
-    },
-  };
-  await expect(new EpisodeRepository(prisma).claimNext()).resolves.toBeNull();
-  expect(prisma.episode.findUnique).not.toHaveBeenCalled();
-  expect(prisma.episode.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-    where: { id: 'episode-1', status: 'PENDING' },
-  }));
-});
-
-test('event persistence is attempt-aware, immutable, and completes last', async () => {
+const ep = { id: 'episode-1', episodeKey: 'key', policyId: 'policy-1', leaseToken: 'token', attempt: 1 };
+const events = [
+  { type: 'FleetObservation', payload: { schema_version: '2.0', observation_id: 'obs-1', step: 0 } },
+  { type: 'PolicyRecommendation', payload: { schema_version: '2.0' } },
+  { type: 'StepResult', payload: { schema_version: '2.0', step: 0, total_cost: 1, episode_terminated: true } },
+];
+function setup() {
   const calls = [];
   const tx = {
-    fleetObservation: {
-      upsert: jest.fn(async (args) => {
-        calls.push('observation');
-        return { id: 'observation-1', ...args };
-      }),
-    },
-    policyRecommendation: { upsert: jest.fn(async () => { calls.push('recommendation'); }) },
-    stepResult: { upsert: jest.fn(async () => { calls.push('result'); }) },
-    episodeSummary: { upsert: jest.fn(async () => { calls.push('summary'); }) },
-    episode: { updateMany: jest.fn(async () => { calls.push('completed'); return { count: 1 }; }) },
+    fleetObservation: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn(async () => { calls.push('observation'); return { id: 'obs' }; }) },
+    policyRecommendation: { create: jest.fn(async () => { calls.push('recommendation'); }) },
+    stepResult: { create: jest.fn(async () => { calls.push('result'); }) },
+    episodeSummary: { create: jest.fn(async () => { calls.push('summary'); }) },
+    auditLog: { create: jest.fn() },
+    episode: { updateMany: jest.fn(async () => { calls.push('guard'); return { count: 1 }; }),
+      update: jest.fn(async () => { calls.push('completed'); }) },
   };
-  const prisma = { $transaction: (callback) => callback(tx) };
-  const repo = new EpisodeRepository(prisma);
-  const episode = { id: 'episode-1', attempt: 2, policyId: 'policy-db-id' };
-  const events = [
-    {
-      type: 'FleetObservation',
-      payload: {
-        schema_version: '2.0', observation_id: 'obs-attempt-2-step-0', episode_id: 'episode-1', step: 0,
-      },
-    },
-    {
-      type: 'PolicyRecommendation',
-      payload: { schema_version: '2.0', observation_id: 'obs-attempt-2-step-0' },
-    },
-    {
-      type: 'StepResult',
-      payload: {
-        schema_version: '2.0', observation_id: 'obs-attempt-2-step-0', total_cost: 1,
-        episode_terminated: true,
-      },
-    },
-    {
-      type: 'EpisodeSummary',
-      payload: {
-        schema_version: '2.0', steps_completed: 1, total_cost: 1, failure_count: 0,
-        replacement_count: 0, waiting_steps: 0,
-      },
-    },
-  ];
-
-  await repo.persistCompleted(episode, events);
-  await repo.persistCompleted(episode, events);
-
-  expect(tx.fleetObservation.upsert).toHaveBeenCalledTimes(2);
-  expect(tx.fleetObservation.upsert.mock.calls[0][0]).toMatchObject({
-    where: { episodeId_attempt_step: { episodeId: 'episode-1', attempt: 2, step: 0 } },
-    create: { observationKey: 'obs-attempt-2-step-0', attempt: 2 },
-    update: {},
-  });
-  expect(tx.episodeSummary.upsert.mock.calls[0][0]).toMatchObject({
-    where: { episodeId_attempt: { episodeId: 'episode-1', attempt: 2 } },
-    update: {},
-  });
-  expect(calls.slice(0, 5)).toEqual(['observation', 'recommendation', 'result', 'summary', 'completed']);
+  const prisma = { $transaction: jest.fn((callback) => callback(tx)) };
+  return { tx, calls, prisma, repo: new EpisodeRepository(prisma) };
+}
+test('atomic claim loser never runs the candidate', async () => {
+  const { tx, repo } = setup();
+  tx.episode.findFirst = jest.fn().mockResolvedValue({ id: ep.id });
+  tx.episode.findUnique = jest.fn();
+  tx.episode.updateMany.mockResolvedValue({ count: 0 });
+  await expect(repo.claimNext()).resolves.toBeNull();
+  expect(tx.episode.findUnique).not.toHaveBeenCalled();
+  expect(tx.episode.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: ep.id, status: 'PENDING' } }));
 });
-
-test('stale recovery marks interrupted work failed without deleting research events', async () => {
-  const prisma = {
-    episode: { updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
-    fleetObservation: { deleteMany: jest.fn() },
-  };
-  const staleBefore = new Date('2026-01-01T00:00:00.000Z');
-  const now = new Date('2026-01-01T01:00:00.000Z');
-  await expect(new EpisodeRepository(prisma).recoverStale(staleBefore, now)).resolves.toEqual({ count: 2 });
-  expect(prisma.episode.updateMany).toHaveBeenCalledWith({
-    where: { status: 'RUNNING', updatedAt: { lt: staleBefore } },
-    data: expect.objectContaining({ status: 'FAILED', failedAt: now, errorCode: 'WORKER_STALE' }),
-  });
-  expect(prisma.fleetObservation.deleteMany).not.toHaveBeenCalled();
-});
-
-test('failure status is conditional on the worker still owning the attempt', async () => {
-  const tx = {
-    episode: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
-    auditLog: { create: jest.fn().mockResolvedValue({}) },
-  };
-  const prisma = { $transaction: (callback) => callback(tx) };
-  const error = Object.assign(new Error('engine stopped'), { code: 'ENGINE_TIMEOUT' });
-  await new EpisodeRepository(prisma).markFailed({ id: 'episode-1', attempt: 2 }, error);
+test('step records and progress are in one guarded transaction', async () => {
+  const { repo, calls, tx, prisma } = setup();
+  await repo.persistStep(ep, events);
+  expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+  expect(calls).toEqual(['guard', 'guard', 'observation', 'recommendation', 'result']);
   expect(tx.episode.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-    where: { id: 'episode-1', status: 'RUNNING', attempt: 2 },
+    where: expect.objectContaining({ leaseToken: ep.leaseToken, status: 'RUNNING', stepsCompleted: 0, leaseExpiresAt: { gt: expect.any(Date) } }),
+    data: expect.objectContaining({ stepsCompleted: 1 }),
   }));
-  expect(tx.auditLog.create).toHaveBeenCalledTimes(1);
+  expect(tx.episode.update).not.toHaveBeenCalled();
+});
+test('summary persists before COMPLETED in same transaction', async () => {
+  const { repo, calls, prisma } = setup();
+  await repo.persistSummary(ep, { payload: { schema_version: '2.0', steps_completed: 1 } });
+  expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+  expect(calls).toEqual(['guard', 'summary', 'completed']);
+});
+test('summary failure never writes COMPLETED', async () => {
+  const { repo, tx } = setup();
+  tx.episodeSummary.create.mockRejectedValue(new Error('DB failure'));
+  await expect(repo.persistSummary(ep, { payload: { steps_completed: 1 } })).rejects.toThrow('DB failure');
+  expect(tx.episode.update).not.toHaveBeenCalled();
+});
+test.each(['persistStep', 'persistSummary', 'markFailed'])('lost owner is fenced out of %s', async (method) => {
+  const { repo, tx } = setup();
+  tx.episode.updateMany.mockResolvedValue({ count: 0 });
+  const arg = method === 'persistStep' ? events : method === 'markFailed' ? new Error('fail') : { payload: { steps_completed: 1 } };
+  await expect(repo[method](ep, arg)).rejects.toMatchObject({ code: 'WORKER_LEASE_LOST' });
+  expect(tx.fleetObservation.create).not.toHaveBeenCalled();
+  expect(tx.episodeSummary.create).not.toHaveBeenCalled();
+  expect(tx.auditLog.create).not.toHaveBeenCalled();
+});
+test('stale recovery uses lease expiry and preserves progress', async () => {
+  const prisma = { episode: { updateMany: jest.fn() } };
+  const now = new Date();
+  await new EpisodeRepository(prisma).recoverStale(now);
+  const { where, data } = prisma.episode.updateMany.mock.calls[0][0];
+  expect(where.OR).toContainEqual({ leaseExpiresAt: { lte: now } });
+  expect(data.status).toBe('FAILED');
+  expect(data.stepsCompleted).toBeUndefined();
+});
+
+
+test('identical step replay is idempotent and keeps immutable records', async () => {
+  const { repo, tx } = setup();
+  tx.fleetObservation.findUnique.mockResolvedValue({ payloadJson: events[0].payload,
+    recommendation: { payloadJson: events[1].payload }, stepResult: { payloadJson: events[2].payload } });
+  await repo.persistStep(ep, events);
+  expect(tx.fleetObservation.create).not.toHaveBeenCalled();
+  expect(tx.episode.updateMany).toHaveBeenCalledTimes(1);
+});
+test('conflicting step replay fails instead of overwriting history', async () => {
+  const { repo, tx } = setup();
+  tx.fleetObservation.findUnique.mockResolvedValue({ payloadJson: { altered: true } });
+  await expect(repo.persistStep(ep, events)).rejects.toMatchObject({ code: 'ENGINE_PROTOCOL_ERROR' });
+  expect(tx.fleetObservation.create).not.toHaveBeenCalled();
+});
+test('raw engine and DB errors never enter public errorMessage or audit payload', async () => {
+  const { repo, tx } = setup();
+  await repo.markFailed(ep, Object.assign(new Error('password=secret SELECT private_data'), { code: 'P2002' }));
+  const data = tx.episode.updateMany.mock.calls[0][0].data;
+  expect(data.errorCode).toBe('ENGINE_EXECUTION_FAILED');
+  expect(data.errorMessage).not.toMatch(/secret|SELECT|private_data/);
+  expect(data.failedAt).toBeInstanceOf(Date);
+  expect(data.completedAt).toBeNull();
+  expect(JSON.stringify(tx.auditLog.create.mock.calls)).not.toMatch(/secret|SELECT|private_data/);
 });

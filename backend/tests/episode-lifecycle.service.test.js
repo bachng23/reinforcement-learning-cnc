@@ -131,6 +131,8 @@ describe('transitionEpisode', () => {
       where: { id: EPISODE_ID, status: 'FAILED' },
       data: {
         status: 'PENDING',
+        leaseToken: null,
+        leaseExpiresAt: null,
         attempt: { increment: 1 },
         queuedAt: NOW,
         startedAt: null,
