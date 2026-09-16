@@ -464,7 +464,7 @@ describe('episode status, persisted events, summary, retry, and cancellation', (
       userId: prisma.__ids.owner,
     });
     expect(rejected.response.status).toBe(409);
-    expect(rejected.json.error.code).toBe('RUNNING_CANCELLATION_UNSUPPORTED');
+    expect(rejected.json.error.code).toBe('INVALID_EPISODE_TRANSITION');
   });
 
   test('prevents another owner from reading or mutating an episode', async () => {

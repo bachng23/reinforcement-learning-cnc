@@ -48,7 +48,7 @@ fi
 log "Running Prisma generate."
 (cd "$BACKEND" && npm run prisma:generate)
 
-log "Starting backend on http://localhost:8080."
+log "Starting backend on http://localhost:5000."
 (cd "$BACKEND" && npm run dev) &
 PIDS+=($!)
 
@@ -65,7 +65,7 @@ PIDS+=($!)
 echo ""
 log "Source web stack is up:"
 echo "  Frontend: http://localhost:3000"
-echo "  Backend:  http://localhost:8080"
+echo "  Backend:  http://localhost:5000"
 echo "  Worker:   polling queued episodes"
 echo ""
 warn "Press Ctrl+C to stop backend, worker, and frontend."
