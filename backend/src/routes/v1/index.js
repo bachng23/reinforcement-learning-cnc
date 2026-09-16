@@ -13,6 +13,7 @@ router.use('/users', userRoute);
 router.use('/policies', policyRoute);
 router.use('/experiments', experimentRoute);
 router.use('/episodes', episodeRoute);
+router.use('/maintenance', require('./maintenance.route'));
 
 router.get('/openapi.yaml', (_req, res) => {
   res.type('application/yaml').sendFile(path.resolve(__dirname, '../../../openapi.yaml'));

@@ -23,6 +23,302 @@ security:
   - cookieAuth: []
   - bearerAuth: []
 paths:
+  /maintenance/decisions:
+    post:
+      tags:
+        - Maintenance
+      operationId: createMaintenanceDecision
+      summary: Open a recommendation for human review
+      description: >-
+        Requires authentication. ADMIN can access all decisions; other roles access decisions belonging to their
+        own experiments. VIEWER can only read. No operation executes machine actions. OPERATOR, ENGINEER, ADMIN
+        only. Idempotently returns the existing decision for this recommendation without resetting its status.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - recommendationId
+              properties:
+                recommendationId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Pending or existing decision
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: '#/components/schemas/MaintenanceDecision'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
+  '/maintenance/decisions/{id}/approve':
+    post:
+      tags:
+        - Maintenance
+      operationId: approveMaintenanceDecision
+      summary: approve a pending maintenance decision
+      description: >-
+        Requires authentication. ADMIN can access all decisions; other roles access decisions belonging to their
+        own experiments. VIEWER can only read. No operation executes machine actions. OPERATOR, ENGINEER, ADMIN
+        only. Only PENDING_REVIEW -> APPROVED is allowed; repeated or concurrent decisions return 409. Records
+        immutable recommendation and risk snapshots, authenticated actor and timestamp atomically with audit
+        log.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceReviewInput'
+      responses:
+        '200':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: object
+                    required:
+                      - id
+                      - status
+                      - action
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      status:
+                        const: APPROVED
+                      action:
+                        $ref: '#/components/schemas/MaintenanceDecisionAction'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
+  '/maintenance/decisions/{id}/override':
+    post:
+      tags:
+        - Maintenance
+      operationId: overrideMaintenanceDecision
+      summary: override a pending maintenance decision
+      description: >-
+        Requires authentication. ADMIN can access all decisions; other roles access decisions belonging to their
+        own experiments. VIEWER can only read. No operation executes machine actions. OPERATOR, ENGINEER, ADMIN
+        only. Only PENDING_REVIEW -> OVERRIDDEN is allowed; repeated or concurrent decisions return 409. Records
+        immutable recommendation and risk snapshots, authenticated actor and timestamp atomically with audit
+        log. A nonblank reason and replacementAction are required. The replacement must reference the same
+        observation, cover every machine exactly once and change at least one action.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceOverrideInput'
+      responses:
+        '200':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: object
+                    required:
+                      - id
+                      - status
+                      - action
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      status:
+                        const: OVERRIDDEN
+                      action:
+                        $ref: '#/components/schemas/MaintenanceDecisionAction'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
+  '/maintenance/decisions/{id}/reject':
+    post:
+      tags:
+        - Maintenance
+      operationId: rejectMaintenanceDecision
+      summary: reject a pending maintenance decision
+      description: >-
+        Requires authentication. ADMIN can access all decisions; other roles access decisions belonging to their
+        own experiments. VIEWER can only read. No operation executes machine actions. OPERATOR, ENGINEER, ADMIN
+        only. Only PENDING_REVIEW -> REJECTED is allowed; repeated or concurrent decisions return 409. Records
+        immutable recommendation and risk snapshots, authenticated actor and timestamp atomically with audit
+        log.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceReviewInput'
+      responses:
+        '200':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: object
+                    required:
+                      - id
+                      - status
+                      - action
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      status:
+                        const: REJECTED
+                      action:
+                        $ref: '#/components/schemas/MaintenanceDecisionAction'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
+  '/maintenance/decisions/{id}/history':
+    get:
+      tags:
+        - Maintenance
+      operationId: maintenanceDecisionHistory
+      summary: Read immutable decision history
+      description: >-
+        Requires authentication. ADMIN can access all decisions; other roles access decisions belonging to their
+        own experiments. VIEWER can only read. No operation executes machine actions. Actions are ordered by
+        createdAt then id. Pending decisions have an empty history.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Decision and human review history
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/MaintenanceDecision'
+                      - type: object
+                        required:
+                          - actions
+                        properties:
+                          actions:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/MaintenanceDecisionAction'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
   /policies:
     get:
       tags: [Policies]
@@ -1724,3 +2020,100 @@ components:
         waiting_steps:
           type: integer
           minimum: 0
+
+    MaintenanceReviewInput:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          description: Trimmed; must not be blank when supplied.
+    MaintenanceOverrideInput:
+      type: object
+      additionalProperties: false
+      required:
+        - reason
+        - replacementAction
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          pattern: \S
+        replacementAction:
+          $ref: '#/components/schemas/JointAction'
+    MaintenanceDecision:
+      type: object
+      required:
+        - id
+        - recommendationId
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        recommendationId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - PENDING_REVIEW
+            - APPROVED
+            - OVERRIDDEN
+            - REJECTED
+        createdAt:
+          type: string
+          format: date-time
+    MaintenanceDecisionAction:
+      type: object
+      required:
+        - id
+        - decisionId
+        - actorUserId
+        - fromStatus
+        - toStatus
+        - reason
+        - selectedAction
+        - recommendationSnapshot
+        - riskSnapshot
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        decisionId:
+          type: string
+          format: uuid
+        actorUserId:
+          type: string
+          format: uuid
+        fromStatus:
+          const: PENDING_REVIEW
+        toStatus:
+          enum:
+            - APPROVED
+            - OVERRIDDEN
+            - REJECTED
+        reason:
+          type:
+            - string
+            - 'null'
+        selectedAction:
+          anyOf:
+            - $ref: '#/components/schemas/JointAction'
+            - type: 'null'
+        recommendationSnapshot:
+          type: object
+          description: 'Recommendation ID, policy ID, schemaVersion and full payload captured at review time.'
+        riskSnapshot:
+          type: object
+          description: >-
+            Full observation (including RUL distributions) and environmentConfig (including risk objective and
+            costs) captured at review time.
+        createdAt:
+          type: string
+          format: date-time
