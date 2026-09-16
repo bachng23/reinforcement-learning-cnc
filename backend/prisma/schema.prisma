@@ -124,6 +124,7 @@ model EpisodeSummary {
 }
 
 model PolicyRecommendation {
+  maintenanceDecision MaintenanceDecision?
   id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   observationId String           @unique @map("observation_id") @db.Uuid
   policyId      String           @map("policy_id") @db.Uuid
@@ -151,6 +152,7 @@ model StepResult {
 }
 
 model User {
+  maintenanceActions MaintenanceDecisionAction[]
   id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username     String       @unique
   fullName     String?      @map("full_name")
@@ -208,9 +210,45 @@ enum UserRole {
 }
 
 enum EntityType {
+  MAINTENANCE_DECISION
   AUTH
   EXPERIMENT
   POLICY
   EPISODE
   SYSTEM
+}
+
+enum MaintenanceDecisionStatus {
+  PENDING_REVIEW
+  APPROVED
+  OVERRIDDEN
+  REJECTED
+}
+
+model MaintenanceDecision {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recommendationId String @unique @map("recommendation_id") @db.Uuid
+  status MaintenanceDecisionStatus @default(PENDING_REVIEW)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  recommendation PolicyRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Restrict)
+  actions MaintenanceDecisionAction[]
+
+  @@map("maintenance_decisions")
+}
+
+model MaintenanceDecisionAction {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  decisionId String @unique @map("decision_id") @db.Uuid
+  actorUserId String @map("actor_user_id") @db.Uuid
+  fromStatus MaintenanceDecisionStatus @default(PENDING_REVIEW) @map("from_status")
+  toStatus MaintenanceDecisionStatus @map("to_status")
+  reason String?
+  selectedAction Json? @map("selected_action")
+  recommendationSnapshot Json @map("recommendation_snapshot")
+  riskSnapshot Json @map("risk_snapshot")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  decision MaintenanceDecision @relation(fields: [decisionId], references: [id], onDelete: Restrict)
+  actor User @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@map("maintenance_decision_actions")
 }
