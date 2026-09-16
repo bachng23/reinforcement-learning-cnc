@@ -1,11 +1,10 @@
 const { PrismaClient } = require('@prisma/client');
 const { randomUUID } = require('node:crypto');
-const { decide } = require('../src/services/maintenance-decision.service');
-const describeDb = process.env.MAINTENANCE_TEST_DATABASE_URL ? describe : describe.skip;
+const { decide } = require('../../src/services/maintenance-decision.service');
 
-describeDb('Maintenance PostgreSQL integration (dedicated migrated database)', () => {
+describe('Maintenance PostgreSQL integration', () => {
   let db;
-  beforeAll(() => { db = new PrismaClient({ datasources: { db: { url: process.env.MAINTENANCE_TEST_DATABASE_URL } } }); });
+  beforeAll(() => { db = new PrismaClient(); });
   afterAll(async () => { await db.$disconnect(); });
   test('atomic review, audit, immutable snapshots, database transition guards and rollback', async () => {
     const rollback = new Error('rollback test fixtures');

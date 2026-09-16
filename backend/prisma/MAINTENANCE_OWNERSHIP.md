@@ -22,6 +22,7 @@ matching human action at commit. Restrict FKs retain source records and actors.
 Concurrent reviews return 409 and cannot create a second action.
 
 Run `npm run prisma:generate`, then deploy migrations to the intended database.
-Run `npm test -- --runInBand`. PostgreSQL integration tests additionally require
-MAINTENANCE_TEST_DATABASE_URL pointing to a dedicated migrated test database.
-Those tests run inside a rolled-back outer transaction, including immutable records.
+Run `npm test -- --runInBand`. Run `TEST_DATABASE_URL=<dedicated PostgreSQL database>`
+`npm run test:integration` to create an isolated schema, deploy all migrations, and
+verify the database guards. The maintenance test rolls back its own fixtures,
+including immutable records.
