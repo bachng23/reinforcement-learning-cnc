@@ -1,5 +1,13 @@
 # CNC Research Platform Backend
 
+## Maintenance decision queue
+
+`GET /api/v1/maintenance/decisions?experiment=<UUID>` returns one candidate per machine in each persisted observation/recommendation/result triple from the episode's current attempt. The response shape is fixed in [the frontend mock](examples/maintenance-decisions.list.json) and described in [OpenAPI](openapi.yaml). Query filters are `status`, `severity`, `experiment`, and exact `machine`; `page` starts at 1 and `limit` defaults to 20 (maximum 100). `GET /api/v1/maintenance/decisions/:id` uses the candidate id from the list, formed as `<recommendation UUID>~<machine id>`.
+
+Priority is severity first, then estimated cost of waiting one simulator step, then newest recommendation. Severity and rationale are derived from the policy action and persisted observation because the policy contract has no free-text rationale. `predictedCost` is the policy's estimate for the whole joint action. `costOfDelay.amount` is a transparent exposure proxy: probability of failure within one step multiplied by the configured failure cost. It is not a counterfactual forecast. `result` is a simulator outcome, not proof that maintenance happened. `decisionId` is the separate UUID used by the existing human review endpoints; its status applies to the entire joint recommendation.
+
+The initial queue computes severity and filtering from accessible persisted events in the API process, so very large histories will need a database projection before production-scale use.
+
 ## Durable episode worker
 
 The worker conditionally claims a PENDING episode with a unique lease token. Every write checks that token, RUNNING status and an unexpired lease. A step is validated in the order FleetObservation, PolicyRecommendation, StepResult, then all three records and stepsCompleted commit in one transaction. The next event is requested only after that transaction finishes. Memory use is limited to one step plus a summary, independent of episode length.
