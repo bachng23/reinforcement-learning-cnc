@@ -6,6 +6,7 @@ Next.js frontend for the authenticated CNC experiment workflow. The UI includes:
 - complete CNC contract v2 create form and Product API policy selection;
 - experiment detail with idempotent run, mixed episode states, and polling;
 - episode detail with Retry for `FAILED`, Cancel for `PENDING`, current-attempt metadata, historical-attempt switching, partial-result handling, and a direct RUL-distribution visualization;
+- Decision Center with a recommendation queue, experiment/machine/severity/status filters, observation and policy context, audit history, and approve/reject/override review modals;
 - a typed real Product API adapter and an in-memory mock adapter using the same TypeScript models.
 
 The frontend only presents returned research data. It does not predict RUL, derive a point estimate, calculate cost/risk/CVaR/failure probability, choose replacement actions, or reconstruct missing engine output.
@@ -82,3 +83,15 @@ Manual workflow:
 8. Repeat at desktop and mobile widths; tables and RUL plots should scroll within their own containers rather than overlap the page.
 
 The default example configuration uses the real Product API. Set `NEXT_PUBLIC_PRODUCT_API_MODE=mock` only when working without the backend.
+
+## Decision Center contract and limitations
+
+Open `/decisions` after signing in. In mock mode, the page uses in-memory sample-shaped CNC v2 events from `lib/product-api/fixtures.ts` and simulated Maintenance API reviews. In real mode, it reads current-attempt observation and recommendation events from the Product API, then uses these Maintenance API endpoints only when a reviewer confirms an action:
+
+- `POST /api/v1/maintenance/decisions` (idempotently open a review)
+- `POST /api/v1/maintenance/decisions/:id/approve`
+- `POST /api/v1/maintenance/decisions/:id/reject`
+- `POST /api/v1/maintenance/decisions/:id/override`
+- `GET /api/v1/maintenance/decisions/:id/history`
+
+The current contract has no read-only decision list or lookup-by-recommendation endpoint. Consequently, the queue is assembled from persisted recommendations, and existing review statuses/history can only be recovered for decision IDs opened in the same browser session. A row marked "Not opened" may already have a decision created elsewhere. Opening a review is never triggered by page load, refresh, or row selection. The backend also does not provide severity, failure risk, or defer consequence in the current CNC v2 payload; real mode displays "Not provided" for those fields. The policy's estimated expected cost is shown as a *joint fleet estimate*, not a computed per-machine cost. No mock values are injected in real mode.
