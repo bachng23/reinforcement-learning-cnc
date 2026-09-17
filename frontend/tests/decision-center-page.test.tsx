@@ -42,7 +42,7 @@ describe("DecisionCenterPage", () => {
       .toBeInTheDocument();
     expect(screen.getByText("Returned RUL distribution · machine-01"))
       .toBeInTheDocument();
-    expect(screen.getByText("Review not opened here"))
+    expect(screen.getByText("Review not opened"))
       .toBeInTheDocument();
   });
 

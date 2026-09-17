@@ -86,7 +86,30 @@ export class MockDecisionApiClient implements DecisionApiClient {
       decisionId: decision.id,
       status: decision.status as DecisionStatus,
     }]));
-    return clone(fixtureRows(known));
+    return clone(fixtureRows(known).map((row) => ({
+      ...row,
+      status: row.status === "NOT_OPENED" ? "PENDING_REVIEW" : row.status,
+      severity: row.severity ?? "MEDIUM",
+      failureRisk: row.failureRisk ?? 0.1,
+      predictedExpectedCost: row.predictedCost ?? null,
+      predictedCvarCost: null,
+      costOfDelay: null,
+    })));
+  }
+
+  async getContext(item: DecisionQueueItem, options: ProductApiRequestOptions = {}) {
+    this.check(options);
+    const row = fixtureRows(new Map()).find((value) => value.recommendationId === item.recommendationId);
+    if (!row?.observation || !row.recommendation || !row.environmentConfig || !row.experimentName || !row.observationKey) {
+      throw new ProductApiError("Decision context was not found.", { status: 404, code: "DECISION_CONTEXT_NOT_FOUND" });
+    }
+    return clone({
+      experimentName: row.experimentName,
+      observationKey: row.observationKey,
+      observation: row.observation,
+      recommendation: row.recommendation,
+      environmentConfig: row.environmentConfig,
+    });
   }
 
   async openReview(recommendationId: string, options: ProductApiRequestOptions = {}): Promise<MaintenanceDecision> {
@@ -128,12 +151,15 @@ export class MockDecisionApiClient implements DecisionApiClient {
       throw new ProductApiError("Decision is no longer PENDING_REVIEW.", { status: 409, code: "INVALID_DECISION_TRANSITION" });
     }
     const row = fixtureRows(new Map()).find((value) => value.recommendationId === decision.recommendationId);
-    if (!row) throw new ProductApiError("Recommendation was not found.", { status: 404 });
+    if (!row?.observation || !row.recommendation || !row.environmentConfig || !row.observationKey) {
+      throw new ProductApiError("Recommendation was not found.", { status: 404 });
+    }
     const replacement = "replacementAction" in input ? input.replacementAction : undefined;
+    const originalActions = row.recommendation.actions.actions;
     if (action === "override") {
       const expected = row.observation.machines.map((machine) => machine.machine_id).sort();
       const supplied = replacement?.actions.map((machine) => machine.machine_id).sort();
-      const changed = replacement?.actions.some((machine) => row.recommendation.actions.actions.find(
+      const changed = replacement?.actions.some((machine) => originalActions.find(
         (original) => original.machine_id === machine.machine_id && original.action !== machine.action,
       ));
       if (!input.reason?.trim() || !replacement || replacement.observation_id !== row.observationKey ||
@@ -153,7 +179,7 @@ export class MockDecisionApiClient implements DecisionApiClient {
       toStatus,
       reason: input.reason?.trim() || null,
       selectedAction: action === "reject" ? null : clone((replacement ?? row.recommendation.actions) as JointAction),
-      recommendationSnapshot: { id: row.recommendationId, policyId: row.policyId, payload: clone(row.recommendation) },
+      recommendationSnapshot: { id: row.recommendationId, policyId: row.recommendation.policy_id, payload: clone(row.recommendation) },
       riskSnapshot: { observation: clone(row.observation), environmentConfig: clone(row.environmentConfig) },
       createdAt: new Date().toISOString(),
     };

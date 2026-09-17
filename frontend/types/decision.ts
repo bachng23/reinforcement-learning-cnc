@@ -10,24 +10,46 @@ export interface DecisionQueueItem {
   recommendationId: string;
   decisionId?: string;
   experimentId: string;
-  experimentName: string;
   episodeId: string;
+  observationId?: string;
   attempt: number;
   step: number;
   machineId: string;
   toolId?: string;
-  recommendedAction: ToolAction;
+  jobId?: string;
+  recommendedAction: ToolAction | "REPLACE_NOW" | "SCHEDULE_REPLACEMENT" | "DEFER";
   severity?: string;
   failureRisk?: number;
+  predictedRulSteps?: number | null;
+  observedWearUm?: number;
+  posteriorMedianWearUm?: number;
+  failureThresholdUm?: number;
+  loadClass?: "LIGHT" | "NOMINAL" | "HEAVY";
+  sparesAvailable?: number;
+  inventoryCapacity?: number;
+  predictedExpectedCost?: number | null;
+  predictedCvarCost?: number | null;
+  costOfDelay?: number | null;
+  rationale?: string;
+  result?: { outcome: string; incurredCost: number };
+  policyId?: string;
   predictedCost?: number;
   deferConsequence?: string;
   status: DecisionStatus;
-  policyId: string;
+  createdAt?: string;
+  experimentName?: string;
+  observationKey?: string;
+  observation?: FleetObservation;
+  recommendation?: PolicyRecommendation;
+  environmentConfig?: EnvironmentConfig;
+}
+
+export interface DecisionContext {
+  experimentName: string;
   observationKey: string;
   observation: FleetObservation;
   recommendation: PolicyRecommendation;
   environmentConfig: EnvironmentConfig;
-  createdAt?: string;
 }
 
 export interface MaintenanceDecision {
@@ -58,6 +80,7 @@ export type ReviewInput = { reason?: string } | { reason: string; replacementAct
 
 export interface DecisionApiClient {
   listQueue(options?: ProductApiRequestOptions): Promise<DecisionQueueItem[]>;
+  getContext(item: DecisionQueueItem, options?: ProductApiRequestOptions): Promise<DecisionContext>;
   openReview(recommendationId: string, options?: ProductApiRequestOptions): Promise<MaintenanceDecision>;
   getHistory(decisionId: string, options?: ProductApiRequestOptions): Promise<DecisionHistory>;
   submitReview(

@@ -11,7 +11,9 @@ import { getUserFromToken } from "@/lib/auth";
 import { getDecisionApiClient } from "@/lib/decision-api";
 import { isProductApiError, productApiErrorMessage } from "@/lib/product-api/errors";
 import type { JointAction, ToolAction } from "@/types/cnc";
-import type { DecisionApiClient, DecisionHistory, DecisionQueueItem, DecisionStatus, ReviewAction } from "@/types/decision";
+import type { DecisionApiClient, DecisionContext, DecisionHistory, DecisionQueueItem, DecisionStatus, ReviewAction } from "@/types/decision";
+
+type DecisionDetailItem = DecisionQueueItem & DecisionContext;
 
 const STATUS_LABELS: Record<DecisionStatus, string> = {
   NOT_OPENED: "Not opened",
@@ -55,7 +57,7 @@ function ReviewModal({
   onClose,
   onSubmit,
 }: {
-  item: DecisionQueueItem;
+  item: DecisionDetailItem;
   action: ReviewAction;
   busy: boolean;
   error: string;
@@ -123,7 +125,7 @@ function ReviewModal({
 }
 
 function Detail({ item, history, loading, error, canReview, onRetryHistory, onAction }: {
-  item: DecisionQueueItem;
+  item: DecisionDetailItem;
   history: DecisionHistory | null;
   loading: boolean;
   error: string;
@@ -135,7 +137,7 @@ function Detail({ item, history, loading, error, canReview, onRetryHistory, onAc
   const tool = machine?.tool_state;
   const risk = item.environmentConfig.risk;
   const inventory = item.observation.inventory;
-  const isPending = item.status === "NOT_OPENED" || item.status === "PENDING_REVIEW";
+  const isPending = item.status === "PENDING_REVIEW";
 
   return (
     <div className="space-y-5" aria-label="Decision detail">
@@ -165,10 +167,10 @@ function Detail({ item, history, loading, error, canReview, onRetryHistory, onAc
         <h3 id="policy-heading" className="text-base font-semibold">Policy recommendation and defer consequence</h3>
         <dl className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Recommended action" value={item.recommendedAction} />
-          <Field label="Policy ID" value={item.policyId} />
-          <Field label="Policy estimated expected cost (joint)" value={item.recommendation.estimated_expected_cost} />
-          <Field label="Policy estimated CVaR cost (joint)" value={item.recommendation.estimated_cvar_cost} />
-          <Field label="Consequence if deferred" value={item.deferConsequence} />
+          <Field label="Policy ID" value={item.recommendation.policy_id} />
+          <Field label="Policy estimated expected cost (joint)" value={item.predictedExpectedCost} />
+          <Field label="Policy estimated CVaR cost (joint)" value={item.predictedCvarCost} />
+          <Field label="One-step delay exposure" value={item.costOfDelay} />
           <Field label="Severity" value={item.severity} />
         </dl>
         <p className="text-xs text-[var(--color-ash-gray)]">Cost estimates apply to the policy&apos;s joint fleet recommendation; they are not per-machine or recalculated values.</p>
@@ -179,7 +181,7 @@ function Detail({ item, history, loading, error, canReview, onRetryHistory, onAc
         <h3 id="history-heading" className="text-base font-semibold">Review history / audit trail</h3>
         {loading ? <AsyncState kind="loading" compact title="Loading decision history" /> : null}
         {error ? <AsyncState kind="error" compact description={error} onRetry={onRetryHistory} /> : null}
-        {!loading && !error && !item.decisionId ? <AsyncState kind="empty" compact title="Review not opened here" description="The backend does not provide a list endpoint for finding an existing decision by recommendation. History becomes available after a review is opened in this browser." /> : null}
+        {!loading && !error && !item.decisionId ? <AsyncState kind="empty" compact title="Review not opened" description="No human review has been created for this recommendation." /> : null}
         {!loading && !error && item.decisionId && history?.actions.length === 0 ? <AsyncState kind="empty" compact title="No actions recorded" description="This decision is pending human review." /> : null}
         {!loading && !error && history?.actions.length ? <ol className="space-y-2">{history.actions.map((entry) => <li key={entry.id} className="rounded-md border border-[var(--color-stone-border)] bg-white p-3 text-sm"><div className="flex flex-wrap justify-between gap-2"><strong>{entry.fromStatus} → {entry.toStatus}</strong><time dateTime={entry.createdAt} className="text-xs text-[var(--color-ash-gray)]">{date(entry.createdAt)}</time></div><p className="mt-1 text-xs text-[var(--color-ash-gray)]">Actor: {entry.actorUserId}</p><p className="mt-1">Reason: {display(entry.reason)}</p><details className="mt-2 text-xs"><summary className="cursor-pointer font-medium">Recorded action and snapshots</summary><pre className="mt-2 max-h-56 overflow-auto rounded-md bg-stone-50 p-2">{JSON.stringify({ selectedAction: entry.selectedAction, recommendationSnapshot: entry.recommendationSnapshot, riskSnapshot: entry.riskSnapshot }, null, 2)}</pre></details></li>)}</ol> : null}
       </section>
@@ -202,6 +204,9 @@ export function DecisionCenterPage({ api, canReview: canReviewOverride }: { api?
   const [severityFilter, setSeverityFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [context, setContext] = useState<DecisionContext | null>(null);
+  const [contextError, setContextError] = useState("");
+  const [contextLoading, setContextLoading] = useState(false);
   const [history, setHistory] = useState<DecisionHistory | null>(null);
   const [historyError, setHistoryError] = useState("");
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -235,6 +240,26 @@ export function DecisionCenterPage({ api, canReview: canReviewOverride }: { api?
   }, [client, revision]);
 
   const selected = queue?.find((item) => item.rowId === selectedId) ?? null;
+  useEffect(() => {
+    if (!selected) {
+      setContext(null);
+      setContextError("");
+      setContextLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    setContext(null);
+    setContextError("");
+    setContextLoading(true);
+    void client.getContext(selected, { signal: controller.signal }).then((result) => {
+      if (!controller.signal.aborted) setContext(result);
+    }).catch((reason: unknown) => {
+      if (!controller.signal.aborted) setContextError(productApiErrorMessage(reason, "Decision context could not be loaded."));
+    }).finally(() => {
+      if (!controller.signal.aborted) setContextLoading(false);
+    });
+    return () => controller.abort();
+  }, [client, selected]);
   useEffect(() => {
     if (!selected?.decisionId) {
       setHistory(null);
@@ -306,7 +331,7 @@ export function DecisionCenterPage({ api, canReview: canReviewOverride }: { api?
     <AppShell title="Decision Center">
       <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <PageHeader title="Decision Center" eyebrow="Human-in-the-loop review" description="Prioritized machine recommendations from persisted experiment events. Reviews are recorded by the Maintenance API; no action is sent to a machine." actions={<button type="button" onClick={() => setRevision((value) => value + 1)} disabled={refreshing} className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[var(--color-stone-border)] bg-white px-4 text-sm font-medium disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh queue</button>} />
-        <div className="rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900" role="note">The current backend has no read-only decision-list endpoint. This queue is composed from current-attempt recommendations; review status/history can be recovered only for decisions opened in this browser session. Missing severity, failure risk and defer consequence are shown as not provided.</div>
+        <div className="rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900" role="note">Priority, risk, cost exposure, and review status are returned by the Maintenance API. Opening a row loads its source context for review without recalculating the recommendation in the browser.</div>
         {!queue && refreshing ? <AsyncState kind="loading" title="Loading decision queue" /> : null}
         {!queue && !refreshing && error ? <AsyncState kind="error" title="Decision queue unavailable" description={error} onRetry={() => setRevision((value) => value + 1)} /> : null}
         {queue ? <>
@@ -321,13 +346,13 @@ export function DecisionCenterPage({ api, canReview: canReviewOverride }: { api?
             </div>
           </section>
           <section aria-label="Priority decision queue" className="rounded-lg border border-[var(--color-stone-border)] bg-white">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-stone-border)] p-4"><div><h2 className="text-base font-semibold">Priority queue</h2><p className="text-xs text-[var(--color-ash-gray)]">{filtered.length} of {queue.length} machine recommendations · sorted by returned severity, risk and cost</p></div><ClipboardCheck className="h-5 w-5 text-[var(--color-chartwell-blue)]" /></div>
-            {filtered.length === 0 ? <AsyncState kind="empty" compact title={queue.length ? "No matching decisions" : "No recommendations returned"} description={queue.length ? "Adjust filters to see more rows." : "No current-attempt recommendation events are available from the Product API."} className="m-4 w-auto" /> : <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-sm"><thead className="bg-[var(--color-canvas-fog)] text-xs uppercase tracking-wide text-[var(--color-ash-gray)]"><tr><th className="px-4 py-3">Severity</th><th className="px-4 py-3">Machine / tool</th><th className="px-4 py-3">Recommended action</th><th className="px-4 py-3">Failure risk</th><th className="px-4 py-3">Predicted cost</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Detail</th></tr></thead><tbody className="divide-y divide-[var(--color-stone-border)]">{filtered.map((item) => <tr key={item.rowId} tabIndex={0} onClick={() => { setSelectedId(item.rowId); setHistory(null); setHistoryError(""); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedId(item.rowId); setHistory(null); setHistoryError(""); } }} aria-label={`Open decision detail for ${item.machineId} at step ${item.step}`} className={`cursor-pointer focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500 ${selectedId === item.rowId ? "bg-sky-50" : "hover:bg-stone-50"}`}><td className="px-4 py-3 font-semibold">{display(item.severity)}</td><td className="px-4 py-3"><div className="font-mono font-semibold">{item.machineId}</div><div className="font-mono text-xs text-[var(--color-ash-gray)]">{display(item.toolId)}</div></td><td className="px-4 py-3 font-mono">{item.recommendedAction}</td><td className="px-4 py-3">{display(item.failureRisk)}</td><td className="px-4 py-3">{display(item.predictedCost)}</td><td className="px-4 py-3"><Status value={item.status} /></td><td className="px-4 py-3"><button type="button" onClick={() => { setSelectedId(item.rowId); setHistory(null); setHistoryError(""); }} aria-label={`Open decision detail for ${item.machineId} at step ${item.step}`} className="inline-flex items-center gap-1 text-sm font-semibold text-sky-700 hover:underline">View <ChevronRight className="h-4 w-4" /></button></td></tr>)}</tbody></table></div>}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-stone-border)] p-4"><div><h2 className="text-base font-semibold">Priority queue</h2><p className="text-xs text-[var(--color-ash-gray)]">{filtered.length} of {queue.length} machine recommendations · sorted by backend severity and one-step delay exposure</p></div><ClipboardCheck className="h-5 w-5 text-[var(--color-chartwell-blue)]" /></div>
+            {filtered.length === 0 ? <AsyncState kind="empty" compact title={queue.length ? "No matching decisions" : "No recommendations returned"} description={queue.length ? "Adjust filters to see more rows." : "No current-attempt recommendation events are available from the Maintenance API."} className="m-4 w-auto" /> : <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-sm"><thead className="bg-[var(--color-canvas-fog)] text-xs uppercase tracking-wide text-[var(--color-ash-gray)]"><tr><th className="px-4 py-3">Severity</th><th className="px-4 py-3">Machine / tool</th><th className="px-4 py-3">Recommended action</th><th className="px-4 py-3">Failure risk</th><th className="px-4 py-3">Predicted cost</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Detail</th></tr></thead><tbody className="divide-y divide-[var(--color-stone-border)]">{filtered.map((item) => <tr key={item.rowId} tabIndex={0} onClick={() => { setSelectedId(item.rowId); setHistory(null); setHistoryError(""); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedId(item.rowId); setHistory(null); setHistoryError(""); } }} aria-label={`Open decision detail for ${item.machineId} at step ${item.step}`} className={`cursor-pointer focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500 ${selectedId === item.rowId ? "bg-sky-50" : "hover:bg-stone-50"}`}><td className="px-4 py-3 font-semibold">{display(item.severity)}</td><td className="px-4 py-3"><div className="font-mono font-semibold">{item.machineId}</div><div className="font-mono text-xs text-[var(--color-ash-gray)]">{display(item.toolId)}</div></td><td className="px-4 py-3 font-mono">{item.recommendedAction}</td><td className="px-4 py-3">{display(item.failureRisk)}</td><td className="px-4 py-3">{display(item.predictedExpectedCost)}</td><td className="px-4 py-3"><Status value={item.status} /></td><td className="px-4 py-3"><button type="button" onClick={() => { setSelectedId(item.rowId); setHistory(null); setHistoryError(""); }} aria-label={`Open decision detail for ${item.machineId} at step ${item.step}`} className="inline-flex items-center gap-1 text-sm font-semibold text-sky-700 hover:underline">View <ChevronRight className="h-4 w-4" /></button></td></tr>)}</tbody></table></div>}
           </section>
-          {selected ? <section className="rounded-lg border border-[var(--color-stone-border)] bg-white p-4 sm:p-6" id="decision-detail"><Detail item={selected} history={history} loading={historyLoading} error={historyError} canReview={canReview} onRetryHistory={() => setHistoryRevision((value) => value + 1)} onAction={(action) => { setSubmitError(""); setModal(action); }} /></section> : null}
+          {selected ? <section className="rounded-lg border border-[var(--color-stone-border)] bg-white p-4 sm:p-6" id="decision-detail">{contextLoading ? <AsyncState kind="loading" compact title="Loading decision context" /> : null}{contextError ? <AsyncState kind="error" compact description={contextError} onRetry={() => setSelectedId(null)} /> : null}{context ? <Detail item={{ ...selected, ...context }} history={history} loading={historyLoading} error={historyError} canReview={canReview} onRetryHistory={() => setHistoryRevision((value) => value + 1)} onAction={(action) => { setSubmitError(""); setModal(action); }} /> : null}</section> : null}
         </> : null}
       </main>
-      {selected && modal ? <ReviewModal key={`${selected.rowId}:${modal}`} item={selected} action={modal} busy={submitting} error={submitError} onClose={() => { if (!submitting) setModal(null); }} onSubmit={(reason, replacementAction) => void submit(reason, replacementAction)} /> : null}
+      {selected && context && modal ? <ReviewModal key={`${selected.rowId}:${modal}`} item={{ ...selected, ...context }} action={modal} busy={submitting} error={submitError} onClose={() => { if (!submitting) setModal(null); }} onSubmit={(reason, replacementAction) => void submit(reason, replacementAction)} /> : null}
     </AppShell>
   );
 }

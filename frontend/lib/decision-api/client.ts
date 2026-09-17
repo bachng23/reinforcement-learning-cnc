@@ -1,12 +1,11 @@
 import { AuthRedirectError, authFetch, endpoint } from "@/lib/auth";
-import { rowsFromEvents, record, sortDecisionQueue, text } from "@/lib/decision-api/normalize";
+import { record, text } from "@/lib/decision-api/normalize";
 import { ProductApiError, isProductApiError, malformedProductApiResponse, productApiErrorFromPayload } from "@/lib/product-api/errors";
 import { createHttpProductApiClient } from "@/lib/product-api/client";
-import type { DecisionApiClient, DecisionHistory, DecisionQueueItem, DecisionStatus, MaintenanceDecision, MaintenanceDecisionAction, ReviewAction, ReviewInput } from "@/types/decision";
+import type { DecisionApiClient, DecisionContext, DecisionHistory, DecisionQueueItem, MaintenanceDecision, MaintenanceDecisionAction, ReviewAction, ReviewInput } from "@/types/decision";
 import type { ProductApiClient, ProductApiRequestOptions } from "@/types/product-api";
 
 type AuthFetcher = typeof authFetch;
-const STORAGE_KEY = "cnc-decision-review-ids-v1";
 const FINAL_STATUSES: ReadonlySet<string> = new Set(["APPROVED", "REJECTED", "OVERRIDDEN"]);
 
 function dataRecord(payload: unknown, label: string): Record<string, unknown> {
@@ -24,6 +23,60 @@ function dataList(payload: unknown, label: string): { items: unknown[]; totalPag
   return {
     items: payload.data,
     totalPages: typeof pages === "number" && Number.isInteger(pages) ? Math.max(1, pages) : 1,
+  };
+}
+
+function numberValue(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function candidateFrom(value: unknown): DecisionQueueItem {
+  if (!record(value) || !record(value.source) || !record(value.risk) || !record(value.resources) ||
+    !record(value.predictedCost) || !record(value.costOfDelay) || !record(value.result) ||
+    !text(value.id) || !text(value.machineId) || !text(value.recommendedAction) || !text(value.status) ||
+    !text(value.source.experimentId) || !text(value.source.episodeId) || !text(value.source.observationId) ||
+    !text(value.source.recommendationId) || typeof value.source.attempt !== "number" || typeof value.source.step !== "number" ||
+    typeof value.risk.failureProbabilityNextStep !== "number" || typeof value.risk.observedWearUm !== "number" ||
+    typeof value.risk.posteriorMedianWearUm !== "number" || typeof value.risk.failureThresholdUm !== "number" ||
+    typeof value.resources.sparesAvailable !== "number" || typeof value.resources.inventoryCapacity !== "number" ||
+    typeof value.result.outcome !== "string" || typeof value.result.incurredCost !== "number") {
+    throw malformedProductApiResponse("Maintenance API returned a malformed queue candidate.");
+  }
+  if (!["PENDING_REVIEW", "APPROVED", "REJECTED", "OVERRIDDEN"].includes(String(value.status)) ||
+    !["REPLACE_NOW", "SCHEDULE_REPLACEMENT", "DEFER"].includes(String(value.recommendedAction)) ||
+    !["CRITICAL", "HIGH", "MEDIUM", "LOW"].includes(String(value.severity)) ||
+    !record(value.risk.condition) || !["LIGHT", "NOMINAL", "HEAVY"].includes(String(value.risk.condition.loadClass))) {
+    throw malformedProductApiResponse("Maintenance API returned an invalid queue candidate.");
+  }
+  return {
+    rowId: value.id as string,
+    recommendationId: value.source.recommendationId as string,
+    ...(text(value.decisionId) ? { decisionId: text(value.decisionId) } : {}),
+    experimentId: value.source.experimentId as string,
+    episodeId: value.source.episodeId as string,
+    observationId: value.source.observationId as string,
+    attempt: value.source.attempt as number,
+    step: value.source.step as number,
+    machineId: value.machineId as string,
+    ...(text(value.toolId) ? { toolId: text(value.toolId) } : {}),
+    ...(text(value.jobId) ? { jobId: text(value.jobId) } : {}),
+    recommendedAction: value.recommendedAction as DecisionQueueItem["recommendedAction"],
+    severity: value.severity as DecisionQueueItem["severity"],
+    failureRisk: value.risk.failureProbabilityNextStep as number,
+    predictedRulSteps: numberValue(value.risk.predictedRulSteps),
+    observedWearUm: value.risk.observedWearUm as number,
+    posteriorMedianWearUm: value.risk.posteriorMedianWearUm as number,
+    failureThresholdUm: value.risk.failureThresholdUm as number,
+    loadClass: value.risk.condition.loadClass as DecisionQueueItem["loadClass"],
+    sparesAvailable: value.resources.sparesAvailable as number,
+    inventoryCapacity: value.resources.inventoryCapacity as number,
+    predictedExpectedCost: numberValue(value.predictedCost.expected),
+    predictedCvarCost: numberValue(value.predictedCost.cvar),
+    costOfDelay: numberValue(value.costOfDelay.amount),
+    rationale: text(value.rationale) ?? "Not provided",
+    result: { outcome: value.result.outcome, incurredCost: value.result.incurredCost as number },
+    status: value.status as DecisionQueueItem["status"],
+    ...(text(value.createdAt) ? { createdAt: text(value.createdAt) } : {}),
   };
 }
 
@@ -61,51 +114,11 @@ function actionFrom(value: unknown): MaintenanceDecisionAction {
   };
 }
 
-async function batches<T, R>(items: T[], size: number, worker: (item: T) => Promise<R>): Promise<R[]> {
-  const output: R[] = [];
-  for (let index = 0; index < items.length; index += size) {
-    output.push(...await Promise.all(items.slice(index, index + size).map(worker)));
-  }
-  return output;
-}
-
-/** Read-only queue composition until the backend exposes a list-decisions endpoint. */
 export class HttpDecisionApiClient implements DecisionApiClient {
-  private readonly known = new Map<string, { decisionId: string; status: DecisionStatus }>();
-
   constructor(
     private readonly fetcher: AuthFetcher = authFetch,
     private readonly productApi: ProductApiClient = createHttpProductApiClient(fetcher),
-  ) {
-    if (typeof window !== "undefined") {
-      try {
-        const saved: unknown = JSON.parse(window.sessionStorage.getItem(STORAGE_KEY) ?? "{}");
-        if (record(saved)) {
-          for (const [recommendationId, decisionId] of Object.entries(saved)) {
-            if (text(recommendationId) && text(decisionId)) {
-              this.known.set(recommendationId, { decisionId: text(decisionId)!, status: "PENDING_REVIEW" });
-            }
-          }
-        }
-      } catch { /* Storage may be unavailable; the API remains usable. */ }
-    }
-  }
-
-  private remember(decision: MaintenanceDecision): void {
-    this.known.set(decision.recommendationId, {
-      decisionId: decision.id,
-      status: decision.status,
-    });
-    if (typeof window === "undefined") return;
-    try {
-      window.sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(Object.fromEntries(
-          [...this.known].map(([recommendationId, value]) => [recommendationId, value.decisionId]),
-        )),
-      );
-    } catch { /* Browsers can disable session storage. */ }
-  }
+  ) {}
 
   private async request(path: string, init: RequestInit): Promise<unknown> {
     let response: Response;
@@ -157,47 +170,41 @@ export class HttpDecisionApiClient implements DecisionApiClient {
   }
 
   async listQueue(options: ProductApiRequestOptions = {}): Promise<DecisionQueueItem[]> {
-    // Only previously opened IDs can be recovered. The backend has no read-only list endpoint.
-    await batches([...this.known.values()], 4, async ({ decisionId }) => {
-      try {
-        await this.getHistory(decisionId, options);
-      } catch (error) {
-        if (!isProductApiError(error) || error.status !== 404) throw error;
-      }
-    });
-
-    const experiments = [];
+    const items: DecisionQueueItem[] = [];
     let page = 1;
     let totalPages = 1;
     do {
-      const response = await this.productApi.listExperiments({ page, pageSize: 100 }, options);
-      experiments.push(...response.items);
-      totalPages = response.total_pages;
+      const payload = await this.request(`/api/v1/maintenance/decisions?page=${page}&limit=100`, {
+        method: "GET",
+        signal: options.signal,
+      });
+      const batch = dataList(payload, "decision queue");
+      items.push(...batch.items.map(candidateFrom));
+      totalPages = batch.totalPages;
       page += 1;
     } while (page <= totalPages);
+    return items;
+  }
 
-    const details = await batches(experiments, 4, (experiment) =>
-      this.productApi.getExperiment(experiment.id, options));
-    const groups = await batches(details.flatMap((experiment) =>
-      experiment.episodes.map((episode) => ({ experiment, episode }))), 4, async ({ experiment, episode }) => {
-      const attempt = episode.attempt ?? 1;
-      const base = `/api/v1/episodes/${encodeURIComponent(episode.id)}`;
-      const [observations, recommendations] = await Promise.all([
-        this.allEvents(`${base}/observations?attempt=${attempt}`, options),
-        this.allEvents(`${base}/recommendations?attempt=${attempt}`, options),
-      ]);
-      return rowsFromEvents({
-        experimentId: experiment.id,
-        experimentName: experiment.name,
-        episodeId: episode.id,
-        attempt,
-        environmentConfig: experiment.environment_config,
-        observations,
-        recommendations,
-        knownStatuses: this.known,
-      });
-    });
-    return sortDecisionQueue(groups.flat());
+  async getContext(item: DecisionQueueItem, options: ProductApiRequestOptions = {}): Promise<DecisionContext> {
+    const [experiment, observations, recommendations] = await Promise.all([
+      this.productApi.getExperiment(item.experimentId, options),
+      this.allEvents(`/api/v1/episodes/${encodeURIComponent(item.episodeId)}/observations?attempt=${item.attempt}`, options),
+      this.allEvents(`/api/v1/episodes/${encodeURIComponent(item.episodeId)}/recommendations?attempt=${item.attempt}`, options),
+    ]);
+    const observation = observations.find((event) => record(event) && event.id === item.observationId);
+    const recommendation = recommendations.find((event) => record(event) && event.id === item.recommendationId);
+    if (!record(observation) || !record(observation.payload) || !text(observation.observationKey) ||
+      !record(recommendation) || !record(recommendation.payload)) {
+      throw malformedProductApiResponse("Maintenance API could not load the selected decision context.");
+    }
+    return {
+      experimentName: experiment.name,
+      observationKey: text(observation.observationKey)!,
+      observation: observation.payload as unknown as DecisionContext["observation"],
+      recommendation: recommendation.payload as unknown as DecisionContext["recommendation"],
+      environmentConfig: experiment.environment_config,
+    };
   }
 
   async openReview(recommendationId: string, options: ProductApiRequestOptions = {}): Promise<MaintenanceDecision> {
@@ -208,7 +215,6 @@ export class HttpDecisionApiClient implements DecisionApiClient {
       signal: options.signal,
     });
     const decision = decisionFrom(dataRecord(payload, "decision response"));
-    this.remember(decision);
     return decision;
   }
 
@@ -222,7 +228,6 @@ export class HttpDecisionApiClient implements DecisionApiClient {
     if (!Array.isArray(value.actions)) {
       throw malformedProductApiResponse("Maintenance API returned malformed action history.");
     }
-    this.remember(decision);
     return {
       ...decision,
       actions: value.actions.map(actionFrom),
@@ -249,11 +254,6 @@ export class HttpDecisionApiClient implements DecisionApiClient {
       throw malformedProductApiResponse("Maintenance API returned malformed review response.");
     }
     const review = actionFrom(result.action);
-    for (const [recommendationId, known] of this.known) {
-      if (known.decisionId === decisionId) {
-        this.known.set(recommendationId, { ...known, status: result.status as DecisionStatus });
-      }
-    }
     return review;
   }
 }

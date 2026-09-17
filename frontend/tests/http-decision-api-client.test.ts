@@ -34,18 +34,17 @@ beforeEach(() => window.sessionStorage.clear());
 afterEach(() => vi.unstubAllGlobals());
 
 describe("HttpDecisionApiClient", () => {
-  it("composes the real read-only queue from persisted current-attempt events", async () => {
+  it("loads the authoritative decision queue from the Maintenance API", async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       const path = String(input);
-      if (path.includes("/observations?")) return json({
+      if (path.includes("/maintenance/decisions?")) return json({
         success: true,
-        data: [{ id: observationId, observationKey: sample.observation?.observation_id, step: sample.step, payload: sample.observation }],
-        meta: { page: 1, limit: 100, total: 1, totalPages: 1 },
-      });
-      if (path.includes("/recommendations?")) return json({
-        success: true,
-        data: [{ id: recommendationId, observationId, step: sample.step, payload: sample.recommendation }],
-        meta: { page: 1, limit: 100, total: 1, totalPages: 1 },
+        data: [{
+          id: `${recommendationId}~machine-01`, decisionId: null, status: "PENDING_REVIEW", machineId: "machine-01", toolId: "tool-01", jobId: null,
+          source: { experimentId: experiment.id, episodeId: experiment.episodes[0].id, observationId, recommendationId, attempt: 1, step: sample.step },
+          recommendedAction: "REPLACE_NOW", severity: "HIGH", risk: { predictedRulSteps: 2, failureProbabilityNextStep: 0.3, observedWearUm: 10, posteriorMedianWearUm: 9, failureThresholdUm: 20, condition: { loadClass: "NOMINAL" } },
+          resources: { sparesAvailable: 1, inventoryCapacity: 2 }, predictedCost: { expected: 25, cvar: null }, costOfDelay: { amount: 30 }, rationale: "Policy recommends replacement.", result: { outcome: "REPLACED", incurredCost: 25 },
+        }], meta: { page: 1, limit: 100, total: 1, totalPages: 1 },
       });
       throw new Error(`Unexpected request: ${path}`);
     });
@@ -53,15 +52,9 @@ describe("HttpDecisionApiClient", () => {
 
     const queue = await api.listQueue();
 
-    expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(fetcher.mock.calls.every(([, init]) => init?.method === "GET")).toBe(true);
-    expect(fetcher.mock.calls.every(([path]) => String(path).includes("?attempt=1&page=1&limit=100"))).toBe(true);
-    expect(queue).toHaveLength(2);
-    expect(queue[0]).toMatchObject({ recommendationId, status: "NOT_OPENED", attempt: 1 });
-    expect(queue[0].predictedCost).toBe(sample.recommendation?.estimated_expected_cost);
-    expect(queue[0].failureRisk).toBeUndefined();
-    expect(queue[0].severity).toBeUndefined();
-    expect(queue[0].deferConsequence).toBeUndefined();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls[0][0]).toBe("/api/v1/maintenance/decisions?page=1&limit=100");
+    expect(queue).toEqual([expect.objectContaining({ recommendationId, status: "PENDING_REVIEW", severity: "HIGH", failureRisk: 0.3 })]);
   });
 
   it("opens an idempotent review, sends the override contract, and reloads audit history", async () => {
@@ -94,7 +87,6 @@ describe("HttpDecisionApiClient", () => {
     expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toEqual({ recommendationId });
     expect(String(fetcher.mock.calls[1][0])).toBe(`/api/v1/maintenance/decisions/${decisionId}/override`);
     expect(JSON.parse(String(fetcher.mock.calls[1][1]?.body))).toEqual({ reason: "Tool inspection", replacementAction });
-    expect(window.sessionStorage.getItem("cnc-decision-review-ids-v1")).toContain(decisionId);
   });
 
   it("propagates authorization and conflict errors, and labels network failures", async () => {
