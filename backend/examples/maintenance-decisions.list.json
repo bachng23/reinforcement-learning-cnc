@@ -1,0 +1,64 @@
+{
+  "success": true,
+  "data": [
+    {
+      "id": "7d9d3d39-6208-4ea7-9668-c7781744ef12~machine-02",
+      "decisionId": null,
+      "status": "PENDING_REVIEW",
+      "machineId": "machine-02",
+      "toolId": "tool-02",
+      "jobId": "job-08",
+      "source": {
+        "experimentId": "b54092cc-a79d-4db7-82b3-c5160c69be8c",
+        "episodeId": "f58e5427-655c-4e32-867a-32d5d59f09c1",
+        "episodeIndex": 0,
+        "attempt": 1,
+        "step": 8,
+        "observationId": "39c4a00a-330b-4e2a-93b9-3de2f3e8ad90",
+        "recommendationId": "7d9d3d39-6208-4ea7-9668-c7781744ef12",
+        "policyId": "10d03b67-e956-4344-8063-42f71e9510bf",
+        "resultId": "0bd5b4b8-2e31-4b41-b759-15bb38257668"
+      },
+      "recommendedAction": "REPLACE_NOW",
+      "severity": "HIGH",
+      "priority": 2,
+      "risk": {
+        "predictedRulSteps": 2,
+        "failureProbabilityNextStep": 0.36,
+        "observedWearUm": 245,
+        "posteriorMedianWearUm": 239,
+        "failureThresholdUm": 300,
+        "condition": {
+          "conditionId": "heavy-cut",
+          "loadClass": "HEAVY"
+        }
+      },
+      "resources": {
+        "sparesAvailable": 1,
+        "inventoryCapacity": 2
+      },
+      "predictedCost": {
+        "expected": 25,
+        "cvar": null,
+        "scope": "JOINT_RECOMMENDATION"
+      },
+      "costOfDelay": {
+        "amount": 180,
+        "basis": "ONE_STEP_FAILURE_EXPOSURE"
+      },
+      "rationale": "Policy 1.0 recommends replace; failure probability within one step is 36%; observed wear is 245/300 µm; 1 spare available.",
+      "rationaleSource": "DERIVED_FROM_PERSISTED_EVENTS",
+      "result": {
+        "outcome": "REPLACED",
+        "incurredCost": 25
+      },
+      "createdAt": "2026-09-17T08:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}

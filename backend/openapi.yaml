@@ -19,11 +19,71 @@ tags:
   - name: Policies
   - name: Experiments
   - name: Episodes
+  - name: Maintenance
 security:
   - cookieAuth: []
   - bearerAuth: []
 paths:
   /maintenance/decisions:
+    get:
+      tags: [Maintenance]
+      operationId: listMaintenanceDecisionCandidates
+      summary: List machine-level maintenance candidates from persisted simulator events
+      description: >-
+        Each complete observation, policy recommendation and step result produces one candidate per machine
+        for the episode's current attempt. ADMIN can read all experiments; other users can read their own.
+        Results are ordered by severity (CRITICAL first), estimated cost of one-step delay (highest first),
+        creation time (newest first), then candidate id. The review status belongs to the shared joint
+        recommendation; decisionId is null until POST /maintenance/decisions opens it for human review.
+        Simulator results are research outcomes, not maintenance execution acknowledgements.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING_REVIEW, APPROVED, OVERRIDDEN, REJECTED]
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [CRITICAL, HIGH, MEDIUM, LOW]
+        - name: experiment
+          in: query
+          description: Experiment UUID.
+          schema:
+            type: string
+            format: uuid
+        - name: machine
+          in: query
+          description: Exact machine identifier.
+          schema:
+            $ref: '#/components/schemas/Identifier'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Filtered and prioritized candidates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceCandidateListResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
     post:
       tags:
         - Maintenance
@@ -71,6 +131,37 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
+  '/maintenance/decisions/{id}':
+    get:
+      tags: [Maintenance]
+      operationId: getMaintenanceDecisionCandidate
+      summary: Get one machine-level maintenance candidate
+      description: >-
+        id is recommendation UUID, a tilde, and the machine identifier. The candidate is derived from the
+        current episode attempt's persisted observation, recommendation and step result. Owner scope is
+        identical to the list endpoint. The id differs from the UUID used by review/history endpoints.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F-]{36}~[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'
+      responses:
+        '200':
+          description: Candidate and its source snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceCandidateResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '503':
           $ref: '#/components/responses/DatabaseUnavailable'
   '/maintenance/decisions/{id}/approve':
@@ -2033,6 +2124,141 @@ components:
           type: integer
           minimum: 0
 
+    MaintenanceCandidate:
+      type: object
+      additionalProperties: false
+      required: [id, decisionId, status, machineId, toolId, jobId, source, recommendedAction, severity, priority, risk, resources, predictedCost, costOfDelay, rationale, rationaleSource, result, createdAt]
+      properties:
+        id:
+          type: string
+          description: Stable recommendation UUID followed by ~ and the machine identifier.
+        decisionId:
+          type: [string, 'null']
+          format: uuid
+          description: Shared human review decision UUID, if opened.
+        status:
+          type: string
+          enum: [PENDING_REVIEW, APPROVED, OVERRIDDEN, REJECTED]
+          description: Status of the joint recommendation's human review; PENDING_REVIEW before a review row exists.
+        machineId:
+          $ref: '#/components/schemas/Identifier'
+        toolId:
+          $ref: '#/components/schemas/Identifier'
+        jobId:
+          type: [string, 'null']
+        source:
+          type: object
+          additionalProperties: false
+          required: [experimentId, episodeId, episodeIndex, attempt, step, observationId, recommendationId, policyId, resultId]
+          properties:
+            experimentId: { type: string, format: uuid }
+            episodeId: { type: string, format: uuid }
+            episodeIndex: { type: integer, minimum: 0 }
+            attempt: { type: integer, minimum: 1 }
+            step: { type: integer, minimum: 0 }
+            observationId: { type: string, format: uuid }
+            recommendationId: { type: string, format: uuid }
+            policyId: { type: string, format: uuid }
+            resultId: { type: string, format: uuid }
+        recommendedAction:
+          type: string
+          enum: [REPLACE_NOW, SCHEDULE_REPLACEMENT, DEFER]
+          description: REPLACE with spares maps to REPLACE_NOW, REPLACE without spares to SCHEDULE_REPLACEMENT, CONTINUE to DEFER.
+        severity:
+          type: string
+          enum: [CRITICAL, HIGH, MEDIUM, LOW]
+          description: >-
+            CRITICAL at one-step failure probability >= 0.5 or wear >= threshold; HIGH at probability >= 0.25,
+            wear >= 80% of threshold or policy REPLACE; MEDIUM at probability >= 0.1 or wear >= 50%; else LOW.
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 4
+          description: 1=CRITICAL, 2=HIGH, 3=MEDIUM, 4=LOW.
+        risk:
+          type: object
+          additionalProperties: false
+          required: [predictedRulSteps, failureProbabilityNextStep, observedWearUm, posteriorMedianWearUm, failureThresholdUm, condition]
+          properties:
+            predictedRulSteps:
+              type: [integer, 'null']
+              minimum: 0
+              description: Median of the persisted RUL distribution; null if survival beyond horizon exceeds 50%.
+            failureProbabilityNextStep:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Probability mass at RUL support steps 0 and 1.
+            observedWearUm: { type: number, minimum: 0 }
+            posteriorMedianWearUm: { type: number, minimum: 0 }
+            failureThresholdUm: { type: number, exclusiveMinimum: 0 }
+            condition:
+              type: object
+              additionalProperties: false
+              required: [conditionId, loadClass]
+              properties:
+                conditionId: { $ref: '#/components/schemas/Identifier' }
+                loadClass: { type: string, enum: [LIGHT, NOMINAL, HEAVY] }
+        resources:
+          type: object
+          additionalProperties: false
+          required: [sparesAvailable, inventoryCapacity]
+          properties:
+            sparesAvailable: { type: integer, minimum: 0 }
+            inventoryCapacity: { type: integer, minimum: 0 }
+        predictedCost:
+          type: object
+          additionalProperties: false
+          required: [expected, cvar, scope]
+          properties:
+            expected: { type: [number, 'null'], minimum: 0 }
+            cvar: { type: [number, 'null'], minimum: 0 }
+            scope: { const: JOINT_RECOMMENDATION }
+          description: Policy estimates for the whole joint action, not a machine-specific allocation.
+        costOfDelay:
+          type: object
+          additionalProperties: false
+          required: [amount, basis]
+          properties:
+            amount:
+              type: [number, 'null']
+              minimum: 0
+              description: One-step failure probability multiplied by configured failure cost; null if cost is absent.
+            basis: { const: ONE_STEP_FAILURE_EXPOSURE }
+          description: Derived exposure proxy, not a counterfactual policy forecast.
+        rationale:
+          type: string
+        rationaleSource:
+          const: DERIVED_FROM_PERSISTED_EVENTS
+          description: Policy payload has no free-text rationale; this text is composed from action and risk/resource snapshot.
+        result:
+          type: object
+          additionalProperties: false
+          required: [outcome, incurredCost]
+          properties:
+            outcome: { type: string, enum: [CONTINUED, REPLACED, WAITING_FOR_SPARE, FAILED] }
+            incurredCost: { type: number, minimum: 0 }
+          description: Persisted simulator outcome, not a maintenance execution acknowledgement.
+        createdAt:
+          type: string
+          format: date-time
+    MaintenanceCandidateResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success: { const: true }
+        data: { $ref: '#/components/schemas/MaintenanceCandidate' }
+    MaintenanceCandidateListResponse:
+      type: object
+      additionalProperties: false
+      required: [success, data, meta]
+      properties:
+        success: { const: true }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/MaintenanceCandidate' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
     MaintenanceReviewInput:
       type: object
       additionalProperties: false
