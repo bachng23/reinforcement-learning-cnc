@@ -75,7 +75,9 @@ export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}
     credentials: "include",
   });
 
-  if (response.status === 401 || response.status === 403) {
+  // A 403 is an authorization failure, not an expired session. Let callers
+  // surface the API's forbidden response without sending the user to login.
+  if (response.status === 401) {
     redirectToLogin();
     // Stop callers from parsing a response while the redirect is in flight.
     throw new AuthRedirectError();
