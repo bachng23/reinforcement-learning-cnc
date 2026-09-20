@@ -1,5 +1,15 @@
 # CNC Research Platform Backend
 
+## Operations Context design drafts
+
+Design-only deliverables (no runtime API or migration changes):
+
+- [Prisma mapping, phased persistence and transaction boundaries](docs/operations-context/prisma-design-note.md)
+- [Six proposed v1 endpoints and concurrency/idempotency contract](docs/operations-context/api-endpoint-spec.md)
+- [Decision Case lifecycle and transition guards](docs/operations-context/state-machine.md)
+
+The incoming Operations Context contract is not present in this checkout. These drafts distinguish task requirements from proposed fields and semantics pending contract alignment.
+
 ## Durable episode worker
 
 The worker conditionally claims a PENDING episode with a unique lease token. Every write checks that token, RUNNING status and an unexpired lease. A step is validated in the order FleetObservation, PolicyRecommendation, StepResult, then all three records and stepsCompleted commit in one transaction. The next event is requested only after that transaction finishes. Memory use is limited to one step plus a summary, independent of episode length.
