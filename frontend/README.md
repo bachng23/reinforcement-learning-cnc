@@ -93,7 +93,7 @@ The preview reads only `lib/operations/fixtures.ts`. It preserves the v3 contrac
 
 ## Decision Center contract and limitations
 
-Open `/decisions` after signing in. In mock mode, the page uses in-memory sample-shaped CNC v2 events from `lib/product-api/fixtures.ts` and simulated Maintenance API reviews. In real mode, it reads current-attempt observation and recommendation events from the Product API, then uses these Maintenance API endpoints only when a reviewer confirms an action:
+Open `/decisions` after signing in. Each queue row links to a dedicated `/decisions/:rowId` detail page so review context and actions are no longer rendered below the queue. In mock mode, the page uses in-memory sample-shaped CNC v2 events from `lib/product-api/fixtures.ts` and simulated Maintenance API reviews. In real mode, it reads current-attempt observation and recommendation events from the Product API, then uses these Maintenance API endpoints only when a reviewer confirms an action:
 
 - `POST /api/v1/maintenance/decisions` (idempotently open a review)
 - `POST /api/v1/maintenance/decisions/:id/approve`

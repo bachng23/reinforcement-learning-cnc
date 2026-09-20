@@ -5,28 +5,33 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { DecisionCenterPage } from "@/components/pages/decision-center-page";
+import { DecisionDetailPage } from "@/components/pages/decision-detail-page";
 import { AuthRedirectError } from "@/lib/auth";
 import { MockDecisionApiClient } from "@/lib/decision-api/mock";
 import { ProductApiError } from "@/lib/product-api/errors";
 import { deferred } from "@/tests/product-api-test-utils";
 import type { DecisionQueueItem } from "@/types/decision";
 
+vi.mock("next/navigation", () => ({
+  useParams: () => ({}),
+}));
+
 vi.mock("@/components/app-shell", () => ({
   AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
-async function openPending(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(await screen.findByRole("button", {
-    name: "Open decision detail for machine-01 at step 1",
-  }));
+async function renderPending(api: MockDecisionApiClient) {
+  const row = (await api.listQueue()).find((item) => item.machineId === "machine-01" && item.step === 1);
+  if (!row) throw new Error("Pending decision fixture was not found.");
+  render(<DecisionDetailPage api={api} canReview rowId={row.rowId} />);
   expect(await screen.findByRole("heading", { name: "Why this recommendation?" }))
     .toBeInTheDocument();
 }
 
-describe("DecisionCenterPage", () => {
-  it("renders the queue, filters it, and opens policy / RUL context", async () => {
+describe("Decision Center", () => {
+  it("renders and filters the queue, then links View to a dedicated detail route", async () => {
     const user = userEvent.setup();
-    render(<DecisionCenterPage api={new MockDecisionApiClient()} canReview />);
+    render(<DecisionCenterPage api={new MockDecisionApiClient()} />);
 
     expect(await screen.findByText("4 of 4 machine recommendations", { exact: false }))
       .toBeInTheDocument();
@@ -34,24 +39,26 @@ describe("DecisionCenterPage", () => {
     expect(screen.getByText("2 of 4 machine recommendations", { exact: false }))
       .toBeInTheDocument();
     await user.selectOptions(screen.getByRole("combobox", { name: "Filter by workflow status" }), "");
-    await user.click(screen.getByRole("row", { name: "Open decision detail for machine-01 at step 1" }));
-    expect(await screen.findByRole("heading", { name: "Why this recommendation?" }))
-      .toBeInTheDocument();
 
-    expect(screen.getByText("Policy recommendation and defer consequence"))
-      .toBeInTheDocument();
-    expect(screen.getByText("Returned RUL distribution · machine-01"))
-      .toBeInTheDocument();
-    expect(screen.getByText("Review not opened"))
-      .toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "View decision detail for machine-01 at step 1" });
+    expect(link.getAttribute("href")).toMatch(/^\/decisions\//);
+    expect(screen.queryByRole("heading", { name: "Why this recommendation?" }))
+      .not.toBeInTheDocument();
+  });
+
+  it("loads policy, RUL context and audit state on the dedicated detail page", async () => {
+    await renderPending(new MockDecisionApiClient());
+    expect(screen.getByText("Policy recommendation and defer consequence")).toBeInTheDocument();
+    expect(screen.getByText("Returned RUL distribution · machine-01")).toBeInTheDocument();
+    expect(screen.getByText("Review not opened")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to queue" })).toHaveAttribute("href", "/decisions");
   });
 
   it.each(["approve", "reject"] as const)("submits %s once and refreshes status/history", async (action) => {
     const user = userEvent.setup();
     const api = new MockDecisionApiClient();
     const submitReview = vi.spyOn(api, "submitReview");
-    render(<DecisionCenterPage api={api} canReview />);
-    await openPending(user);
+    await renderPending(api);
 
     await user.click(screen.getByRole("button", { name: action === "approve" ? "Approve" : "Reject" }));
     await user.click(screen.getByRole("button", { name: `Confirm ${action}` }));
@@ -66,8 +73,7 @@ describe("DecisionCenterPage", () => {
     const user = userEvent.setup();
     const api = new MockDecisionApiClient();
     const submitReview = vi.spyOn(api, "submitReview");
-    render(<DecisionCenterPage api={api} canReview />);
-    await openPending(user);
+    await renderPending(api);
 
     await user.click(screen.getByRole("button", { name: "Override" }));
     await user.click(screen.getByRole("button", { name: "Confirm override" }));
@@ -108,7 +114,7 @@ describe("DecisionCenterPage", () => {
       getHistory: base.getHistory.bind(base),
       submitReview: base.submitReview.bind(base),
     };
-    const view = render(<DecisionCenterPage api={api} canReview />);
+    const view = render(<DecisionCenterPage api={api} />);
     expect(screen.getByText("Loading decision queue")).toBeInTheDocument();
     pending.resolve([]);
     expect(await screen.findByText("No recommendations returned")).toBeInTheDocument();
@@ -119,7 +125,7 @@ describe("DecisionCenterPage", () => {
       listQueue: vi.fn(async () => {
         throw new ProductApiError("Unable to reach the Product API.", { status: 0, code: "NETWORK_ERROR" });
       }),
-    }} canReview />);
+    }} />);
     expect(await screen.findByText(/Network error: Unable to reach/)).toBeInTheDocument();
   });
 
@@ -129,8 +135,7 @@ describe("DecisionCenterPage", () => {
     const submitReview = vi.spyOn(api, "submitReview").mockRejectedValueOnce(
       new ProductApiError("Decision is no longer pending.", { status: 409, code: "INVALID_DECISION_TRANSITION" }),
     );
-    render(<DecisionCenterPage api={api} canReview />);
-    await openPending(user);
+    await renderPending(api);
     await user.click(screen.getByRole("button", { name: "Approve" }));
     await user.click(screen.getByRole("button", { name: "Confirm approve" }));
 
@@ -146,7 +151,7 @@ describe("DecisionCenterPage", () => {
       openReview: base.openReview.bind(base),
       getHistory: base.getHistory.bind(base),
       submitReview: base.submitReview.bind(base),
-    }} canReview />);
+    }} />);
 
     expect(await screen.findByText("Your session has expired. Redirecting to sign in."))
       .toBeInTheDocument();
