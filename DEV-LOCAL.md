@@ -57,7 +57,7 @@ bash scripts/dev-web.sh
 bash scripts/dev-ai.sh
 ```
 
-The web script runs the backend on port `8080`, the episode worker, and the frontend on port `3000`. The worker must remain running for queued episodes to progress from `PENDING` to a terminal status. The AI script runs the minimal FastAPI service on port `8001`.
+The web script runs the backend on port `5000`, the episode worker, and the frontend on port `3000`. The worker must remain running for queued episodes to progress from `PENDING` to a terminal status. The AI script runs the minimal FastAPI service on port `8001`.
 
 Check all processes:
 
@@ -71,6 +71,15 @@ bash scripts/check-dev.sh
 cd backend && npm test
 cd ../frontend && npm run build
 cd ../ai_services && uv run pytest -q
+```
+
+Use a dedicated PostgreSQL database for the Product API integration suite. The
+runner creates and drops an isolated schema; it never resets the configured
+database or its `public` schema.
+
+```bash
+cd backend
+TEST_DATABASE_URL="postgresql://admin:password@localhost:5432/cnc_research_test" npm run test:integration
 ```
 
 Regenerate the CNC domain schema after changing Pydantic contracts:

@@ -65,6 +65,45 @@ async function request(verb, role, body) {
     ...(verb === 'history' ? {} : { body: JSON.stringify(body ?? {}) }),
   });
 }
+async function createDecision(role, body) {
+  db.user.findUnique.mockResolvedValue({ ...user, role });
+  return fetch(base, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${jwt.sign({ id }, process.env.JWT_SECRET)}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+}
+test('creates a decision and returns the existing decision for the same recommendation', async () => {
+  const created = { id: 'f4a03f6e-1d46-4f5c-87e0-3d5b1f2188e1', recommendationId: id, status: 'PENDING_REVIEW' };
+  db.policyRecommendation.findFirst.mockResolvedValue({ id });
+  db.maintenanceDecision.upsert.mockResolvedValue(created);
+
+  const response = await createDecision('OPERATOR', { recommendationId: id });
+
+  expect(response.status).toBe(200);
+  expect((await response.json()).data).toEqual(created);
+  expect(db.maintenanceDecision.upsert).toHaveBeenCalledWith({
+    where: { recommendationId: id },
+    update: {},
+    create: { recommendationId: id },
+  });
+});
+test('rejects an invalid or inaccessible decision creation request', async () => {
+  expect((await createDecision('VIEWER', { recommendationId: id })).status).toBe(403);
+  expect((await createDecision('OPERATOR', { recommendationId: 'not-a-uuid' })).status).toBe(400);
+
+  db.policyRecommendation.findFirst.mockResolvedValue(null);
+  expect((await createDecision('OPERATOR', { recommendationId: id })).status).toBe(404);
+  expect(db.policyRecommendation.findFirst).toHaveBeenCalledWith({
+    where: expect.objectContaining({
+      id,
+      observation: { episode: { experiment: { createdById: id } } },
+    }),
+  });
+});
 test.each(['approve', 'override', 'reject'])('VIEWER forbidden from %s', async (verb) => {
   expect((await request(verb, 'VIEWER')).status).toBe(403);
   expect(db.$transaction).not.toHaveBeenCalled();
