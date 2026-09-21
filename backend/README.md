@@ -1,5 +1,15 @@
 # CNC Research Platform Backend
 
+## Operations Context design drafts
+
+Design-only deliverables (no runtime API or migration changes):
+
+- [Prisma mapping, phased persistence and transaction boundaries](docs/operations-context/prisma-design-note.md)
+- [Six proposed v1 endpoints and concurrency/idempotency contract](docs/operations-context/api-endpoint-spec.md)
+- [Decision Case lifecycle and transition guards](docs/operations-context/state-machine.md)
+
+These drafts target Operations and Multi-Agent Contract v3.0. They still distinguish canonical contract payloads from proposed HTTP DTOs, persistence fields and transaction semantics.
+
 ## Maintenance decision queue
 
 `GET /api/v1/maintenance/decisions?experiment=<UUID>` returns one candidate per machine in each persisted observation/recommendation/result triple from the episode's current attempt. The response shape is fixed in [the frontend mock](examples/maintenance-decisions.list.json) and described in [OpenAPI](openapi.yaml). Query filters are `status`, `severity`, `experiment`, and exact `machine`; `page` starts at 1 and `limit` defaults to 20 (maximum 100). `GET /api/v1/maintenance/decisions/:id` uses the candidate id from the list, formed as `<recommendation UUID>~<machine id>`.
