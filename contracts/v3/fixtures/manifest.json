@@ -1,0 +1,7 @@
+{
+  "scenario_id": "demo-health-alert",
+  "fixtures": [
+    {"file": "demo-health-alert.json", "model": "RunDecisionCaseRequest"},
+    {"file": "demo-case-status.json", "model": "DecisionCaseStatusResponse"}
+  ]
+}

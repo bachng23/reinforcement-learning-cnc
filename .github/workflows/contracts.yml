@@ -1,0 +1,19 @@
+name: Contracts
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen --group dev --project ai_services
+      - run: npm ci --prefix frontend
+      - run: uv run --frozen --project ai_services python scripts/check-contracts.py

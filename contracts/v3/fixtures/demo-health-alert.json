@@ -1,0 +1,34 @@
+{
+  "schema_version": "3.0",
+  "decision_case_id": "demo-case-001",
+  "mode": "LIVE",
+  "factory_snapshot": {
+    "schema_version": "3.0",
+    "snapshot_id": "demo-snapshot-001",
+    "factory_id": "demo-factory-01",
+    "captured_at": "2026-09-21T08:00:00Z",
+    "planning_window": {"start_at": "2026-09-21T08:00:00Z", "end_at": "2026-09-21T16:00:00Z"},
+    "machines": [
+      {"machine_id": "demo-M01", "display_name": "Demo mill 01", "machine_family": "cnc-mill", "status": "WARNING", "capabilities": [{"operation_type": "milling", "nominal_processing_minutes": 45}]},
+      {"machine_id": "demo-M02", "display_name": "Demo mill 02", "machine_family": "cnc-mill", "status": "IDLE", "capabilities": [{"operation_type": "milling", "nominal_processing_minutes": 55}]}
+    ],
+    "jobs": [{
+      "job_id": "demo-J01", "display_name": "Demo priority order", "release_at": "2026-09-21T08:00:00Z", "due_at": "2026-09-21T16:00:00Z", "priority": 80,
+      "operations": [{"operation_id": "demo-O01", "sequence": 0, "operation_type": "milling", "status": "READY", "machine_options": [{"machine_id": "demo-M01", "processing_minutes": 45}, {"machine_id": "demo-M02", "processing_minutes": 55}]}]
+    }],
+    "technicians": [{
+      "technician_id": "demo-K01", "display_name": "Demo technician", "status": "AVAILABLE",
+      "availability": [{"start_at": "2026-09-21T08:00:00Z", "end_at": "2026-09-21T16:00:00Z"}],
+      "skills": [{"skill_id": "mechanical", "level": 4, "certified_machine_families": ["cnc-mill"], "certified_action_types": ["spindle-inspection"]}]
+    }],
+    "health_snapshots": [{"health_snapshot_id": "demo-health-001", "machine_id": "demo-M01", "observed_at": "2026-09-21T08:00:00Z", "health_index": 0.42, "observed_wear_um": 180, "failure_probability_horizon_minutes": 240, "failure_probability": 0.31, "confidence": "MEDIUM", "source_model_version": "demo-rul-v1"}],
+    "maintenance_requests": [{"maintenance_request_id": "demo-MR01", "machine_id": "demo-M01", "maintenance_type": "PREVENTIVE", "action_type": "spindle-inspection", "priority": "HIGH", "status": "OPEN", "requested_at": "2026-09-21T08:00:00Z", "earliest_start_at": "2026-09-21T09:00:00Z", "latest_start_at": "2026-09-21T12:00:00Z", "expected_duration_minutes": 60, "required_skill_ids": ["mechanical"], "minimum_skill_level": 3}],
+    "current_schedule": {
+      "schedule_id": "demo-schedule-001", "factory_id": "demo-factory-01", "revision": 1,
+      "planning_window": {"start_at": "2026-09-21T08:00:00Z", "end_at": "2026-09-21T16:00:00Z"}, "created_at": "2026-09-21T08:00:00Z",
+      "assignments": [{"assignment_id": "demo-A01", "assignment_type": "PRODUCTION", "status": "COMMITTED", "machine_id": "demo-M01", "job_id": "demo-J01", "operation_id": "demo-O01", "start_at": "2026-09-21T08:00:00Z", "end_at": "2026-09-21T08:45:00Z"}]
+    }
+  },
+  "trigger": {"type": "HEALTH_ALERT", "event_id": "demo-event-001", "occurred_at": "2026-09-21T08:00:00Z", "machine_id": "demo-M01", "failure_probability": 0.31, "alert_threshold": 0.2},
+  "planning_config": {"horizon_minutes": 480, "candidate_limit": 3, "solver_timeout_seconds": 20, "simulation_runs": 100, "base_seed": 42}
+}

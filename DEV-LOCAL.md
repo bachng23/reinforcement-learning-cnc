@@ -89,3 +89,37 @@ cd ai_services
 uv run python scripts/export_cnc_contracts.py
 uv run pytest tests/test_cnc_contracts.py -q
 ```
+# Operations v3 contract workflow
+
+From the repository root (Node 22.22.2+ and uv):
+
+```sh
+npm ci --prefix frontend
+uv sync --frozen --group dev --project ai_services
+uv run --frozen --project ai_services python scripts/check-contracts.py
+```
+
+After intentionally changing Pydantic models:
+
+```sh
+uv run --frozen --project ai_services python ai_services/scripts/export_operations_contracts.py
+npm --prefix frontend run contracts:generate
+uv run --frozen --project ai_services python scripts/check-contracts.py
+```
+
+Commit both schema JSON and `frontend/types/generated/operations.ts`. The gate
+exports to a temporary file, compares schema structure, runs AI v2/v3 and shared
+fixture tests, checks generated TS drift, typechecks frontend and tests the new
+client. It never repairs stale committed artifacts. CI runs the same command in
+`.github/workflows/contracts.yml`.
+
+Shared fixtures and the Week 2 seed/reset plan are documented in
+`contracts/v3/fixtures/README.md`. The wire client is
+`frontend/lib/operations-api/client.ts`; its injectable transport uses the proposed
+`/api/v1` routes from the product spec. Bare JSON resources/arrays, create using
+`RunDecisionCaseRequest`, bodyless run represented by `{}`, and status responses
+for mutations are provisional until backend defines HTTP DTOs. The domain catalog
+is not OpenAPI. Backend must own snapshot creation and approval validation;
+frontend types do not validate JSON or domain invariants at runtime. Existing UI
+view-model types in `frontend/types/operations.ts` are separate from generated
+wire types. No UI cutover or live backend endpoints are included in this skeleton.
