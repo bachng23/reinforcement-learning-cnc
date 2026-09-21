@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, CalendarRange, Factory, GitCompareArrows } from "lucide-react";
+import { Beaker, Bot, CalendarRange, Factory, GitCompareArrows } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -14,6 +14,7 @@ const screens = [
   { href: "/operations/schedule", label: "Integrated Schedule", icon: CalendarRange },
   { href: "/operations/recommendations", label: "Recommendations", icon: GitCompareArrows },
   { href: "/operations/agents", label: "Agent Control Room", icon: Bot },
+  { href: "/operations/what-if", label: "What-if", icon: Beaker },
 ] as const;
 
 export function OperationsShell({
