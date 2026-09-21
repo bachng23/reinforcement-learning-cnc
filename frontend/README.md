@@ -7,7 +7,7 @@ Next.js frontend for the authenticated CNC experiment workflow. The UI includes:
 - experiment detail with idempotent run, mixed episode states, and polling;
 - episode detail with Retry for `FAILED`, Cancel for `PENDING`, current-attempt metadata, historical-attempt switching, partial-result handling, and a direct RUL-distribution visualization;
 - Decision Center with a recommendation queue, experiment/machine/severity/status filters, observation and policy context, audit history, and approve/reject/override review modals;
-- an Operations contract v3 fixture preview spanning overview, integrated scheduling, recommendation comparison, and agent trace inspection;
+- an Operations contract v3 fixture preview spanning overview, integrated scheduling, recommendation comparison, agent trace inspection, and isolated what-if scenarios;
 - a typed real Product API adapter and an in-memory mock adapter using the same TypeScript models.
 
 The frontend only presents returned research data. It does not predict RUL, derive a point estimate, calculate cost/risk/CVaR/failure probability, choose replacement actions, or reconstruct missing engine output.
@@ -87,9 +87,9 @@ The default example configuration uses the real Product API. Set `NEXT_PUBLIC_PR
 
 ## Operations contract v3 fixture preview
 
-Open `/operations` to inspect the first-pass UI skeleton without waiting for backend integration. The four routes are `/operations`, `/operations/schedule`, `/operations/recommendations`, and `/operations/agents`.
+Open `/operations` to inspect the first-pass UI skeleton without waiting for backend integration. The five routes are `/operations`, `/operations/schedule`, `/operations/recommendations`, `/operations/agents`, and `/operations/what-if`.
 
-The preview reads only `lib/operations/fixtures.ts`. It preserves the v3 contract boundaries: candidate KPIs, health metrics, risk, RUL, costs, and recommendation selection are displayed from supplied fields and are never derived by page components. Human decision controls currently emit and preview contract-shaped approve, modify, or reject requests; they do not call an API. See `../docs/frontend-operations-ia.md` for the information architecture, field mapping, wireframes, known contract gaps, and integration breakdown.
+The preview reads `lib/operations/fixtures.ts` and the scenario-adapter fixture in `lib/operations/what-if-fixtures.ts`. It preserves the v3 contract boundaries: candidate KPIs, health metrics, risk, RUL, costs, and recommendation selection are displayed from supplied fields and are never derived by page components. Human decision controls currently emit and preview contract-shaped approve, modify, or reject requests; they do not call an API. The what-if workspace renders returned baseline/result KPIs and ordered `DecisionEvent` records; it cannot commit a schedule. See `../docs/frontend-operations-ia.md` for the information architecture, field mapping, wireframes, known contract gaps, and integration breakdown.
 
 ## Decision Center contract and limitations
 

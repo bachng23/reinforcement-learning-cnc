@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { OperationsPanel, OperationsShell } from "@/components/operations/operations-shell";
@@ -23,7 +24,7 @@ export function IntegratedSchedulePage() {
       </OperationsPanel>
       {current ? <OperationsPanel title="Current committed schedule" description="Machine lanes plus technician lanes derived from the assignment resource references."><ScheduleGantt schedule={current} snapshot={snapshot} riskReports={fixture.risk_reports} label="Current plan" machineFilter={machine} assignmentTypeFilter={type} /></OperationsPanel> : null}
       {proposed ? <OperationsPanel title="Proposed recommended schedule" description="Dashed blocks are returned PROPOSED assignments. Risk, priority and dependencies are direct joins to contract entities."><ScheduleGantt schedule={proposed} snapshot={snapshot} riskReports={fixture.risk_reports} label="Balanced candidate" machineFilter={machine} assignmentTypeFilter={type} /></OperationsPanel> : null}
-      <div className="grid gap-3 sm:grid-cols-2"><button type="button" disabled className="rounded-md border border-dashed bg-white p-4 text-left text-sm text-[var(--color-ash-gray)] disabled:opacity-100"><strong className="block text-[var(--color-slate-text)]">Manual patch editor</strong><span className="mt-1 block text-xs">Interaction boundary reserved; modifications must be revalidated before commit.</span></button><button type="button" disabled className="rounded-md border border-dashed bg-white p-4 text-left text-sm text-[var(--color-ash-gray)] disabled:opacity-100"><strong className="block text-[var(--color-slate-text)]">Open what-if case</strong><span className="mt-1 block text-xs">Reserved for SIMULATION_ONLY Decision Case workflow.</span></button></div>
+      <div className="grid gap-3 sm:grid-cols-2"><button type="button" disabled className="rounded-md border border-dashed bg-white p-4 text-left text-sm text-[var(--color-ash-gray)] disabled:opacity-100"><strong className="block text-[var(--color-slate-text)]">Manual patch editor</strong><span className="mt-1 block text-xs">Interaction boundary reserved; modifications must be revalidated before commit.</span></button><Link href="/operations/what-if" className="rounded-md border border-[var(--color-stone-border)] bg-white p-4 text-left text-sm text-[var(--color-ash-gray)] transition-colors hover:bg-stone-50"><strong className="block text-[var(--color-slate-text)]">Open what-if workspace</strong><span className="mt-1 block text-xs">Compare SIMULATION_ONLY outcomes without changing the current schedule.</span></Link></div>
     </OperationsShell>
   );
 }

@@ -8,6 +8,7 @@ import { AgentTraceTimeline } from "@/components/operations/agent-trace-timeline
 import { DecisionControls } from "@/components/operations/decision-controls";
 import { OperationsOverviewPage } from "@/components/pages/operations-overview-page";
 import { RecommendationCenterPage } from "@/components/pages/recommendation-center-page";
+import { WhatIfWorkspacePage } from "@/components/pages/what-if-workspace-page";
 import { getOperationsFixture } from "@/lib/operations/fixtures";
 import type { HumanDecisionRequest } from "@/types/operations";
 
@@ -88,5 +89,20 @@ describe("operations fixture UI", () => {
     expect(screen.getByRole("complementary", { name: "Tool call detail" })).toHaveTextContent("run-cp-sat@0.8.0");
     expect(screen.getByText("Not supplied by v3")).toBeInTheDocument();
     expect(screen.getByText("Structured agent messages")).toBeInTheDocument();
+  });
+
+  it("renders simulator-returned what-if KPIs without committing a schedule", async () => {
+    const user = userEvent.setup();
+    render(<WhatIfWorkspacePage />);
+
+    expect(screen.getByRole("heading", { name: "No simulation result" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Technician unavailable/ }));
+    await user.click(screen.getByRole("button", { name: "Run fixture" }));
+
+    expect(screen.getByRole("heading", { name: "Baseline vs simulated plan" })).toBeInTheDocument();
+    expect(screen.getByText(/simulation-technician-001/)).toBeInTheDocument();
+    expect(screen.getByText("RELIABILITY_PRIORITY")).toBeInTheDocument();
+    expect(screen.getByText(/cannot create a committed schedule/i)).toBeInTheDocument();
+    expect(screen.getByText("candidate.validated")).toBeInTheDocument();
   });
 });
