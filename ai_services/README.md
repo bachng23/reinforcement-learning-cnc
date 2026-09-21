@@ -17,6 +17,7 @@ Generate and verify the shared contract:
 ```bash
 uv run python scripts/export_cnc_contracts.py
 uv run python scripts/export_operations_contracts.py
+uv run python scripts/export_operations_demo.py
 uv run pytest -q
 ```
 

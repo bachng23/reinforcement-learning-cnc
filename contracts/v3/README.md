@@ -20,6 +20,10 @@ workflow.
 - Schema builder: `ai_services/domain/operations/schema.py`
 - Generated artifact: `contracts/v3/operations-domain.schema.json`
 - Contract tests: `ai_services/tests/test_operations_contracts.py`
+- Canonical demo: `ai_services/domain/operations/demo.py`
+- Hard constraints: `contracts/v3/constraints-v1.md`
+- Planning engine draft: `ai_services/domain/operations/planning.py`
+- Semantics review: `contracts/v3/semantics-review.md`
 
 Không sửa file JSON Schema bằng tay. Mọi thay đổi bắt đầu từ Pydantic models, sau đó
 regenerate schema và chạy test.

@@ -1,0 +1,13 @@
+{
+  "candidate_plan_id": "plan-production-priority",
+  "schema_version": "3.0",
+  "simulation_runs": 100,
+  "validated_at": "2026-09-22T00:02:00Z",
+  "validation_id": "validation-invalid-without-error",
+  "validator_version": "hard-constraints-v1",
+  "verdict": "INVALID",
+  "violations": [],
+  "warnings": [
+    "M03 intervention is delayed until its three queued turning operations finish."
+  ]
+}
