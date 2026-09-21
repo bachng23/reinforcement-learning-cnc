@@ -115,11 +115,11 @@ client. It never repairs stale committed artifacts. CI runs the same command in
 
 Shared fixtures and the Week 2 seed/reset plan are documented in
 `contracts/v3/fixtures/README.md`. The wire client is
-`frontend/lib/operations-api/client.ts`; its injectable transport uses the proposed
-`/api/v1` routes from the product spec. Bare JSON resources/arrays, create using
-`RunDecisionCaseRequest`, bodyless run represented by `{}`, and status responses
-for mutations are provisional until backend defines HTTP DTOs. The domain catalog
-is not OpenAPI. Backend must own snapshot creation and approval validation;
-frontend types do not validate JSON or domain invariants at runtime. Existing UI
-view-model types in `frontend/types/operations.ts` are separate from generated
-wire types. No UI cutover or live backend endpoints are included in this skeleton.
+`frontend/lib/operations-api/client.ts`; its injectable transport uses the six
+proposed `/api/v1` operations routes from the backend workflow draft. HTTP DTOs
+wrap canonical contract payloads in `{ success, data, request_id }` envelopes:
+backend still owns snapshot creation, approval validation and command
+idempotency. Frontend types do not validate JSON or domain invariants at runtime.
+Existing UI view-model types in `frontend/types/operations.ts` are separate from
+generated wire types. No UI cutover or live backend endpoints are included in this
+skeleton.
