@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ClipboardCheck, FlaskConical, LogOut, Users } from "lucide-react";
+import { ClipboardCheck, Factory, FlaskConical, LogOut, Users } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -89,6 +89,7 @@ export function AppShell({ children, title = "Research overview" }: AppShellProp
         </Link>
 
         <nav className="flex flex-1 flex-col gap-1 px-3 py-3" aria-label="Primary navigation">
+          <NavItem href="/operations" label="Operations" icon={Factory} />
           <NavItem href="/experiments" label="Experiments" icon={FlaskConical} />
           <NavItem href="/decisions" label="Decision Center" icon={ClipboardCheck} />
           {user.role === "ADMIN" && <NavItem href="/admin" label="Users" icon={Users} />}
@@ -124,6 +125,9 @@ export function AppShell({ children, title = "Research overview" }: AppShellProp
             <h1 className="truncate text-base font-semibold text-[var(--color-slate-text)]">{title}</h1>
           </div>
           <div className="flex items-center gap-1 lg:hidden">
+            <Link href="/operations" aria-label="Operations" title="Operations" className="grid h-9 w-9 place-items-center rounded-md">
+              <Factory className="h-4 w-4" aria-hidden="true" />
+            </Link>
             <Link href="/experiments" aria-label="Experiments" title="Experiments" className="grid h-9 w-9 place-items-center rounded-md">
               <FlaskConical className="h-4 w-4" aria-hidden="true" />
             </Link>

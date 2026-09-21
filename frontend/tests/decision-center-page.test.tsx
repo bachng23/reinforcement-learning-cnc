@@ -103,6 +103,7 @@ describe("DecisionCenterPage", () => {
     const base = new MockDecisionApiClient();
     const api = {
       listQueue: vi.fn(() => pending.promise),
+      getContext: base.getContext.bind(base),
       openReview: base.openReview.bind(base),
       getHistory: base.getHistory.bind(base),
       submitReview: base.submitReview.bind(base),
@@ -141,6 +142,7 @@ describe("DecisionCenterPage", () => {
     const base = new MockDecisionApiClient();
     render(<DecisionCenterPage api={{
       listQueue: vi.fn(async () => { throw new AuthRedirectError(); }),
+      getContext: base.getContext.bind(base),
       openReview: base.openReview.bind(base),
       getHistory: base.getHistory.bind(base),
       submitReview: base.submitReview.bind(base),
