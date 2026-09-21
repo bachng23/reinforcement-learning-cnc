@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import argparse
 import sys
 from pathlib import Path
 
@@ -16,12 +17,15 @@ OUTPUT_PATH = REPOSITORY_ROOT / "contracts" / "v3" / "operations-domain.schema.j
 
 
 def main() -> None:
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
+    args = parser.parse_args()
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
         json.dumps(build_operations_contract_schema(), indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    print(OUTPUT_PATH)
+    print(args.output)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,9 @@
+{
+  "schema_version": "3.0",
+  "decision_case_id": "demo-case-001",
+  "mode": "LIVE",
+  "status": "CREATED",
+  "snapshot_id": "demo-snapshot-001",
+  "created_at": "2026-09-21T08:00:00Z",
+  "updated_at": "2026-09-21T08:00:00Z"
+}

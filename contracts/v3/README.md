@@ -1,5 +1,14 @@
 # Multi-Agent PdM Operations Contract v3
 
+## Tooling
+
+- Generate wire types: `npm --prefix frontend run contracts:generate`.
+- Full local/CI gate: `uv run --frozen --project ai_services python scripts/check-contracts.py`.
+- Shared demo payloads and Week 2 seed/reset handoff: [fixtures/README.md](fixtures/README.md).
+- Typed HTTP skeleton for the proposed envelope-based `/api/v1` operations routes:
+  `frontend/lib/operations-api/client.ts`.
+- Setup and regeneration steps: [DEV-LOCAL.md](../../DEV-LOCAL.md).
+
 `v3` là contract chuẩn cho sản phẩm hỗ trợ quyết định production–maintenance–technician.
 Contract này không thay thế `v2`: `v2` tiếp tục mô tả research environment cho quyết
 định nhị phân `CONTINUE/REPLACE`, còn `v3` mô tả Operations Context và multi-agent
