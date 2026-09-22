@@ -1,18 +1,24 @@
-# Risk-Aware CNC Tool Replacement Research Platform
+# Multi-Agent Predictive Maintenance and Production Planning Platform
 
-Production-oriented software support for experiments on multi-agent CNC cutting-tool replacement under probabilistic remaining useful life and shared spare constraints.
+Production-oriented foundation for health-aware CNC production scheduling,
+predictive maintenance, heterogeneous-technician dispatch, and auditable
+multi-agent decision support.
 
 ## Current scope
 
-The repository is intentionally at a clean research-platform baseline:
+The repository is intentionally at a contract-first platform baseline:
 
-- `contracts/v2`: canonical CNC domain contract and generated JSON Schema.
-- `ai_services`: Pydantic contracts plus a minimal FastAPI process.
+- `contracts/v2`: canonical CNC tool-replacement research contract.
+- `contracts/v3`: canonical operations and multi-agent decision-support contract.
+- `ai_services`: Pydantic contract sources plus a minimal FastAPI process.
 - `backend`: platform health, authentication, user administration, and the Product API for policy catalogs, experiments, queued episodes, and persisted research results.
 - `frontend`: authenticated research console and user administration.
 - PostgreSQL 16 is the only infrastructure dependency.
 
-Simulation, M4 adaptation, policy execution, and research visualizations are not implemented yet. Experiment run requests only queue episodes; a separate worker executes them asynchronously. The local web script starts that worker with the backend and frontend.
+Experiment execution, maintenance review, and decision-center workflows already
+exist in the Product API. Integrated production scheduling, multi-agent execution,
+and their product visualizations are not implemented yet. Contract v3 defines the
+shared service boundary for that next stage before implementation begins.
 
 ## Local development
 
@@ -89,7 +95,10 @@ bash scripts/dev-ai.sh
 - Backend: `http://localhost:5000/api/health`
 - AI API: `http://localhost:8001/health`
 
-See [DEV-LOCAL.md](DEV-LOCAL.md) for the complete workflow and [contracts/v2/README.md](contracts/v2/README.md) for the research contract boundary.
+See [DEV-LOCAL.md](DEV-LOCAL.md) for the complete workflow,
+[contracts/v2/README.md](contracts/v2/README.md) for the research contract, and
+[contracts/v3/README.md](contracts/v3/README.md) for the operations/multi-agent
+contract boundary.
 
 ## Verification
 

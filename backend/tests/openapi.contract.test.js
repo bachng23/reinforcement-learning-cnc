@@ -128,4 +128,15 @@ describe('OpenAPI and Product API serializers', () => {
     expect(requiredProperties(schemas.PaginationMeta)).not.toContain('attempt');
     expect(requiredProperties(schemas.EventPaginationMeta)).toContain('attempt');
   });
+
+  test('publishes a frontend maintenance mock matching the documented candidate shape', () => {
+    const example = JSON.parse(fs.readFileSync(
+      path.resolve(__dirname, '../examples/maintenance-decisions.list.json'),
+      'utf8',
+    ));
+    expect(serializedKeys(example)).toEqual(requiredProperties(schemas.MaintenanceCandidateListResponse));
+    expect(serializedKeys(example.data[0])).toEqual(requiredProperties(schemas.MaintenanceCandidate));
+    expect(example.data[0].id).toBe(`${example.data[0].source.recommendationId}~${example.data[0].machineId}`);
+    expect(example.data[0].costOfDelay.amount).toBe(180);
+  });
 });

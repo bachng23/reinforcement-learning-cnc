@@ -1,0 +1,3697 @@
+{
+  "$defs": {
+    "AgentDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "allowed_tool_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Allowed Tool Ids",
+          "type": "array"
+        },
+        "display_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "goal": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Goal",
+          "type": "string"
+        },
+        "max_tool_calls": {
+          "minimum": 1,
+          "title": "Max Tool Calls",
+          "type": "integer"
+        },
+        "role": {
+          "$ref": "#/$defs/AgentRole"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "minimum": 1,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent_id",
+        "version",
+        "role",
+        "display_name",
+        "goal",
+        "timeout_seconds",
+        "max_tool_calls"
+      ],
+      "title": "AgentDefinition",
+      "type": "object"
+    },
+    "AgentMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "correlation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Correlation Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "from_agent_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "From Agent Run Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/MessageKind"
+        },
+        "message_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Message Id",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "subject": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        },
+        "to_agent_role": {
+          "$ref": "#/$defs/AgentRole"
+        }
+      },
+      "required": [
+        "message_id",
+        "decision_case_id",
+        "correlation_id",
+        "from_agent_run_id",
+        "to_agent_role",
+        "kind",
+        "subject",
+        "created_at",
+        "payload"
+      ],
+      "title": "AgentMessage",
+      "type": "object"
+    },
+    "AgentRole": {
+      "enum": [
+        "SUPERVISOR",
+        "PDM",
+        "PRODUCTION_SCHEDULING",
+        "MAINTENANCE_PLANNING",
+        "TECHNICIAN_DISPATCH",
+        "INTEGRATED_PLANNING",
+        "VALIDATION",
+        "EXPLANATION"
+      ],
+      "title": "AgentRole",
+      "type": "string"
+    },
+    "AgentRunTrace": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Agent Run Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "message_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Message Ids",
+          "type": "array"
+        },
+        "output_ref": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Ref"
+        },
+        "role": {
+          "$ref": "#/$defs/AgentRole"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "status": {
+          "$ref": "#/$defs/RunStatus"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "tool_call_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Tool Call Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "agent_run_id",
+        "decision_case_id",
+        "task_id",
+        "agent_id",
+        "agent_version",
+        "role",
+        "status"
+      ],
+      "title": "AgentRunTrace",
+      "type": "object"
+    },
+    "AgentTask": {
+      "additionalProperties": false,
+      "properties": {
+        "assigned_role": {
+          "$ref": "#/$defs/AgentRole"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "dependency_task_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Dependency Task Ids",
+          "type": "array"
+        },
+        "input_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Input Refs",
+          "type": "array"
+        },
+        "objective": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Objective",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "decision_case_id",
+        "assigned_role",
+        "objective",
+        "created_at"
+      ],
+      "title": "AgentTask",
+      "type": "object"
+    },
+    "AssignmentStatus": {
+      "enum": [
+        "PROPOSED",
+        "COMMITTED",
+        "RUNNING",
+        "COMPLETED",
+        "CANCELLED"
+      ],
+      "title": "AssignmentStatus",
+      "type": "string"
+    },
+    "AssignmentType": {
+      "enum": [
+        "PRODUCTION",
+        "MAINTENANCE",
+        "BLOCKED_TIME"
+      ],
+      "title": "AssignmentType",
+      "type": "string"
+    },
+    "AuditLevel": {
+      "enum": [
+        "METADATA",
+        "INPUT_OUTPUT_SUMMARY",
+        "FULL"
+      ],
+      "title": "AuditLevel",
+      "type": "string"
+    },
+    "CandidatePlan": {
+      "additionalProperties": false,
+      "properties": {
+        "assumptions": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Assumptions",
+          "type": "array"
+        },
+        "candidate_plan_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Candidate Plan Id",
+          "type": "string"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "kpis": {
+          "$ref": "#/$defs/PlanKPIs"
+        },
+        "plan_version": {
+          "minimum": 1,
+          "title": "Plan Version",
+          "type": "integer"
+        },
+        "schedule": {
+          "$ref": "#/$defs/Schedule"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_agent_run_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Source Agent Run Ids",
+          "type": "array"
+        },
+        "source_engine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Engine Id",
+          "type": "string"
+        },
+        "source_engine_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Engine Version",
+          "type": "string"
+        },
+        "strategy": {
+          "$ref": "#/$defs/PlanStrategy"
+        },
+        "validation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlanValidation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "warnings": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "candidate_plan_id",
+        "decision_case_id",
+        "snapshot_id",
+        "plan_version",
+        "strategy",
+        "source_engine_id",
+        "source_engine_version",
+        "generated_at",
+        "schedule",
+        "kpis"
+      ],
+      "title": "CandidatePlan",
+      "type": "object"
+    },
+    "ConstraintSeverity": {
+      "enum": [
+        "ERROR",
+        "WARNING"
+      ],
+      "title": "ConstraintSeverity",
+      "type": "string"
+    },
+    "ConstraintViolation": {
+      "additionalProperties": false,
+      "properties": {
+        "constraint_code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Constraint Code",
+          "type": "string"
+        },
+        "entity_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Entity Refs",
+          "type": "array"
+        },
+        "message": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/ConstraintSeverity"
+        },
+        "time_window": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TimeWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "violation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Violation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "violation_id",
+        "constraint_code",
+        "severity",
+        "message"
+      ],
+      "title": "ConstraintViolation",
+      "type": "object"
+    },
+    "DecisionCaseStatus": {
+      "enum": [
+        "CREATED",
+        "ANALYZING",
+        "GENERATING",
+        "VALIDATING",
+        "EXPLAINING",
+        "AWAITING_APPROVAL",
+        "APPROVED",
+        "MODIFIED",
+        "REJECTED",
+        "COMMITTED",
+        "FAILED",
+        "CANCELLED"
+      ],
+      "title": "DecisionCaseStatus",
+      "type": "string"
+    },
+    "DecisionCaseStatusResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "committed_schedule_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Committed Schedule Id"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "mode": {
+          "$ref": "#/$defs/DecisionMode"
+        },
+        "recommendation_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommendation Id"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/DecisionCaseStatus"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision_case_id",
+        "mode",
+        "status",
+        "snapshot_id",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "DecisionCaseStatusResponse",
+      "type": "object"
+    },
+    "DecisionEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "correlation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Correlation Id",
+          "type": "string"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "event_type": {
+          "$ref": "#/$defs/DecisionEventType"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "subject_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Subject Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "sequence",
+        "decision_case_id",
+        "event_type",
+        "occurred_at",
+        "subject_id",
+        "correlation_id",
+        "payload"
+      ],
+      "title": "DecisionEvent",
+      "type": "object"
+    },
+    "DecisionEventType": {
+      "enum": [
+        "case.status_changed",
+        "agent.started",
+        "agent.completed",
+        "agent.failed",
+        "tool.started",
+        "tool.completed",
+        "tool.failed",
+        "candidate.created",
+        "candidate.validated",
+        "recommendation.ready",
+        "human_decision.recorded",
+        "schedule.committed"
+      ],
+      "title": "DecisionEventType",
+      "type": "string"
+    },
+    "DecisionMode": {
+      "enum": [
+        "LIVE",
+        "SIMULATION_ONLY"
+      ],
+      "title": "DecisionMode",
+      "type": "string"
+    },
+    "DiscreteRULDistribution": {
+      "additionalProperties": false,
+      "properties": {
+        "model_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Model Version",
+          "type": "string"
+        },
+        "probability_mass": {
+          "items": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "type": "number"
+          },
+          "minItems": 2,
+          "title": "Probability Mass",
+          "type": "array"
+        },
+        "support_minutes": {
+          "items": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minItems": 2,
+          "title": "Support Minutes",
+          "type": "array"
+        },
+        "survival_beyond_horizon": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Survival Beyond Horizon",
+          "type": "number"
+        }
+      },
+      "required": [
+        "support_minutes",
+        "probability_mass",
+        "survival_beyond_horizon",
+        "model_version"
+      ],
+      "title": "DiscreteRULDistribution",
+      "type": "object"
+    },
+    "ErrorDetail": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field"
+        },
+        "message": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "ErrorDetail",
+      "type": "object"
+    },
+    "ErrorResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "correlation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Correlation Id",
+          "type": "string"
+        },
+        "details": {
+          "items": {
+            "$ref": "#/$defs/ErrorDetail"
+          },
+          "title": "Details",
+          "type": "array"
+        },
+        "error_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Error Id",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "default": false,
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "error_id",
+        "code",
+        "message",
+        "correlation_id"
+      ],
+      "title": "ErrorResponse",
+      "type": "object"
+    },
+    "FactorySnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "current_schedule": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Schedule"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Factory Id",
+          "type": "string"
+        },
+        "health_snapshots": {
+          "items": {
+            "$ref": "#/$defs/HealthSnapshot"
+          },
+          "title": "Health Snapshots",
+          "type": "array"
+        },
+        "jobs": {
+          "items": {
+            "$ref": "#/$defs/ProductionJob"
+          },
+          "title": "Jobs",
+          "type": "array"
+        },
+        "machines": {
+          "items": {
+            "$ref": "#/$defs/Machine"
+          },
+          "minItems": 1,
+          "title": "Machines",
+          "type": "array"
+        },
+        "maintenance_requests": {
+          "items": {
+            "$ref": "#/$defs/MaintenanceRequest"
+          },
+          "title": "Maintenance Requests",
+          "type": "array"
+        },
+        "planning_window": {
+          "$ref": "#/$defs/TimeWindow"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "technicians": {
+          "items": {
+            "$ref": "#/$defs/Technician"
+          },
+          "title": "Technicians",
+          "type": "array"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "factory_id",
+        "captured_at",
+        "planning_window",
+        "machines"
+      ],
+      "title": "FactorySnapshot",
+      "type": "object"
+    },
+    "HealthAlertTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_threshold": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Alert Threshold",
+          "type": "number"
+        },
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "failure_probability": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Failure Probability",
+          "type": "number"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "type": {
+          "const": "HEALTH_ALERT",
+          "default": "HEALTH_ALERT",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "occurred_at",
+        "machine_id",
+        "failure_probability",
+        "alert_threshold"
+      ],
+      "title": "HealthAlertTrigger",
+      "type": "object"
+    },
+    "HealthSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "failure_probability": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Failure Probability",
+          "type": "number"
+        },
+        "failure_probability_horizon_minutes": {
+          "minimum": 1,
+          "title": "Failure Probability Horizon Minutes",
+          "type": "integer"
+        },
+        "health_index": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Health Index",
+          "type": "number"
+        },
+        "health_snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Health Snapshot Id",
+          "type": "string"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "observed_wear_um": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed Wear Um"
+        },
+        "rul_distribution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DiscreteRULDistribution"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source_model_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Model Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "health_snapshot_id",
+        "machine_id",
+        "observed_at",
+        "health_index",
+        "failure_probability_horizon_minutes",
+        "failure_probability",
+        "confidence",
+        "source_model_version"
+      ],
+      "title": "HealthSnapshot",
+      "type": "object"
+    },
+    "HumanDecisionRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_plan_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Plan Id"
+        },
+        "decision": {
+          "$ref": "#/$defs/HumanDecisionType"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "expected_plan_version": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Plan Version"
+        },
+        "expected_snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Expected Snapshot Id",
+          "type": "string"
+        },
+        "modified_schedule": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Schedule"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "recommendation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Recommendation Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision_case_id",
+        "recommendation_id",
+        "expected_snapshot_id",
+        "decision"
+      ],
+      "title": "HumanDecisionRequest",
+      "type": "object"
+    },
+    "HumanDecisionType": {
+      "enum": [
+        "APPROVE",
+        "MODIFY",
+        "REJECT"
+      ],
+      "title": "HumanDecisionType",
+      "type": "string"
+    },
+    "Machine": {
+      "additionalProperties": false,
+      "properties": {
+        "capabilities": {
+          "items": {
+            "$ref": "#/$defs/MachineCapability"
+          },
+          "minItems": 1,
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "display_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "machine_family": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Family",
+          "type": "string"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/MachineStatus"
+        }
+      },
+      "required": [
+        "machine_id",
+        "display_name",
+        "machine_family",
+        "status",
+        "capabilities"
+      ],
+      "title": "Machine",
+      "type": "object"
+    },
+    "MachineCapability": {
+      "additionalProperties": false,
+      "properties": {
+        "damage_factor": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Damage Factor",
+          "type": "number"
+        },
+        "load_factor": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Load Factor",
+          "type": "number"
+        },
+        "nominal_processing_minutes": {
+          "minimum": 1,
+          "title": "Nominal Processing Minutes",
+          "type": "integer"
+        },
+        "operation_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Operation Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_type",
+        "nominal_processing_minutes"
+      ],
+      "title": "MachineCapability",
+      "type": "object"
+    },
+    "MachineFailureTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "failure_code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Failure Code",
+          "type": "string"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "type": {
+          "const": "MACHINE_FAILURE",
+          "default": "MACHINE_FAILURE",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "occurred_at",
+        "machine_id",
+        "failure_code"
+      ],
+      "title": "MachineFailureTrigger",
+      "type": "object"
+    },
+    "MachineOption": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_damage": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Damage"
+        },
+        "load_factor": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Load Factor",
+          "type": "number"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "processing_minutes": {
+          "minimum": 1,
+          "title": "Processing Minutes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "machine_id",
+        "processing_minutes"
+      ],
+      "title": "MachineOption",
+      "type": "object"
+    },
+    "MachineRiskReport": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "expected_rul_minutes": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Rul Minutes"
+        },
+        "failure_probability": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Failure Probability",
+          "type": "number"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "generated_by_agent_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Generated By Agent Run Id",
+          "type": "string"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "prediction_horizon_minutes": {
+          "minimum": 1,
+          "title": "Prediction Horizon Minutes",
+          "type": "integer"
+        },
+        "recommended_review_window_minutes": {
+          "minimum": 0,
+          "title": "Recommended Review Window Minutes",
+          "type": "integer"
+        },
+        "risk_drivers": {
+          "items": {
+            "$ref": "#/$defs/RiskDriver"
+          },
+          "minItems": 1,
+          "title": "Risk Drivers",
+          "type": "array"
+        },
+        "risk_level": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+          ],
+          "title": "Risk Level",
+          "type": "string"
+        },
+        "risk_report_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Risk Report Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "risk_report_id",
+        "decision_case_id",
+        "snapshot_id",
+        "generated_by_agent_run_id",
+        "generated_at",
+        "machine_id",
+        "prediction_horizon_minutes",
+        "failure_probability",
+        "confidence",
+        "risk_level",
+        "recommended_review_window_minutes",
+        "risk_drivers",
+        "evidence_refs"
+      ],
+      "title": "MachineRiskReport",
+      "type": "object"
+    },
+    "MachineStatus": {
+      "enum": [
+        "IDLE",
+        "RUNNING",
+        "WARNING",
+        "MAINTENANCE",
+        "FAILED",
+        "UNAVAILABLE"
+      ],
+      "title": "MachineStatus",
+      "type": "string"
+    },
+    "MaintenanceDecision": {
+      "enum": [
+        "MAINTAIN_NOW",
+        "MAINTAIN_IN_WINDOW",
+        "CONTINUE_AND_MONITOR",
+        "CORRECTIVE_REPAIR"
+      ],
+      "title": "MaintenanceDecision",
+      "type": "string"
+    },
+    "MaintenanceOption": {
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "$ref": "#/$defs/MaintenanceDecision"
+        },
+        "expected_duration_minutes": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Duration Minutes"
+        },
+        "expected_failure_probability": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Expected Failure Probability",
+          "type": "number"
+        },
+        "expected_maintenance_cost": {
+          "minimum": 0.0,
+          "title": "Expected Maintenance Cost",
+          "type": "number"
+        },
+        "expected_restoration_effectiveness": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Restoration Effectiveness"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "maintenance_option_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Option Id",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "proposed_window": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TimeWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reason_codes": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Reason Codes",
+          "type": "array"
+        },
+        "required_skill_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Required Skill Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "maintenance_option_id",
+        "maintenance_request_id",
+        "machine_id",
+        "decision",
+        "expected_failure_probability",
+        "expected_maintenance_cost",
+        "reason_codes"
+      ],
+      "title": "MaintenanceOption",
+      "type": "object"
+    },
+    "MaintenanceOptionSet": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "generated_by_agent_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Generated By Agent Run Id",
+          "type": "string"
+        },
+        "maintenance_option_set_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Option Set Id",
+          "type": "string"
+        },
+        "options": {
+          "items": {
+            "$ref": "#/$defs/MaintenanceOption"
+          },
+          "minItems": 1,
+          "title": "Options",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "maintenance_option_set_id",
+        "decision_case_id",
+        "snapshot_id",
+        "generated_by_agent_run_id",
+        "generated_at",
+        "options",
+        "evidence_refs"
+      ],
+      "title": "MaintenanceOptionSet",
+      "type": "object"
+    },
+    "MaintenancePriority": {
+      "enum": [
+        "LOW",
+        "NORMAL",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "MaintenancePriority",
+      "type": "string"
+    },
+    "MaintenanceRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "action_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Action Type",
+          "type": "string"
+        },
+        "earliest_start_at": {
+          "format": "date-time",
+          "title": "Earliest Start At",
+          "type": "string"
+        },
+        "expected_duration_minutes": {
+          "minimum": 1,
+          "title": "Expected Duration Minutes",
+          "type": "integer"
+        },
+        "latest_start_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Start At"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "maintenance_type": {
+          "$ref": "#/$defs/MaintenanceType"
+        },
+        "mandatory": {
+          "default": false,
+          "title": "Mandatory",
+          "type": "boolean"
+        },
+        "minimum_skill_level": {
+          "default": 1,
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Minimum Skill Level",
+          "type": "integer"
+        },
+        "priority": {
+          "$ref": "#/$defs/MaintenancePriority"
+        },
+        "requested_at": {
+          "format": "date-time",
+          "title": "Requested At",
+          "type": "string"
+        },
+        "required_skill_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Required Skill Ids",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/$defs/MaintenanceRequestStatus"
+        }
+      },
+      "required": [
+        "maintenance_request_id",
+        "machine_id",
+        "maintenance_type",
+        "action_type",
+        "priority",
+        "status",
+        "requested_at",
+        "earliest_start_at",
+        "expected_duration_minutes",
+        "required_skill_ids"
+      ],
+      "title": "MaintenanceRequest",
+      "type": "object"
+    },
+    "MaintenanceRequestStatus": {
+      "enum": [
+        "OPEN",
+        "SCHEDULED",
+        "IN_PROGRESS",
+        "COMPLETED",
+        "CANCELLED"
+      ],
+      "title": "MaintenanceRequestStatus",
+      "type": "string"
+    },
+    "MaintenanceRequestedTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "type": {
+          "const": "MAINTENANCE_REQUESTED",
+          "default": "MAINTENANCE_REQUESTED",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "occurred_at",
+        "maintenance_request_id"
+      ],
+      "title": "MaintenanceRequestedTrigger",
+      "type": "object"
+    },
+    "MaintenanceType": {
+      "enum": [
+        "PREVENTIVE",
+        "CORRECTIVE"
+      ],
+      "title": "MaintenanceType",
+      "type": "string"
+    },
+    "ManualReplanTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "requested_by_user_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Requested By User Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "MANUAL_REPLAN",
+          "default": "MANUAL_REPLAN",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "occurred_at",
+        "requested_by_user_id",
+        "reason"
+      ],
+      "title": "ManualReplanTrigger",
+      "type": "object"
+    },
+    "MessageKind": {
+      "enum": [
+        "TASK",
+        "RESULT",
+        "EVIDENCE",
+        "FEEDBACK",
+        "ERROR"
+      ],
+      "title": "MessageKind",
+      "type": "string"
+    },
+    "ObjectiveWeights": {
+      "additionalProperties": false,
+      "properties": {
+        "maintenance": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Maintenance",
+          "type": "number"
+        },
+        "production": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Production",
+          "type": "number"
+        },
+        "reliability": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Reliability",
+          "type": "number"
+        },
+        "schedule_stability": {
+          "default": 0.25,
+          "minimum": 0.0,
+          "title": "Schedule Stability",
+          "type": "number"
+        },
+        "workforce": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Workforce",
+          "type": "number"
+        }
+      },
+      "title": "ObjectiveWeights",
+      "type": "object"
+    },
+    "Operation": {
+      "additionalProperties": false,
+      "properties": {
+        "machine_options": {
+          "items": {
+            "$ref": "#/$defs/MachineOption"
+          },
+          "minItems": 1,
+          "title": "Machine Options",
+          "type": "array"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "operation_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Operation Type",
+          "type": "string"
+        },
+        "predecessor_operation_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Predecessor Operation Ids",
+          "type": "array"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/OperationStatus",
+          "default": "PENDING"
+        }
+      },
+      "required": [
+        "operation_id",
+        "sequence",
+        "operation_type",
+        "machine_options"
+      ],
+      "title": "Operation",
+      "type": "object"
+    },
+    "OperationStatus": {
+      "enum": [
+        "PENDING",
+        "READY",
+        "SCHEDULED",
+        "RUNNING",
+        "COMPLETED",
+        "BLOCKED"
+      ],
+      "title": "OperationStatus",
+      "type": "string"
+    },
+    "PlanKPIs": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_latency_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Latency Ms"
+        },
+        "expected_emergency_downtime_minutes": {
+          "minimum": 0.0,
+          "title": "Expected Emergency Downtime Minutes",
+          "type": "number"
+        },
+        "expected_failure_count": {
+          "minimum": 0.0,
+          "title": "Expected Failure Count",
+          "type": "number"
+        },
+        "failure_probability": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Failure Probability",
+          "type": "number"
+        },
+        "maintenance_cost": {
+          "minimum": 0.0,
+          "title": "Maintenance Cost",
+          "type": "number"
+        },
+        "makespan_minutes": {
+          "minimum": 0.0,
+          "title": "Makespan Minutes",
+          "type": "number"
+        },
+        "maximum_tardiness_minutes": {
+          "minimum": 0.0,
+          "title": "Maximum Tardiness Minutes",
+          "type": "number"
+        },
+        "on_time_completion_rate": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "On Time Completion Rate",
+          "type": "number"
+        },
+        "schedule_changes": {
+          "minimum": 0,
+          "title": "Schedule Changes",
+          "type": "integer"
+        },
+        "technician_utilization": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Technician Utilization",
+          "type": "number"
+        },
+        "total_tardiness_minutes": {
+          "minimum": 0.0,
+          "title": "Total Tardiness Minutes",
+          "type": "number"
+        }
+      },
+      "required": [
+        "makespan_minutes",
+        "total_tardiness_minutes",
+        "maximum_tardiness_minutes",
+        "on_time_completion_rate",
+        "expected_failure_count",
+        "failure_probability",
+        "expected_emergency_downtime_minutes",
+        "maintenance_cost",
+        "technician_utilization",
+        "schedule_changes"
+      ],
+      "title": "PlanKPIs",
+      "type": "object"
+    },
+    "PlanStrategy": {
+      "enum": [
+        "CURRENT",
+        "PRODUCTION_PRIORITY",
+        "BALANCED",
+        "RELIABILITY_PRIORITY",
+        "MANUAL",
+        "EXPERIMENTAL"
+      ],
+      "title": "PlanStrategy",
+      "type": "string"
+    },
+    "PlanValidation": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_plan_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Candidate Plan Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "simulation_runs": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Simulation Runs",
+          "type": "integer"
+        },
+        "validated_at": {
+          "format": "date-time",
+          "title": "Validated At",
+          "type": "string"
+        },
+        "validation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Validation Id",
+          "type": "string"
+        },
+        "validator_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Validator Version",
+          "type": "string"
+        },
+        "verdict": {
+          "$ref": "#/$defs/ValidationVerdict"
+        },
+        "violations": {
+          "items": {
+            "$ref": "#/$defs/ConstraintViolation"
+          },
+          "title": "Violations",
+          "type": "array"
+        },
+        "warnings": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "validation_id",
+        "candidate_plan_id",
+        "validator_version",
+        "verdict",
+        "validated_at"
+      ],
+      "title": "PlanValidation",
+      "type": "object"
+    },
+    "PlanningConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_strategy_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Allowed Strategy Ids",
+          "type": "array"
+        },
+        "base_seed": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_limit": {
+          "default": 3,
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Candidate Limit",
+          "type": "integer"
+        },
+        "horizon_minutes": {
+          "minimum": 1,
+          "title": "Horizon Minutes",
+          "type": "integer"
+        },
+        "objective_weights": {
+          "$ref": "#/$defs/ObjectiveWeights"
+        },
+        "simulation_runs": {
+          "default": 100,
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Simulation Runs",
+          "type": "integer"
+        },
+        "solver_timeout_seconds": {
+          "default": 30,
+          "maximum": 300,
+          "minimum": 1,
+          "title": "Solver Timeout Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "horizon_minutes"
+      ],
+      "title": "PlanningConfig",
+      "type": "object"
+    },
+    "ProductionJob": {
+      "additionalProperties": false,
+      "properties": {
+        "display_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "due_at": {
+          "format": "date-time",
+          "title": "Due At",
+          "type": "string"
+        },
+        "job_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "operations": {
+          "items": {
+            "$ref": "#/$defs/Operation"
+          },
+          "minItems": 1,
+          "title": "Operations",
+          "type": "array"
+        },
+        "priority": {
+          "default": 50,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Priority",
+          "type": "integer"
+        },
+        "release_at": {
+          "format": "date-time",
+          "title": "Release At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id",
+        "display_name",
+        "release_at",
+        "due_at",
+        "operations"
+      ],
+      "title": "ProductionJob",
+      "type": "object"
+    },
+    "ProductionOptionSet": {
+      "additionalProperties": false,
+      "properties": {
+        "affected_job_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Affected Job Ids",
+          "type": "array"
+        },
+        "affected_operation_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Affected Operation Ids",
+          "type": "array"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "generated_by_agent_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Generated By Agent Run Id",
+          "type": "string"
+        },
+        "production_option_set_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Production Option Set Id",
+          "type": "string"
+        },
+        "routing_options": {
+          "items": {
+            "$ref": "#/$defs/ProductionRoutingOption"
+          },
+          "minItems": 1,
+          "title": "Routing Options",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "production_option_set_id",
+        "decision_case_id",
+        "snapshot_id",
+        "generated_by_agent_run_id",
+        "generated_at",
+        "affected_job_ids",
+        "affected_operation_ids",
+        "routing_options",
+        "evidence_refs"
+      ],
+      "title": "ProductionOptionSet",
+      "type": "object"
+    },
+    "ProductionRoutingOption": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_damage": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Damage"
+        },
+        "expected_processing_minutes": {
+          "minimum": 1,
+          "title": "Expected Processing Minutes",
+          "type": "integer"
+        },
+        "expected_tardiness_minutes": {
+          "minimum": 0.0,
+          "title": "Expected Tardiness Minutes",
+          "type": "number"
+        },
+        "job_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "proposed_window": {
+          "$ref": "#/$defs/TimeWindow"
+        },
+        "reason_codes": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Reason Codes",
+          "type": "array"
+        },
+        "routing_option_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Routing Option Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "routing_option_id",
+        "job_id",
+        "operation_id",
+        "machine_id",
+        "proposed_window",
+        "expected_processing_minutes",
+        "expected_tardiness_minutes",
+        "reason_codes"
+      ],
+      "title": "ProductionRoutingOption",
+      "type": "object"
+    },
+    "RecommendationExplanation": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "primary_reasons": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Primary Reasons",
+          "type": "array"
+        },
+        "residual_risks": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Residual Risks",
+          "type": "array"
+        },
+        "summary": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "tradeoffs": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Tradeoffs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "summary",
+        "primary_reasons",
+        "tradeoffs",
+        "evidence_refs"
+      ],
+      "title": "RecommendationExplanation",
+      "type": "object"
+    },
+    "RecommendationPackage": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_plans": {
+          "items": {
+            "$ref": "#/$defs/CandidatePlan"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "Candidate Plans",
+          "type": "array"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "explanation": {
+          "$ref": "#/$defs/RecommendationExplanation"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "recommendation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Recommendation Id",
+          "type": "string"
+        },
+        "recommended_plan_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Recommended Plan Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recommendation_id",
+        "decision_case_id",
+        "snapshot_id",
+        "generated_at",
+        "recommended_plan_id",
+        "candidate_plans",
+        "explanation"
+      ],
+      "title": "RecommendationPackage",
+      "type": "object"
+    },
+    "RiskDriver": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "contribution": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contribution"
+        },
+        "description": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "description"
+      ],
+      "title": "RiskDriver",
+      "type": "object"
+    },
+    "RunDecisionCaseRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "factory_snapshot": {
+          "$ref": "#/$defs/FactorySnapshot"
+        },
+        "mode": {
+          "$ref": "#/$defs/DecisionMode"
+        },
+        "planning_config": {
+          "$ref": "#/$defs/PlanningConfig"
+        },
+        "requested_by_user_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Requested By User Id"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "trigger": {
+          "discriminator": {
+            "mapping": {
+              "HEALTH_ALERT": "#/$defs/HealthAlertTrigger",
+              "MACHINE_FAILURE": "#/$defs/MachineFailureTrigger",
+              "MAINTENANCE_REQUESTED": "#/$defs/MaintenanceRequestedTrigger",
+              "MANUAL_REPLAN": "#/$defs/ManualReplanTrigger",
+              "TECHNICIAN_UNAVAILABLE": "#/$defs/TechnicianUnavailableTrigger",
+              "WHAT_IF": "#/$defs/WhatIfTrigger"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/HealthAlertTrigger"
+            },
+            {
+              "$ref": "#/$defs/MachineFailureTrigger"
+            },
+            {
+              "$ref": "#/$defs/TechnicianUnavailableTrigger"
+            },
+            {
+              "$ref": "#/$defs/MaintenanceRequestedTrigger"
+            },
+            {
+              "$ref": "#/$defs/ManualReplanTrigger"
+            },
+            {
+              "$ref": "#/$defs/WhatIfTrigger"
+            }
+          ],
+          "title": "Trigger"
+        }
+      },
+      "required": [
+        "decision_case_id",
+        "mode",
+        "factory_snapshot",
+        "trigger",
+        "planning_config"
+      ],
+      "title": "RunDecisionCaseRequest",
+      "type": "object"
+    },
+    "RunStatus": {
+      "enum": [
+        "QUEUED",
+        "RUNNING",
+        "WAITING_FOR_DEPENDENCY",
+        "COMPLETED",
+        "FAILED",
+        "CANCELLED"
+      ],
+      "title": "RunStatus",
+      "type": "string"
+    },
+    "Schedule": {
+      "additionalProperties": false,
+      "properties": {
+        "assignments": {
+          "items": {
+            "$ref": "#/$defs/ScheduleAssignment"
+          },
+          "title": "Assignments",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Factory Id",
+          "type": "string"
+        },
+        "planning_window": {
+          "$ref": "#/$defs/TimeWindow"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schedule_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Schedule Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schedule_id",
+        "factory_id",
+        "revision",
+        "planning_window",
+        "created_at"
+      ],
+      "title": "Schedule",
+      "type": "object"
+    },
+    "ScheduleAssignment": {
+      "additionalProperties": false,
+      "properties": {
+        "assignment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Assignment Id",
+          "type": "string"
+        },
+        "assignment_type": {
+          "$ref": "#/$defs/AssignmentType"
+        },
+        "end_at": {
+          "format": "date-time",
+          "title": "End At",
+          "type": "string"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Job Id"
+        },
+        "locked": {
+          "default": false,
+          "title": "Locked",
+          "type": "boolean"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maintenance Request Id"
+        },
+        "operation_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operation Id"
+        },
+        "start_at": {
+          "format": "date-time",
+          "title": "Start At",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/AssignmentStatus"
+        },
+        "technician_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Technician Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "assignment_id",
+        "assignment_type",
+        "status",
+        "machine_id",
+        "start_at",
+        "end_at"
+      ],
+      "title": "ScheduleAssignment",
+      "type": "object"
+    },
+    "Technician": {
+      "additionalProperties": false,
+      "properties": {
+        "availability": {
+          "items": {
+            "$ref": "#/$defs/TimeWindow"
+          },
+          "title": "Availability",
+          "type": "array"
+        },
+        "display_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "skills": {
+          "items": {
+            "$ref": "#/$defs/TechnicianSkill"
+          },
+          "minItems": 1,
+          "title": "Skills",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/$defs/TechnicianStatus"
+        },
+        "technician_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Technician Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "technician_id",
+        "display_name",
+        "status",
+        "skills"
+      ],
+      "title": "Technician",
+      "type": "object"
+    },
+    "TechnicianCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "available_window": {
+          "$ref": "#/$defs/TimeWindow"
+        },
+        "expected_duration_minutes": {
+          "minimum": 1,
+          "title": "Expected Duration Minutes",
+          "type": "integer"
+        },
+        "expected_restoration_effectiveness": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Expected Restoration Effectiveness",
+          "type": "number"
+        },
+        "expected_workforce_cost": {
+          "minimum": 0.0,
+          "title": "Expected Workforce Cost",
+          "type": "number"
+        },
+        "maintenance_option_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Option Id",
+          "type": "string"
+        },
+        "reason_codes": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Reason Codes",
+          "type": "array"
+        },
+        "skill_match_level": {
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Skill Match Level",
+          "type": "integer"
+        },
+        "technician_candidate_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Technician Candidate Id",
+          "type": "string"
+        },
+        "technician_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Technician Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "technician_candidate_id",
+        "maintenance_option_id",
+        "technician_id",
+        "available_window",
+        "expected_duration_minutes",
+        "skill_match_level",
+        "expected_restoration_effectiveness",
+        "expected_workforce_cost",
+        "reason_codes"
+      ],
+      "title": "TechnicianCandidate",
+      "type": "object"
+    },
+    "TechnicianOptionSet": {
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/TechnicianCandidate"
+          },
+          "title": "Candidates",
+          "type": "array"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "generated_by_agent_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Generated By Agent Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "technician_option_set_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Technician Option Set Id",
+          "type": "string"
+        },
+        "unstaffed_maintenance_option_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Unstaffed Maintenance Option Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "technician_option_set_id",
+        "decision_case_id",
+        "snapshot_id",
+        "generated_by_agent_run_id",
+        "generated_at",
+        "evidence_refs"
+      ],
+      "title": "TechnicianOptionSet",
+      "type": "object"
+    },
+    "TechnicianSkill": {
+      "additionalProperties": false,
+      "properties": {
+        "certified_action_types": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Certified Action Types",
+          "type": "array"
+        },
+        "certified_machine_families": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Certified Machine Families",
+          "type": "array"
+        },
+        "level": {
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Level",
+          "type": "integer"
+        },
+        "skill_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Skill Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skill_id",
+        "level"
+      ],
+      "title": "TechnicianSkill",
+      "type": "object"
+    },
+    "TechnicianStatus": {
+      "enum": [
+        "AVAILABLE",
+        "ASSIGNED",
+        "OFF_SHIFT",
+        "UNAVAILABLE"
+      ],
+      "title": "TechnicianStatus",
+      "type": "string"
+    },
+    "TechnicianUnavailableTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "technician_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Technician Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "TECHNICIAN_UNAVAILABLE",
+          "default": "TECHNICIAN_UNAVAILABLE",
+          "title": "Type",
+          "type": "string"
+        },
+        "unavailable_window": {
+          "$ref": "#/$defs/TimeWindow"
+        }
+      },
+      "required": [
+        "event_id",
+        "occurred_at",
+        "technician_id",
+        "unavailable_window",
+        "reason"
+      ],
+      "title": "TechnicianUnavailableTrigger",
+      "type": "object"
+    },
+    "TimeWindow": {
+      "additionalProperties": false,
+      "properties": {
+        "end_at": {
+          "format": "date-time",
+          "title": "End At",
+          "type": "string"
+        },
+        "start_at": {
+          "format": "date-time",
+          "title": "Start At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start_at",
+        "end_at"
+      ],
+      "title": "TimeWindow",
+      "type": "object"
+    },
+    "ToolCallStatus": {
+      "enum": [
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED",
+        "TIMED_OUT",
+        "CANCELLED"
+      ],
+      "title": "ToolCallStatus",
+      "type": "string"
+    },
+    "ToolCallTrace": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Agent Run Id",
+          "type": "string"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
+        },
+        "correlation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Correlation Id",
+          "type": "string"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "evidence_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "input_summary": {
+          "additionalProperties": true,
+          "title": "Input Summary",
+          "type": "object"
+        },
+        "output_summary": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Summary"
+        },
+        "retry_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Retry Count",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ToolCallStatus"
+        },
+        "tool_call_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Tool Call Id",
+          "type": "string"
+        },
+        "tool_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Tool Id",
+          "type": "string"
+        },
+        "tool_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Tool Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_call_id",
+        "decision_case_id",
+        "agent_run_id",
+        "correlation_id",
+        "tool_id",
+        "tool_version",
+        "status",
+        "started_at",
+        "input_summary"
+      ],
+      "title": "ToolCallTrace",
+      "type": "object"
+    },
+    "ToolDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_agent_roles": {
+          "items": {
+            "$ref": "#/$defs/AgentRole"
+          },
+          "minItems": 1,
+          "title": "Allowed Agent Roles",
+          "type": "array"
+        },
+        "audit_level": {
+          "$ref": "#/$defs/AuditLevel",
+          "default": "INPUT_OUTPUT_SUMMARY"
+        },
+        "description": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "input_schema_ref": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Input Schema Ref",
+          "type": "string"
+        },
+        "output_schema_ref": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Output Schema Ref",
+          "type": "string"
+        },
+        "owner_service": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Owner Service",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "side_effect": {
+          "$ref": "#/$defs/ToolSideEffect",
+          "default": "NONE"
+        },
+        "timeout_ms": {
+          "minimum": 1,
+          "title": "Timeout Ms",
+          "type": "integer"
+        },
+        "tool_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Tool Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_id",
+        "version",
+        "description",
+        "owner_service",
+        "input_schema_ref",
+        "output_schema_ref",
+        "timeout_ms",
+        "allowed_agent_roles"
+      ],
+      "title": "ToolDefinition",
+      "type": "object"
+    },
+    "ToolSideEffect": {
+      "enum": [
+        "NONE",
+        "PERSIST_ONLY",
+        "OPERATIONAL_COMMIT"
+      ],
+      "title": "ToolSideEffect",
+      "type": "string"
+    },
+    "ValidationVerdict": {
+      "enum": [
+        "VALID",
+        "INVALID",
+        "ERROR"
+      ],
+      "title": "ValidationVerdict",
+      "type": "string"
+    },
+    "WhatIfTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "assumptions": {
+          "additionalProperties": true,
+          "title": "Assumptions",
+          "type": "object"
+        },
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "requested_by_user_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Requested By User Id",
+          "type": "string"
+        },
+        "scenario_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Scenario Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "WHAT_IF",
+          "default": "WHAT_IF",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "occurred_at",
+        "requested_by_user_id",
+        "scenario_id",
+        "assumptions"
+      ],
+      "title": "WhatIfTrigger",
+      "type": "object"
+    }
+  },
+  "$id": "https://pdm-marl.local/contracts/v3/operations-domain.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Canonical wire-contract catalog for factory snapshots, integrated schedules, decision cases, agent/tool observability, validation, recommendations, and human approval. The catalog wrapper is not a wire payload; consumers use the models in $defs.",
+  "properties": {
+    "agent_definition": {
+      "$ref": "#/$defs/AgentDefinition"
+    },
+    "agent_message": {
+      "$ref": "#/$defs/AgentMessage"
+    },
+    "agent_run_trace": {
+      "$ref": "#/$defs/AgentRunTrace"
+    },
+    "agent_task": {
+      "$ref": "#/$defs/AgentTask"
+    },
+    "candidate_plan": {
+      "$ref": "#/$defs/CandidatePlan"
+    },
+    "decision_case_status_response": {
+      "$ref": "#/$defs/DecisionCaseStatusResponse"
+    },
+    "decision_event": {
+      "$ref": "#/$defs/DecisionEvent"
+    },
+    "error_response": {
+      "$ref": "#/$defs/ErrorResponse"
+    },
+    "factory_snapshot": {
+      "$ref": "#/$defs/FactorySnapshot"
+    },
+    "human_decision_request": {
+      "$ref": "#/$defs/HumanDecisionRequest"
+    },
+    "machine_risk_report": {
+      "$ref": "#/$defs/MachineRiskReport"
+    },
+    "maintenance_option_set": {
+      "$ref": "#/$defs/MaintenanceOptionSet"
+    },
+    "plan_validation": {
+      "$ref": "#/$defs/PlanValidation"
+    },
+    "production_option_set": {
+      "$ref": "#/$defs/ProductionOptionSet"
+    },
+    "recommendation_package": {
+      "$ref": "#/$defs/RecommendationPackage"
+    },
+    "run_decision_case_request": {
+      "$ref": "#/$defs/RunDecisionCaseRequest"
+    },
+    "technician_option_set": {
+      "$ref": "#/$defs/TechnicianOptionSet"
+    },
+    "tool_call_trace": {
+      "$ref": "#/$defs/ToolCallTrace"
+    },
+    "tool_definition": {
+      "$ref": "#/$defs/ToolDefinition"
+    }
+  },
+  "required": [
+    "factory_snapshot",
+    "run_decision_case_request",
+    "machine_risk_report",
+    "production_option_set",
+    "maintenance_option_set",
+    "technician_option_set",
+    "decision_case_status_response",
+    "agent_definition",
+    "tool_definition",
+    "agent_task",
+    "agent_run_trace",
+    "agent_message",
+    "tool_call_trace",
+    "candidate_plan",
+    "plan_validation",
+    "recommendation_package",
+    "human_decision_request",
+    "decision_event",
+    "error_response"
+  ],
+  "title": "Multi-Agent PdM Operations Contract Catalog v3",
+  "type": "object"
+}

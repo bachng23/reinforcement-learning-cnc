@@ -4,10 +4,19 @@ const prisma = require('../../config/prisma');
 const { requireAuth, requireRole } = require('../../middlewares/auth.middleware');
 const validateUuid = require('../../middlewares/validate-uuid.middleware');
 const { decide, accessWhere, missing, roles } = require('../../services/maintenance-decision.service');
+const { listCandidates, getCandidate } = require('../../services/maintenance-candidate.service');
 const { episodeAccessWhere } = require('../../services/research-access.service');
 const { ApiError, fromZodError } = require('../../lib/api-error');
 
 router.use(requireAuth);
+router.get('/decisions', async (req, res) => {
+  const result = await listCandidates(prisma, req.user, req.query);
+  res.json({ success: true, ...result });
+});
+router.get('/decisions/:id', async (req, res) => {
+  const data = await getCandidate(prisma, req.user, req.params.id);
+  res.json({ success: true, data });
+});
 router.post('/decisions', requireRole(roles), async (req, res) => {
   const parsed = z.object({ recommendationId: z.string().uuid() }).strict().safeParse(req.body);
   if (!parsed.success) throw fromZodError(parsed.error);

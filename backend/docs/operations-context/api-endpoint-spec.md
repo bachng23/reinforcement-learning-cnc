@@ -1,6 +1,6 @@
 # Operations Context — API endpoint spec draft v1
 
-Status: DESIGN DRAFT, 2026-09-21; not registered in the running API or existing openapi.yaml. The incoming Operations Context field contract is not present in this checkout. Payload shapes below are proposed wire DTOs, not a generated canonical contract.
+Status: DESIGN DRAFT, 2026-09-21; not registered in the running API or existing openapi.yaml. This draft targets Operations and Multi-Agent Contract v3.0. Payload shapes below are proposed HTTP DTOs around canonical contract payloads, not a generated OpenAPI contract.
 
 Related: [Prisma design note](prisma-design-note.md), [state transitions](state-machine.md).
 
@@ -21,13 +21,13 @@ No extra `/approve` or `/commit` route: COMMIT is an explicit command on the dec
 
 ## Common contract
 
-- UUID for database resource IDs; opaque string for factory_id and source IDs pending canonical contract. Timestamps are server UTC RFC3339. Do not convert research steps into wall-clock scheduling units without a contract.
+- UUID for database resource IDs where the database owns identity; contract identifiers such as `factory_id`, `snapshot_id`, machine/job/source IDs and candidate IDs are opaque v3 identifiers. Timestamps are server UTC RFC3339. Do not convert research steps into wall-clock scheduling units without a contract.
 - Read scope: explicit `factory_id` query for snapshot/current schedule; case scope is resolved from persisted case. Unknown query/body fields rejected. An unauthenticated request gets 401; VIEWER mutation gets 403; inaccessible factory/case behaves as 404 to avoid disclosure.
 - VIEWER may read; OPERATOR, ENGINEER and ADMIN may create/review/commit within granted factory scope. This reuses current role names but requires a new factory access resolver. Separate approver/committer identities are not required by this draft; confirm enterprise policy before implementation.
 - Success envelope: `{ "success": true, "data": ..., "request_id": "..." }`; list events also has `meta`. Errors: `{ "success": false, "error": { "code": "...", "message": "...", "details": {} }, "request_id": "..." }`. Serialization for these proposed routes must explicitly map the existing middleware's requestId convention rather than mixing names.
 - Mutating requests require `Idempotency-Key`: 1–128 ASCII letters, digits, `._:-`. Scope `(factory_id, actor_id, operation, key)`; canonical body hash includes target path/case ID. Same key/body returns original status/body with `Idempotency-Replayed: true`, even if versions have since changed; same key/different input → 409 IDEMPOTENCY_KEY_REUSED. Persist receipts for at least the case/audit retention period; do not expire them silently while accepting replays.
 - Mutations require `expected_snapshot_id` (UUID) and `expected_plan_version` (integer >= 0). Here plan version means **published factory schedule version**, not candidate revision. Snapshot ID comes from server, not a client timestamp. Human commands additionally require `expected_case_revision` and `candidate_revision` (integers >= 1). All expected values are mandatory; missing values → 400, no last-write-wins default.
-- `schema_version` is required on create; it must be a supported Operations Context contract version. Examples use `operations-draft-1` only as a placeholder, not an asserted canonical version. Opaque payload objects must ultimately be validated against that pinned schema, not accepted as arbitrary JSON.
+- `schema_version` is required on create; it must be a supported Operations Context contract version. Examples use `3.0` for the current canonical contract. Opaque payload objects must be validated against that pinned schema, not accepted as arbitrary JSON.
 - Initial request size limit remains 100 KiB; return 413 above it. Large plan/artifact uploads require a later agreed artifact transport, not increasing limits implicitly.
 
 ## GET /operations/snapshot?factory_id=factory-01
@@ -40,7 +40,7 @@ Read head and its snapshot in one consistent DB statement/transaction. Return th
   "data": {
     "factory_id": "factory-01",
     "snapshot_id": "a935403f-08c7-4a47-bca0-366a60d7368b",
-    "schema_version": "operations-draft-1",
+    "schema_version": "3.0",
     "captured_at": "2026-09-21T02:00:00Z",
     "plan_version": 7,
     "current_schedule_id": "d5394c33-164f-4f4e-ae53-6b53a9fc933b",
@@ -59,7 +59,7 @@ Required header: Idempotency-Key. Proposed body:
 ```json
 {
   "factory_id": "factory-01",
-  "schema_version": "operations-draft-1",
+  "schema_version": "3.0",
   "expected_snapshot_id": "a935403f-08c7-4a47-bca0-366a60d7368b",
   "expected_plan_version": 7,
   "request": { "objective": "Review the production schedule", "constraints": {} }

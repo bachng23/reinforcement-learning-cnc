@@ -1,6 +1,6 @@
 # Decision Case — state-machine transition table
 
-Status: DESIGN DRAFT, 2026-09-21. State names supplied by the task; edge guards and retry semantics proposed pending the Operations Context contract. This is separate from MaintenanceDecisionStatus.
+Status: DESIGN DRAFT, 2026-09-21. State names follow Operations and Multi-Agent Contract v3.0; edge guards and retry semantics are proposed backend behavior. This is separate from MaintenanceDecisionStatus.
 
 Related: [persistence/transaction design](prisma-design-note.md), [API commands](api-endpoint-spec.md).
 
@@ -18,8 +18,17 @@ stateDiagram-v2
     MODIFIED --> VALIDATING: validate modified candidate
     VALIDATING --> GENERATING: validation failed, bounded regeneration
     APPROVED --> COMMITTED: explicit human COMMIT
+    CREATED --> CANCELLED: cancel before work
+    ANALYZING --> FAILED: terminal execution failure
+    GENERATING --> FAILED: terminal execution failure
+    VALIDATING --> FAILED: terminal execution failure
+    EXPLAINING --> FAILED: terminal execution failure
+    AWAITING_APPROVAL --> CANCELLED: cancel stale case
+    APPROVED --> CANCELLED: cancel before commit
     REJECTED --> [*]
     COMMITTED --> [*]
+    FAILED --> [*]
+    CANCELLED --> [*]
 ```
 
 ## Transition table
@@ -40,23 +49,25 @@ Every accepted transition performs a compare-and-swap on case status/revision, i
 | MODIFIED | VALIDATING | Worker claims edited candidate | Exact modified candidate; lease/revision valid | New validation run; MODIFIED_VALIDATION_STARTED event |
 | APPROVED | COMMITTED | Human COMMIT | Fresh expected head pair AND original case basis; expected case/candidate revision; recorded approval covers exact candidate; one commit per case | ScheduleCommit; current schedule pointer/version; HumanDecision(COMMIT); COMMITTED event/audit/receipt in one transaction |
 | AWAITING_APPROVAL | REJECTED | Human REJECT | Expected head/case/candidate revisions match; authorized reviewer | HumanDecision(REJECT), status, reason if supplied, REJECTED event/audit/receipt; no plan change |
+| ANALYZING/GENERATING/VALIDATING/EXPLAINING | FAILED | Worker or system marks unrecoverable execution failure | Current case revision, safe error code/message, no pending successful transition to persist | FAILED event, sanitized error evidence, audit/receipt if human-triggered |
+| CREATED/AWAITING_APPROVAL/APPROVED | CANCELLED | Human/system cancellation | Current case revision, no commit published; role/policy permits cancellation | CANCELLED event, reason if supplied, audit/receipt if human-triggered |
 
 ## Meaning of the outcome states
 
 - APPROVED is a recorded authorization for one immutable candidate; it is not terminal because COMMIT can follow. The published plan remains unchanged until commit.
 - MODIFIED is a recorded human edit awaiting validation, not permission to publish. The edited candidate flows through VALIDATING → EXPLAINING → AWAITING_APPROVAL and requires a fresh APPROVE. The human MODIFY event is retained through later state changes.
-- REJECTED and COMMITTED are terminal. COMMITTED means the platform published a schedule, not that physical operations completed.
+- REJECTED, COMMITTED, FAILED and CANCELLED are terminal. COMMITTED means the platform published a schedule, not that physical operations completed. FAILED/CANCELLED are canonical v3 lifecycle states and should not be modeled only as processing flags.
 - The supplied slash notation `APPROVED/MODIFIED/REJECTED/COMMITTED` is interpreted as available outcome states, not permission for a direct AWAITING_APPROVAL → COMMITTED edge. If the canonical contract requires modify-and-commit or approve-and-commit, agree a new atomic command explicitly; do not implement it by skipping review guards.
 
 ## Failures, retries and stale evidence
 
-No FAILED/CANCELLED state is introduced because neither was supplied in the lifecycle. Proposed v1 exposes `processing.status = QUEUED | RUNNING | BLOCKED | IDLE`, attempt and sanitized last_error independently of case status.
+FAILED and CANCELLED are canonical case statuses. Proposed v1 may still expose `processing.status = QUEUED | RUNNING | BLOCKED | IDLE`, attempt and sanitized last_error independently for non-terminal stage progress.
 
 | Situation | Behavior |
 | --- | --- |
 | Transient agent/tool failure | Stay in current state; append STAGE_FAILED event and trace; retry same stage with new run attempt/lease, bounded by configured budget. Do not duplicate candidate revisions or successful events. |
 | Validation failure of human-modified candidate | Stay VALIDATING and set processing BLOCKED with validation errors. Do not silently regenerate/replace a human edit. With no repair endpoint in v1, user creates a new case; a future correction command is a contract extension. |
-| Unrepairable failure or exhausted budget | Stay at failing stage, processing BLOCKED, retain errors/events; no automatic approval. New case is the v1 recovery path. Retry attempts themselves are trace events, not backwards lifecycle transitions. |
+| Unrepairable failure or exhausted budget | Transition an executing case to FAILED, retaining sanitized error evidence and events; no automatic approval. New case is the v1 recovery path. Retry attempts before budget exhaustion are trace events, not backwards lifecycle transitions. |
 | Snapshot or current published plan changed | Case remains on its immutable basis. Mark computed `stale=true` in reads; review/commit returns 409. Create a new case from a fresh snapshot/plan pair. No in-place rebase. |
 | Worker lease expired | New owner gets new lease token/attempt; previous owner cannot persist. Same-state recovery is an event + CAS revision, not a duplicate transition. |
 | Concurrent human commands | One case revision CAS wins; losing command rolls back its writes and gets 409. Identical idempotency replay returns original success. |

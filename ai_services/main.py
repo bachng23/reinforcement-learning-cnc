@@ -8,9 +8,9 @@ app = FastAPI(
 
 
 @app.get("/health")
-async def health() -> dict[str, str]:
+async def health() -> dict[str, str | list[str]]:
     return {
         "status": "ok",
         "service": "cnc-research-ai",
-        "contract_version": "2.0",
+        "contract_versions": ["2.0", "3.0"],
     }
