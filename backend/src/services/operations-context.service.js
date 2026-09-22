@@ -50,21 +50,26 @@ async function seedOperations(db, plan, { factoryId } = {}) {
 
 async function readOperations(db, user, factoryId) {
   authorizeFactory(user, factoryId);
-  const head = await db.$transaction((tx) => tx.operationsHead.findUnique({ where: { factoryId }, include: { snapshot: true, schedule: true } }), { isolationLevel: 'RepeatableRead' });
+  const head = await db.$transaction((tx) => tx.operationsHead.findUnique({ where: { factoryId }, include: { snapshot: true, schedule: { include: { snapshot: true } } } }), { isolationLevel: 'RepeatableRead' });
   if (!head) throw notFound();
   const { snapshot, schedule } = head;
   const corrupt = () => new ApiError(500, 'OPERATIONS_INTEGRITY_ERROR', 'Stored operations context failed integrity validation');
-  if (snapshot.schemaVersion !== '3.0' || contentHash(snapshot.payloadJson) !== snapshot.contentHash) throw corrupt();
-  let payload;
-  try { payload = await validatePayload(snapshot.payloadJson); }
-  catch (error) { if (error.statusCode === 400) throw corrupt(); throw error; }
-  if (contentHash(payload) !== snapshot.contentHash || payload.factory_id !== factoryId || payload.snapshot_id !== snapshot.snapshotId
-    || new Date(payload.captured_at).getTime() !== snapshot.capturedAt.getTime()) throw corrupt();
+  const checkSnapshot = async (row) => {
+    if (row.schemaVersion !== '3.0' || contentHash(row.payloadJson) !== row.contentHash) throw corrupt();
+    let payload;
+    try { payload = await validatePayload(row.payloadJson); }
+    catch (error) { if (error.statusCode === 400) throw corrupt(); throw error; }
+    if (contentHash(payload) !== row.contentHash || payload.factory_id !== factoryId || payload.snapshot_id !== row.snapshotId
+      || new Date(payload.captured_at).getTime() !== row.capturedAt.getTime()) throw corrupt();
+    return payload;
+  };
+  const payload = await checkSnapshot(snapshot);
   if (schedule) {
+    const basis = schedule.snapshotId === snapshot.snapshotId ? payload : await checkSnapshot(schedule.snapshot);
     if (schedule.schemaVersion !== '3.0' || schedule.factoryId !== factoryId
-      || contentHash(schedule.payloadJson) !== schedule.contentHash || contentHash(payload.current_schedule) !== schedule.contentHash
+      || contentHash(schedule.payloadJson) !== schedule.contentHash || contentHash(basis.current_schedule) !== schedule.contentHash
       || schedule.payloadJson.schedule_id !== schedule.scheduleId || schedule.payloadJson.revision !== schedule.revision) throw corrupt();
-  } else if (payload.current_schedule !== null) throw corrupt();
+  }
   const currentSchedule = schedule?.payloadJson ?? null;
   return {
     snapshot: {

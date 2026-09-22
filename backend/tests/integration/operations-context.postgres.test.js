@@ -99,8 +99,10 @@ describe('Operations Context — canonical seed, PostgreSQL persistence and auth
     try {
       await expect(seedOperations(prisma, plan, { factoryId })).rejects.toMatchObject({ code: 'OPERATIONS_SEED_CONFLICT' });
       expect((await prisma.operationsHead.findUnique({ where: { factoryId } })).scheduleId).toBeNull();
-      // The API refuses a head that disagrees with the immutable snapshot.
-      expect((await get(`/schedules/current?factory_id=${factoryId}`)).body.code).toBe('OPERATIONS_INTEGRITY_ERROR');
+      // Head is now the schedule authority, independent of observation evidence.
+      const response = await get(`/schedules/current?factory_id=${factoryId}`);
+      expect(response.status).toBe(200);
+      expect(response.body.data.schedule).toBeNull();
     } finally {
       const s = plan.run_request.factory_snapshot.current_schedule;
       await prisma.operationsHead.update({ where: { factoryId }, data: { scheduleId: s.schedule_id, scheduleRevision: s.revision } });

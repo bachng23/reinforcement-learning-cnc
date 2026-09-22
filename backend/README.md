@@ -1,5 +1,9 @@
 # CNC Research Platform Backend
 
+## Operations snapshot ingestion
+
+The internal `ingestFactorySnapshot` service validates v3 observations, serializes ingestion per factory, and updates the current snapshot with a head-revision CAS while preserving the published schedule and plan version. [Migration impact, concurrency protocol, CLI and test evidence](docs/operations-context/snapshot-ingestion.md). No public mutation endpoint is added.
+
 ## Operations Context design drafts
 
 Design-only deliverables (no runtime API or migration changes):
