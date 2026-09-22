@@ -2,7 +2,7 @@
 
 import { CalendarClock, ClipboardList, RefreshCw, UserRoundCheck } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { HealthAlertPanel } from "@/components/operations/health-alert-panel";
 import { MachineStatusGrid } from "@/components/operations/machine-status-grid";
@@ -12,54 +12,12 @@ import {
   getOperationsApiClient,
   getOperationsApiMode,
   getOperationsFactoryId,
-  OperationsApiError,
+  useOperationsContext,
+  type OperationsContextData,
   type OperationsApiClient,
   type OperationsApiMode,
 } from "@/lib/operations-api";
-import type { OperationsCurrentScheduleResponse, OperationsSnapshotResponse } from "@/lib/operations-api/client";
 import { formatDateTime, formatTime } from "@/lib/operations/format";
-
-type ReadyData = {
-  snapshotResponse: OperationsSnapshotResponse;
-  scheduleResponse: OperationsCurrentScheduleResponse;
-};
-
-type PageState =
-  | { kind: "loading" }
-  | { kind: "ready"; data: ReadyData }
-  | { kind: "empty" }
-  | { kind: "unauthorized"; message: string }
-  | { kind: "unavailable"; message: string }
-  | { kind: "error"; message: string };
-
-function errorMessage(error: OperationsApiError): string {
-  return error.contractError?.message ?? error.apiError?.message ?? error.message;
-}
-
-function failureState(error: unknown): Exclude<PageState, { kind: "loading" } | { kind: "ready" } | { kind: "empty" }> {
-  if (error instanceof Error && error.name === "AuthRedirectError") {
-    return { kind: "unauthorized", message: "Your session has expired. Sign in again to view operations data." };
-  }
-  if (error instanceof OperationsApiError) {
-    const message = errorMessage(error);
-    if (error.status === 401 || error.status === 403) {
-      return { kind: "unauthorized", message };
-    }
-    if (error.status === 404) {
-      return { kind: "unavailable", message: message || "No snapshot is available for this factory." };
-    }
-    if (error.status === 503) {
-      return { kind: "unavailable", message: message || "The operations snapshot service is temporarily unavailable." };
-    }
-    return { kind: "error", message };
-  }
-  return {
-    kind: "error",
-    message: error instanceof Error && error.message
-      ? `Network error: ${error.message}`
-      : "The Operations API request did not complete.",
-  };
-}
 
 function ResourceCount({ count, label, field }: { count: number; label: string; field: string }) {
   return (
@@ -71,7 +29,7 @@ function ResourceCount({ count, label, field }: { count: number; label: string; 
   );
 }
 
-function OperationsOverviewContent({ data }: { data: ReadyData }) {
+function OperationsOverviewContent({ data }: { data: OperationsContextData }) {
   const snapshot = data.snapshotResponse.snapshot;
   const schedule = data.scheduleResponse.schedule;
   const machines = snapshot.machines;
@@ -135,36 +93,11 @@ export function OperationsOverviewPage({ api, factoryId, apiMode }: {
   const client = useMemo(() => api ?? getOperationsApiClient(), [api]);
   const selectedFactoryId = factoryId ?? getOperationsFactoryId();
   const selectedMode = apiMode ?? (api ? "mock" : getOperationsApiMode());
-  const [state, setState] = useState<PageState>({ kind: "loading" });
-  const [revision, setRevision] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setState({ kind: "loading" });
-    void Promise.all([
-      client.getOperationsSnapshot(selectedFactoryId, { signal: controller.signal }),
-      client.getCurrentSchedule(selectedFactoryId, { signal: controller.signal }),
-    ]).then(([snapshotResponse, scheduleResponse]) => {
-      if (controller.signal.aborted) return;
-      if (snapshotResponse.snapshot_id !== scheduleResponse.snapshot_id ||
-        snapshotResponse.plan_version !== scheduleResponse.plan_version) {
-        setState({ kind: "error", message: "Snapshot and schedule changed during this read. Refresh to load one consistent operations context." });
-        return;
-      }
-      const snapshot = snapshotResponse.snapshot;
-      if (!snapshot.machines.length && !(snapshot.jobs ?? []).length && !(snapshot.technicians ?? []).length) {
-        setState({ kind: "empty" });
-        return;
-      }
-      setState({ kind: "ready", data: { snapshotResponse, scheduleResponse } });
-    }).catch((error: unknown) => {
-      if (controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) return;
-      setState(failureState(error));
-    });
-    return () => controller.abort();
-  }, [client, revision, selectedFactoryId]);
-
-  const retry = () => setRevision((value) => value + 1);
+  const { state, retry } = useOperationsContext({ api: client, factoryId: selectedFactoryId });
+  const hasNoResources = state.kind === "ready" &&
+    !state.data.snapshotResponse.snapshot.machines.length &&
+    !(state.data.snapshotResponse.snapshot.jobs ?? []).length &&
+    !(state.data.snapshotResponse.snapshot.technicians ?? []).length;
 
   return (
     <OperationsShell
@@ -174,11 +107,11 @@ export function OperationsOverviewPage({ api, factoryId, apiMode }: {
       actions={<button type="button" onClick={retry} disabled={state.kind === "loading"} className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[var(--color-stone-border)] bg-white px-4 text-sm font-medium disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${state.kind === "loading" ? "animate-spin" : ""}`} />Refresh</button>}
     >
       {state.kind === "loading" ? <AsyncState kind="loading" title="Loading operations snapshot" description={`Requesting snapshot and current schedule for ${selectedFactoryId}.`} /> : null}
-      {state.kind === "empty" ? <AsyncState kind="empty" title="No operations resources" description="The snapshot contains no machines, jobs or technicians." onRetry={retry} retryLabel="Refresh snapshot" /> : null}
+      {hasNoResources ? <AsyncState kind="empty" title="No operations resources" description="The snapshot contains no machines, jobs or technicians." onRetry={retry} retryLabel="Refresh snapshot" /> : null}
       {state.kind === "unauthorized" ? <AsyncState kind="error" title="Operations access required" description={state.message} action={<Link href="/login" className="inline-flex min-h-10 items-center rounded-md border border-[var(--color-stone-border)] bg-white px-4 text-sm font-medium">Sign in</Link>} /> : null}
       {state.kind === "unavailable" ? <AsyncState kind="empty" title="Operations snapshot unavailable" description={state.message} onRetry={retry} retryLabel="Retry snapshot" /> : null}
-      {state.kind === "error" ? <AsyncState kind="error" title="Operations data could not be loaded" description={state.message} onRetry={retry} /> : null}
-      {state.kind === "ready" ? <OperationsOverviewContent data={state.data} /> : null}
+      {state.kind === "error" || state.kind === "network-error" || state.kind === "mismatch" ? <AsyncState kind="error" title="Operations data could not be loaded" description={state.message} onRetry={retry} /> : null}
+      {state.kind === "ready" && !hasNoResources ? <OperationsOverviewContent data={state.data} /> : null}
     </OperationsShell>
   );
 }
