@@ -85,11 +85,16 @@ Manual workflow:
 
 The default example configuration uses the real Product API. Set `NEXT_PUBLIC_PRODUCT_API_MODE=mock` only when working without the backend.
 
-## Operations contract v3 fixture preview
+## Operations contract v3
 
-Open `/operations` to inspect the first-pass UI skeleton without waiting for backend integration. The five routes are `/operations`, `/operations/schedule`, `/operations/recommendations`, `/operations/agents`, and `/operations/what-if`.
+Open `/operations` for the API-backed overview. It loads both `getOperationsSnapshot()` and `getCurrentSchedule()` through `OperationsApiClient`. Mock mode is the default and reads the shared canonical 6-machine/12-job/3-technician fixture; real mode calls the authenticated backend read endpoints:
 
-The preview reads `lib/operations/fixtures.ts` and the scenario-adapter fixture in `lib/operations/what-if-fixtures.ts`. It preserves the v3 contract boundaries: candidate KPIs, health metrics, risk, RUL, costs, and recommendation selection are displayed from supplied fields and are never derived by page components. Human decision controls currently emit and preview contract-shaped approve, modify, or reject requests; they do not call an API. The what-if workspace renders returned baseline/result KPIs and ordered `DecisionEvent` records; it cannot commit a schedule. See `../docs/frontend-operations-ia.md` for the information architecture, field mapping, wireframes, known contract gaps, and integration breakdown.
+```dotenv
+NEXT_PUBLIC_OPERATIONS_API_MODE=real
+NEXT_PUBLIC_OPERATIONS_FACTORY_ID=factory-demo-01
+```
+
+`/operations/schedule`, `/operations/recommendations`, `/operations/agents`, and `/operations/what-if` remain fixture-rendered in this slice. They preserve the v3 contract boundaries: candidate KPIs, health metrics, risk, RUL, costs, validation, and recommendation selection are displayed from supplied fields and are never derived by page components. See `../docs/frontend-operations-ia.md` for the information architecture and contract map.
 
 ## Decision Center contract and limitations
 
