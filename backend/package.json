@@ -12,7 +12,8 @@
     "test:integration": "node tests/integration/run-integration-tests.js",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:seed": "node prisma/seed.js",
+    "operations:seed": "node scripts/seed-operations.js"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",

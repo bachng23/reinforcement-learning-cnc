@@ -14,6 +14,7 @@ router.use('/policies', policyRoute);
 router.use('/experiments', experimentRoute);
 router.use('/episodes', episodeRoute);
 router.use('/maintenance', require('./maintenance.route'));
+router.use(require('./operations.route'));
 
 router.get('/openapi.yaml', (_req, res) => {
   res.type('application/yaml').sendFile(path.resolve(__dirname, '../../../openapi.yaml'));
