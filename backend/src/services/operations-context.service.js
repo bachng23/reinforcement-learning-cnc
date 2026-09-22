@@ -39,32 +39,38 @@ async function seedOperations(db, plan, { factoryId } = {}) {
     }
     const head = await tx.operationsHead.findUnique({ where: { factoryId } });
     if (head && (head.snapshotId !== payload.snapshot_id || head.scheduleId !== (schedule?.schedule_id ?? null) || head.scheduleRevision !== (schedule?.revision ?? null))) throw conflict();
-    if (!head) await tx.operationsHead.create({ data: { factoryId, snapshotId: payload.snapshot_id, scheduleId: schedule?.schedule_id ?? null, scheduleRevision: schedule?.revision ?? null } });
+    if (!head) await tx.operationsHead.create({ data: { factoryId, snapshotId: payload.snapshot_id, scheduleId: schedule?.schedule_id ?? null, scheduleRevision: schedule?.revision ?? null, planVersion: schedule?.revision ?? 0 } });
     return { factory_id: factoryId, snapshot_id: payload.snapshot_id, snapshot_hash: snapshotHash, schedule_hash: scheduleHash, machines: payload.machines.length, replayed: Boolean(head) };
   });
 }
 
 async function readOperations(db, user, factoryId) {
   authorizeFactory(user, factoryId);
-  const head = await db.$transaction((tx) => tx.operationsHead.findUnique({ where: { factoryId }, include: { snapshot: true, schedule: true } }), { isolationLevel: 'RepeatableRead' });
+  const head = await db.$transaction((tx) => tx.operationsHead.findUnique({ where: { factoryId }, include: { snapshot: true, schedule: { include: { snapshot: true } } } }), { isolationLevel: 'RepeatableRead' });
   if (!head) throw notFound();
   const { snapshot, schedule } = head;
   const corrupt = () => new ApiError(500, 'OPERATIONS_INTEGRITY_ERROR', 'Stored operations context failed integrity validation');
-  if (snapshot.schemaVersion !== '3.0' || contentHash(snapshot.payloadJson) !== snapshot.contentHash) throw corrupt();
-  let payload;
-  try { payload = await validatePayload(snapshot.payloadJson); }
-  catch (error) { if (error.statusCode === 400) throw corrupt(); throw error; }
-  if (contentHash(payload) !== snapshot.contentHash || payload.factory_id !== factoryId || payload.snapshot_id !== snapshot.snapshotId
-    || new Date(payload.captured_at).getTime() !== snapshot.capturedAt.getTime()) throw corrupt();
+  const checkSnapshot = async (row) => {
+    if (row.schemaVersion !== '3.0' || contentHash(row.payloadJson) !== row.contentHash) throw corrupt();
+    let payload;
+    try { payload = await validatePayload(row.payloadJson); }
+    catch (error) { if (error.statusCode === 400) throw corrupt(); throw error; }
+    if (contentHash(payload) !== row.contentHash || payload.factory_id !== factoryId || payload.snapshot_id !== row.snapshotId
+      || new Date(payload.captured_at).getTime() !== row.capturedAt.getTime()) throw corrupt();
+    return payload;
+  };
+  const payload = await checkSnapshot(snapshot);
   if (schedule) {
-    if (schedule.schemaVersion !== '3.0' || schedule.snapshotId !== snapshot.snapshotId || schedule.factoryId !== factoryId
-      || contentHash(schedule.payloadJson) !== schedule.contentHash || contentHash(payload.current_schedule) !== schedule.contentHash
+    const basis = schedule.snapshotId === snapshot.snapshotId ? payload : await checkSnapshot(schedule.snapshot);
+    if (schedule.schemaVersion !== '3.0' || schedule.factoryId !== factoryId
+      || contentHash(schedule.payloadJson) !== schedule.contentHash || contentHash(basis.current_schedule) !== schedule.contentHash
       || schedule.payloadJson.schedule_id !== schedule.scheduleId || schedule.payloadJson.revision !== schedule.revision) throw corrupt();
-  } else if (payload.current_schedule !== null) throw corrupt();
+  }
   return { snapshot: payload, schedule: schedule?.payloadJson ?? null, meta: {
     factory_id: factoryId, snapshot_id: snapshot.snapshotId, schema_version: '3.0',
     snapshot_hash: snapshot.contentHash, schedule_hash: schedule?.contentHash ?? null,
     schedule_revision: schedule?.revision ?? null, head_revision: head.revision,
+    plan_version: head.planVersion, schedule_basis_snapshot_id: schedule?.snapshotId ?? null,
   } };
 }
 module.exports = { seedOperations, readOperations, authorizeFactory };

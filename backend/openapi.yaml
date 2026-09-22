@@ -2178,6 +2178,8 @@ components:
         - schedule_hash
         - schedule_revision
         - head_revision
+        - plan_version
+        - schedule_basis_snapshot_id
       properties:
         factory_id:
           type: string
@@ -2199,6 +2201,13 @@ components:
         head_revision:
           type: integer
           minimum: 1
+        plan_version:
+          type: integer
+          minimum: 0
+          description: Published plan version; observation ingestion never increments this value.
+        schedule_basis_snapshot_id:
+          type: [string, 'null']
+          description: Immutable basis of the published schedule, which can differ from the current snapshot_id.
     ErrorResponse:
       type: object
       additionalProperties: false
