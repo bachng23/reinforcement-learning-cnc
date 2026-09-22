@@ -1,0 +1,76 @@
+name: Operations integration
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'ai_services/**'
+      - 'contracts/**'
+      - 'scripts/**'
+      - '.github/workflows/operations-integration.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'ai_services/**'
+      - 'contracts/**'
+      - 'scripts/**'
+      - '.github/workflows/operations-integration.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: operations-integration-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  operations-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: operations_test
+          POSTGRES_PASSWORD: operations_test_only
+          POSTGRES_DB: operations_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U operations_test -d operations_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      # Ephemeral service credentials only; no repository/environment secrets.
+      TEST_DATABASE_URL: postgresql://operations_test:operations_test_only@127.0.0.1:5432/operations_test?schema=public
+      JWT_SECRET: operations-ci-test-only-secret-at-least-32-characters
+      OPERATIONS_FACTORY_ACCESS: '{}'
+      OPERATIONS_SCHEMA_JOURNAL: /tmp/operations-schemas-${{ github.run_id }}-${{ github.run_attempt }}.jsonl
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.10.11'
+          enable-cache: true
+          cache-dependency-glob: ai_services/uv.lock
+      - name: Contract, unit, PostgreSQL, frontend, snapshot flow and builds
+        run: bash scripts/check-operations-integration.sh
+      - name: Clean any schemas left by an interrupted runner
+        if: ${{ always() }}
+        timeout-minutes: 2
+        run: node backend/tests/integration/run-integration-tests.js --cleanup
