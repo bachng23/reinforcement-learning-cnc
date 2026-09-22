@@ -60,7 +60,35 @@ paths:
                   success:
                     const: true
                   data:
-                    $ref: '#/components/schemas/OperationsFactorySnapshot'
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - factory_id
+                      - snapshot_id
+                      - schema_version
+                      - captured_at
+                      - plan_version
+                      - current_schedule_id
+                      - snapshot
+                    properties:
+                      factory_id:
+                        type: string
+                      snapshot_id:
+                        type: string
+                      schema_version:
+                        const: '3.0'
+                      captured_at:
+                        type: string
+                        format: date-time
+                      plan_version:
+                        type: integer
+                        minimum: 0
+                      current_schedule_id:
+                        type:
+                          - string
+                          - 'null'
+                      snapshot:
+                        $ref: '#/components/schemas/OperationsFactorySnapshot'
                   meta:
                     $ref: '#/components/schemas/OperationsReadMeta'
         '400':
@@ -129,9 +157,31 @@ paths:
                   success:
                     const: true
                   data:
-                    anyOf:
-                      - $ref: '#/components/schemas/OperationsSchedule'
-                      - type: 'null'
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - factory_id
+                      - snapshot_id
+                      - plan_version
+                      - schedule
+                      - commit
+                    properties:
+                      factory_id:
+                        type: string
+                      snapshot_id:
+                        type: string
+                      plan_version:
+                        type: integer
+                        minimum: 0
+                      schedule:
+                        anyOf:
+                          - $ref: '#/components/schemas/OperationsSchedule'
+                          - type: 'null'
+                      commit:
+                        anyOf:
+                          - type: object
+                            additionalProperties: true
+                          - type: 'null'
                   meta:
                     $ref: '#/components/schemas/OperationsReadMeta'
         '400':
@@ -2174,12 +2224,12 @@ components:
         - factory_id
         - snapshot_id
         - schema_version
+        - plan_version
         - snapshot_hash
         - schedule_hash
         - schedule_revision
-        - head_revision
-        - plan_version
         - schedule_basis_snapshot_id
+        - head_revision
       properties:
         factory_id:
           type: string
@@ -2206,8 +2256,10 @@ components:
           minimum: 0
           description: Published plan version; observation ingestion never increments this value.
         schedule_basis_snapshot_id:
-          type: [string, 'null']
-          description: Immutable basis of the published schedule, which can differ from the current snapshot_id.
+          type:
+            - string
+            - 'null'
+          description: 'Immutable basis of the published schedule, which can differ from the current snapshot_id.'
     ErrorResponse:
       type: object
       additionalProperties: false

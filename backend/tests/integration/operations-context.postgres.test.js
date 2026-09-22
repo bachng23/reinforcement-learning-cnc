@@ -48,11 +48,14 @@ describe('Operations Context — canonical seed, PostgreSQL persistence and auth
     const schedule = await get(`/schedules/current?factory_id=${factoryId}`, viewer);
     expect(snapshot.status).toBe(200);
     expect(schedule.status).toBe(200);
-    expect(snapshot.body.data).toEqual(expected);
-    expect(snapshot.body.data.machines).toHaveLength(6);
-    expect(schedule.body.data).toEqual(expected.current_schedule);
-    expect(snapshot.body.meta.snapshot_hash).toBe(contentHash(snapshot.body.data));
-    expect(schedule.body.meta.schedule_hash).toBe(contentHash(schedule.body.data));
+    expect(snapshot.body.data.snapshot).toEqual(expected);
+    expect(snapshot.body.data.snapshot.machines).toHaveLength(6);
+    expect(snapshot.body.data.plan_version).toBe(1);
+    expect(snapshot.body.data.current_schedule_id).toBe(expected.current_schedule.schedule_id);
+    expect(schedule.body.data.schedule).toEqual(expected.current_schedule);
+    expect(schedule.body.data.plan_version).toBe(1);
+    expect(snapshot.body.meta.snapshot_hash).toBe(contentHash(snapshot.body.data.snapshot));
+    expect(schedule.body.meta.schedule_hash).toBe(contentHash(schedule.body.data.schedule));
     expect(snapshot.headers.get('cache-control')).toBe('no-store');
   });
   test.each(['/operations/snapshot', '/schedules/current'])('%s authenticates and scopes reads', async (route) => {
@@ -99,10 +102,30 @@ describe('Operations Context — canonical seed, PostgreSQL persistence and auth
       // Head is now the schedule authority, independent of observation evidence.
       const response = await get(`/schedules/current?factory_id=${factoryId}`);
       expect(response.status).toBe(200);
-      expect(response.body.data).toBeNull();
+      expect(response.body.data.schedule).toBeNull();
     } finally {
       const s = plan.run_request.factory_snapshot.current_schedule;
       await prisma.operationsHead.update({ where: { factoryId }, data: { scheduleId: s.schedule_id, scheduleRevision: s.revision } });
+    }
+  });
+  test('a fresh snapshot can retain a schedule based on the previous snapshot', async () => {
+    const canonical = await validatePayload(plan, 'seed');
+    const previousSnapshotId = canonical.snapshot_id;
+    const draft = structuredClone(canonical);
+    draft.snapshot_id = 'snapshot-demo-fresh-observation';
+    draft.captured_at = new Date(new Date(draft.captured_at).getTime() + 60_000).toISOString();
+    const fresh = await validatePayload(draft);
+    await prisma.factorySnapshot.create({ data: { factoryId, snapshotId: fresh.snapshot_id, schemaVersion: '3.0',
+      payloadJson: fresh, contentHash: contentHash(fresh), capturedAt: new Date(fresh.captured_at) } });
+    await prisma.operationsHead.update({ where: { factoryId }, data: { snapshotId: fresh.snapshot_id, revision: { increment: 1 } } });
+    try {
+      const response = await get(`/schedules/current?factory_id=${factoryId}`);
+      expect(response.status).toBe(200);
+      expect(response.body.data.snapshot_id).toBe(fresh.snapshot_id);
+      expect(response.body.data.schedule).toEqual(canonical.current_schedule);
+      expect(response.body.meta.schedule_basis_snapshot_id).toBe(previousSnapshotId);
+    } finally {
+      await prisma.operationsHead.update({ where: { factoryId }, data: { snapshotId: previousSnapshotId, revision: { increment: 1 } } });
     }
   });
   test('API rejects stored invalid schema/content hash, and nullable schedule works', async () => {
@@ -116,7 +139,10 @@ describe('Operations Context — canonical seed, PostgreSQL persistence and auth
       await prisma.operationsHead.create({ data: { factoryId: id, snapshotId: payload.snapshot_id } });
       const result = await get(`/schedules/current?factory_id=${id}`);
       expect(result.status).toBe(scenario === 'empty' ? 200 : 500);
-      if (scenario === 'empty') expect(result.body.data).toBeNull();
+      if (scenario === 'empty') {
+        expect(result.body.data.schedule).toBeNull();
+        expect(result.body.data.plan_version).toBe(0);
+      }
       else expect(result.body.code).toBe('OPERATIONS_INTEGRITY_ERROR');
     }
   });

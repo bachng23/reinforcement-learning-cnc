@@ -15,4 +15,10 @@ test('Operations OpenAPI uses canonical schemas without changing Schedule wire s
     expect(api.paths[route].get.parameters[0]).toMatchObject({ name: 'factory_id', required: true });
     expect(api.paths[route].get.responses['404'].content['application/json'].schema.$ref).toBe('#/components/schemas/OperationsErrorResponse');
   }
+  const snapshotData = api.paths['/operations/snapshot'].get.responses['200'].content['application/json'].schema.properties.data;
+  expect(snapshotData.required).toEqual(expect.arrayContaining(['snapshot_id', 'plan_version', 'snapshot']));
+  expect(snapshotData.properties.snapshot.$ref).toBe('#/components/schemas/OperationsFactorySnapshot');
+  const scheduleData = api.paths['/schedules/current'].get.responses['200'].content['application/json'].schema.properties.data;
+  expect(scheduleData.required).toEqual(expect.arrayContaining(['snapshot_id', 'plan_version', 'schedule']));
+  expect(scheduleData.properties.schedule.anyOf[0].$ref).toBe('#/components/schemas/OperationsSchedule');
 });

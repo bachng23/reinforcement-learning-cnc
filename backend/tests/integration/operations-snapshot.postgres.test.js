@@ -59,8 +59,8 @@ describe('Snapshot ingestion — isolated PostgreSQL schema', () => {
       scheduleId: before.scheduleId, scheduleRevision: before.scheduleRevision, planVersion: 1 });
     expect(await db.factorySnapshot.findUnique({ where: { factoryId_snapshotId: { factoryId: id, snapshotId: 'S1' } } })).toEqual(priorSnapshot);
     const read = await readOperations(db, { role: 'ADMIN' }, id);
-    expect(read.snapshot.snapshot_id).toBe('S2');
-    expect(read.schedule.schedule_id).toBe(before.scheduleId);
+    expect(read.snapshot.snapshot.snapshot_id).toBe('S2');
+    expect(read.schedule.schedule.schedule_id).toBe(before.scheduleId);
     expect(read.meta).toMatchObject({ snapshot_id: 'S2', schedule_basis_snapshot_id: 'S1', plan_version: 1, head_revision: 2 });
     await expect(db.factorySnapshot.update({ where: { factoryId_snapshotId: { factoryId: id, snapshotId: 'S1' } }, data: { sourceId: 'rewritten' } })).rejects.toThrow('immutable');
     await expect(db.factorySnapshot.delete({ where: { factoryId_snapshotId: { factoryId: id, snapshotId: 'S1' } } })).rejects.toThrow();
