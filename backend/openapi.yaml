@@ -24,6 +24,196 @@ security:
   - cookieAuth: []
   - bearerAuth: []
 paths:
+  /operations/snapshot:
+    get:
+      tags:
+        - Operations
+      operationId: getOperationsSnapshot
+      summary: Read current immutable FactorySnapshot
+      description: >-
+        Authenticated database read. ADMIN can read all factories; other roles need their database user UUID in
+        OPERATIONS_FACTORY_ACCESS. Unknown or inaccessible factories return 404. Validates canonical schema 3.0 and
+        SHA-256 content hashes. Cache-Control: no-store. Schedule is null if none exists. Schedule has no embedded
+        schema_version per the canonical contract; meta supplies version 3.0.
+      parameters:
+        - name: factory_id
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          example: factory-demo-01
+      responses:
+        '200':
+          description: Canonical payload and integrity metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                  - meta
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - factory_id
+                      - snapshot_id
+                      - schema_version
+                      - captured_at
+                      - plan_version
+                      - current_schedule_id
+                      - snapshot
+                    properties:
+                      factory_id:
+                        type: string
+                      snapshot_id:
+                        type: string
+                      schema_version:
+                        const: '3.0'
+                      captured_at:
+                        type: string
+                        format: date-time
+                      plan_version:
+                        type: integer
+                        minimum: 0
+                      current_schedule_id:
+                        type:
+                          - string
+                          - 'null'
+                      snapshot:
+                        $ref: '#/components/schemas/OperationsFactorySnapshot'
+                  meta:
+                    $ref: '#/components/schemas/OperationsReadMeta'
+        '400':
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsErrorResponse'
+        '404':
+          description: Unknown or inaccessible factory
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsErrorResponse'
+        '500':
+          description: Stored content failed integrity checks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsErrorResponse'
+        '503':
+          description: Database or validator unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsErrorResponse'
+  /schedules/current:
+    get:
+      tags:
+        - Operations
+      operationId: getCurrentOperationSchedule
+      summary: Read current immutable Schedule
+      description: >-
+        Authenticated database read. ADMIN can read all factories; other roles need their database user UUID in
+        OPERATIONS_FACTORY_ACCESS. Unknown or inaccessible factories return 404. Validates canonical schema 3.0 and
+        SHA-256 content hashes. Cache-Control: no-store. Schedule is null if none exists. Schedule has no embedded
+        schema_version per the canonical contract; meta supplies version 3.0.
+      parameters:
+        - name: factory_id
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          example: factory-demo-01
+      responses:
+        '200':
+          description: Canonical payload and integrity metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                  - meta
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - factory_id
+                      - snapshot_id
+                      - plan_version
+                      - schedule
+                      - commit
+                    properties:
+                      factory_id:
+                        type: string
+                      snapshot_id:
+                        type: string
+                      plan_version:
+                        type: integer
+                        minimum: 0
+                      schedule:
+                        anyOf:
+                          - $ref: '#/components/schemas/OperationsSchedule'
+                          - type: 'null'
+                      commit:
+                        anyOf:
+                          - type: object
+                            additionalProperties: true
+                          - type: 'null'
+                  meta:
+                    $ref: '#/components/schemas/OperationsReadMeta'
+        '400':
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsErrorResponse'
+        '404':
+          description: Unknown or inaccessible factory
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsErrorResponse'
+        '500':
+          description: Stored content failed integrity checks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsErrorResponse'
+        '503':
+          description: Database or validator unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsErrorResponse'
   /maintenance/decisions:
     get:
       tags: [Maintenance]
@@ -1262,6 +1452,812 @@ components:
               message: Database unavailable. Check DATABASE_URL and make sure Postgres is running.
 
   schemas:
+    OperationsFactorySnapshot:
+      additionalProperties: false
+      properties:
+        captured_at:
+          format: date-time
+          title: Captured At
+          type: string
+        current_schedule:
+          anyOf:
+            - $ref: '#/components/schemas/OperationsSchedule'
+            - type: 'null'
+          default: null
+        factory_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Factory Id
+          type: string
+        health_snapshots:
+          items:
+            $ref: '#/components/schemas/OperationsHealthSnapshot'
+          title: Health Snapshots
+          type: array
+        jobs:
+          items:
+            $ref: '#/components/schemas/OperationsProductionJob'
+          title: Jobs
+          type: array
+        machines:
+          items:
+            $ref: '#/components/schemas/OperationsMachine'
+          minItems: 1
+          title: Machines
+          type: array
+        maintenance_requests:
+          items:
+            $ref: '#/components/schemas/OperationsMaintenanceRequest'
+          title: Maintenance Requests
+          type: array
+        planning_window:
+          $ref: '#/components/schemas/OperationsTimeWindow'
+        schema_version:
+          const: '3.0'
+          default: '3.0'
+          title: Schema Version
+          type: string
+        snapshot_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Snapshot Id
+          type: string
+        technicians:
+          items:
+            $ref: '#/components/schemas/OperationsTechnician'
+          title: Technicians
+          type: array
+      required:
+        - snapshot_id
+        - factory_id
+        - captured_at
+        - planning_window
+        - machines
+      title: FactorySnapshot
+      type: object
+    OperationsSchedule:
+      additionalProperties: false
+      properties:
+        assignments:
+          items:
+            $ref: '#/components/schemas/OperationsScheduleAssignment'
+          title: Assignments
+          type: array
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        factory_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Factory Id
+          type: string
+        planning_window:
+          $ref: '#/components/schemas/OperationsTimeWindow'
+        revision:
+          minimum: 1
+          title: Revision
+          type: integer
+        schedule_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Schedule Id
+          type: string
+      required:
+        - schedule_id
+        - factory_id
+        - revision
+        - planning_window
+        - created_at
+      title: Schedule
+      type: object
+    OperationsScheduleAssignment:
+      additionalProperties: false
+      properties:
+        assignment_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Assignment Id
+          type: string
+        assignment_type:
+          $ref: '#/components/schemas/OperationsAssignmentType'
+        end_at:
+          format: date-time
+          title: End At
+          type: string
+        job_id:
+          anyOf:
+            - maxLength: 128
+              minLength: 1
+              pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+              type: string
+            - type: 'null'
+          default: null
+          title: Job Id
+        locked:
+          default: false
+          title: Locked
+          type: boolean
+        machine_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Machine Id
+          type: string
+        maintenance_request_id:
+          anyOf:
+            - maxLength: 128
+              minLength: 1
+              pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+              type: string
+            - type: 'null'
+          default: null
+          title: Maintenance Request Id
+        operation_id:
+          anyOf:
+            - maxLength: 128
+              minLength: 1
+              pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+              type: string
+            - type: 'null'
+          default: null
+          title: Operation Id
+        start_at:
+          format: date-time
+          title: Start At
+          type: string
+        status:
+          $ref: '#/components/schemas/OperationsAssignmentStatus'
+        technician_ids:
+          items:
+            maxLength: 128
+            minLength: 1
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            type: string
+          title: Technician Ids
+          type: array
+      required:
+        - assignment_id
+        - assignment_type
+        - status
+        - machine_id
+        - start_at
+        - end_at
+      title: ScheduleAssignment
+      type: object
+    OperationsAssignmentType:
+      enum:
+        - PRODUCTION
+        - MAINTENANCE
+        - BLOCKED_TIME
+      title: AssignmentType
+      type: string
+    OperationsAssignmentStatus:
+      enum:
+        - PROPOSED
+        - COMMITTED
+        - RUNNING
+        - COMPLETED
+        - CANCELLED
+      title: AssignmentStatus
+      type: string
+    OperationsTimeWindow:
+      additionalProperties: false
+      properties:
+        end_at:
+          format: date-time
+          title: End At
+          type: string
+        start_at:
+          format: date-time
+          title: Start At
+          type: string
+      required:
+        - start_at
+        - end_at
+      title: TimeWindow
+      type: object
+    OperationsHealthSnapshot:
+      additionalProperties: false
+      properties:
+        confidence:
+          enum:
+            - LOW
+            - MEDIUM
+            - HIGH
+          title: Confidence
+          type: string
+        failure_probability:
+          maximum: 1
+          minimum: 0
+          title: Failure Probability
+          type: number
+        failure_probability_horizon_minutes:
+          minimum: 1
+          title: Failure Probability Horizon Minutes
+          type: integer
+        health_index:
+          maximum: 1
+          minimum: 0
+          title: Health Index
+          type: number
+        health_snapshot_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Health Snapshot Id
+          type: string
+        machine_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Machine Id
+          type: string
+        observed_at:
+          format: date-time
+          title: Observed At
+          type: string
+        observed_wear_um:
+          anyOf:
+            - minimum: 0
+              type: number
+            - type: 'null'
+          default: null
+          title: Observed Wear Um
+        rul_distribution:
+          anyOf:
+            - $ref: '#/components/schemas/OperationsDiscreteRULDistribution'
+            - type: 'null'
+          default: null
+        source_model_version:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Source Model Version
+          type: string
+      required:
+        - health_snapshot_id
+        - machine_id
+        - observed_at
+        - health_index
+        - failure_probability_horizon_minutes
+        - failure_probability
+        - confidence
+        - source_model_version
+      title: HealthSnapshot
+      type: object
+    OperationsDiscreteRULDistribution:
+      additionalProperties: false
+      properties:
+        model_version:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Model Version
+          type: string
+        probability_mass:
+          items:
+            maximum: 1
+            minimum: 0
+            type: number
+          minItems: 2
+          title: Probability Mass
+          type: array
+        support_minutes:
+          items:
+            minimum: 0
+            type: integer
+          minItems: 2
+          title: Support Minutes
+          type: array
+        survival_beyond_horizon:
+          maximum: 1
+          minimum: 0
+          title: Survival Beyond Horizon
+          type: number
+      required:
+        - support_minutes
+        - probability_mass
+        - survival_beyond_horizon
+        - model_version
+      title: DiscreteRULDistribution
+      type: object
+    OperationsProductionJob:
+      additionalProperties: false
+      properties:
+        display_name:
+          maxLength: 256
+          minLength: 1
+          title: Display Name
+          type: string
+        due_at:
+          format: date-time
+          title: Due At
+          type: string
+        job_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Job Id
+          type: string
+        operations:
+          items:
+            $ref: '#/components/schemas/OperationsOperation'
+          minItems: 1
+          title: Operations
+          type: array
+        priority:
+          default: 50
+          maximum: 100
+          minimum: 1
+          title: Priority
+          type: integer
+        release_at:
+          format: date-time
+          title: Release At
+          type: string
+      required:
+        - job_id
+        - display_name
+        - release_at
+        - due_at
+        - operations
+      title: ProductionJob
+      type: object
+    OperationsOperation:
+      additionalProperties: false
+      properties:
+        machine_options:
+          items:
+            $ref: '#/components/schemas/OperationsMachineOption'
+          minItems: 1
+          title: Machine Options
+          type: array
+        operation_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Operation Id
+          type: string
+        operation_type:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Operation Type
+          type: string
+        predecessor_operation_ids:
+          items:
+            maxLength: 128
+            minLength: 1
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            type: string
+          title: Predecessor Operation Ids
+          type: array
+        sequence:
+          minimum: 0
+          title: Sequence
+          type: integer
+        status:
+          $ref: '#/components/schemas/OperationsOperationStatus'
+          default: PENDING
+      required:
+        - operation_id
+        - sequence
+        - operation_type
+        - machine_options
+      title: Operation
+      type: object
+    OperationsMachineOption:
+      additionalProperties: false
+      properties:
+        expected_damage:
+          anyOf:
+            - minimum: 0
+              type: number
+            - type: 'null'
+          default: null
+          title: Expected Damage
+        load_factor:
+          default: 1
+          exclusiveMinimum: 0
+          title: Load Factor
+          type: number
+        machine_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Machine Id
+          type: string
+        processing_minutes:
+          minimum: 1
+          title: Processing Minutes
+          type: integer
+      required:
+        - machine_id
+        - processing_minutes
+      title: MachineOption
+      type: object
+    OperationsOperationStatus:
+      enum:
+        - PENDING
+        - READY
+        - SCHEDULED
+        - RUNNING
+        - COMPLETED
+        - BLOCKED
+      title: OperationStatus
+      type: string
+    OperationsMachine:
+      additionalProperties: false
+      properties:
+        capabilities:
+          items:
+            $ref: '#/components/schemas/OperationsMachineCapability'
+          minItems: 1
+          title: Capabilities
+          type: array
+        display_name:
+          maxLength: 256
+          minLength: 1
+          title: Display Name
+          type: string
+        machine_family:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Machine Family
+          type: string
+        machine_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Machine Id
+          type: string
+        status:
+          $ref: '#/components/schemas/OperationsMachineStatus'
+      required:
+        - machine_id
+        - display_name
+        - machine_family
+        - status
+        - capabilities
+      title: Machine
+      type: object
+    OperationsMachineCapability:
+      additionalProperties: false
+      properties:
+        damage_factor:
+          default: 1
+          exclusiveMinimum: 0
+          title: Damage Factor
+          type: number
+        load_factor:
+          default: 1
+          exclusiveMinimum: 0
+          title: Load Factor
+          type: number
+        nominal_processing_minutes:
+          minimum: 1
+          title: Nominal Processing Minutes
+          type: integer
+        operation_type:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Operation Type
+          type: string
+      required:
+        - operation_type
+        - nominal_processing_minutes
+      title: MachineCapability
+      type: object
+    OperationsMachineStatus:
+      enum:
+        - IDLE
+        - RUNNING
+        - WARNING
+        - MAINTENANCE
+        - FAILED
+        - UNAVAILABLE
+      title: MachineStatus
+      type: string
+    OperationsMaintenanceRequest:
+      additionalProperties: false
+      properties:
+        action_type:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Action Type
+          type: string
+        earliest_start_at:
+          format: date-time
+          title: Earliest Start At
+          type: string
+        expected_duration_minutes:
+          minimum: 1
+          title: Expected Duration Minutes
+          type: integer
+        latest_start_at:
+          anyOf:
+            - format: date-time
+              type: string
+            - type: 'null'
+          default: null
+          title: Latest Start At
+        machine_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Machine Id
+          type: string
+        maintenance_request_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Maintenance Request Id
+          type: string
+        maintenance_type:
+          $ref: '#/components/schemas/OperationsMaintenanceType'
+        mandatory:
+          default: false
+          title: Mandatory
+          type: boolean
+        minimum_skill_level:
+          default: 1
+          maximum: 5
+          minimum: 1
+          title: Minimum Skill Level
+          type: integer
+        priority:
+          $ref: '#/components/schemas/OperationsMaintenancePriority'
+        requested_at:
+          format: date-time
+          title: Requested At
+          type: string
+        required_skill_ids:
+          items:
+            maxLength: 128
+            minLength: 1
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            type: string
+          minItems: 1
+          title: Required Skill Ids
+          type: array
+        status:
+          $ref: '#/components/schemas/OperationsMaintenanceRequestStatus'
+      required:
+        - maintenance_request_id
+        - machine_id
+        - maintenance_type
+        - action_type
+        - priority
+        - status
+        - requested_at
+        - earliest_start_at
+        - expected_duration_minutes
+        - required_skill_ids
+      title: MaintenanceRequest
+      type: object
+    OperationsMaintenanceType:
+      enum:
+        - PREVENTIVE
+        - CORRECTIVE
+      title: MaintenanceType
+      type: string
+    OperationsMaintenancePriority:
+      enum:
+        - LOW
+        - NORMAL
+        - HIGH
+        - CRITICAL
+      title: MaintenancePriority
+      type: string
+    OperationsMaintenanceRequestStatus:
+      enum:
+        - OPEN
+        - SCHEDULED
+        - IN_PROGRESS
+        - COMPLETED
+        - CANCELLED
+      title: MaintenanceRequestStatus
+      type: string
+    OperationsTechnician:
+      additionalProperties: false
+      properties:
+        availability:
+          items:
+            $ref: '#/components/schemas/OperationsTimeWindow'
+          title: Availability
+          type: array
+        display_name:
+          maxLength: 256
+          minLength: 1
+          title: Display Name
+          type: string
+        skills:
+          items:
+            $ref: '#/components/schemas/OperationsTechnicianSkill'
+          minItems: 1
+          title: Skills
+          type: array
+        status:
+          $ref: '#/components/schemas/OperationsTechnicianStatus'
+        technician_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Technician Id
+          type: string
+      required:
+        - technician_id
+        - display_name
+        - status
+        - skills
+      title: Technician
+      type: object
+    OperationsTechnicianSkill:
+      additionalProperties: false
+      properties:
+        certified_action_types:
+          items:
+            maxLength: 128
+            minLength: 1
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            type: string
+          title: Certified Action Types
+          type: array
+        certified_machine_families:
+          items:
+            maxLength: 128
+            minLength: 1
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            type: string
+          title: Certified Machine Families
+          type: array
+        level:
+          maximum: 5
+          minimum: 1
+          title: Level
+          type: integer
+        skill_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Skill Id
+          type: string
+      required:
+        - skill_id
+        - level
+      title: TechnicianSkill
+      type: object
+    OperationsTechnicianStatus:
+      enum:
+        - AVAILABLE
+        - ASSIGNED
+        - OFF_SHIFT
+        - UNAVAILABLE
+      title: TechnicianStatus
+      type: string
+    OperationsErrorResponse:
+      additionalProperties: false
+      properties:
+        code:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Code
+          type: string
+        correlation_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Correlation Id
+          type: string
+        details:
+          items:
+            $ref: '#/components/schemas/OperationsErrorDetail'
+          title: Details
+          type: array
+        error_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Error Id
+          type: string
+        message:
+          maxLength: 256
+          minLength: 1
+          title: Message
+          type: string
+        retryable:
+          default: false
+          title: Retryable
+          type: boolean
+        schema_version:
+          const: '3.0'
+          default: '3.0'
+          title: Schema Version
+          type: string
+      required:
+        - error_id
+        - code
+        - message
+        - correlation_id
+      title: ErrorResponse
+      type: object
+    OperationsErrorDetail:
+      additionalProperties: false
+      properties:
+        code:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Code
+          type: string
+        field:
+          anyOf:
+            - maxLength: 256
+              minLength: 1
+              type: string
+            - type: 'null'
+          default: null
+          title: Field
+        message:
+          maxLength: 256
+          minLength: 1
+          title: Message
+          type: string
+      required:
+        - code
+        - message
+      title: ErrorDetail
+      type: object
+    OperationsReadMeta:
+      type: object
+      required:
+        - factory_id
+        - snapshot_id
+        - schema_version
+        - plan_version
+        - snapshot_hash
+        - schedule_hash
+        - schedule_revision
+        - schedule_basis_snapshot_id
+        - head_revision
+      properties:
+        factory_id:
+          type: string
+        snapshot_id:
+          type: string
+        schema_version:
+          const: '3.0'
+        plan_version:
+          type: integer
+          minimum: 0
+        snapshot_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        schedule_hash:
+          type:
+            - string
+            - 'null'
+        schedule_revision:
+          type:
+            - integer
+            - 'null'
+        schedule_basis_snapshot_id:
+          type:
+            - string
+            - 'null'
+        head_revision:
+          type: integer
+          minimum: 1
     ErrorResponse:
       type: object
       additionalProperties: false

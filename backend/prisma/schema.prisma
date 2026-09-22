@@ -2,6 +2,52 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model FactorySnapshot {
+  factoryId String @map("factory_id")
+  snapshotId String @map("snapshot_id")
+  schemaVersion String @map("schema_version")
+  contentHash String @map("content_hash") @db.Char(64)
+  payloadJson Json @map("payload_json") @db.JsonB
+  capturedAt DateTime @map("captured_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  schedules OperationSchedule[]
+  heads OperationsHead[]
+
+  @@id([factoryId, snapshotId])
+  @@map("factory_snapshots")
+}
+
+model OperationSchedule {
+  factoryId String @map("factory_id")
+  scheduleId String @map("schedule_id")
+  revision Int
+  snapshotId String @map("snapshot_id")
+  schemaVersion String @map("schema_version")
+  contentHash String @map("content_hash") @db.Char(64)
+  payloadJson Json @map("payload_json") @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  snapshot FactorySnapshot @relation(fields: [factoryId, snapshotId], references: [factoryId, snapshotId], onDelete: Restrict)
+  heads OperationsHead[]
+
+  @@id([factoryId, scheduleId, revision])
+  @@unique([factoryId, snapshotId, scheduleId, revision], map: "operation_schedules_snapshot_schedule_key")
+  @@map("operation_schedules")
+}
+
+model OperationsHead {
+  factoryId String @id @map("factory_id")
+  snapshotId String @map("snapshot_id")
+  scheduleId String? @map("schedule_id")
+  scheduleRevision Int? @map("schedule_revision")
+  planVersion Int @default(0) @map("plan_version")
+  revision Int @default(1)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  snapshot FactorySnapshot @relation(fields: [factoryId, snapshotId], references: [factoryId, snapshotId], onDelete: Restrict)
+  schedule OperationSchedule? @relation(fields: [factoryId, scheduleId, scheduleRevision], references: [factoryId, scheduleId, revision], onDelete: Restrict, map: "operations_heads_schedule_fkey")
+
+  @@map("operations_heads")
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
