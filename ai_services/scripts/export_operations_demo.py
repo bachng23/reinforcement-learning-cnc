@@ -40,6 +40,22 @@ def _json(model: object) -> dict:
     return model.model_dump(mode="json")  # type: ignore[attr-defined, no-any-return]
 
 
+def _assignment(candidate: dict, assignment_id: str) -> dict:
+    return next(
+        assignment
+        for assignment in candidate["schedule"]["assignments"]
+        if assignment["assignment_id"] == assignment_id
+    )
+
+
+def _candidate_fixture(candidates: list[dict], suffix: str) -> dict:
+    candidate = deepcopy(candidates[0])
+    candidate["candidate_plan_id"] = f"plan-invalid-{suffix}"
+    candidate["schedule"]["schedule_id"] = f"schedule-invalid-{suffix}"
+    candidate["validation"] = None
+    return candidate
+
+
 def main() -> None:
     snapshot = _json(DEMO_FACTORY_SNAPSHOT)
     candidates = [_json(plan) for plan in DEMO_CANDIDATE_PLANS]
@@ -105,6 +121,55 @@ def main() -> None:
         "warnings": [],
     }
     _dump(INVALID_DIR / "machine-capacity-overlap.json", overlap_candidate)
+
+    ineligible_machine = _candidate_fixture(candidates, "machine-eligibility")
+    _assignment(ineligible_machine, "A-J01-O10")["machine_id"] = "M03"
+    _dump(INVALID_DIR / "candidate-machine-ineligible.json", ineligible_machine)
+
+    unknown_resource = _candidate_fixture(candidates, "unknown-resource")
+    _assignment(unknown_resource, "A-J01-O10")["machine_id"] = "M99"
+    _dump(INVALID_DIR / "candidate-unknown-resource.json", unknown_resource)
+
+    outside_snapshot_window = _candidate_fixture(candidates, "planning-window")
+    outside_snapshot_window["schedule"]["planning_window"][
+        "start_at"
+    ] = "2026-09-21T23:00:00Z"
+    first_assignment = _assignment(outside_snapshot_window, "A-J01-O10")
+    first_assignment["start_at"] = "2026-09-21T23:00:00Z"
+    first_assignment["end_at"] = "2026-09-22T00:00:00Z"
+    _dump(
+        INVALID_DIR / "candidate-outside-snapshot-window.json",
+        outside_snapshot_window,
+    )
+
+    precedence = _candidate_fixture(candidates, "precedence")
+    successor = _assignment(precedence, "A-J01-O20")
+    successor["start_at"] = "2026-09-22T00:00:00Z"
+    successor["end_at"] = "2026-09-22T00:30:00Z"
+    _dump(INVALID_DIR / "candidate-precedence-violation.json", precedence)
+
+    unavailable_technician = _candidate_fixture(
+        candidates, "technician-availability"
+    )
+    maintenance = _assignment(
+        unavailable_technician, "A-maintenance-plan-production-priority"
+    )
+    maintenance["technician_ids"] = ["T02"]
+    maintenance["start_at"] = "2026-09-22T00:00:00Z"
+    maintenance["end_at"] = "2026-09-22T01:00:00Z"
+    _dump(
+        INVALID_DIR / "candidate-technician-unavailable.json",
+        unavailable_technician,
+    )
+
+    inadequate_skill = _candidate_fixture(candidates, "technician-skill")
+    _assignment(inadequate_skill, "A-maintenance-plan-production-priority")[
+        "technician_ids"
+    ] = ["T03"]
+    _dump(
+        INVALID_DIR / "candidate-technician-skill-inadequate.json",
+        inadequate_skill,
+    )
 
     invalid_without_error = deepcopy(validations[0])
     invalid_without_error["validation_id"] = "validation-invalid-without-error"
