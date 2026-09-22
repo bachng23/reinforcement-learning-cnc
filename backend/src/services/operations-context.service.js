@@ -16,6 +16,7 @@ async function seedOperations(db, plan, { factoryId } = {}) {
   const payload = await validatePayload(plan, 'seed');
   if (!factoryId || payload.factory_id !== factoryId) throw new ApiError(400, 'FACTORY_SCOPE_MISMATCH', 'Explicit seed factory must match canonical scenario');
   const schedule = payload.current_schedule;
+  const planVersion = schedule ? 1 : 0;
   const snapshotHash = contentHash(payload);
   const scheduleHash = schedule ? contentHash(schedule) : null;
   // Stable IDs and per-factory transaction advisory lock serialize concurrent seed replays.
@@ -38,9 +39,12 @@ async function seedOperations(db, plan, { factoryId } = {}) {
       } });
     }
     const head = await tx.operationsHead.findUnique({ where: { factoryId } });
-    if (head && (head.snapshotId !== payload.snapshot_id || head.scheduleId !== (schedule?.schedule_id ?? null) || head.scheduleRevision !== (schedule?.revision ?? null))) throw conflict();
-    if (!head) await tx.operationsHead.create({ data: { factoryId, snapshotId: payload.snapshot_id, scheduleId: schedule?.schedule_id ?? null, scheduleRevision: schedule?.revision ?? null } });
-    return { factory_id: factoryId, snapshot_id: payload.snapshot_id, snapshot_hash: snapshotHash, schedule_hash: scheduleHash, machines: payload.machines.length, replayed: Boolean(head) };
+    if (head && (head.snapshotId !== payload.snapshot_id || head.scheduleId !== (schedule?.schedule_id ?? null)
+      || head.scheduleRevision !== (schedule?.revision ?? null) || head.planVersion !== planVersion)) throw conflict();
+    if (!head) await tx.operationsHead.create({ data: { factoryId, snapshotId: payload.snapshot_id,
+      scheduleId: schedule?.schedule_id ?? null, scheduleRevision: schedule?.revision ?? null, planVersion } });
+    return { factory_id: factoryId, snapshot_id: payload.snapshot_id, snapshot_hash: snapshotHash,
+      schedule_hash: scheduleHash, plan_version: planVersion, machines: payload.machines.length, replayed: Boolean(head) };
   });
 }
 
@@ -57,14 +61,34 @@ async function readOperations(db, user, factoryId) {
   if (contentHash(payload) !== snapshot.contentHash || payload.factory_id !== factoryId || payload.snapshot_id !== snapshot.snapshotId
     || new Date(payload.captured_at).getTime() !== snapshot.capturedAt.getTime()) throw corrupt();
   if (schedule) {
-    if (schedule.schemaVersion !== '3.0' || schedule.snapshotId !== snapshot.snapshotId || schedule.factoryId !== factoryId
+    if (schedule.schemaVersion !== '3.0' || schedule.factoryId !== factoryId
       || contentHash(schedule.payloadJson) !== schedule.contentHash || contentHash(payload.current_schedule) !== schedule.contentHash
       || schedule.payloadJson.schedule_id !== schedule.scheduleId || schedule.payloadJson.revision !== schedule.revision) throw corrupt();
   } else if (payload.current_schedule !== null) throw corrupt();
-  return { snapshot: payload, schedule: schedule?.payloadJson ?? null, meta: {
-    factory_id: factoryId, snapshot_id: snapshot.snapshotId, schema_version: '3.0',
-    snapshot_hash: snapshot.contentHash, schedule_hash: schedule?.contentHash ?? null,
-    schedule_revision: schedule?.revision ?? null, head_revision: head.revision,
-  } };
+  const currentSchedule = schedule?.payloadJson ?? null;
+  return {
+    snapshot: {
+      factory_id: factoryId,
+      snapshot_id: snapshot.snapshotId,
+      schema_version: '3.0',
+      captured_at: payload.captured_at,
+      plan_version: head.planVersion,
+      current_schedule_id: schedule?.scheduleId ?? null,
+      snapshot: payload,
+    },
+    schedule: {
+      factory_id: factoryId,
+      snapshot_id: snapshot.snapshotId,
+      plan_version: head.planVersion,
+      schedule: currentSchedule,
+      commit: null,
+    },
+    meta: {
+      factory_id: factoryId, snapshot_id: snapshot.snapshotId, schema_version: '3.0', plan_version: head.planVersion,
+      snapshot_hash: snapshot.contentHash, schedule_hash: schedule?.contentHash ?? null,
+      schedule_revision: schedule?.revision ?? null, schedule_basis_snapshot_id: schedule?.snapshotId ?? null,
+      head_revision: head.revision,
+    },
+  };
 }
 module.exports = { seedOperations, readOperations, authorizeFactory };

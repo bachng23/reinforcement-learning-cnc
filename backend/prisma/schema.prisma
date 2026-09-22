@@ -39,10 +39,11 @@ model OperationsHead {
   snapshotId String @map("snapshot_id")
   scheduleId String? @map("schedule_id")
   scheduleRevision Int? @map("schedule_revision")
+  planVersion Int @default(0) @map("plan_version")
   revision Int @default(1)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   snapshot FactorySnapshot @relation(fields: [factoryId, snapshotId], references: [factoryId, snapshotId], onDelete: Restrict)
-  schedule OperationSchedule? @relation(fields: [factoryId, snapshotId, scheduleId, scheduleRevision], references: [factoryId, snapshotId, scheduleId, revision], onDelete: Restrict, map: "operations_heads_schedule_fkey")
+  schedule OperationSchedule? @relation(fields: [factoryId, scheduleId, scheduleRevision], references: [factoryId, scheduleId, revision], onDelete: Restrict, map: "operations_heads_schedule_fkey")
 
   @@map("operations_heads")
 }

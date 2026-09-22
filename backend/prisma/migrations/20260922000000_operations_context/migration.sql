@@ -38,13 +38,14 @@ CREATE TABLE operations_heads (
   snapshot_id TEXT NOT NULL,
   schedule_id TEXT,
   schedule_revision INTEGER,
+  plan_version INTEGER NOT NULL DEFAULT 0 CHECK (plan_version >= 0),
   revision INTEGER NOT NULL DEFAULT 1 CHECK (revision > 0),
   updated_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CHECK ((schedule_id IS NULL) = (schedule_revision IS NULL)),
   CONSTRAINT operations_heads_factory_id_snapshot_id_fkey FOREIGN KEY (factory_id, snapshot_id)
     REFERENCES factory_snapshots(factory_id, snapshot_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT operations_heads_schedule_fkey FOREIGN KEY (factory_id, snapshot_id, schedule_id, schedule_revision)
-    REFERENCES operation_schedules(factory_id, snapshot_id, schedule_id, revision) ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT operations_heads_schedule_fkey FOREIGN KEY (factory_id, schedule_id, schedule_revision)
+    REFERENCES operation_schedules(factory_id, schedule_id, revision) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 CREATE FUNCTION operations_context_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

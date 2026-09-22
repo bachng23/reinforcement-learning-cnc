@@ -50,7 +50,7 @@ Read head and its snapshot in one consistent DB statement/transaction. Return th
 }
 ```
 
-`snapshot: {}` is a documentation placeholder for the full validated FactorySnapshot, not a valid fixture. Missing current snapshot → 404 SNAPSHOT_NOT_AVAILABLE. Unknown/inaccessible factory → 404 FACTORY_NOT_FOUND. Set Cache-Control: no-store for mutable-head reads. Separate GETs can observe different head versions; the client must compare tokens and refetch rather than combine inconsistent results.
+`snapshot: {}` is a documentation placeholder for the full validated FactorySnapshot, not a valid fixture. Missing current snapshot → 404 SNAPSHOT_NOT_AVAILABLE. Unknown/inaccessible factory → 404 FACTORY_NOT_FOUND. Set Cache-Control: no-store for mutable-head reads. Separate GETs can observe different head versions; the client must compare tokens and refetch rather than combine inconsistent results. The implemented read slice may include an additional `meta` object containing integrity hashes and head revision; authoritative concurrency fields remain in `data`.
 
 ## POST /decision-cases
 
