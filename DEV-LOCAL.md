@@ -91,6 +91,54 @@ uv run pytest tests/test_cnc_contracts.py -q
 ```
 # Operations v3 contract workflow
 
+## Full Operations integration gate
+
+CI runs `.github/workflows/operations-integration.yml` on PR changes under backend,
+frontend, ai_services, contracts, scripts or that workflow, and on matching main
+pushes. It uses a disposable PostgreSQL 16 service on a GitHub-hosted Ubuntu
+runner; no developer Docker daemon, database or GitHub secrets are used.
+
+Equivalent local command (Bash, Node 22.22.2+ in the 22 release line, Python 3.12,
+uv 0.10.11, and a Docker builder available locally or through DOCKER_HOST):
+
+```bash
+TEST_DATABASE_URL='postgresql://test_user:test_password@127.0.0.1:5432/operations_test?schema=public' bash scripts/check-operations-integration.sh
+```
+
+Provision a dedicated PostgreSQL 16 test database first. The gate requires an
+explicit TEST_DATABASE_URL with a database name ending in `_test` or `_ci`; it
+never starts PostgreSQL, creates/drops a database, or uses a development URL as
+a fallback. The test role must be able to create/drop schemas and own tables.
+Only test JWT/factory-access values are used. The Docker step builds the image;
+it does not run application or database containers.
+
+The fail-fast order is locked npm/uv installation and Prisma generation, canonical
+contract check, backend unit tests, PostgreSQL integration, frontend generated
+types/typecheck/full tests, snapshot E2E, production frontend build and backend
+Docker build. The full gate does not skip integration suites. Contract checks
+also exercise the wire client as part of the existing shared contract gate.
+
+Each database suite migrates into a new random `product_api_it_*` schema and
+cleans it in `finally`, including test/migration failures. A journal records only
+schemas created by this run and a hash of the explicit target URL (no plaintext
+credentials). The shell exit trap and CI `always()` step retry recorded cleanup
+after interruption. Cleanup refuses mismatched targets or arbitrary schema
+names. Hard-killed CI jobs additionally lose their disposable service container.
+If a local process is force-killed or the database is unavailable, retain the
+journal path printed at startup and retry after restoring connectivity:
+
+```bash
+TEST_DATABASE_URL='postgresql://test_user:test_password@127.0.0.1:5432/operations_test?schema=public' OPERATIONS_SCHEMA_JOURNAL='/path/from/gate' node backend/tests/integration/run-integration-tests.js --cleanup
+```
+
+The Dockerfile explicitly requires `backend/scripts/validate-operations.py` and
+runs a no-database smoke check of the packaged validator and canonical seed plan.
+Missing Python code or runtime dependencies fail the build. A Dockerfile-specific
+ignore file excludes local environments, dependencies and credentials from its
+root build context.
+
+## Contract-only commands
+
 From the repository root (Node 22.22.2+ and uv):
 
 ```sh
