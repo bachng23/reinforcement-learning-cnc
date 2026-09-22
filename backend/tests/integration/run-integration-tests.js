@@ -36,9 +36,9 @@ const parseTestDatabaseUrl = () => {
   return url;
 };
 
-const run = (command, args, { env, input } = {}) => {
+const run = (command, args, { env, input, cwd = backendRoot } = {}) => {
   const result = spawnSync(command, args, {
-    cwd: backendRoot,
+    cwd,
     env,
     input,
     encoding: 'utf8',
@@ -85,7 +85,11 @@ const main = () => {
       throw new Error(`Prisma migrations failed with exit code ${migrationStatus}`);
     }
 
-    testStatus = run(
+    if (process.argv.includes('--operations-flow')) {
+      const frontendRoot = path.resolve(backendRoot, '../frontend');
+      testStatus = run(process.execPath, [path.join(frontendRoot, 'node_modules/vitest/vitest.mjs'),
+        'run', '--config', 'vitest.operations.config.ts'], { env: testEnv, cwd: frontendRoot });
+    } else testStatus = run(
       process.execPath,
       [jestCli, '--config', 'jest.integration.config.js', '--runInBand'],
       { env: testEnv },

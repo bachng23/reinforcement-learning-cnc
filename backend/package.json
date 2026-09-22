@@ -13,7 +13,9 @@
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev",
     "prisma:seed": "node prisma/seed.js",
-    "operations:seed": "node scripts/seed-operations.js"
+    "operations:seed": "node scripts/seed-operations.js",
+    "operations:reset": "node scripts/reset-operations.js",
+    "test:operations-flow": "node tests/integration/run-integration-tests.js --operations-flow"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",
