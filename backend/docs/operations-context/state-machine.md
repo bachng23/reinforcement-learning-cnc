@@ -49,8 +49,8 @@ Every accepted transition performs a compare-and-swap on case status/revision, i
 | MODIFIED | VALIDATING | Worker claims edited candidate | Exact modified candidate; lease/revision valid | New validation run; MODIFIED_VALIDATION_STARTED event |
 | APPROVED | COMMITTED | Human COMMIT | Fresh expected head pair AND original case basis; expected case/candidate revision; recorded approval covers exact candidate; one commit per case | ScheduleCommit; current schedule pointer/version; HumanDecision(COMMIT); COMMITTED event/audit/receipt in one transaction |
 | AWAITING_APPROVAL | REJECTED | Human REJECT | Expected head/case/candidate revisions match; authorized reviewer | HumanDecision(REJECT), status, reason if supplied, REJECTED event/audit/receipt; no plan change |
-| Non-terminal except COMMITTED/REJECTED | FAILED | Worker or system marks unrecoverable execution failure | Current case revision, safe error code/message, no pending successful transition to persist | FAILED event, sanitized error evidence, audit/receipt if human-triggered |
-| CREATED/AWAITING_APPROVAL/APPROVED and other cancellable non-terminal states | CANCELLED | Human/system cancellation | Current case revision, no commit published; role/policy permits cancellation | CANCELLED event, reason if supplied, audit/receipt if human-triggered |
+| ANALYZING/GENERATING/VALIDATING/EXPLAINING | FAILED | Worker or system marks unrecoverable execution failure | Current case revision, safe error code/message, no pending successful transition to persist | FAILED event, sanitized error evidence, audit/receipt if human-triggered |
+| CREATED/AWAITING_APPROVAL/APPROVED | CANCELLED | Human/system cancellation | Current case revision, no commit published; role/policy permits cancellation | CANCELLED event, reason if supplied, audit/receipt if human-triggered |
 
 ## Meaning of the outcome states
 
@@ -67,7 +67,7 @@ FAILED and CANCELLED are canonical case statuses. Proposed v1 may still expose `
 | --- | --- |
 | Transient agent/tool failure | Stay in current state; append STAGE_FAILED event and trace; retry same stage with new run attempt/lease, bounded by configured budget. Do not duplicate candidate revisions or successful events. |
 | Validation failure of human-modified candidate | Stay VALIDATING and set processing BLOCKED with validation errors. Do not silently regenerate/replace a human edit. With no repair endpoint in v1, user creates a new case; a future correction command is a contract extension. |
-| Unrepairable failure or exhausted budget | Stay at failing stage, processing BLOCKED, retain errors/events; no automatic approval. New case is the v1 recovery path. Retry attempts themselves are trace events, not backwards lifecycle transitions. |
+| Unrepairable failure or exhausted budget | Transition an executing case to FAILED, retaining sanitized error evidence and events; no automatic approval. New case is the v1 recovery path. Retry attempts before budget exhaustion are trace events, not backwards lifecycle transitions. |
 | Snapshot or current published plan changed | Case remains on its immutable basis. Mark computed `stale=true` in reads; review/commit returns 409. Create a new case from a fresh snapshot/plan pair. No in-place rebase. |
 | Worker lease expired | New owner gets new lease token/attempt; previous owner cannot persist. Same-state recovery is an event + CAS revision, not a duplicate transition. |
 | Concurrent human commands | One case revision CAS wins; losing command rolls back its writes and gets 409. Identical idempotency replay returns original success. |
