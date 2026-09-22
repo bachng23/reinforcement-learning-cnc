@@ -6,7 +6,7 @@ import type { RunDecisionCaseRequest, DecisionCaseStatusResponse } from "@/types
 // canonical Pydantic models; consumers get a fresh copy to avoid test pollution.
 export function createOperationsDemoFixtures() {
   return {
-    request: structuredClone(request) as RunDecisionCaseRequest,
-    status: structuredClone(status) as DecisionCaseStatusResponse,
+    request: structuredClone(request) as unknown as RunDecisionCaseRequest,
+    status: structuredClone(status) as unknown as DecisionCaseStatusResponse,
   };
 }

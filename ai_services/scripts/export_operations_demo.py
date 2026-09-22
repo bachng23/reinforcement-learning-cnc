@@ -10,16 +10,21 @@ if str(AI_SERVICES_ROOT) not in sys.path:
     sys.path.insert(0, str(AI_SERVICES_ROOT))
 
 from domain.operations.demo import (
+    DEMO_CASE_STATUS,
     DEMO_CANDIDATE_PLANS,
     DEMO_FACTORY_SNAPSHOT,
     DEMO_PLAN_VALIDATIONS,
     DEMO_PLANNING_CONFIG,
+    DEMO_RUN_REQUEST,
     DEMO_TRIGGER,
 )
 
 
 REPOSITORY_ROOT = AI_SERVICES_ROOT.parent
 EXAMPLE_PATH = REPOSITORY_ROOT / "contracts" / "v3" / "examples" / "demo-scenario.json"
+FIXTURE_DIR = REPOSITORY_ROOT / "contracts" / "v3" / "fixtures"
+RUN_REQUEST_PATH = FIXTURE_DIR / "demo-health-alert.json"
+CASE_STATUS_PATH = FIXTURE_DIR / "demo-case-status.json"
 INVALID_DIR = REPOSITORY_ROOT / "contracts" / "v3" / "fixtures" / "invalid"
 
 
@@ -39,6 +44,9 @@ def main() -> None:
     snapshot = _json(DEMO_FACTORY_SNAPSHOT)
     candidates = [_json(plan) for plan in DEMO_CANDIDATE_PLANS]
     validations = [_json(validation) for validation in DEMO_PLAN_VALIDATIONS]
+
+    _dump(RUN_REQUEST_PATH, _json(DEMO_RUN_REQUEST))
+    _dump(CASE_STATUS_PATH, _json(DEMO_CASE_STATUS))
 
     _dump(
         EXAMPLE_PATH,
@@ -128,6 +136,8 @@ def main() -> None:
     _dump(INVALID_DIR / "recommendation-with-invalid-plan.json", recommendation)
 
     print(EXAMPLE_PATH)
+    print(RUN_REQUEST_PATH)
+    print(CASE_STATUS_PATH)
     print(INVALID_DIR)
 
 

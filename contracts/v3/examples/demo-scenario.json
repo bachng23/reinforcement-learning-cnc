@@ -1164,7 +1164,7 @@
           "maintenance_request_id": null,
           "operation_id": "J01-O10",
           "start_at": "2026-09-22T00:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1177,7 +1177,7 @@
           "maintenance_request_id": null,
           "operation_id": "J02-O10",
           "start_at": "2026-09-22T00:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1190,7 +1190,7 @@
           "maintenance_request_id": null,
           "operation_id": "J03-O10",
           "start_at": "2026-09-22T00:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1203,7 +1203,7 @@
           "maintenance_request_id": null,
           "operation_id": "J04-O10",
           "start_at": "2026-09-22T00:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1216,7 +1216,7 @@
           "maintenance_request_id": null,
           "operation_id": "J05-O10",
           "start_at": "2026-09-22T01:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1229,7 +1229,7 @@
           "maintenance_request_id": null,
           "operation_id": "J06-O10",
           "start_at": "2026-09-22T01:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1242,7 +1242,7 @@
           "maintenance_request_id": null,
           "operation_id": "J07-O10",
           "start_at": "2026-09-22T01:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1255,7 +1255,7 @@
           "maintenance_request_id": null,
           "operation_id": "J08-O10",
           "start_at": "2026-09-22T01:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1268,7 +1268,7 @@
           "maintenance_request_id": null,
           "operation_id": "J09-O10",
           "start_at": "2026-09-22T02:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1281,7 +1281,7 @@
           "maintenance_request_id": null,
           "operation_id": "J10-O10",
           "start_at": "2026-09-22T02:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1294,7 +1294,7 @@
           "maintenance_request_id": null,
           "operation_id": "J11-O10",
           "start_at": "2026-09-22T02:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1307,7 +1307,7 @@
           "maintenance_request_id": null,
           "operation_id": "J12-O10",
           "start_at": "2026-09-22T02:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1320,7 +1320,7 @@
           "maintenance_request_id": null,
           "operation_id": "J01-O20",
           "start_at": "2026-09-22T01:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1333,7 +1333,7 @@
           "maintenance_request_id": null,
           "operation_id": "J02-O20",
           "start_at": "2026-09-22T01:30:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1346,7 +1346,7 @@
           "maintenance_request_id": null,
           "operation_id": "J03-O20",
           "start_at": "2026-09-22T02:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1359,7 +1359,7 @@
           "maintenance_request_id": null,
           "operation_id": "J04-O20",
           "start_at": "2026-09-22T02:30:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1372,7 +1372,7 @@
           "maintenance_request_id": null,
           "operation_id": "J05-O20",
           "start_at": "2026-09-22T03:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1385,7 +1385,7 @@
           "maintenance_request_id": null,
           "operation_id": "J06-O20",
           "start_at": "2026-09-22T03:30:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1398,7 +1398,7 @@
           "maintenance_request_id": null,
           "operation_id": "J07-O20",
           "start_at": "2026-09-22T04:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1411,7 +1411,7 @@
           "maintenance_request_id": null,
           "operation_id": "J08-O20",
           "start_at": "2026-09-22T04:30:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1424,7 +1424,7 @@
           "maintenance_request_id": null,
           "operation_id": "J09-O20",
           "start_at": "2026-09-22T05:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1437,7 +1437,7 @@
           "maintenance_request_id": null,
           "operation_id": "J10-O20",
           "start_at": "2026-09-22T05:30:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1450,7 +1450,7 @@
           "maintenance_request_id": null,
           "operation_id": "J11-O20",
           "start_at": "2026-09-22T06:00:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         },
         {
@@ -1463,7 +1463,7 @@
           "maintenance_request_id": null,
           "operation_id": "J12-O20",
           "start_at": "2026-09-22T06:30:00Z",
-          "status": "PROPOSED",
+          "status": "COMMITTED",
           "technician_ids": []
         }
       ],
