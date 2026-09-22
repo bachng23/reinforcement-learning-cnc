@@ -21,8 +21,10 @@ DB_UNAVAILABLE). Errors use `OperationsApiError` with canonical v3 `ErrorRespons
 payloads, available through `contractError`, matching `backend/workflow` read routes.
 Unknown factories return 404. Pre-aborted read signals reject with AbortError.
 Decision methods and event streams are outside this read mock's scope and fail
-explicitly with 501; they do not simulate successful writes. No pages are wired
-to this mock automatically.
+explicitly with 501; they do not simulate successful writes. `/operations`
+selects this adapter by default through `NEXT_PUBLIC_OPERATIONS_API_MODE=mock`.
+Set that variable to `real` and configure `NEXT_PUBLIC_OPERATIONS_FACTORY_ID`
+to run the same page against the authenticated backend endpoints.
 
 The existing HTTP DTOs are retained. Initial plan version is one with a schedule,
 zero when absent, matching the backend seed adapter independently of schedule

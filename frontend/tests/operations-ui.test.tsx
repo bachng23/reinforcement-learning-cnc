@@ -21,15 +21,18 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("operations fixture UI", () => {
-  it("renders machine state and authoritative health fields without inventing shift KPIs", () => {
+  it("renders canonical resources and authoritative health fields through the mock adapter", async () => {
     render(<OperationsOverviewPage />);
 
-    expect(screen.getByRole("heading", { name: "Machine status grid" })).toBeInTheDocument();
-    expect(screen.getByText("CNC Mill 01")).toBeInTheDocument();
-    expect(screen.getAllByText("31%").length).toBeGreaterThan(0);
-    expect(screen.getByText("Expected RUL")).toBeInTheDocument();
-    expect(screen.getByText("186 min")).toBeInTheDocument();
-    expect(screen.getByText(/Shift KPI cards are intentionally deferred/)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Machine status grid" })).toBeInTheDocument();
+    expect(screen.getByText("CNC M01")).toBeInTheDocument();
+    expect(screen.getByLabelText("6 machines")).toBeInTheDocument();
+    expect(screen.getByLabelText("12 jobs")).toBeInTheDocument();
+    expect(screen.getByLabelText("3 technicians")).toBeInTheDocument();
+    expect(screen.getAllByText("38%").length).toBeGreaterThan(0);
+    expect(screen.getByText("Observed wear")).toBeInTheDocument();
+    expect(screen.getByText("205 µm")).toBeInTheDocument();
+    expect(screen.getByText(/No operational KPI or feasibility value is calculated/)).toBeInTheDocument();
   });
 
   it("renders direct candidate KPIs and changes only the selected fixture plan", async () => {

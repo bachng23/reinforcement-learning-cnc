@@ -2,7 +2,7 @@ import { Activity, Clock3, Wrench } from "lucide-react";
 
 import { OperationsStatus } from "@/components/operations/operations-shell";
 import { formatPercent, formatTime } from "@/lib/operations/format";
-import type { HealthSnapshot, Machine, ScheduleAssignment } from "@/types/operations";
+import type { HealthSnapshot, Machine, ScheduleAssignment } from "@/types/generated/operations";
 
 export interface MachineStatusGridProps {
   machines: Machine[];
