@@ -6,6 +6,9 @@ from domain.operations.contracts import (
     AssignmentStatus,
     AssignmentType,
     CandidatePlan,
+    DecisionCaseStatus,
+    DecisionCaseStatusResponse,
+    DecisionMode,
     FactorySnapshot,
     HealthAlertTrigger,
     HealthSnapshot,
@@ -24,6 +27,7 @@ from domain.operations.contracts import (
     PlanValidation,
     PlanningConfig,
     ProductionJob,
+    RunDecisionCaseRequest,
     Schedule,
     ScheduleAssignment,
     Technician,
@@ -37,6 +41,7 @@ from domain.operations.planning import PlanningEngineInput, PlanningEngineOutput
 
 DEMO_T0 = datetime(2026, 9, 22, 0, 0, tzinfo=timezone.utc)  # 08:00 Asia/Taipei
 DEMO_WINDOW = TimeWindow(start_at=DEMO_T0, end_at=DEMO_T0 + timedelta(hours=12))
+DEMO_DECISION_CASE_ID = "case-demo-M03-001"
 
 
 def _machine(
@@ -177,6 +182,8 @@ DEMO_MAINTENANCE_REQUEST = MaintenanceRequest(
 
 def _production_assignments(
     machine_choices: dict[str, str],
+    *,
+    status: AssignmentStatus = AssignmentStatus.PROPOSED,
 ) -> list[ScheduleAssignment]:
     machine_cursor = {machine.machine_id: DEMO_T0 for machine in DEMO_MACHINES}
     first_end_by_job: dict[str, datetime] = {}
@@ -193,7 +200,7 @@ def _production_assignments(
             ScheduleAssignment(
                 assignment_id=f"A-{job.job_id}-O10",
                 assignment_type=AssignmentType.PRODUCTION,
-                status=AssignmentStatus.PROPOSED,
+                status=status,
                 machine_id=machine_id,
                 job_id=job.job_id,
                 operation_id=first.operation_id,
@@ -211,7 +218,7 @@ def _production_assignments(
             ScheduleAssignment(
                 assignment_id=f"A-{job.job_id}-O20",
                 assignment_type=AssignmentType.PRODUCTION,
-                status=AssignmentStatus.PROPOSED,
+                status=status,
                 machine_id="M06",
                 job_id=job.job_id,
                 operation_id=job.operations[1].operation_id,
@@ -255,7 +262,10 @@ DEMO_FACTORY_SNAPSHOT = FactorySnapshot(
         revision=1,
         planning_window=DEMO_WINDOW,
         created_at=DEMO_T0,
-        assignments=_production_assignments(_CURRENT_CHOICES),
+        assignments=_production_assignments(
+            _CURRENT_CHOICES,
+            status=AssignmentStatus.COMMITTED,
+        ),
     ),
 )
 
@@ -321,7 +331,7 @@ def _candidate(
     return (
         CandidatePlan(
             candidate_plan_id=plan_id,
-            decision_case_id="case-demo-M03-001",
+            decision_case_id=DEMO_DECISION_CASE_ID,
             snapshot_id=DEMO_FACTORY_SNAPSHOT.snapshot_id,
             plan_version=1,
             strategy=strategy,
@@ -416,4 +426,21 @@ DEMO_PLANNING_INPUT = PlanningEngineInput(
 DEMO_PLANNING_OUTPUT = PlanningEngineOutput(
     candidate_plans=DEMO_CANDIDATE_PLANS,
     validations=DEMO_PLAN_VALIDATIONS,
+)
+
+DEMO_RUN_REQUEST = RunDecisionCaseRequest(
+    decision_case_id=DEMO_DECISION_CASE_ID,
+    mode=DecisionMode.LIVE,
+    factory_snapshot=DEMO_FACTORY_SNAPSHOT,
+    trigger=DEMO_TRIGGER,
+    planning_config=DEMO_PLANNING_CONFIG,
+)
+
+DEMO_CASE_STATUS = DecisionCaseStatusResponse(
+    decision_case_id=DEMO_DECISION_CASE_ID,
+    mode=DecisionMode.LIVE,
+    status=DecisionCaseStatus.CREATED,
+    snapshot_id=DEMO_FACTORY_SNAPSHOT.snapshot_id,
+    created_at=DEMO_T0,
+    updated_at=DEMO_T0,
 )

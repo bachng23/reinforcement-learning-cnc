@@ -20,6 +20,7 @@ from domain.operations.demo import (
     DEMO_PLAN_VALIDATIONS,
     DEMO_PLANNING_INPUT,
     DEMO_PLANNING_OUTPUT,
+    DEMO_RUN_REQUEST,
     DEMO_TRIGGER,
 )
 from domain.operations.planning import PlanningEngineOutput
@@ -49,7 +50,14 @@ def test_canonical_demo_has_requested_shape() -> None:
         for validation in DEMO_PLAN_VALIDATIONS
     )
     assert DEMO_PLANNING_INPUT.factory_snapshot is DEMO_FACTORY_SNAPSHOT
+    assert DEMO_RUN_REQUEST.factory_snapshot is DEMO_FACTORY_SNAPSHOT
+    assert DEMO_RUN_REQUEST.trigger is DEMO_TRIGGER
     assert len(DEMO_PLANNING_OUTPUT.validations) == 3
+    assert DEMO_FACTORY_SNAPSHOT.current_schedule is not None
+    assert all(
+        assignment.status is AssignmentStatus.COMMITTED
+        for assignment in DEMO_FACTORY_SNAPSHOT.current_schedule.assignments
+    )
 
 
 def test_canonical_demo_candidates_satisfy_v1_resource_constraints() -> None:

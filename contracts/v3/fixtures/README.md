@@ -2,11 +2,13 @@
 
 `manifest.json` maps each JSON payload to its canonical Pydantic model. These files
 are language-neutral inputs for frontend, backend and AI. Do not copy them into
-service-specific directories. Fixed UTC timestamps, stable `demo-` IDs and seed 42
-make the health-alert scenario reproducible. This is demo data, not real machine telemetry.
+service-specific directories. They are generated from
+`ai_services/domain/operations/demo.py`; fixed UTC timestamps, stable scenario IDs
+and a fixed seed make the health-alert scenario reproducible. This is demo data,
+not real machine telemetry.
 
-- `demo-health-alert.json`: `RunDecisionCaseRequest`, including a complete factory
-  snapshot (two machines, one production job, one technician, health alert,
+- `demo-health-alert.json`: `RunDecisionCaseRequest`, including the canonical factory
+  snapshot (six machines, twelve production jobs, three technicians, health alert,
   maintenance request and current schedule).
 - `demo-case-status.json`: the matching `CREATED` case status.
 
@@ -23,6 +25,13 @@ const snapshot = structuredClone(request.factory_snapshot);
 
 AI: read the JSON and call `RunDecisionCaseRequest.model_validate_json(...)`.
 The contract gate validates every manifest entry and cross-file case/snapshot IDs.
+It also fails when these committed fixtures drift from the canonical demo models.
+
+Regenerate the shared fixtures, planning example and invalid cases with:
+
+```sh
+uv run --frozen --project ai_services python ai_services/scripts/export_operations_demo.py
+```
 
 ## Week 2 seed/reset handoff
 

@@ -1,34 +1,1126 @@
 {
-  "schema_version": "3.0",
-  "decision_case_id": "demo-case-001",
-  "mode": "LIVE",
+  "decision_case_id": "case-demo-M03-001",
   "factory_snapshot": {
-    "schema_version": "3.0",
-    "snapshot_id": "demo-snapshot-001",
-    "factory_id": "demo-factory-01",
-    "captured_at": "2026-09-21T08:00:00Z",
-    "planning_window": {"start_at": "2026-09-21T08:00:00Z", "end_at": "2026-09-21T16:00:00Z"},
-    "machines": [
-      {"machine_id": "demo-M01", "display_name": "Demo mill 01", "machine_family": "cnc-mill", "status": "WARNING", "capabilities": [{"operation_type": "milling", "nominal_processing_minutes": 45}]},
-      {"machine_id": "demo-M02", "display_name": "Demo mill 02", "machine_family": "cnc-mill", "status": "IDLE", "capabilities": [{"operation_type": "milling", "nominal_processing_minutes": 55}]}
-    ],
-    "jobs": [{
-      "job_id": "demo-J01", "display_name": "Demo priority order", "release_at": "2026-09-21T08:00:00Z", "due_at": "2026-09-21T16:00:00Z", "priority": 80,
-      "operations": [{"operation_id": "demo-O01", "sequence": 0, "operation_type": "milling", "status": "READY", "machine_options": [{"machine_id": "demo-M01", "processing_minutes": 45}, {"machine_id": "demo-M02", "processing_minutes": 55}]}]
-    }],
-    "technicians": [{
-      "technician_id": "demo-K01", "display_name": "Demo technician", "status": "AVAILABLE",
-      "availability": [{"start_at": "2026-09-21T08:00:00Z", "end_at": "2026-09-21T16:00:00Z"}],
-      "skills": [{"skill_id": "mechanical", "level": 4, "certified_machine_families": ["cnc-mill"], "certified_action_types": ["spindle-inspection"]}]
-    }],
-    "health_snapshots": [{"health_snapshot_id": "demo-health-001", "machine_id": "demo-M01", "observed_at": "2026-09-21T08:00:00Z", "health_index": 0.42, "observed_wear_um": 180, "failure_probability_horizon_minutes": 240, "failure_probability": 0.31, "confidence": "MEDIUM", "source_model_version": "demo-rul-v1"}],
-    "maintenance_requests": [{"maintenance_request_id": "demo-MR01", "machine_id": "demo-M01", "maintenance_type": "PREVENTIVE", "action_type": "spindle-inspection", "priority": "HIGH", "status": "OPEN", "requested_at": "2026-09-21T08:00:00Z", "earliest_start_at": "2026-09-21T09:00:00Z", "latest_start_at": "2026-09-21T12:00:00Z", "expected_duration_minutes": 60, "required_skill_ids": ["mechanical"], "minimum_skill_level": 3}],
+    "captured_at": "2026-09-22T00:00:00Z",
     "current_schedule": {
-      "schedule_id": "demo-schedule-001", "factory_id": "demo-factory-01", "revision": 1,
-      "planning_window": {"start_at": "2026-09-21T08:00:00Z", "end_at": "2026-09-21T16:00:00Z"}, "created_at": "2026-09-21T08:00:00Z",
-      "assignments": [{"assignment_id": "demo-A01", "assignment_type": "PRODUCTION", "status": "COMMITTED", "machine_id": "demo-M01", "job_id": "demo-J01", "operation_id": "demo-O01", "start_at": "2026-09-21T08:00:00Z", "end_at": "2026-09-21T08:45:00Z"}]
-    }
+      "assignments": [
+        {
+          "assignment_id": "A-J01-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T01:00:00Z",
+          "job_id": "J01",
+          "locked": false,
+          "machine_id": "M01",
+          "maintenance_request_id": null,
+          "operation_id": "J01-O10",
+          "start_at": "2026-09-22T00:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J02-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T01:00:00Z",
+          "job_id": "J02",
+          "locked": false,
+          "machine_id": "M03",
+          "maintenance_request_id": null,
+          "operation_id": "J02-O10",
+          "start_at": "2026-09-22T00:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J03-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T01:00:00Z",
+          "job_id": "J03",
+          "locked": false,
+          "machine_id": "M02",
+          "maintenance_request_id": null,
+          "operation_id": "J03-O10",
+          "start_at": "2026-09-22T00:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J04-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T01:00:00Z",
+          "job_id": "J04",
+          "locked": false,
+          "machine_id": "M04",
+          "maintenance_request_id": null,
+          "operation_id": "J04-O10",
+          "start_at": "2026-09-22T00:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J05-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T02:00:00Z",
+          "job_id": "J05",
+          "locked": false,
+          "machine_id": "M01",
+          "maintenance_request_id": null,
+          "operation_id": "J05-O10",
+          "start_at": "2026-09-22T01:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J06-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T02:00:00Z",
+          "job_id": "J06",
+          "locked": false,
+          "machine_id": "M03",
+          "maintenance_request_id": null,
+          "operation_id": "J06-O10",
+          "start_at": "2026-09-22T01:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J07-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T02:00:00Z",
+          "job_id": "J07",
+          "locked": false,
+          "machine_id": "M02",
+          "maintenance_request_id": null,
+          "operation_id": "J07-O10",
+          "start_at": "2026-09-22T01:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J08-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T02:00:00Z",
+          "job_id": "J08",
+          "locked": false,
+          "machine_id": "M04",
+          "maintenance_request_id": null,
+          "operation_id": "J08-O10",
+          "start_at": "2026-09-22T01:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J09-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T03:00:00Z",
+          "job_id": "J09",
+          "locked": false,
+          "machine_id": "M01",
+          "maintenance_request_id": null,
+          "operation_id": "J09-O10",
+          "start_at": "2026-09-22T02:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J10-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T03:00:00Z",
+          "job_id": "J10",
+          "locked": false,
+          "machine_id": "M03",
+          "maintenance_request_id": null,
+          "operation_id": "J10-O10",
+          "start_at": "2026-09-22T02:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J11-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T03:00:00Z",
+          "job_id": "J11",
+          "locked": false,
+          "machine_id": "M02",
+          "maintenance_request_id": null,
+          "operation_id": "J11-O10",
+          "start_at": "2026-09-22T02:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J12-O10",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T03:00:00Z",
+          "job_id": "J12",
+          "locked": false,
+          "machine_id": "M04",
+          "maintenance_request_id": null,
+          "operation_id": "J12-O10",
+          "start_at": "2026-09-22T02:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J01-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T01:30:00Z",
+          "job_id": "J01",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J01-O20",
+          "start_at": "2026-09-22T01:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J02-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T02:00:00Z",
+          "job_id": "J02",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J02-O20",
+          "start_at": "2026-09-22T01:30:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J03-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T02:30:00Z",
+          "job_id": "J03",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J03-O20",
+          "start_at": "2026-09-22T02:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J04-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T03:00:00Z",
+          "job_id": "J04",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J04-O20",
+          "start_at": "2026-09-22T02:30:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J05-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T03:30:00Z",
+          "job_id": "J05",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J05-O20",
+          "start_at": "2026-09-22T03:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J06-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T04:00:00Z",
+          "job_id": "J06",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J06-O20",
+          "start_at": "2026-09-22T03:30:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J07-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T04:30:00Z",
+          "job_id": "J07",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J07-O20",
+          "start_at": "2026-09-22T04:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J08-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T05:00:00Z",
+          "job_id": "J08",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J08-O20",
+          "start_at": "2026-09-22T04:30:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J09-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T05:30:00Z",
+          "job_id": "J09",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J09-O20",
+          "start_at": "2026-09-22T05:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J10-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T06:00:00Z",
+          "job_id": "J10",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J10-O20",
+          "start_at": "2026-09-22T05:30:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J11-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T06:30:00Z",
+          "job_id": "J11",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J11-O20",
+          "start_at": "2026-09-22T06:00:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        },
+        {
+          "assignment_id": "A-J12-O20",
+          "assignment_type": "PRODUCTION",
+          "end_at": "2026-09-22T07:00:00Z",
+          "job_id": "J12",
+          "locked": false,
+          "machine_id": "M06",
+          "maintenance_request_id": null,
+          "operation_id": "J12-O20",
+          "start_at": "2026-09-22T06:30:00Z",
+          "status": "COMMITTED",
+          "technician_ids": []
+        }
+      ],
+      "created_at": "2026-09-22T00:00:00Z",
+      "factory_id": "factory-demo-01",
+      "planning_window": {
+        "end_at": "2026-09-22T12:00:00Z",
+        "start_at": "2026-09-22T00:00:00Z"
+      },
+      "revision": 1,
+      "schedule_id": "schedule-demo-current"
+    },
+    "factory_id": "factory-demo-01",
+    "health_snapshots": [
+      {
+        "confidence": "HIGH",
+        "failure_probability": 0.42,
+        "failure_probability_horizon_minutes": 480,
+        "health_index": 0.38,
+        "health_snapshot_id": "health-M03-001",
+        "machine_id": "M03",
+        "observed_at": "2026-09-22T00:00:00Z",
+        "observed_wear_um": 205.0,
+        "rul_distribution": null,
+        "source_model_version": "rul-demo-v1"
+      }
+    ],
+    "jobs": [
+      {
+        "display_name": "Demo order 01",
+        "due_at": "2026-09-22T08:00:00Z",
+        "job_id": "J01",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M01",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M02",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J01-O10",
+            "operation_type": "milling",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J01-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J01-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 90,
+        "release_at": "2026-09-22T00:00:00Z"
+      },
+      {
+        "display_name": "Demo order 02",
+        "due_at": "2026-09-22T08:00:00Z",
+        "job_id": "J02",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M03",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M04",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J02-O10",
+            "operation_type": "turning",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J02-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J02-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 90,
+        "release_at": "2026-09-22T00:00:00Z"
+      },
+      {
+        "display_name": "Demo order 03",
+        "due_at": "2026-09-22T08:00:00Z",
+        "job_id": "J03",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M01",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M02",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J03-O10",
+            "operation_type": "milling",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J03-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J03-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 90,
+        "release_at": "2026-09-22T00:00:00Z"
+      },
+      {
+        "display_name": "Demo order 04",
+        "due_at": "2026-09-22T09:00:00Z",
+        "job_id": "J04",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M03",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M04",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J04-O10",
+            "operation_type": "turning",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J04-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J04-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 60,
+        "release_at": "2026-09-22T00:00:00Z"
+      },
+      {
+        "display_name": "Demo order 05",
+        "due_at": "2026-09-22T09:00:00Z",
+        "job_id": "J05",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M01",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M02",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J05-O10",
+            "operation_type": "milling",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J05-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J05-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 60,
+        "release_at": "2026-09-22T00:00:00Z"
+      },
+      {
+        "display_name": "Demo order 06",
+        "due_at": "2026-09-22T09:00:00Z",
+        "job_id": "J06",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M03",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M04",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J06-O10",
+            "operation_type": "turning",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J06-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J06-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 60,
+        "release_at": "2026-09-22T00:00:00Z"
+      },
+      {
+        "display_name": "Demo order 07",
+        "due_at": "2026-09-22T09:00:00Z",
+        "job_id": "J07",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M01",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M02",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J07-O10",
+            "operation_type": "milling",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J07-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J07-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 60,
+        "release_at": "2026-09-22T00:00:00Z"
+      },
+      {
+        "display_name": "Demo order 08",
+        "due_at": "2026-09-22T10:00:00Z",
+        "job_id": "J08",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M03",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M04",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J08-O10",
+            "operation_type": "turning",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J08-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J08-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 60,
+        "release_at": "2026-09-22T00:00:00Z"
+      },
+      {
+        "display_name": "Demo order 09",
+        "due_at": "2026-09-22T10:00:00Z",
+        "job_id": "J09",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M01",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M02",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J09-O10",
+            "operation_type": "milling",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J09-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J09-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 60,
+        "release_at": "2026-09-22T00:00:00Z"
+      },
+      {
+        "display_name": "Demo order 10",
+        "due_at": "2026-09-22T10:00:00Z",
+        "job_id": "J10",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M03",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M04",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J10-O10",
+            "operation_type": "turning",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J10-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J10-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 60,
+        "release_at": "2026-09-22T00:00:00Z"
+      },
+      {
+        "display_name": "Demo order 11",
+        "due_at": "2026-09-22T10:00:00Z",
+        "job_id": "J11",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M01",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M02",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J11-O10",
+            "operation_type": "milling",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J11-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J11-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 60,
+        "release_at": "2026-09-22T00:00:00Z"
+      },
+      {
+        "display_name": "Demo order 12",
+        "due_at": "2026-09-22T11:00:00Z",
+        "job_id": "J12",
+        "operations": [
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M03",
+                "processing_minutes": 60
+              },
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M04",
+                "processing_minutes": 60
+              }
+            ],
+            "operation_id": "J12-O10",
+            "operation_type": "turning",
+            "predecessor_operation_ids": [],
+            "sequence": 10,
+            "status": "READY"
+          },
+          {
+            "machine_options": [
+              {
+                "expected_damage": null,
+                "load_factor": 1.0,
+                "machine_id": "M06",
+                "processing_minutes": 30
+              }
+            ],
+            "operation_id": "J12-O20",
+            "operation_type": "quality-inspection",
+            "predecessor_operation_ids": [
+              "J12-O10"
+            ],
+            "sequence": 20,
+            "status": "PENDING"
+          }
+        ],
+        "priority": 60,
+        "release_at": "2026-09-22T00:00:00Z"
+      }
+    ],
+    "machines": [
+      {
+        "capabilities": [
+          {
+            "damage_factor": 1.0,
+            "load_factor": 1.0,
+            "nominal_processing_minutes": 60,
+            "operation_type": "milling"
+          }
+        ],
+        "display_name": "CNC M01",
+        "machine_family": "mill-3-axis",
+        "machine_id": "M01",
+        "status": "IDLE"
+      },
+      {
+        "capabilities": [
+          {
+            "damage_factor": 1.0,
+            "load_factor": 1.0,
+            "nominal_processing_minutes": 60,
+            "operation_type": "milling"
+          }
+        ],
+        "display_name": "CNC M02",
+        "machine_family": "mill-3-axis",
+        "machine_id": "M02",
+        "status": "IDLE"
+      },
+      {
+        "capabilities": [
+          {
+            "damage_factor": 1.0,
+            "load_factor": 1.0,
+            "nominal_processing_minutes": 60,
+            "operation_type": "turning"
+          }
+        ],
+        "display_name": "CNC M03",
+        "machine_family": "lathe",
+        "machine_id": "M03",
+        "status": "WARNING"
+      },
+      {
+        "capabilities": [
+          {
+            "damage_factor": 1.0,
+            "load_factor": 1.0,
+            "nominal_processing_minutes": 60,
+            "operation_type": "turning"
+          }
+        ],
+        "display_name": "CNC M04",
+        "machine_family": "lathe",
+        "machine_id": "M04",
+        "status": "IDLE"
+      },
+      {
+        "capabilities": [
+          {
+            "damage_factor": 1.0,
+            "load_factor": 1.0,
+            "nominal_processing_minutes": 45,
+            "operation_type": "drilling"
+          }
+        ],
+        "display_name": "CNC M05",
+        "machine_family": "drill-cell",
+        "machine_id": "M05",
+        "status": "IDLE"
+      },
+      {
+        "capabilities": [
+          {
+            "damage_factor": 1.0,
+            "load_factor": 1.0,
+            "nominal_processing_minutes": 30,
+            "operation_type": "quality-inspection"
+          }
+        ],
+        "display_name": "CNC M06",
+        "machine_family": "inspection-cell",
+        "machine_id": "M06",
+        "status": "IDLE"
+      }
+    ],
+    "maintenance_requests": [
+      {
+        "action_type": "spindle-inspection",
+        "earliest_start_at": "2026-09-22T00:00:00Z",
+        "expected_duration_minutes": 60,
+        "latest_start_at": "2026-09-22T04:00:00Z",
+        "machine_id": "M03",
+        "maintenance_request_id": "MR-M03-001",
+        "maintenance_type": "PREVENTIVE",
+        "mandatory": false,
+        "minimum_skill_level": 4,
+        "priority": "HIGH",
+        "requested_at": "2026-09-22T00:00:00Z",
+        "required_skill_ids": [
+          "mechanical"
+        ],
+        "status": "OPEN"
+      }
+    ],
+    "planning_window": {
+      "end_at": "2026-09-22T12:00:00Z",
+      "start_at": "2026-09-22T00:00:00Z"
+    },
+    "schema_version": "3.0",
+    "snapshot_id": "snapshot-demo-20260922-0800",
+    "technicians": [
+      {
+        "availability": [
+          {
+            "end_at": "2026-09-22T12:00:00Z",
+            "start_at": "2026-09-22T00:00:00Z"
+          }
+        ],
+        "display_name": "An Nguyen",
+        "skills": [
+          {
+            "certified_action_types": [
+              "spindle-inspection",
+              "bearing-replacement"
+            ],
+            "certified_machine_families": [
+              "lathe",
+              "mill-3-axis"
+            ],
+            "level": 4,
+            "skill_id": "mechanical"
+          }
+        ],
+        "status": "AVAILABLE",
+        "technician_id": "T01"
+      },
+      {
+        "availability": [
+          {
+            "end_at": "2026-09-22T12:00:00Z",
+            "start_at": "2026-09-22T01:00:00Z"
+          }
+        ],
+        "display_name": "Binh Tran",
+        "skills": [
+          {
+            "certified_action_types": [
+              "servo-diagnostics"
+            ],
+            "certified_machine_families": [
+              "lathe",
+              "drill-cell"
+            ],
+            "level": 5,
+            "skill_id": "electrical"
+          }
+        ],
+        "status": "AVAILABLE",
+        "technician_id": "T02"
+      },
+      {
+        "availability": [
+          {
+            "end_at": "2026-09-22T12:00:00Z",
+            "start_at": "2026-09-22T00:00:00Z"
+          }
+        ],
+        "display_name": "Chi Le",
+        "skills": [
+          {
+            "certified_action_types": [
+              "spindle-inspection"
+            ],
+            "certified_machine_families": [
+              "lathe"
+            ],
+            "level": 3,
+            "skill_id": "mechanical"
+          }
+        ],
+        "status": "AVAILABLE",
+        "technician_id": "T03"
+      }
+    ]
   },
-  "trigger": {"type": "HEALTH_ALERT", "event_id": "demo-event-001", "occurred_at": "2026-09-21T08:00:00Z", "machine_id": "demo-M01", "failure_probability": 0.31, "alert_threshold": 0.2},
-  "planning_config": {"horizon_minutes": 480, "candidate_limit": 3, "solver_timeout_seconds": 20, "simulation_runs": 100, "base_seed": 42}
+  "mode": "LIVE",
+  "planning_config": {
+    "allowed_strategy_ids": [
+      "production-priority",
+      "balanced",
+      "reliability-priority"
+    ],
+    "base_seed": 20260922,
+    "candidate_limit": 3,
+    "horizon_minutes": 720,
+    "objective_weights": {
+      "maintenance": 1.0,
+      "production": 1.0,
+      "reliability": 1.0,
+      "schedule_stability": 0.25,
+      "workforce": 1.0
+    },
+    "simulation_runs": 100,
+    "solver_timeout_seconds": 30
+  },
+  "requested_by_user_id": null,
+  "schema_version": "3.0",
+  "trigger": {
+    "alert_threshold": 0.3,
+    "event_id": "health-alert-M03-001",
+    "failure_probability": 0.42,
+    "machine_id": "M03",
+    "occurred_at": "2026-09-22T00:00:00Z",
+    "type": "HEALTH_ALERT"
+  }
 }

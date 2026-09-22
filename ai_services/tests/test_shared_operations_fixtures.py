@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 from domain.operations import contracts
+from domain.operations.demo import DEMO_CASE_STATUS, DEMO_RUN_REQUEST
 
 FIXTURES = Path(__file__).resolve().parents[2] / "contracts/v3/fixtures"
 MANIFEST = json.loads((FIXTURES / "manifest.json").read_text(encoding="utf-8"))
@@ -30,18 +31,27 @@ def test_demo_references_and_rejects_unknown_machine():
         contracts.RunDecisionCaseRequest.model_validate(payload)
 
 
+def test_shared_demo_fixtures_match_canonical_demo_models():
+    request = json.loads((FIXTURES / "demo-health-alert.json").read_text(encoding="utf-8"))
+    status = json.loads((FIXTURES / "demo-case-status.json").read_text(encoding="utf-8"))
+    assert request == DEMO_RUN_REQUEST.model_dump(mode="json")
+    assert status == DEMO_CASE_STATUS.model_dump(mode="json")
+    assert len(request["factory_snapshot"]["machines"]) == 6
+    assert len(request["factory_snapshot"]["jobs"]) == 12
+    assert len(request["factory_snapshot"]["technicians"]) == 3
+
+
 def test_seed_reset_plan_is_deterministic_and_scoped():
     build_plan = runpy.run_path(str(FIXTURES.parents[2] / "scripts/demo-seed-plan.py"))["build_plan"]
     seed = build_plan("seed")
     reset = build_plan("reset")
     assert seed == build_plan("seed")
     assert seed["dry_run"] is True
-    assert seed["base_seed"] == 42
+    assert seed["base_seed"] == DEMO_RUN_REQUEST.planning_config.base_seed
     assert seed["fixture_sha256"] == reset["fixture_sha256"]
     assert [step["entity"] for step in reset["steps"]] == [step["entity"] for step in reversed(seed["steps"])]
     for step in seed["steps"]:
         assert step["ids"]
-        assert all(value.startswith("demo-") for value in step["ids"])
         assert [row[step["key"]] for row in step["records"]] == step["ids"]
     assert all("records" not in step for step in reset["steps"])
     contracts.RunDecisionCaseRequest.model_validate(seed["run_request"])
