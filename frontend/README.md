@@ -92,9 +92,10 @@ Open `/operations` for the API-backed overview. It loads both `getOperationsSnap
 ```dotenv
 NEXT_PUBLIC_OPERATIONS_API_MODE=real
 NEXT_PUBLIC_OPERATIONS_FACTORY_ID=factory-demo-01
+NEXT_PUBLIC_OPERATIONS_DECISION_CASE_ID=case-demo-M03-001
 ```
 
-`/operations/schedule`, `/operations/recommendations`, `/operations/agents`, and `/operations/what-if` remain fixture-rendered in this slice. They preserve the v3 contract boundaries: candidate KPIs, health metrics, risk, RUL, costs, validation, and recommendation selection are displayed from supplied fields and are never derived by page components. See `../docs/frontend-operations-ia.md` for the information architecture and contract map.
+`/operations/schedule` uses the same synchronized snapshot/current-schedule reads. `/operations/recommendations` keeps its canonical candidate comparison in mock mode; in real mode it accepts `?caseId=...` (or `NEXT_PUBLIC_OPERATIONS_DECISION_CASE_ID`) and reads only `getDecisionCase()`. Until the backend exposes an authoritative RecommendationPackage read endpoint, real mode shows status only and does not render candidate plans, KPIs, evidence, schedules, or decision controls. `/operations/agents` and `/operations/what-if` remain fixture-rendered in this slice. These pages preserve the v3 boundary: authoritative KPI, health, risk, RUL, cost and feasibility values are never derived by page components. See `../docs/frontend-operations-ia.md` for the information architecture and contract map.
 
 ## Decision Center contract and limitations
 
