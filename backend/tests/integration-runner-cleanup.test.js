@@ -92,3 +92,15 @@ test('missing journal is a no-op, including before dependency installation', () 
   run();
   expect(spawnSync).not.toHaveBeenCalled();
 });
+
+test('fallback attempts both migration schemas even if the first drop fails', () => {
+  process.argv.push('--cleanup');
+  const first = 'product_api_it_fresh_123_abc';
+  const second = 'product_api_it_upgrade_123_abc';
+  files.set(journal, [first, second].map(schema => JSON.stringify({ schema, target }) + '\n').join(''));
+  spawnSync.mockReturnValueOnce({ status: 1 }).mockReturnValueOnce({ status: 0 });
+  run();
+  expect(process.exitCode).toBe(1);
+  expect(spawnSync).toHaveBeenCalledTimes(2);
+  expect(JSON.parse(files.get(journal)).schema).toBe(first);
+});

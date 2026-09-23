@@ -143,15 +143,19 @@ function cleanupJournal() {
   if (entries.some(entry => !schemaPattern.test(entry.schema) || entry.target !== targetHash(baseUrl))) {
     throw new Error('Refusing cleanup: journal schema or explicit test database does not match');
   }
+  const failures = [];
   for (const { schema } of entries) {
     console.log(`[integration] Cleaning recorded schema ${schema}`);
-    const status = run(process.execPath, [prismaCli, 'db', 'execute', '--stdin', '--schema', 'prisma/schema.prisma'], {
-      env: { ...process.env, DATABASE_URL: baseUrl.toString() },
-      input: `DROP SCHEMA IF EXISTS "${schema}" CASCADE;\n`,
-    });
-    if (status !== 0) throw new Error(`Schema cleanup failed with exit code ${status}`);
-    forgetSchema(schema);
+    try {
+      const status = run(process.execPath, [prismaCli, 'db', 'execute', '--stdin', '--schema', 'prisma/schema.prisma'], {
+        env: { ...process.env, DATABASE_URL: baseUrl.toString() },
+        input: `DROP SCHEMA IF EXISTS "${schema}" CASCADE;\n`,
+      });
+      if (status !== 0) throw new Error(`Schema cleanup failed with exit code ${status}`);
+      forgetSchema(schema);
+    } catch (error) { failures.push(`${schema}: ${error.message}`); }
   }
+  if (failures.length) throw new Error(failures.join('\n'));
 }
 
 try {

@@ -5,6 +5,7 @@ repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 : "${TEST_DATABASE_URL:?Pass an explicit URL for a dedicated database ending in _test or _ci}"
+: "${MIGRATION_BASE_SHA:?Pass the exact PR base SHA (or pre-push SHA)}"
 for tool in node npm uv docker; do
   command -v "$tool" >/dev/null || { echo "Missing required tool: $tool" >&2; exit 1; }
 done
@@ -51,7 +52,9 @@ stage() {
   if [[ "${GITHUB_ACTIONS:-}" == 'true' ]]; then echo '::endgroup::'; fi
 }
 
+stage 'Existing migration history is immutable' node scripts/check-migration-history.js
 stage 'Install locked backend dependencies' npm ci --include=dev --prefix backend
+stage 'Fresh migrations and upgrade from base SHA' node scripts/check-migration-paths.js
 stage 'Install locked frontend dependencies' npm ci --include=dev --prefix frontend
 stage 'Install locked Python dependencies' uv sync --frozen --group dev --python 3.12 --project ai_services
 export OPERATIONS_PYTHON
