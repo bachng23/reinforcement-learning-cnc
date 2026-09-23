@@ -66,8 +66,8 @@ test('upgrades populated main without checksum drift, version backfill or schedu
     const stored = await db.$queryRaw`SELECT * FROM factory_snapshots`;
     expect(stored).toEqual(beforeSnapshot.map(row => ({ ...row, source_id: null })));
     const migrations = await db.$queryRaw`SELECT migration_name, checksum FROM _prisma_migrations WHERE finished_at IS NOT NULL ORDER BY migration_name`;
-    expect(migrations).toHaveLength(beforeMigrations.length + 1);
-    expect(migrations.slice(0, -1)).toEqual(beforeMigrations);
+    expect(migrations).toHaveLength(beforeMigrations.length + 2);
+    expect(migrations.slice(0, beforeMigrations.length)).toEqual(beforeMigrations);
     for (const row of migrations) {
       expect(row.checksum).toBe(createHash('sha256').update(fs.readFileSync(path.join(temp, 'migrations', row.migration_name, 'migration.sql'))).digest('hex'));
     }
@@ -76,6 +76,13 @@ test('upgrades populated main without checksum drift, version backfill or schedu
     expect(result.head).toMatchObject({ snapshotId: 'upgrade-S2', revision: 10,
       scheduleId: schedule.schedule_id, scheduleRevision: schedule.revision, planVersion: 7 });
     expect(await db.factorySnapshot.count()).toBe(2);
+    const { createDecisionCase } = require('../../src/services/decision-case.service');
+    const created = await createDecisionCase(db, { role: 'ADMIN', id: '00000000-0000-4000-8000-000000000001' }, {
+      factory_id: factoryId, schema_version: '3.0', expected_snapshot_id: 'upgrade-S2', expected_plan_version: 7,
+      request: { mode: 'LIVE', trigger: { type: 'MANUAL_REPLAN', reason: 'Upgrade regression' }, planning_config: { horizon_minutes: 720 } },
+    }, 'upgrade-create');
+    expect(created.body.data.status).toBe('CREATED');
+    expect(await db.decisionCaseEvent.count()).toBe(1);
     await expect(db.factorySnapshot.deleteMany()).rejects.toThrow('immutable');
   } finally {
     try {

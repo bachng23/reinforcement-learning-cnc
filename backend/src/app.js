@@ -24,7 +24,7 @@ const corsOptions = {
   preflightContinue: false,
   optionsSuccessStatus: 204,
   credentials: true,
-  exposedHeaders: ['Idempotency-Replayed', 'X-Request-Id'],
+  exposedHeaders: ['Idempotency-Replayed', 'X-Request-Id', 'Location'],
   allowedHeaders: [
     'Content-Type',
     'Authorization',
