@@ -48,16 +48,18 @@ async function seedOperations(db, plan, { factoryId } = {}) {
   });
 }
 
-async function readOperations(db, user, factoryId) {
+async function readOperations(db, user, factoryId, { signal } = {}) {
+  signal?.throwIfAborted();
   authorizeFactory(user, factoryId);
   const head = await db.$transaction((tx) => tx.operationsHead.findUnique({ where: { factoryId }, include: { snapshot: true, schedule: { include: { snapshot: true } } } }), { isolationLevel: 'RepeatableRead' });
   if (!head) throw notFound();
+  signal?.throwIfAborted();
   const { snapshot, schedule } = head;
   const corrupt = () => new ApiError(500, 'OPERATIONS_INTEGRITY_ERROR', 'Stored operations context failed integrity validation');
   const checkSnapshot = async (row) => {
     if (row.schemaVersion !== '3.0' || contentHash(row.payloadJson) !== row.contentHash) throw corrupt();
     let payload;
-    try { payload = await validatePayload(row.payloadJson); }
+    try { payload = await validatePayload(row.payloadJson, 'snapshot', { signal }); }
     catch (error) { if (error.statusCode === 400) throw corrupt(); throw error; }
     if (contentHash(payload) !== row.contentHash || payload.factory_id !== factoryId || payload.snapshot_id !== row.snapshotId
       || new Date(payload.captured_at).getTime() !== row.capturedAt.getTime()) throw corrupt();

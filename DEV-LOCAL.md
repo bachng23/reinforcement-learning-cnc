@@ -196,7 +196,79 @@ failures. Decision workflow endpoints remain separate work. Frontend types do
 not validate JSON or domain invariants at runtime. Existing UI view-model types
 in `frontend/types/operations.ts` are separate from generated wire types.
 
-## Operations snapshot demo and integration flow
+## Real Operations planning bridge
+
+The backend `OperationsPlanningClient` posts contract-v3 `RunDecisionCaseRequest`
+to `${AI_SERVICE_URL}/v1/operations/plan`. `planPersistedSnapshot` reads the
+authorized, integrity-checked PostgreSQL snapshot and builds that request. It
+never imports a demo fixture. Both request and recommendation are validated by
+the canonical Python/Pydantic v3 models, including the VALID-only candidate rule.
+The adapter also checks request/recommendation factory, snapshot, case and
+candidate-limit alignment. No recommendations, cases or schedules are persisted.
+
+After seeding the demo snapshot as described below and starting the AI service,
+one command runs the complete PostgreSQL -> backend -> FastAPI -> validated
+recommendation flow and prints the recommendation JSON:
+
+```powershell
+$env:NODE_ENV = 'development'
+$env:OPERATIONS_DEMO_DATABASE_URL = 'postgresql://operations_demo:operations_demo_local@127.0.0.1:55433/operations_demo?schema=public'
+$env:AI_SERVICE_URL = 'http://127.0.0.1:8001'
+$env:OPERATIONS_PYTHON = (Resolve-Path ai_services/.venv/Scripts/python.exe).Path
+npm.cmd --prefix backend run operations:plan-demo -- factory-demo-01 case-demo-planning
+```
+
+For a host AI process: `uv sync --frozen --group dev --project ai_services`, then
+`uv run --project ai_services uvicorn main:app --app-dir ai_services --port 8001`.
+For Compose: `docker compose up -d --build ai_service`. The AI service has a real
+`/health` probe. With the Compose PostgreSQL database already migrated and seeded,
+`docker compose --profile operations-demo run --rm --build operations_plan_demo`
+starts healthy PostgreSQL/AI dependencies and runs the same command. It reads the
+existing database and does not automatically migrate or seed it. The profile is
+an administrative development-only CLI, not a public API.
+
+`AI_SERVICE_URL` is required; there is no implicit localhost or fixture fallback.
+`AI_TRANSPORT_ALLOWANCE_MS` defaults to 2000 (1..30000). One absolute deadline
+covers request validation, all HTTP attempts/body reads and response validation,
+bounded by `solver_timeout_seconds * 1000 + transport allowance`. An optional
+client `timeoutMs` may shorten but cannot extend that budget. Caller cancellation
+is propagated to fetch and contract-validator subprocesses. Forwarded
+`x-request-id` and `x-correlation-id` remain identical across retries.
+
+| Failure | Backend status/code | Retry |
+| --- | --- | --- |
+| Outbound contract invalid or AI 422 | 422 / `INVALID_PLANNING_REQUEST` | Never |
+| AI 409 | 409 / `NO_FEASIBLE_PLAN` | Never |
+| AI 504 or client deadline | 504 / `PLANNING_TIMEOUT` | Never |
+| Network failure | 503 / `AI_UNAVAILABLE` | At most once, within original deadline |
+| Retryable AI 5xx | 503 / `AI_UNAVAILABLE` | At most once; 502/503 unless explicitly nonretryable, other 5xx only with `retryable: true` |
+| Other 4xx or nonretryable 5xx | 503 / `AI_UNAVAILABLE` | Never |
+| Invalid JSON, v3 contract or context binding | 502 / `INVALID_AI_RESPONSE` | Never |
+| Caller cancellation | 499 / `PLANNING_CANCELLED` | Never |
+
+An unavailable local contract validator remains `OPERATIONS_VALIDATOR_UNAVAILABLE`
+and fails closed; an HTTP 200 is never sufficient to accept AI output.
+
+The dedicated integration command starts FastAPI on an OS-assigned temporary
+port, migrates/seeds an isolated PostgreSQL schema, exercises the real adapter
+and planner, then stops the process and drops the schema:
+
+```powershell
+$env:TEST_DATABASE_URL = 'postgresql://operations_test:operations_test_only@127.0.0.1:55432/operations_test?schema=public'
+$env:OPERATIONS_PYTHON = (Resolve-Path ai_services/.venv/Scripts/python.exe).Path
+npm.cmd --prefix backend run test:operations-planning
+```
+
+The test database must end in `_test` or `_ci`; the runner does not load `.env`.
+Tests cover replay, context binding, no persistence/fallback, HTTP error mapping,
+bounded retry, refused connections, malformed/invalid responses, body timeouts,
+cancellation and runner/process/port/schema cleanup. Fault routes exist only in
+the test harness. FastAPI watches its parent's stdin and exits if the parent is
+force-killed. Schema ownership is recorded in `OPERATIONS_SCHEMA_JOURNAL` for the
+existing CI `always()` cleanup fallback. This suite is a required stage in
+`scripts/check-operations-integration.sh`.
+
+## Seeding the Operations snapshot demo
 
 Requires PostgreSQL 16, Node 22.22.2+ and Python 3.12+ with Pydantic. From the
 repository root in PowerShell:

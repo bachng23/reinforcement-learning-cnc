@@ -9,6 +9,7 @@ on:
       - 'contracts/**'
       - 'scripts/**'
       - '.github/workflows/operations-integration.yml'
+      - 'docker-compose.yml'
   push:
     branches: [main]
     paths:
@@ -18,6 +19,7 @@ on:
       - 'contracts/**'
       - 'scripts/**'
       - '.github/workflows/operations-integration.yml'
+      - 'docker-compose.yml'
 
 permissions:
   contents: read

@@ -12,9 +12,12 @@ function pythonExecutable() {
 }
 
 // Transport-only bridge; no shell and no HTTP input is used as a command or path.
-function pythonJson(script, args = [], input) {
+function pythonJson(script, args = [], input, { signal } = {}) {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(signal.reason);
     const child = spawn(pythonExecutable(), [script, ...args], { cwd: root, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+    const abort = () => child.kill();
+    signal?.addEventListener('abort', abort, { once: true });
     let out = '';
     let overflow = false;
     const timer = setTimeout(() => child.kill(), 15000);
@@ -24,9 +27,11 @@ function pythonJson(script, args = [], input) {
     });
     child.stderr.resume(); // Never expose raw contract input, environment or tracebacks.
     child.stdin.on('error', () => {});
-    child.on('error', () => { clearTimeout(timer); reject(new ApiError(503, 'OPERATIONS_VALIDATOR_UNAVAILABLE', 'Operations validator is unavailable')); });
+    child.on('error', () => { clearTimeout(timer); signal?.removeEventListener('abort', abort); reject(new ApiError(503, 'OPERATIONS_VALIDATOR_UNAVAILABLE', 'Operations validator is unavailable')); });
     child.on('close', (code) => {
       clearTimeout(timer);
+      signal?.removeEventListener('abort', abort);
+      if (signal?.aborted) return reject(signal.reason);
       if (code === 2 && !overflow) return reject(new ApiError(400, 'INVALID_OPERATIONS_SCHEMA', 'Operations contract or seed hash validation failed'));
       if (code !== 0 || overflow) return reject(new ApiError(503, 'OPERATIONS_VALIDATOR_UNAVAILABLE', 'Operations validator is unavailable'));
       try { resolve(JSON.parse(out)); } catch { reject(new ApiError(503, 'OPERATIONS_VALIDATOR_UNAVAILABLE', 'Operations validator returned an invalid response')); }
@@ -46,11 +51,11 @@ function canonicalJson(value) {
   throw new ApiError(400, 'INVALID_OPERATIONS_SCHEMA', 'Payload must contain finite JSON values');
 }
 const contentHash = (payload) => createHash('sha256').update(canonicalJson(payload), 'utf8').digest('hex');
-async function validatePayload(payload, mode = 'snapshot') {
+async function validatePayload(payload, mode = 'snapshot', options = {}) {
   canonicalJson(payload); // Reject unsupported/non-finite input before JSON transport can coerce it.
-  const result = await pythonJson(path.join(root, 'scripts/validate-operations.py'), [], { mode, payload });
+  const result = await pythonJson(path.join(root, 'scripts/validate-operations.py'), [], { mode, payload }, options);
   if (!result.ok) throw new ApiError(400, 'INVALID_OPERATIONS_SCHEMA', 'Operations contract validation failed');
   return result.payload;
 }
 const loadCanonicalSeedPlan = () => pythonJson(path.resolve(root, '../scripts/demo-seed-plan.py'), ['seed']);
-module.exports = { contentHash, validatePayload, loadCanonicalSeedPlan };
+module.exports = { contentHash, validatePayload, loadCanonicalSeedPlan, pythonExecutable };

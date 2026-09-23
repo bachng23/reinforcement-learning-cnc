@@ -252,6 +252,13 @@ def test_api_returns_recommendation_and_structured_errors(monkeypatch) -> None:
     assert infeasible.status_code == 409
     assert infeasible.json()["code"] == "NO_FEASIBLE_PLAN"
 
+    correlated = client.post(
+        "/v1/operations/plan", json=no_technician.model_dump(mode="json"),
+        headers={"x-correlation-id": "backend-correlation", "x-request-id": "backend-request"},
+    )
+    assert correlated.status_code == 409
+    assert correlated.json()["correlation_id"] == "backend-correlation"
+
     class BrokenService:
         def plan(self, request):
             raise RuntimeError("private traceback detail")
