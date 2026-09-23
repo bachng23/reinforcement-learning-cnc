@@ -102,7 +102,7 @@ Equivalent local command (Bash, Node 22.22.2+ in the 22 release line, Python 3.1
 uv 0.10.11, and a Docker builder available locally or through DOCKER_HOST):
 
 ```bash
-TEST_DATABASE_URL='postgresql://test_user:test_password@127.0.0.1:5432/operations_test?schema=public' bash scripts/check-operations-integration.sh
+MIGRATION_BASE_SHA="$(git rev-parse origin/main)" TEST_DATABASE_URL='postgresql://test_user:test_password@127.0.0.1:5432/operations_test?schema=public' bash scripts/check-operations-integration.sh
 ```
 
 Provision a dedicated PostgreSQL 16 test database first. The gate requires an
@@ -112,7 +112,33 @@ a fallback. The test role must be able to create/drop schemas and own tables.
 Only test JWT/factory-access values are used. The Docker step builds the image;
 it does not run application or database containers.
 
-The fail-fast order is locked npm/uv installation and Prisma generation, canonical
+The gate first checks that every migration file already present at the base SHA
+is unchanged (including deletions, renames and the migration lock file). Add a new
+migration directory for schema changes; failures list the offending files.
+CI uses `github.event.pull_request.base.sha` for PRs and `github.event.before`
+for main pushes, with full Git history fetched. It never substitutes a moving
+branch or a hard-coded revision. Local checks use committed candidate `HEAD`;
+commit your migrations and fetch `origin/main` before running them.
+
+After backend dependency installation, migration checks materialize Prisma files
+from the exact base and candidate commits into temporary directories. A fresh
+schema runs all candidate migrations. A second schema runs base migrations,
+then candidate migrations against that existing history, without reset or
+`db push`. This catches upgrades such as adding a column that already exists,
+even when a rewritten history could pass on a fresh database. Both schemas use
+the cleanup journal described below. PostgreSQL regression tests also reproduce
+the fresh-pass/upgrade-fail case using disposable synthetic Git histories.
+
+Run just these checks from the repository root (after backend `npm ci`):
+
+```powershell
+$env:MIGRATION_BASE_SHA = git rev-parse origin/main
+$env:TEST_DATABASE_URL = 'postgresql://test_user:test_password@127.0.0.1:5432/operations_test?schema=public'
+node scripts/check-migration-history.js
+node scripts/check-migration-paths.js
+```
+
+The remaining fail-fast order is locked npm/uv installation and Prisma generation, canonical
 contract check, backend unit tests, PostgreSQL integration, frontend generated
 types/typecheck/full tests, snapshot E2E, production frontend build and backend
 Docker build. The full gate does not skip integration suites. Contract checks

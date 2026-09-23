@@ -50,11 +50,13 @@ jobs:
       JWT_SECRET: operations-ci-test-only-secret-at-least-32-characters
       OPERATIONS_FACTORY_ACCESS: '{}'
       OPERATIONS_SCHEMA_JOURNAL: /tmp/operations-schemas-${{ github.run_id }}-${{ github.run_attempt }}.jsonl
+      # PR upgrades must start at the event's exact base, not a moving main ref.
+      # Main pushes compare with the pre-push revision.
+      MIGRATION_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
         with:
-          # Upgrade regression reads the pinned, deployed main migrations.
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -71,7 +73,7 @@ jobs:
           version: '0.10.11'
           enable-cache: true
           cache-dependency-glob: ai_services/uv.lock
-      - name: Contract, unit, PostgreSQL, frontend, snapshot flow and builds
+      - name: Migration history, fresh/upgrade, contract, backend, frontend and builds
         run: bash scripts/check-operations-integration.sh
       - name: Clean any schemas left by an interrupted runner
         if: ${{ always() }}
