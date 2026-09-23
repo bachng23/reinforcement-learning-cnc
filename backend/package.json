@@ -15,7 +15,8 @@
     "prisma:seed": "node prisma/seed.js",
     "operations:seed": "node scripts/seed-operations.js",
     "operations:reset": "node scripts/reset-operations.js",
-    "test:operations-flow": "node tests/integration/run-integration-tests.js --operations-flow"
+    "test:operations-flow": "node tests/integration/run-integration-tests.js --operations-flow",
+    "operations:ingest": "node scripts/ingest-operations-snapshot.js"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",

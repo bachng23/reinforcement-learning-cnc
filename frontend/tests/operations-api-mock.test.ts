@@ -19,7 +19,7 @@ describe("canonical operations mock / HTTP parity", () => {
     };
     const expectedSchedule = {
       factory_id: factoryId, snapshot_id: snapshot.snapshot_id,
-      plan_version: schedule ? 1 : 0, schedule, commit: null,
+      plan_version: schedule ? 1 : 0, schedule, basis_snapshot: schedule ? snapshot : null, commit: null,
     };
     const fetcher = vi.fn<typeof fetch>(async url => {
       const path = new URL(String(url));

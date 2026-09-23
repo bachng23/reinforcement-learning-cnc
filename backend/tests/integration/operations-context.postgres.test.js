@@ -99,8 +99,10 @@ describe('Operations Context — canonical seed, PostgreSQL persistence and auth
     try {
       await expect(seedOperations(prisma, plan, { factoryId })).rejects.toMatchObject({ code: 'OPERATIONS_SEED_CONFLICT' });
       expect((await prisma.operationsHead.findUnique({ where: { factoryId } })).scheduleId).toBeNull();
-      // The API refuses a head that disagrees with the immutable snapshot.
-      expect((await get(`/schedules/current?factory_id=${factoryId}`)).body.code).toBe('OPERATIONS_INTEGRITY_ERROR');
+      // Head is now the schedule authority, independent of observation evidence.
+      const response = await get(`/schedules/current?factory_id=${factoryId}`);
+      expect(response.status).toBe(200);
+      expect(response.body.data.schedule).toBeNull();
     } finally {
       const s = plan.run_request.factory_snapshot.current_schedule;
       await prisma.operationsHead.update({ where: { factoryId }, data: { scheduleId: s.schedule_id, scheduleRevision: s.revision } });
@@ -121,6 +123,7 @@ describe('Operations Context — canonical seed, PostgreSQL persistence and auth
       expect(response.status).toBe(200);
       expect(response.body.data.snapshot_id).toBe(fresh.snapshot_id);
       expect(response.body.data.schedule).toEqual(canonical.current_schedule);
+      expect(response.body.data.basis_snapshot).toEqual(canonical);
       expect(response.body.meta.schedule_basis_snapshot_id).toBe(previousSnapshotId);
     } finally {
       await prisma.operationsHead.update({ where: { factoryId }, data: { snapshotId: previousSnapshotId, revision: { increment: 1 } } });
@@ -139,6 +142,7 @@ describe('Operations Context — canonical seed, PostgreSQL persistence and auth
       expect(result.status).toBe(scenario === 'empty' ? 200 : 500);
       if (scenario === 'empty') {
         expect(result.body.data.schedule).toBeNull();
+        expect(result.body.data.basis_snapshot).toBeNull();
         expect(result.body.data.plan_version).toBe(0);
       }
       else expect(result.body.code).toBe('OPERATIONS_INTEGRITY_ERROR');

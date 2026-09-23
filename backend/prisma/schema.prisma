@@ -5,6 +5,7 @@ generator client {
 model FactorySnapshot {
   factoryId String @map("factory_id")
   snapshotId String @map("snapshot_id")
+  sourceId String? @map("source_id")
   schemaVersion String @map("schema_version")
   contentHash String @map("content_hash") @db.Char(64)
   payloadJson Json @map("payload_json") @db.JsonB

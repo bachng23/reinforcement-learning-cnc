@@ -45,10 +45,10 @@ function ScheduleContext({ data }: { data: OperationsContextData }) {
   );
 }
 
-function CurrentSchedule({ data }: { data: OperationsContextData }) {
+export function CurrentSchedule({ data }: { data: OperationsContextData }) {
   const [machine, setMachine] = useState("");
   const [assignmentType, setAssignmentType] = useState("");
-  const snapshot = data.snapshotResponse.snapshot;
+  const snapshot = data.scheduleResponse.basis_snapshot;
   const schedule = data.scheduleResponse.schedule;
   const assignments = schedule?.assignments ?? [];
 
@@ -62,6 +62,8 @@ function CurrentSchedule({ data }: { data: OperationsContextData }) {
           title="No current schedule"
           description="The snapshot is available, but the Current Schedule API returned no committed schedule."
         />
+      ) : !snapshot ? (
+        <AsyncState kind="error" title="Schedule basis unavailable" description="The data used to publish this schedule is unavailable. Refresh to try again." />
       ) : (
         <>
           <OperationsPanel title="Schedule filters" description="Filters change presentation only; they do not create a schedule revision.">
@@ -106,7 +108,7 @@ function CurrentSchedule({ data }: { data: OperationsContextData }) {
           ) : (
             <OperationsPanel
               title="Current committed schedule"
-              description="Machine and technician lanes come from the synchronized canonical payload. MachineRiskReport is not provided by these read APIs, so risk is shown as Not provided."
+              description="Lanes, priorities and dependencies reflect the data used when this schedule was published. MachineRiskReport is not provided by these read APIs, so risk is shown as Not provided."
             >
               <ScheduleGantt
                 schedule={schedule}
