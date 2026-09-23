@@ -10,7 +10,11 @@ import { OperationsOverviewPage } from "@/components/pages/operations-overview-p
 import { RecommendationCenterPage } from "@/components/pages/recommendation-center-page";
 import { WhatIfWorkspacePage } from "@/components/pages/what-if-workspace-page";
 import { getOperationsFixture } from "@/lib/operations/fixtures";
-import type { HumanDecisionRequest } from "@/types/operations";
+import {
+  createMockRecommendationCenterDataSource,
+  type RecommendationCenterPreviewData,
+} from "@/lib/recommendation-center";
+import type { HumanDecisionRequest } from "@/types/generated/operations";
 
 vi.mock("@/components/app-shell", () => ({
   AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -39,7 +43,7 @@ describe("operations fixture UI", () => {
     const user = userEvent.setup();
     render(<RecommendationCenterPage />);
 
-    expect(await screen.findByText("Every KPI below is displayed directly", { exact: false })).toBeInTheDocument();
+    expect(await screen.findByText("Every value below comes directly", { exact: false })).toBeInTheDocument();
     const production = screen.getByRole("button", { name: /PRODUCTION PRIORITY/ });
     await user.click(production);
     expect(production).toHaveAttribute("aria-pressed", "true");
@@ -47,8 +51,11 @@ describe("operations fixture UI", () => {
   });
 
   it("builds exact approve, reject and modify HumanDecisionRequest shapes", async () => {
-    const fixture = getOperationsFixture();
-    const candidate = fixture.recommendation.candidate_plans[0];
+    const source = createMockRecommendationCenterDataSource();
+    const fixture = await source.read(source.defaultCaseId ?? "");
+    expect(fixture.source).toBe("mock");
+    const preview = fixture as RecommendationCenterPreviewData;
+    const candidate = preview.recommendation.candidate_plans[0];
     const requests: HumanDecisionRequest[] = [];
     const user = userEvent.setup();
     const view = render(<DecisionControls
@@ -56,7 +63,7 @@ describe("operations fixture UI", () => {
       recommendationId="recommendation-M01-001"
       snapshotId="snapshot-shift-a-0921"
       selectedCandidate={candidate}
-      modifiedSchedule={fixture.modified_schedule}
+      modifiedSchedule={preview.modifiedSchedule}
       onDecision={(request) => { requests.push(request); }}
     />);
 
@@ -69,7 +76,7 @@ describe("operations fixture UI", () => {
       expected_snapshot_id: "snapshot-shift-a-0921",
     }));
 
-    view.rerender(<DecisionControls decisionCaseId="case-health-M01-0921" recommendationId="recommendation-M01-001" snapshotId="snapshot-shift-a-0921" selectedCandidate={candidate} modifiedSchedule={fixture.modified_schedule} onDecision={(request) => { requests.push(request); }} />);
+    view.rerender(<DecisionControls decisionCaseId="case-health-M01-0921" recommendationId="recommendation-M01-001" snapshotId="snapshot-shift-a-0921" selectedCandidate={candidate} modifiedSchedule={preview.modifiedSchedule} onDecision={(request) => { requests.push(request); }} />);
     await user.click(screen.getByRole("button", { name: "Reject" }));
     await user.click(screen.getByRole("button", { name: "Preview request" }));
     expect(screen.getByRole("alert")).toHaveTextContent("rejection note is required");
@@ -77,10 +84,10 @@ describe("operations fixture UI", () => {
     await user.click(screen.getByRole("button", { name: "Preview request" }));
     expect(requests.at(-1)).toEqual(expect.objectContaining({ decision: "REJECT", note: "Keep the current plan for this shift." }));
 
-    view.rerender(<DecisionControls decisionCaseId="case-health-M01-0921" recommendationId="recommendation-M01-001" snapshotId="snapshot-shift-a-0921" selectedCandidate={candidate} modifiedSchedule={fixture.modified_schedule} onDecision={(request) => { requests.push(request); }} />);
+    view.rerender(<DecisionControls decisionCaseId="case-health-M01-0921" recommendationId="recommendation-M01-001" snapshotId="snapshot-shift-a-0921" selectedCandidate={candidate} modifiedSchedule={preview.modifiedSchedule} onDecision={(request) => { requests.push(request); }} />);
     await user.click(screen.getByRole("button", { name: "Modify" }));
     await user.click(screen.getByRole("button", { name: "Preview request" }));
-    expect(requests.at(-1)).toEqual(expect.objectContaining({ decision: "MODIFY", modified_schedule: fixture.modified_schedule }));
+    expect(requests.at(-1)).toEqual(expect.objectContaining({ decision: "MODIFY", modified_schedule: preview.modifiedSchedule }));
   });
 
   it("switches sanitized tool details without exposing a computed latency", async () => {

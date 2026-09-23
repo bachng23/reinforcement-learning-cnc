@@ -4,17 +4,18 @@ import {
   type OperationsRequestOptions,
 } from "@/lib/operations-api/client";
 import { getOperationsFixture } from "@/lib/operations/fixtures";
-import type { DecisionCaseStatusResponse } from "@/types/generated/operations";
 import type {
-  DecisionCaseSummary,
+  DecisionCaseStatusResponse,
+  FactorySnapshot,
   RecommendationPackage,
   Schedule,
-} from "@/types/operations";
+} from "@/types/generated/operations";
 
 export type RecommendationCenterPreviewData = {
   source: "mock";
-  caseStatus: DecisionCaseSummary;
+  caseStatus: DecisionCaseStatusResponse;
   recommendation: RecommendationPackage;
+  snapshot: FactorySnapshot;
   modifiedSchedule: Schedule;
 };
 
@@ -61,9 +62,23 @@ export function createMockRecommendationCenterDataSource(): RecommendationCenter
       options?.signal?.throwIfAborted();
       return {
         source: "mock",
-        caseStatus,
-        recommendation: fixture.recommendation,
-        modifiedSchedule: fixture.modified_schedule,
+        caseStatus: {
+          schema_version: caseStatus.schema_version,
+          decision_case_id: caseStatus.decision_case_id,
+          mode: caseStatus.mode,
+          status: caseStatus.status,
+          snapshot_id: caseStatus.snapshot_id,
+          created_at: caseStatus.created_at,
+          updated_at: caseStatus.updated_at,
+          recommendation_id: caseStatus.recommendation_id,
+          committed_schedule_id: caseStatus.committed_schedule_id,
+          error_code: caseStatus.error_code,
+        },
+        // The preview fixture is contract-shaped but predates generated-type adoption.
+        // Clone it at this boundary so all UI consumers use the generated v3 types.
+        recommendation: structuredClone(fixture.recommendation) as unknown as RecommendationPackage,
+        snapshot: structuredClone(fixture.factory_snapshot) as unknown as FactorySnapshot,
+        modifiedSchedule: structuredClone(fixture.modified_schedule) as unknown as Schedule,
       };
     },
   };

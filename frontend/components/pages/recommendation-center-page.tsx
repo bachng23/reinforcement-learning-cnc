@@ -1,12 +1,12 @@
 "use client";
 
-import { FileJson2, RefreshCw, ShieldAlert } from "lucide-react";
+import { FileJson2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { CandidateComparison } from "@/components/operations/candidate-comparison";
 import { DecisionControls } from "@/components/operations/decision-controls";
 import { OperationsPanel, OperationsShell, OperationsStatus } from "@/components/operations/operations-shell";
+import { isSelectableRecommendationCandidate, RecommendationPackageView } from "@/components/operations/recommendation-package-view";
 import { AsyncState } from "@/components/research/async-state";
 import {
   getOperationsApiClient,
@@ -24,42 +24,31 @@ import {
   type RecommendationCenterPreviewData,
   type RecommendationCenterStatusData,
 } from "@/lib/recommendation-center";
-import type { HumanDecisionRequest } from "@/types/operations";
+import type { HumanDecisionRequest } from "@/types/generated/operations";
 
 function PreviewRecommendation({ data }: { data: RecommendationCenterPreviewData }) {
   const recommendation = data.recommendation;
   const decisionCase = data.caseStatus;
   const [selectedPlanId, setSelectedPlanId] = useState(recommendation.recommended_plan_id);
   const [preview, setPreview] = useState<HumanDecisionRequest | null>(null);
-  const selected = recommendation.candidate_plans.find((plan) => plan.candidate_plan_id === selectedPlanId)
-    ?? recommendation.candidate_plans[0];
+  const selected = recommendation.snapshot_id === data.snapshot.snapshot_id
+    ? recommendation.candidate_plans.find((plan) =>
+      plan.candidate_plan_id === selectedPlanId &&
+      isSelectableRecommendationCandidate(plan, recommendation, data.snapshot))
+    : undefined;
 
   return (
     <>
       <OperationsPanel title="Decision case" description="Canonical preview case and trigger context.">
         <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4 sm:p-5">
           <div><p className="text-xs text-[var(--color-ash-gray)]">Case</p><p className="mt-1 break-all font-mono text-sm font-semibold">{decisionCase.decision_case_id}</p></div>
-          <div><p className="text-xs text-[var(--color-ash-gray)]">Trigger</p><p className="mt-1 font-semibold">{decisionCase.trigger.type} · {decisionCase.trigger.machine_id}</p></div>
+          <div><p className="text-xs text-[var(--color-ash-gray)]">Snapshot</p><p className="mt-1 break-all font-mono text-sm font-semibold">{decisionCase.snapshot_id}</p></div>
           <div><p className="text-xs text-[var(--color-ash-gray)]">Mode</p><p className="mt-1"><OperationsStatus value={decisionCase.mode} /></p></div>
           <div><p className="text-xs text-[var(--color-ash-gray)]">Workflow status</p><p className="mt-1"><OperationsStatus value={decisionCase.status} /></p></div>
         </div>
       </OperationsPanel>
 
-      <OperationsPanel title="Why this recommendation?" description="Explanation text and evidence references come from RecommendationPackage.explanation.">
-        <div className="p-4 sm:p-5">
-          <p className="max-w-4xl text-sm leading-6">{recommendation.explanation.summary}</p>
-          <div className="mt-4 grid gap-4 lg:grid-cols-3">
-            <div><h3 className="text-xs font-semibold uppercase text-[var(--color-ash-gray)]">Primary reasons</h3><ul className="mt-2 space-y-2 text-sm">{recommendation.explanation.primary_reasons.map((item) => <li key={item}>• {item}</li>)}</ul></div>
-            <div><h3 className="text-xs font-semibold uppercase text-[var(--color-ash-gray)]">Tradeoffs</h3><ul className="mt-2 space-y-2 text-sm">{recommendation.explanation.tradeoffs.map((item) => <li key={item}>• {item}</li>)}</ul></div>
-            <div><h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase text-[var(--color-ash-gray)]"><ShieldAlert className="h-3.5 w-3.5" />Residual risks</h3><ul className="mt-2 space-y-2 text-sm">{recommendation.explanation.residual_risks.map((item) => <li key={item}>• {item}</li>)}</ul></div>
-          </div>
-          <p className="mt-4 text-xs text-[var(--color-ash-gray)]">Evidence: {recommendation.explanation.evidence_refs.join(", ")}</p>
-        </div>
-      </OperationsPanel>
-
-      <OperationsPanel title="Candidate comparison" description="Recommended plan plus two alternatives; only contract-validated candidates are presented as selectable.">
-        <CandidateComparison candidates={recommendation.candidate_plans} recommendedPlanId={recommendation.recommended_plan_id} selectedPlanId={selectedPlanId} onSelect={setSelectedPlanId} />
-      </OperationsPanel>
+      <RecommendationPackageView recommendation={recommendation} snapshot={data.snapshot} selectedCandidateId={selectedPlanId} onSelectCandidate={setSelectedPlanId} />
 
       {selected ? (
         <OperationsPanel title="Approval / modify / reject" description="Preview-only controls build a request without sending it to an API.">

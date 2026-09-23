@@ -11,6 +11,7 @@ import { createMockOperationsApiClient } from "@/lib/operations-api/mock";
 import {
   createMockRecommendationCenterDataSource,
   createRealRecommendationCenterDataSource,
+  type RecommendationCenterDataSource,
 } from "@/lib/recommendation-center";
 
 vi.mock("@/components/app-shell", () => ({
@@ -48,7 +49,7 @@ describe("RecommendationCenterPage data integration", () => {
 
     expect(screen.getByRole("heading", { name: "Loading decision case" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Candidate comparison" })).toBeInTheDocument();
-    expect(screen.getByText("Every KPI below is displayed directly", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("Every value below comes directly", { exact: false })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Why this recommendation?" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
 
@@ -56,6 +57,26 @@ describe("RecommendationCenterPage data integration", () => {
     await user.click(production);
     expect(production).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText(/M01 retains elevated failure probability before intervention/)).toBeInTheDocument();
+  });
+
+  it("fails closed and hides decision controls when the preview package and snapshot mismatch", async () => {
+    const canonicalSource = createMockRecommendationCenterDataSource();
+    const canonical = await canonicalSource.read(canonicalSource.defaultCaseId ?? "");
+    if (canonical.source !== "mock") throw new Error("Expected mock preview data.");
+    const mismatched = structuredClone(canonical);
+    mismatched.snapshot.snapshot_id = "snapshot-authoritative-newer";
+    const dataSource: RecommendationCenterDataSource = {
+      mode: "mock",
+      defaultCaseId: canonicalSource.defaultCaseId,
+      read: vi.fn().mockResolvedValue(mismatched),
+    };
+
+    render(<RecommendationCenterPage dataSource={dataSource} />);
+
+    expect(await screen.findByRole("heading", { name: "Recommendation package mismatch" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Modify" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reject" })).not.toBeInTheDocument();
   });
 
   it("renders authoritative real case status without fixture candidates", async () => {
@@ -79,7 +100,7 @@ describe("RecommendationCenterPage data integration", () => {
 
     expect(await screen.findByRole("heading", { name: "Recommendation package not available" })).toBeInTheDocument();
     expect(screen.getByText(/returns status only/)).toBeInTheDocument();
-    expect(screen.queryByText("Every KPI below is displayed directly", { exact: false })).not.toBeInTheDocument();
+    expect(screen.queryByText("Every value below comes directly", { exact: false })).not.toBeInTheDocument();
     expect(screen.queryByText(/^Evidence:/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Modify" })).not.toBeInTheDocument();
