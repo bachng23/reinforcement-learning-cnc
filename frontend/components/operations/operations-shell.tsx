@@ -23,12 +23,14 @@ export function OperationsShell({
   children,
   actions,
   dataSource = "fixture",
+  dataSourceMessage,
 }: {
   title: string;
   description: string;
   children: ReactNode;
   actions?: ReactNode;
   dataSource?: "fixture" | "live";
+  dataSourceMessage?: string;
 }) {
   const pathname = usePathname();
 
@@ -43,9 +45,9 @@ export function OperationsShell({
         />
 
         <div className={`rounded-md border px-4 py-3 text-sm ${dataSource === "live" ? "border-sky-200 bg-sky-50 text-sky-900" : "border-amber-200 bg-amber-50 text-amber-900"}`} role="note">
-          {dataSource === "live"
+          {dataSourceMessage ?? (dataSource === "live"
             ? "Live Operations API mode. Snapshot and current schedule values are rendered exactly as returned by the backend."
-            : "First-pass UI rendered from a contract-shaped fixture. Values are illustrative and no decision is sent to an API."}
+            : "First-pass UI rendered from a contract-shaped fixture. Values are illustrative and no decision is sent to an API.")}
         </div>
 
         <nav className="overflow-x-auto rounded-lg border border-[var(--color-stone-border)] bg-white p-1" aria-label="Operations screens">

@@ -39,7 +39,7 @@ describe("operations fixture UI", () => {
     const user = userEvent.setup();
     render(<RecommendationCenterPage />);
 
-    expect(screen.getByText("Every KPI below is displayed directly", { exact: false })).toBeInTheDocument();
+    expect(await screen.findByText("Every KPI below is displayed directly", { exact: false })).toBeInTheDocument();
     const production = screen.getByRole("button", { name: /PRODUCTION PRIORITY/ });
     await user.click(production);
     expect(production).toHaveAttribute("aria-pressed", "true");
