@@ -200,6 +200,13 @@ test.each(['graceful', 'forced'])('%s runner interruption removes its schema, Fa
   child.stdout.on('data', data => { output += data; });
   child.stderr.resume();
   const exited = new Promise((resolve, reject) => { child.on('error', reject); child.on('close', resolve); });
+  const exitWithin = (timeoutMs) => new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`Lifecycle probe did not exit within ${timeoutMs}ms`)), timeoutMs);
+    exited.then(
+      value => { clearTimeout(timer); resolve(value); },
+      error => { clearTimeout(timer); reject(error); },
+    );
+  });
   let schema, url, journal;
   const deadline = Date.now() + 15000;
   try {
@@ -214,7 +221,7 @@ test.each(['graceful', 'forced'])('%s runner interruption removes its schema, Fa
     if (interruption === 'forced') child.kill('SIGKILL');
     else if (process.platform === 'win32') child.stdin.end();
     else child.kill('SIGTERM');
-    expect(await exited).not.toBe(0);
+    expect(await exitWithin(10000)).not.toBe(0);
     if (interruption === 'forced') {
       // Same journal fallback as the workflow always() step after SIGKILL.
       await command([path.join(root, 'tests/integration/run-integration-tests.js'), '--cleanup'], {
@@ -232,5 +239,11 @@ test.each(['graceful', 'forced'])('%s runner interruption removes its schema, Fa
       await delay(50);
     }
     await expect(fetch(`${url}/health`, { signal: AbortSignal.timeout(1000) })).rejects.toThrow();
-  } finally { if (child.exitCode === null) { child.stdin.end(); child.kill(); await exited; } }
+  } finally {
+    if (child.exitCode === null) {
+      child.stdin.end();
+      child.kill('SIGKILL');
+      await exitWithin(5000);
+    }
+  }
 }, 30000);

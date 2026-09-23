@@ -21,11 +21,17 @@ async function main() {
   const env = { ...process.env, NODE_ENV: 'test', DATABASE_URL: isolated.toString(),
     JWT_SECRET: 'planning-integration-test-only-secret', OPERATIONS_FACTORY_ACCESS: '{}' };
   const controller = new AbortController();
-  const abort = () => controller.abort();
+  const lifecycleProbe = process.argv.includes('--lifecycle-probe');
+  const abort = () => {
+    controller.abort();
+    // A resumed stdin pipe keeps Node alive on POSIX after SIGTERM. Release it
+    // here so the probe can finish cleanup and the parent can observe exit.
+    if (lifecycleProbe) process.stdin.pause();
+  };
   process.on('SIGINT', abort);
   process.on('SIGTERM', abort);
   // Test probes can exercise graceful interruption on Windows via pipe EOF.
-  if (process.argv.includes('--lifecycle-probe')) { process.stdin.resume(); process.stdin.once('end', abort); }
+  if (lifecycleProbe) { process.stdin.resume(); process.stdin.once('end', abort); }
   let child, closed, lines, recorded = false;
   const errors = [];
   console.log(`[planning integration] schema=${schema}; journal=${journal}`);
@@ -34,7 +40,7 @@ async function main() {
     fs.appendFileSync(journal, JSON.stringify({ schema,
       target: createHash('sha256').update(url.toString()).digest('hex') }) + '\n');
     recorded = true;
-    const setup = process.argv.includes('--lifecycle-probe') ? [['migrate', 'deploy']] : [['generate'], ['migrate', 'deploy']];
+    const setup = lifecycleProbe ? [['migrate', 'deploy']] : [['generate'], ['migrate', 'deploy']];
     for (const args of setup) {
       await command([prisma, ...args, '--schema', 'prisma/schema.prisma'],
         { cwd: root, env, signal: controller.signal });
@@ -72,7 +78,7 @@ async function main() {
       await delay(50, undefined, { signal: startup });
     }
     console.log(`[planning integration] FastAPI ready: ${env.AI_SERVICE_URL}`);
-    if (process.argv.includes('--lifecycle-probe')) {
+    if (lifecycleProbe) {
       await delay(60000, undefined, { signal: controller.signal });
     } else {
       await command([path.join(root, 'node_modules/jest/bin/jest.js'), '--config',
@@ -101,6 +107,10 @@ async function main() {
     }
     process.removeListener('SIGINT', abort);
     process.removeListener('SIGTERM', abort);
+    if (lifecycleProbe) {
+      process.stdin.removeListener('end', abort);
+      process.stdin.pause();
+    }
     if (!recorded || !fs.readFileSync(journal, 'utf8').trim() || !journal.startsWith(temporary + path.sep)) {
       await fs.promises.rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     }
