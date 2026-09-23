@@ -164,6 +164,7 @@ paths:
                       - snapshot_id
                       - plan_version
                       - schedule
+                      - basis_snapshot
                       - commit
                     properties:
                       factory_id:
@@ -176,6 +177,11 @@ paths:
                       schedule:
                         anyOf:
                           - $ref: '#/components/schemas/OperationsSchedule'
+                          - type: 'null'
+                      basis_snapshot:
+                        description: Immutable basis for the published schedule's resources, priorities and dependencies; null when no schedule exists. This can differ from the current observation identified by snapshot_id.
+                        anyOf:
+                          - $ref: '#/components/schemas/OperationsFactorySnapshot'
                           - type: 'null'
                       commit:
                         anyOf:

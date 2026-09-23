@@ -123,6 +123,7 @@ describe('Operations Context — canonical seed, PostgreSQL persistence and auth
       expect(response.status).toBe(200);
       expect(response.body.data.snapshot_id).toBe(fresh.snapshot_id);
       expect(response.body.data.schedule).toEqual(canonical.current_schedule);
+      expect(response.body.data.basis_snapshot).toEqual(canonical);
       expect(response.body.meta.schedule_basis_snapshot_id).toBe(previousSnapshotId);
     } finally {
       await prisma.operationsHead.update({ where: { factoryId }, data: { snapshotId: previousSnapshotId, revision: { increment: 1 } } });
@@ -141,6 +142,7 @@ describe('Operations Context — canonical seed, PostgreSQL persistence and auth
       expect(result.status).toBe(scenario === 'empty' ? 200 : 500);
       if (scenario === 'empty') {
         expect(result.body.data.schedule).toBeNull();
+        expect(result.body.data.basis_snapshot).toBeNull();
         expect(result.body.data.plan_version).toBe(0);
       }
       else expect(result.body.code).toBe('OPERATIONS_INTEGRITY_ERROR');

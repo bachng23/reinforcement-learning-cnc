@@ -64,8 +64,9 @@ async function readOperations(db, user, factoryId) {
     return payload;
   };
   const payload = await checkSnapshot(snapshot);
+  let basis = null;
   if (schedule) {
-    const basis = schedule.snapshotId === snapshot.snapshotId ? payload : await checkSnapshot(schedule.snapshot);
+    basis = schedule.snapshotId === snapshot.snapshotId ? payload : await checkSnapshot(schedule.snapshot);
     if (schedule.schemaVersion !== '3.0' || schedule.factoryId !== factoryId
       || contentHash(schedule.payloadJson) !== schedule.contentHash || contentHash(basis.current_schedule) !== schedule.contentHash
       || schedule.payloadJson.schedule_id !== schedule.scheduleId || schedule.payloadJson.revision !== schedule.revision) throw corrupt();
@@ -86,6 +87,7 @@ async function readOperations(db, user, factoryId) {
       snapshot_id: snapshot.snapshotId,
       plan_version: head.planVersion,
       schedule: currentSchedule,
+      basis_snapshot: basis,
       commit: null,
     },
     meta: {

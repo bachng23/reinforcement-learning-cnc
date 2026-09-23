@@ -58,7 +58,7 @@ const current = await readOperations('schedules/current');
 console.log(current.schedule?.assignments);
 ```
 
-Snapshot success uses `{success:true,data:{factory_id,snapshot_id,schema_version,captured_at,plan_version,current_schedule_id,snapshot},meta}`. Current-schedule success uses `{success:true,data:{factory_id,snapshot_id,plan_version,schedule,commit},meta}`. These DTOs match the frontend Operations API client; `snapshot` and `schedule` contain the canonical v3 payloads. A known factory with no current schedule returns `200` with `data.schedule:null`, plan version `0`, and null schedule metadata. Both reads are no-store and load the head and its relations in a repeatable-read transaction; separate requests may observe different heads, so clients compare metadata if they need a joint view.
+Snapshot success uses `{success:true,data:{factory_id,snapshot_id,schema_version,captured_at,plan_version,current_schedule_id,snapshot},meta}`. Current-schedule success uses `{success:true,data:{factory_id,snapshot_id,plan_version,schedule,basis_snapshot,commit},meta}`. These DTOs match the frontend Operations API client; `snapshot` and `schedule` contain the canonical v3 payloads. A known factory with no current schedule returns `200` with `data.schedule:null`, plan version `0`, and null schedule metadata. Both reads are no-store and load the head and its relations in a repeatable-read transaction; separate requests may observe different heads, so clients compare metadata if they need a joint view.
 
 Errors on these routes use canonical v3 ErrorResponse (`schema_version,error_id,code,message,correlation_id,retryable,details`). Unknown query parameters, invalid/missing factory IDs → 400; unauthenticated → 401; unknown/inaccessible → 404; corrupted persisted content → 500 OPERATIONS_INTEGRITY_ERROR; unavailable database/validator → 503. Other routes retain their existing error format. OpenAPI embeds the relevant generated v3 schema definitions; contract changes must regenerate/reconcile them.
 
@@ -83,3 +83,9 @@ npm.cmd run test:integration
 The shared integration runner creates/deploys/drops an isolated schema. Operations tests exercise real HTTP+authentication+Prisma+PostgreSQL: concurrent/idempotent canonical seed, six-machine reads, VIEWER scope, unknown factory, invalid schema/source hash/references, stored hash/schema corruption, null schedule, cross-factory FKs, immutability and no head reset. No immutable-row triggers are disabled for cleanup.
 
 The older design drafts are not the authoritative contract for these implemented read endpoints.
+
+### Published schedule basis
+
+`GET /api/v1/schedules/current` includes `data.basis_snapshot`: the validated immutable FactorySnapshot used to publish the returned schedule, or null when no schedule exists. `data.snapshot_id` still identifies the current observation. After S2 ingestion, the response therefore contains snapshot_id S2, schedule P1 and basis_snapshot S1. The frontend uses basis_snapshot for Gantt lanes, machine filters, priorities and dependencies; the Operations overview continues to use the current snapshot. A missing basis displays an error rather than mixing P1 with S2. No migration is needed.
+
+Regression coverage: `npm run test:operations-flow` seeds S1/P1, ingests S2 with renamed machines, removed technicians and changed job priorities/dependencies, reads through the authenticated HTTP client, and compares the rendered filters/Gantt against S1/P1.
