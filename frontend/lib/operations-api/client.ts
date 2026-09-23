@@ -35,6 +35,7 @@ export type OperationsCurrentScheduleResponse = {
   snapshot_id: string;
   plan_version: number;
   schedule: Schedule | null;
+  basis_snapshot: FactorySnapshot | null;
   commit?: Record<string, unknown> | null;
 };
 export type OperationsDecisionCommandResponse = {

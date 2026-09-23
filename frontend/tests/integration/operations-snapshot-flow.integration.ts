@@ -1,3 +1,6 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { CurrentSchedule } from "@/components/pages/integrated-schedule-page";
 import { createRequire } from "node:module";
 import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
@@ -126,5 +129,37 @@ describe("canonical fixture → PostgreSQL → authenticated snapshot API → fr
     for (const table of ["factory_snapshots", "operation_schedules"]) {
       await expect(db.$executeRawUnsafe(`UPDATE ${table} SET content_hash = content_hash WHERE factory_id = $1`, factoryId)).rejects.toThrow("immutable");
     }
+  });
+
+  it("renders P1 with immutable S1 after ingesting changed resources in S2", async () => {
+    const snapshotResponse = await client.getOperationsSnapshot(factoryId);
+    const scheduleResponse = await client.getCurrentSchedule(factoryId);
+    const oldHead = await db.operationsHead.findUnique({ where: { factoryId } });
+    const published = scheduleResponse.schedule!;
+    expect((published.assignments ?? []).some(a => a.machine_id === snapshotResponse.snapshot.machines[0].machine_id)).toBe(true);
+    const projection = (data: Parameters<typeof CurrentSchedule>[0]["data"]) => {
+      const html = renderToStaticMarkup(createElement(CurrentSchedule, { data }));
+      return html.slice(html.indexOf('Schedule filters'));
+    };
+    const before = projection({ snapshotResponse, scheduleResponse });
+    const next = structuredClone(snapshotResponse.snapshot);
+    next.snapshot_id = "snapshot-resource-changes";
+    next.current_schedule = null;
+    next.technicians = [];
+    next.machines.forEach(m => { m.display_name = "Changed in S2"; });
+    (next.jobs ?? []).forEach(j => { j.priority = 99; j.operations.forEach(o => { o.predecessor_operation_ids = []; }); });
+    const { ingestFactorySnapshot } = backend("./src/services/operations-snapshot.service");
+    await ingestFactorySnapshot({ factoryId, expectedHeadRevision: oldHead.revision, snapshot: next, sourceId: "gantt-regression" }, db);
+    const currentSnapshot = await client.getOperationsSnapshot(factoryId);
+    const currentSchedule = await client.getCurrentSchedule(factoryId);
+    expect(currentSnapshot.snapshot.technicians).toEqual([]);
+    expect(currentSchedule.snapshot_id).toBe(next.snapshot_id);
+    expect(currentSchedule.basis_snapshot).toEqual(snapshotResponse.snapshot);
+    expect(currentSchedule.schedule).toEqual(published);
+    const after = projection({ snapshotResponse: currentSnapshot, scheduleResponse: currentSchedule });
+    expect(after).toBe(before);
+    for (const tech of snapshotResponse.snapshot.technicians ?? []) expect(after).toContain(tech.technician_id + " lane");
+    expect(after).not.toContain("Changed in S2");
+    expect(after).not.toContain("priority 99");
   });
 });

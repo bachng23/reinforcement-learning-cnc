@@ -59,6 +59,7 @@ export function createMockOperationsApiClient({
         snapshot_id: snapshot.snapshot_id,
         plan_version: snapshot.current_schedule ? 1 : 0,
         schedule: snapshot.current_schedule ?? null,
+        basis_snapshot: snapshot.current_schedule ? snapshot : null,
         commit: null,
       };
     },
