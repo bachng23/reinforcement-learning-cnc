@@ -24,6 +24,51 @@ security:
   - cookieAuth: []
   - bearerAuth: []
 paths:
+  '/decision-cases/{id}/recommendation':
+    get:
+      summary: Read immutable recommendation and its pinned snapshot
+      description: >-
+        Factory-scoped read. Missing/inaccessible cases return the same 404. An accessible case without an artifact
+        returns RECOMMENDATION_NOT_READY. Never uses the current head snapshot.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Immutable recommendation and basis
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - recommendation
+                      - snapshot
+                    properties:
+                      recommendation:
+                        $ref: '#/components/schemas/CaseContractRecommendationPackage'
+                      snapshot:
+                        $ref: '#/components/schemas/OperationsFactorySnapshot'
+        '401':
+          description: Authentication required
+        '404':
+          description: DECISION_CASE_NOT_FOUND or RECOMMENDATION_NOT_READY
+        '500':
+          description: Stored artifact/snapshot integrity failure
+        '503':
+          description: Contract validator unavailable
   /decision-cases:
     post:
       summary: Create a case without executing a planner
@@ -1563,6 +1608,517 @@ components:
               message: Database unavailable. Check DATABASE_URL and make sure Postgres is running.
 
   schemas:
+    CaseContractRecommendationPackage:
+      additionalProperties: false
+      properties:
+        candidate_plans:
+          items:
+            $ref: '#/components/schemas/CaseContractCandidatePlan'
+          maxItems: 5
+          minItems: 1
+          title: Candidate Plans
+          type: array
+        decision_case_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Decision Case Id
+          type: string
+        explanation:
+          $ref: '#/components/schemas/CaseContractRecommendationExplanation'
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        recommendation_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Recommendation Id
+          type: string
+        recommended_plan_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Recommended Plan Id
+          type: string
+        schema_version:
+          const: '3.0'
+          default: '3.0'
+          title: Schema Version
+          type: string
+        snapshot_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Snapshot Id
+          type: string
+      required:
+        - recommendation_id
+        - decision_case_id
+        - snapshot_id
+        - generated_at
+        - recommended_plan_id
+        - candidate_plans
+        - explanation
+      title: RecommendationPackage
+      type: object
+    CaseContractCandidatePlan:
+      additionalProperties: false
+      properties:
+        assumptions:
+          items:
+            maxLength: 256
+            minLength: 1
+            type: string
+          title: Assumptions
+          type: array
+        candidate_plan_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Candidate Plan Id
+          type: string
+        decision_case_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Decision Case Id
+          type: string
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        kpis:
+          $ref: '#/components/schemas/CaseContractPlanKPIs'
+        plan_version:
+          minimum: 1
+          title: Plan Version
+          type: integer
+        schedule:
+          $ref: '#/components/schemas/CaseContractSchedule'
+        schema_version:
+          const: '3.0'
+          default: '3.0'
+          title: Schema Version
+          type: string
+        snapshot_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Snapshot Id
+          type: string
+        source_agent_run_ids:
+          items:
+            maxLength: 128
+            minLength: 1
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            type: string
+          title: Source Agent Run Ids
+          type: array
+        source_engine_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Source Engine Id
+          type: string
+        source_engine_version:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Source Engine Version
+          type: string
+        strategy:
+          $ref: '#/components/schemas/CaseContractPlanStrategy'
+        validation:
+          anyOf:
+            - $ref: '#/components/schemas/CaseContractPlanValidation'
+            - type: 'null'
+          default: null
+        warnings:
+          items:
+            maxLength: 256
+            minLength: 1
+            type: string
+          title: Warnings
+          type: array
+      required:
+        - candidate_plan_id
+        - decision_case_id
+        - snapshot_id
+        - plan_version
+        - strategy
+        - source_engine_id
+        - source_engine_version
+        - generated_at
+        - schedule
+        - kpis
+      title: CandidatePlan
+      type: object
+    CaseContractPlanKPIs:
+      additionalProperties: false
+      properties:
+        decision_latency_ms:
+          anyOf:
+            - minimum: 0
+              type: integer
+            - type: 'null'
+          default: null
+          title: Decision Latency Ms
+        expected_emergency_downtime_minutes:
+          minimum: 0
+          title: Expected Emergency Downtime Minutes
+          type: number
+        expected_failure_count:
+          minimum: 0
+          title: Expected Failure Count
+          type: number
+        failure_probability:
+          maximum: 1
+          minimum: 0
+          title: Failure Probability
+          type: number
+        maintenance_cost:
+          minimum: 0
+          title: Maintenance Cost
+          type: number
+        makespan_minutes:
+          minimum: 0
+          title: Makespan Minutes
+          type: number
+        maximum_tardiness_minutes:
+          minimum: 0
+          title: Maximum Tardiness Minutes
+          type: number
+        on_time_completion_rate:
+          maximum: 1
+          minimum: 0
+          title: On Time Completion Rate
+          type: number
+        schedule_changes:
+          minimum: 0
+          title: Schedule Changes
+          type: integer
+        technician_utilization:
+          maximum: 1
+          minimum: 0
+          title: Technician Utilization
+          type: number
+        total_tardiness_minutes:
+          minimum: 0
+          title: Total Tardiness Minutes
+          type: number
+      required:
+        - makespan_minutes
+        - total_tardiness_minutes
+        - maximum_tardiness_minutes
+        - on_time_completion_rate
+        - expected_failure_count
+        - failure_probability
+        - expected_emergency_downtime_minutes
+        - maintenance_cost
+        - technician_utilization
+        - schedule_changes
+      title: PlanKPIs
+      type: object
+    CaseContractSchedule:
+      additionalProperties: false
+      properties:
+        assignments:
+          items:
+            $ref: '#/components/schemas/CaseContractScheduleAssignment'
+          title: Assignments
+          type: array
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        factory_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Factory Id
+          type: string
+        planning_window:
+          $ref: '#/components/schemas/CaseContractTimeWindow'
+        revision:
+          minimum: 1
+          title: Revision
+          type: integer
+        schedule_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Schedule Id
+          type: string
+      required:
+        - schedule_id
+        - factory_id
+        - revision
+        - planning_window
+        - created_at
+      title: Schedule
+      type: object
+    CaseContractScheduleAssignment:
+      additionalProperties: false
+      properties:
+        assignment_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Assignment Id
+          type: string
+        assignment_type:
+          $ref: '#/components/schemas/CaseContractAssignmentType'
+        end_at:
+          format: date-time
+          title: End At
+          type: string
+        job_id:
+          anyOf:
+            - maxLength: 128
+              minLength: 1
+              pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+              type: string
+            - type: 'null'
+          default: null
+          title: Job Id
+        locked:
+          default: false
+          title: Locked
+          type: boolean
+        machine_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Machine Id
+          type: string
+        maintenance_request_id:
+          anyOf:
+            - maxLength: 128
+              minLength: 1
+              pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+              type: string
+            - type: 'null'
+          default: null
+          title: Maintenance Request Id
+        operation_id:
+          anyOf:
+            - maxLength: 128
+              minLength: 1
+              pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+              type: string
+            - type: 'null'
+          default: null
+          title: Operation Id
+        start_at:
+          format: date-time
+          title: Start At
+          type: string
+        status:
+          $ref: '#/components/schemas/CaseContractAssignmentStatus'
+        technician_ids:
+          items:
+            maxLength: 128
+            minLength: 1
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            type: string
+          title: Technician Ids
+          type: array
+      required:
+        - assignment_id
+        - assignment_type
+        - status
+        - machine_id
+        - start_at
+        - end_at
+      title: ScheduleAssignment
+      type: object
+    CaseContractAssignmentType:
+      enum:
+        - PRODUCTION
+        - MAINTENANCE
+        - BLOCKED_TIME
+      title: AssignmentType
+      type: string
+    CaseContractAssignmentStatus:
+      enum:
+        - PROPOSED
+        - COMMITTED
+        - RUNNING
+        - COMPLETED
+        - CANCELLED
+      title: AssignmentStatus
+      type: string
+    CaseContractPlanStrategy:
+      enum:
+        - CURRENT
+        - PRODUCTION_PRIORITY
+        - BALANCED
+        - RELIABILITY_PRIORITY
+        - MANUAL
+        - EXPERIMENTAL
+      title: PlanStrategy
+      type: string
+    CaseContractPlanValidation:
+      additionalProperties: false
+      properties:
+        candidate_plan_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Candidate Plan Id
+          type: string
+        schema_version:
+          const: '3.0'
+          default: '3.0'
+          title: Schema Version
+          type: string
+        simulation_runs:
+          default: 0
+          minimum: 0
+          title: Simulation Runs
+          type: integer
+        validated_at:
+          format: date-time
+          title: Validated At
+          type: string
+        validation_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Validation Id
+          type: string
+        validator_version:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Validator Version
+          type: string
+        verdict:
+          $ref: '#/components/schemas/CaseContractValidationVerdict'
+        violations:
+          items:
+            $ref: '#/components/schemas/CaseContractConstraintViolation'
+          title: Violations
+          type: array
+        warnings:
+          items:
+            maxLength: 256
+            minLength: 1
+            type: string
+          title: Warnings
+          type: array
+      required:
+        - validation_id
+        - candidate_plan_id
+        - validator_version
+        - verdict
+        - validated_at
+      title: PlanValidation
+      type: object
+    CaseContractValidationVerdict:
+      enum:
+        - VALID
+        - INVALID
+        - ERROR
+      title: ValidationVerdict
+      type: string
+    CaseContractConstraintViolation:
+      additionalProperties: false
+      properties:
+        constraint_code:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Constraint Code
+          type: string
+        entity_refs:
+          items:
+            maxLength: 128
+            minLength: 1
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            type: string
+          title: Entity Refs
+          type: array
+        message:
+          maxLength: 256
+          minLength: 1
+          title: Message
+          type: string
+        severity:
+          $ref: '#/components/schemas/CaseContractConstraintSeverity'
+        time_window:
+          anyOf:
+            - $ref: '#/components/schemas/CaseContractTimeWindow'
+            - type: 'null'
+          default: null
+        violation_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Violation Id
+          type: string
+      required:
+        - violation_id
+        - constraint_code
+        - severity
+        - message
+      title: ConstraintViolation
+      type: object
+    CaseContractConstraintSeverity:
+      enum:
+        - ERROR
+        - WARNING
+      title: ConstraintSeverity
+      type: string
+    CaseContractRecommendationExplanation:
+      additionalProperties: false
+      properties:
+        evidence_refs:
+          items:
+            maxLength: 128
+            minLength: 1
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            type: string
+          minItems: 1
+          title: Evidence Refs
+          type: array
+        primary_reasons:
+          items:
+            maxLength: 256
+            minLength: 1
+            type: string
+          minItems: 1
+          title: Primary Reasons
+          type: array
+        residual_risks:
+          items:
+            maxLength: 256
+            minLength: 1
+            type: string
+          title: Residual Risks
+          type: array
+        summary:
+          maxLength: 4000
+          minLength: 1
+          title: Summary
+          type: string
+        tradeoffs:
+          items:
+            maxLength: 256
+            minLength: 1
+            type: string
+          minItems: 1
+          title: Tradeoffs
+          type: array
+      required:
+        - summary
+        - primary_reasons
+        - tradeoffs
+        - evidence_refs
+      title: RecommendationExplanation
+      type: object
     CaseContractDecisionCaseStatusResponse:
       additionalProperties: false
       properties:
@@ -1946,7 +2502,8 @@ components:
               type: integer
               minimum: 0
             case_revision:
-              const: 1
+              type: integer
+              minimum: 1
             stale:
               type: boolean
             current_context:
@@ -1965,6 +2522,27 @@ components:
                       type: integer
                       minimum: 0
                 - type: 'null'
+            processing:
+              type: object
+              additionalProperties: false
+              required:
+                - status
+                - attempt
+                - error_code
+              properties:
+                status:
+                  enum:
+                    - PENDING
+                    - RUNNING
+                    - SUCCEEDED
+                    - FAILED
+                attempt:
+                  type: integer
+                  minimum: 0
+                error_code:
+                  anyOf:
+                    - type: string
+                    - type: 'null'
     DecisionCaseHistoryEvent:
       type: object
       additionalProperties: false
@@ -1995,7 +2573,9 @@ components:
             - id
           properties:
             kind:
-              const: HUMAN
+              enum:
+                - HUMAN
+                - SYSTEM
             id:
               type: string
               format: uuid
@@ -2009,7 +2589,12 @@ components:
             status:
               const: CREATED
             revision:
-              const: 1
+              type: integer
+              minimum: 1
+            from_status:
+              type: string
+            to_status:
+              type: string
     DecisionCaseEventsResponse:
       type: object
       required:

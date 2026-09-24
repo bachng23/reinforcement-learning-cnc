@@ -7,10 +7,29 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "ai_services"))
 from domain.operations.contracts import FactorySnapshot, RunDecisionCaseRequest, RecommendationPackage, DecisionTrigger, PlanningConfig, DecisionMode, DecisionCaseStatusResponse
 from pydantic import TypeAdapter
+from domain.operations.contracts import RecommendationPackage
+from domain.operations.validator import validate_candidate_plan
 
 
 def validate(value):
     mode = value["mode"]
+    if mode == "recommendation":
+        data = value["payload"]
+        raw = data["recommendation"]
+        if not isinstance(raw, dict) or raw.get("schema_version") != "3.0":
+            raise ValueError("Explicit v3 version required")
+        candidates = raw.get("candidate_plans")
+        if not isinstance(candidates, list) or any(not isinstance(p, dict) or p.get("schema_version") != "3.0" for p in candidates):
+            raise ValueError("Explicit v3 versions required")
+        recommendation = RecommendationPackage.model_validate_json(json.dumps(raw), strict=True)
+        snapshot = FactorySnapshot.model_validate(data["snapshot"])
+        if recommendation.decision_case_id != data["case_id"] or recommendation.snapshot_id != snapshot.snapshot_id:
+            raise ValueError("Recommendation basis mismatch")
+        for candidate in recommendation.candidate_plans:
+            # Do not trust AI's self-reported VALID verdict, including unselected plans.
+            if validate_candidate_plan(snapshot, candidate).verdict.value != "VALID":
+                raise ValueError("Candidate failed semantic validation")
+        return recommendation.model_dump(mode="json")
     if mode == "case-status":
         return DecisionCaseStatusResponse.model_validate(value["payload"]).model_dump(mode="json")
     if mode == "case-request":
