@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "ai_services"))
-from domain.operations.contracts import FactorySnapshot, RunDecisionCaseRequest, DecisionTrigger, PlanningConfig, DecisionMode, DecisionCaseStatusResponse
+from domain.operations.contracts import FactorySnapshot, RunDecisionCaseRequest, RecommendationPackage, DecisionTrigger, PlanningConfig, DecisionMode, DecisionCaseStatusResponse
 from pydantic import TypeAdapter
 
 
@@ -32,6 +32,17 @@ def validate(value):
             raise ValueError("WHAT_IF requires simulation mode")
         return {"mode": decision_mode.value, "trigger": trigger,
                 "planning_config": PlanningConfig.model_validate_json(json.dumps(request["planning_config"]), strict=True).model_dump(mode="json")}
+    if mode in {"planning-request", "recommendation"}:
+        payload = value["payload"]
+        if not isinstance(payload, dict):
+            raise ValueError("Operations wire payload must be an object")
+        if payload.get("schema_version") != "3.0":
+            raise ValueError("Explicit schema_version 3.0 is required")
+        if mode == "planning-request":
+            if payload.get("factory_snapshot", {}).get("schema_version") != "3.0":
+                raise ValueError("Explicit snapshot schema_version 3.0 is required")
+            return RunDecisionCaseRequest.model_validate(payload).model_dump(mode="json")
+        return RecommendationPackage.model_validate(payload).model_dump(mode="json")
     if mode == "snapshot":
         payload = value["payload"]
         if payload.get("schema_version") != "3.0":

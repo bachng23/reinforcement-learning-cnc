@@ -81,14 +81,15 @@ async def health() -> dict[str, str | list[str]]:
         504: {"model": ErrorResponse},
     },
 )
-async def plan_operations(request: RunDecisionCaseRequest) -> RecommendationPackage | JSONResponse:
+async def plan_operations(request: RunDecisionCaseRequest, http_request: Request) -> RecommendationPackage | JSONResponse:
+    correlation_id = http_request.headers.get("x-correlation-id") or http_request.headers.get("x-request-id") or request.decision_case_id
     try:
         return planning_service.plan(request)
     except NoFeasiblePlan as exc:
         payload = _error_response(
             code=exc.code,
             message="No feasible plan satisfies the requested resources and windows.",
-            correlation_id=request.decision_case_id,
+            correlation_id=correlation_id,
             details=[ErrorDetail(code=exc.code, message=str(exc)[:256])],
         )
         return JSONResponse(status_code=409, content=payload.model_dump(mode="json"))
@@ -96,7 +97,7 @@ async def plan_operations(request: RunDecisionCaseRequest) -> RecommendationPack
         payload = _error_response(
             code=exc.code,
             message="Planning exceeded its configured time limit before finding a valid plan.",
-            correlation_id=request.decision_case_id,
+            correlation_id=correlation_id,
             retryable=True,
             details=[ErrorDetail(code=exc.code, message=str(exc)[:256])],
         )
@@ -105,7 +106,7 @@ async def plan_operations(request: RunDecisionCaseRequest) -> RecommendationPack
         payload = _error_response(
             code=exc.code,
             message="Planning could not complete.",
-            correlation_id=request.decision_case_id,
+            correlation_id=correlation_id,
             retryable=True,
         )
         return JSONResponse(status_code=500, content=payload.model_dump(mode="json"))
@@ -113,7 +114,7 @@ async def plan_operations(request: RunDecisionCaseRequest) -> RecommendationPack
         payload = _error_response(
             code="INTERNAL_PLANNING_ERROR",
             message="Planning failed internally.",
-            correlation_id=request.decision_case_id,
+            correlation_id=correlation_id,
             retryable=True,
         )
         return JSONResponse(status_code=500, content=payload.model_dump(mode="json"))
