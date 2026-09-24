@@ -13,6 +13,7 @@ model FactorySnapshot {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   schedules OperationSchedule[]
   heads OperationsHead[]
+  decisionCases DecisionCase[]
 
   @@id([factoryId, snapshotId])
   @@map("factory_snapshots")
@@ -52,6 +53,52 @@ model OperationsHead {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model DecisionCase {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  factoryId String @map("factory_id")
+  snapshotId String @map("snapshot_id")
+  basePlanVersion Int @map("base_plan_version")
+  mode String
+  status String @default("CREATED")
+  revision Int @default(1)
+  requestJson Json @map("request_json") @db.JsonB
+  requestHash String @map("request_hash") @db.Char(64)
+  actorId String @map("actor_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  snapshot FactorySnapshot @relation(fields: [factoryId, snapshotId], references: [factoryId, snapshotId], onDelete: Restrict, onUpdate: Restrict)
+  events DecisionCaseEvent[]
+  receipts DecisionCaseIdempotencyReceipt[]
+  @@index([factoryId, createdAt])
+  @@map("decision_cases")
+}
+
+model DecisionCaseEvent {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  caseId String @map("case_id") @db.Uuid
+  sequence Int
+  type String
+  actorId String @map("actor_id") @db.Uuid
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  payloadJson Json @map("payload_json") @db.JsonB
+  case DecisionCase @relation(fields: [caseId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([caseId, sequence])
+  @@map("decision_case_events")
+}
+
+model DecisionCaseIdempotencyReceipt {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  factoryId String @map("factory_id")
+  actorId String @map("actor_id") @db.Uuid
+  key String
+  requestHash String @map("request_hash") @db.Char(64)
+  caseId String @map("case_id") @db.Uuid
+  responseJson Json @map("response_json") @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  case DecisionCase @relation(fields: [caseId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([factoryId, actorId, key])
+  @@map("decision_case_idempotency_receipts")
 }
 
 model Experiment {

@@ -24,6 +24,111 @@ security:
   - cookieAuth: []
   - bearerAuth: []
 paths:
+  /decision-cases:
+    post:
+      summary: Create a case without executing a planner
+      description: >-
+        OPERATOR, ENGINEER or ADMIN. Key scoped to actor and factory. Replays return the original 202 response. Server
+        owns IDs, actor, timestamp, revision and status.
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: '^[!-~]+$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionCaseCreateRequest'
+      responses:
+        '202':
+          description: 'Persisted, sanitized response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionCaseResponse'
+          headers:
+            Location:
+              schema:
+                type: string
+            Idempotency-Replayed:
+              schema:
+                const: 'true'
+        '400':
+          description: 'Invalid strict body, trigger, idempotency key or cursor'
+        '401':
+          description: Authentication required
+        '403':
+          description: Role cannot create cases
+        '404':
+          description: Unknown or inaccessible resource
+        '409':
+          description: 'IDEMPOTENCY_KEY_REUSED, SNAPSHOT_CONFLICT or PLAN_VERSION_CONFLICT'
+        '500':
+          description: Operation failed atomically; no private details exposed
+  '/decision-cases/{id}':
+    get:
+      summary: Read generated status and consistent current head
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 'Persisted, sanitized response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionCaseResponse'
+        '401':
+          description: Authentication required
+        '404':
+          description: Unknown or inaccessible resource
+  '/decision-cases/{id}/events':
+    get:
+      summary: Read sanitized events ascending by sequence; limit + 1 determines has_more
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: after_sequence
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 2147483647
+            default: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 100
+      responses:
+        '200':
+          description: 'Persisted, sanitized response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionCaseEventsResponse'
+        '400':
+          description: 'Invalid strict body, trigger, idempotency key or cursor'
+        '401':
+          description: Authentication required
+        '404':
+          description: Unknown or inaccessible resource
   /operations/snapshot:
     get:
       tags:
@@ -1458,6 +1563,477 @@ components:
               message: Database unavailable. Check DATABASE_URL and make sure Postgres is running.
 
   schemas:
+    CaseContractDecisionCaseStatusResponse:
+      additionalProperties: false
+      properties:
+        committed_schedule_id:
+          anyOf:
+            - maxLength: 128
+              minLength: 1
+              pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+              type: string
+            - type: 'null'
+          default: null
+          title: Committed Schedule Id
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        decision_case_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Decision Case Id
+          type: string
+        error_code:
+          anyOf:
+            - maxLength: 128
+              minLength: 1
+              pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+              type: string
+            - type: 'null'
+          default: null
+          title: Error Code
+        mode:
+          $ref: '#/components/schemas/CaseContractDecisionMode'
+        recommendation_id:
+          anyOf:
+            - maxLength: 128
+              minLength: 1
+              pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+              type: string
+            - type: 'null'
+          default: null
+          title: Recommendation Id
+        schema_version:
+          const: '3.0'
+          default: '3.0'
+          title: Schema Version
+          type: string
+        snapshot_id:
+          maxLength: 128
+          minLength: 1
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          title: Snapshot Id
+          type: string
+        status:
+          $ref: '#/components/schemas/CaseContractDecisionCaseStatus'
+        updated_at:
+          format: date-time
+          title: Updated At
+          type: string
+      required:
+        - decision_case_id
+        - mode
+        - status
+        - snapshot_id
+        - created_at
+        - updated_at
+      title: DecisionCaseStatusResponse
+      type: object
+    CaseContractDecisionMode:
+      enum:
+        - LIVE
+        - SIMULATION_ONLY
+      title: DecisionMode
+      type: string
+    CaseContractDecisionCaseStatus:
+      enum:
+        - CREATED
+        - ANALYZING
+        - GENERATING
+        - VALIDATING
+        - EXPLAINING
+        - AWAITING_APPROVAL
+        - APPROVED
+        - MODIFIED
+        - REJECTED
+        - COMMITTED
+        - FAILED
+        - CANCELLED
+      title: DecisionCaseStatus
+      type: string
+    CaseContractTimeWindow:
+      additionalProperties: false
+      properties:
+        end_at:
+          format: date-time
+          title: End At
+          type: string
+        start_at:
+          format: date-time
+          title: Start At
+          type: string
+      required:
+        - start_at
+        - end_at
+      title: TimeWindow
+      type: object
+    CaseContractPlanningConfig:
+      additionalProperties: false
+      properties:
+        allowed_strategy_ids:
+          items:
+            maxLength: 128
+            minLength: 1
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            type: string
+          title: Allowed Strategy Ids
+          type: array
+        base_seed:
+          default: 0
+          minimum: 0
+          title: Base Seed
+          type: integer
+        candidate_limit:
+          default: 3
+          maximum: 5
+          minimum: 1
+          title: Candidate Limit
+          type: integer
+        horizon_minutes:
+          minimum: 1
+          title: Horizon Minutes
+          type: integer
+        objective_weights:
+          $ref: '#/components/schemas/CaseContractObjectiveWeights'
+        simulation_runs:
+          default: 100
+          maximum: 10000
+          minimum: 1
+          title: Simulation Runs
+          type: integer
+        solver_timeout_seconds:
+          default: 30
+          maximum: 300
+          minimum: 1
+          title: Solver Timeout Seconds
+          type: integer
+      required:
+        - horizon_minutes
+      title: PlanningConfig
+      type: object
+    CaseContractObjectiveWeights:
+      additionalProperties: false
+      properties:
+        maintenance:
+          default: 1
+          minimum: 0
+          title: Maintenance
+          type: number
+        production:
+          default: 1
+          minimum: 0
+          title: Production
+          type: number
+        reliability:
+          default: 1
+          minimum: 0
+          title: Reliability
+          type: number
+        schedule_stability:
+          default: 0.25
+          minimum: 0
+          title: Schedule Stability
+          type: number
+        workforce:
+          default: 1
+          minimum: 0
+          title: Workforce
+          type: number
+      title: ObjectiveWeights
+      type: object
+    DecisionCaseCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - factory_id
+        - schema_version
+        - expected_snapshot_id
+        - expected_plan_version
+        - request
+      properties:
+        factory_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        schema_version:
+          const: '3.0'
+        expected_snapshot_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        expected_plan_version:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+        request:
+          type: object
+          additionalProperties: false
+          required:
+            - mode
+            - trigger
+            - planning_config
+          properties:
+            mode:
+              $ref: '#/components/schemas/CaseContractDecisionMode'
+            trigger:
+              oneOf:
+                - additionalProperties: false
+                  properties:
+                    alert_threshold:
+                      maximum: 1
+                      minimum: 0
+                      title: Alert Threshold
+                      type: number
+                    failure_probability:
+                      maximum: 1
+                      minimum: 0
+                      title: Failure Probability
+                      type: number
+                    machine_id:
+                      maxLength: 128
+                      minLength: 1
+                      pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+                      title: Machine Id
+                      type: string
+                    type:
+                      const: HEALTH_ALERT
+                      default: HEALTH_ALERT
+                      title: Type
+                      type: string
+                  required:
+                    - machine_id
+                    - failure_probability
+                    - alert_threshold
+                  title: HealthAlertTrigger
+                  type: object
+                - additionalProperties: false
+                  properties:
+                    failure_code:
+                      maxLength: 128
+                      minLength: 1
+                      pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+                      title: Failure Code
+                      type: string
+                    machine_id:
+                      maxLength: 128
+                      minLength: 1
+                      pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+                      title: Machine Id
+                      type: string
+                    type:
+                      const: MACHINE_FAILURE
+                      default: MACHINE_FAILURE
+                      title: Type
+                      type: string
+                  required:
+                    - machine_id
+                    - failure_code
+                  title: MachineFailureTrigger
+                  type: object
+                - additionalProperties: false
+                  properties:
+                    reason:
+                      maxLength: 256
+                      minLength: 1
+                      title: Reason
+                      type: string
+                    technician_id:
+                      maxLength: 128
+                      minLength: 1
+                      pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+                      title: Technician Id
+                      type: string
+                    type:
+                      const: TECHNICIAN_UNAVAILABLE
+                      default: TECHNICIAN_UNAVAILABLE
+                      title: Type
+                      type: string
+                    unavailable_window:
+                      $ref: '#/components/schemas/CaseContractTimeWindow'
+                  required:
+                    - technician_id
+                    - unavailable_window
+                    - reason
+                  title: TechnicianUnavailableTrigger
+                  type: object
+                - additionalProperties: false
+                  properties:
+                    maintenance_request_id:
+                      maxLength: 128
+                      minLength: 1
+                      pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+                      title: Maintenance Request Id
+                      type: string
+                    type:
+                      const: MAINTENANCE_REQUESTED
+                      default: MAINTENANCE_REQUESTED
+                      title: Type
+                      type: string
+                  required:
+                    - maintenance_request_id
+                  title: MaintenanceRequestedTrigger
+                  type: object
+                - additionalProperties: false
+                  properties:
+                    reason:
+                      maxLength: 4000
+                      minLength: 1
+                      title: Reason
+                      type: string
+                    type:
+                      const: MANUAL_REPLAN
+                      default: MANUAL_REPLAN
+                      title: Type
+                      type: string
+                  required:
+                    - reason
+                  title: ManualReplanTrigger
+                  type: object
+                - additionalProperties: false
+                  properties:
+                    assumptions:
+                      additionalProperties: true
+                      title: Assumptions
+                      type: object
+                    scenario_id:
+                      maxLength: 128
+                      minLength: 1
+                      pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+                      title: Scenario Id
+                      type: string
+                    type:
+                      const: WHAT_IF
+                      default: WHAT_IF
+                      title: Type
+                      type: string
+                  required:
+                    - scenario_id
+                    - assumptions
+                  title: WhatIfTrigger
+                  type: object
+            planning_config:
+              $ref: '#/components/schemas/CaseContractPlanningConfig'
+    DecisionCaseResponse:
+      type: object
+      required:
+        - success
+        - data
+        - meta
+      properties:
+        success:
+          const: true
+        data:
+          $ref: '#/components/schemas/CaseContractDecisionCaseStatusResponse'
+        meta:
+          type: object
+          required:
+            - factory_id
+            - base_plan_version
+            - case_revision
+            - current_context
+            - stale
+          properties:
+            factory_id:
+              type: string
+              minLength: 1
+              maxLength: 128
+              pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            base_plan_version:
+              type: integer
+              minimum: 0
+            case_revision:
+              const: 1
+            stale:
+              type: boolean
+            current_context:
+              anyOf:
+                - type: object
+                  required:
+                    - snapshot_id
+                    - plan_version
+                  properties:
+                    snapshot_id:
+                      type: string
+                      minLength: 1
+                      maxLength: 128
+                      pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+                    plan_version:
+                      type: integer
+                      minimum: 0
+                - type: 'null'
+    DecisionCaseHistoryEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - case_id
+        - sequence
+        - type
+        - actor
+        - occurred_at
+        - payload
+      properties:
+        id:
+          type: string
+          format: uuid
+        case_id:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          minimum: 1
+        type:
+          type: string
+        actor:
+          type: object
+          required:
+            - kind
+            - id
+          properties:
+            kind:
+              const: HUMAN
+            id:
+              type: string
+              format: uuid
+        occurred_at:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: false
+          properties:
+            status:
+              const: CREATED
+            revision:
+              const: 1
+    DecisionCaseEventsResponse:
+      type: object
+      required:
+        - success
+        - data
+        - meta
+      properties:
+        success:
+          const: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DecisionCaseHistoryEvent'
+        meta:
+          type: object
+          required:
+            - has_more
+            - next_after_sequence
+          properties:
+            has_more:
+              type: boolean
+            next_after_sequence:
+              type: integer
+              minimum: 0
     OperationsFactorySnapshot:
       additionalProperties: false
       properties:

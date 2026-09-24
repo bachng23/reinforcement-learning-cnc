@@ -5,11 +5,33 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "ai_services"))
-from domain.operations.contracts import FactorySnapshot, RunDecisionCaseRequest
+from domain.operations.contracts import FactorySnapshot, RunDecisionCaseRequest, DecisionTrigger, PlanningConfig, DecisionMode, DecisionCaseStatusResponse
+from pydantic import TypeAdapter
 
 
 def validate(value):
     mode = value["mode"]
+    if mode == "case-status":
+        return DecisionCaseStatusResponse.model_validate(value["payload"]).model_dump(mode="json")
+    if mode == "case-request":
+        request = value["payload"]
+        if set(request) != {"mode", "trigger", "planning_config"}:
+            raise ValueError("Unexpected request fields")
+        trigger = dict(request["trigger"])
+        owned = {"event_id", "occurred_at", "requested_by_user_id"}
+        if owned.intersection(trigger):
+            raise ValueError("Server-owned trigger fields")
+        trigger.update(event_id="server-generated", occurred_at="2000-01-01T00:00:00Z")
+        if trigger.get("type") in {"MANUAL_REPLAN", "WHAT_IF"}:
+            trigger["requested_by_user_id"] = "server-generated"
+        trigger = TypeAdapter(DecisionTrigger).validate_json(json.dumps(trigger), strict=True).model_dump(mode="json")
+        for key in owned:
+            trigger.pop(key, None)
+        decision_mode = DecisionMode(request["mode"])
+        if trigger["type"] == "WHAT_IF" and decision_mode != DecisionMode.SIMULATION_ONLY:
+            raise ValueError("WHAT_IF requires simulation mode")
+        return {"mode": decision_mode.value, "trigger": trigger,
+                "planning_config": PlanningConfig.model_validate_json(json.dumps(request["planning_config"]), strict=True).model_dump(mode="json")}
     if mode == "snapshot":
         payload = value["payload"]
         if payload.get("schema_version") != "3.0":
