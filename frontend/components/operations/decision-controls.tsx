@@ -3,7 +3,7 @@
 import { Check, LoaderCircle, PenLine, X } from "lucide-react";
 import { useState } from "react";
 
-import type { CandidatePlan, HumanDecisionRequest, Schedule } from "@/types/operations";
+import type { CandidatePlan, HumanDecisionRequest, Schedule } from "@/types/generated/operations";
 
 export interface DecisionControlsProps {
   decisionCaseId: string;
