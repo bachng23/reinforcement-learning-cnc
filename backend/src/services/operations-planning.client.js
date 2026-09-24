@@ -96,7 +96,14 @@ class OperationsPlanningClient {
             await response.body?.cancel().catch(() => {});
             throw failure(terminal || 'AI_UNAVAILABLE');
           }
-          data = await readJson(response);
+          // Error bodies are advisory only. Gateways commonly produce HTML/text
+          // for 502/503, which must retain the documented retry semantics.
+          if (!response.ok) {
+            try { data = await readJson(response); }
+            catch { data = undefined; }
+          } else {
+            data = await readJson(response);
+          }
         } catch (error) {
           combined.throwIfAborted();
           if (error instanceof ApiError) throw error;

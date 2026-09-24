@@ -66,3 +66,16 @@ test('a broken response stream cannot turn an observed 4xx into a transport retr
   await expect(client.plan(request)).rejects.toMatchObject({ code: 'INVALID_PLANNING_REQUEST' });
   expect(fetcher).toHaveBeenCalledTimes(1);
 });
+
+test('a non-JSON 503 from a gateway retains the default retry policy', async () => {
+  const fetcher = jest.fn()
+    .mockResolvedValueOnce(new Response('upstream unavailable', {
+      status: 503,
+      headers: { 'content-type': 'text/plain' },
+    }))
+    .mockResolvedValueOnce(Response.json(recommendation));
+  const client = new OperationsPlanningClient({ baseUrl: 'https://example.test', fetcher });
+
+  await expect(client.plan(request)).resolves.toEqual(recommendation);
+  expect(fetcher).toHaveBeenCalledTimes(2);
+});
