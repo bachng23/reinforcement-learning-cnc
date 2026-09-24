@@ -19,17 +19,19 @@ function parse(schema, value) {
 }
 function status(row) {
   return { schema_version: '3.0', decision_case_id: row.id, mode: row.mode, status: row.status,
-    snapshot_id: row.snapshotId, created_at: row.createdAt.toISOString(), updated_at: row.createdAt.toISOString(),
-    recommendation_id: null, committed_schedule_id: null, error_code: null };
+    snapshot_id: row.snapshotId, created_at: row.createdAt.toISOString(), updated_at: row.updatedAt.toISOString(),
+    recommendation_id: row.recommendation?.recommendationId ?? null, committed_schedule_id: null,
+    error_code: row.status === 'FAILED' ? row.processingErrorCode : null };
 }
 function meta(row, head) {
   return { factory_id: row.factoryId, base_plan_version: row.basePlanVersion, case_revision: row.revision,
+    processing: { status: row.processingStatus, attempt: row.processingAttempt, error_code: row.processingErrorCode },
     current_context: head ? { snapshot_id: head.snapshotId, plan_version: head.planVersion } : null,
     stale: !head || head.snapshotId !== row.snapshotId || head.planVersion !== row.basePlanVersion };
 }
 async function accessible(tx, user, id) {
   if (!z.string().uuid().safeParse(id).success) throw notFound();
-  const row = await tx.decisionCase.findUnique({ where: { id } });
+  const row = await tx.decisionCase.findUnique({ where: { id }, include: { recommendation: { select: { recommendationId: true } } } });
   if (!row) throw notFound();
   try { authorizeFactory(user, row.factoryId); }
   catch (error) { if (error.statusCode === 404) throw notFound(); throw error; }
@@ -96,10 +98,16 @@ async function getDecisionCaseEvents(db, user, id, rawQuery) {
       orderBy: { sequence: 'asc' }, take: query.limit + 1 });
     const page = rows.slice(0, query.limit);
     return { success: true, data: page.map(row => ({ id: row.id, case_id: row.caseId, sequence: row.sequence,
-      type: row.type, actor: { kind: 'HUMAN', id: row.actorId }, occurred_at: row.occurredAt.toISOString(),
+      type: row.type, actor: { kind: row.actorKind, id: row.actorId }, occurred_at: row.occurredAt.toISOString(),
       // Allowlisted projection; never expose request JSON, arbitrary stored payloads or future worker traces.
-      payload: row.type === 'CASE_CREATED' ? { status: 'CREATED', revision: 1 } : {},
+      payload: row.type === 'CASE_CREATED' ? { status: 'CREATED', revision: 1 }
+        : row.type === 'CASE_STATUS_CHANGED' ? safeTransition(row.payloadJson) : {},
     })), meta: { has_more: rows.length > query.limit, next_after_sequence: page.at(-1)?.sequence ?? query.after_sequence } };
   }, { isolationLevel: 'RepeatableRead' });
 }
-module.exports = { createDecisionCase, getDecisionCase, getDecisionCaseEvents };
+function safeTransition(payload) {
+  const states = z.enum(['CREATED', 'ANALYZING', 'GENERATING', 'VALIDATING', 'EXPLAINING', 'AWAITING_APPROVAL', 'FAILED']);
+  const parsed = z.object({ from_status: states, to_status: states, revision: z.number().int().positive() }).safeParse(payload);
+  return parsed.success ? parsed.data : {};
+}
+module.exports = { createDecisionCase, getDecisionCase, getDecisionCaseEvents, accessible, parse };

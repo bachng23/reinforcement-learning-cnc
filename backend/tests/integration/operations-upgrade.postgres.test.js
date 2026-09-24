@@ -55,18 +55,35 @@ test('upgrades populated main without checksum drift, version backfill or schedu
     await db.$disconnect();
 
     for (const name of fs.readdirSync(path.join(root, 'prisma/migrations'))) {
+      if (name === '20260925000000_decision_recommendation_persistence') continue;
       const target = path.join(temp, 'migrations', name);
       if (!fs.existsSync(target)) fs.cpSync(path.join(root, 'prisma/migrations', name), target, { recursive: true });
     }
     fs.copyFileSync(path.join(root, 'prisma/schema.prisma'), path.join(temp, 'schema.prisma'));
     deploy();
+    // Materialize a pre-lease CREATED case before applying the new migration.
+    const legacyId = '00000000-0000-4000-8000-000000000002';
+    await db.$executeRaw`INSERT INTO decision_cases (id,factory_id,snapshot_id,base_plan_version,mode,request_json,request_hash,actor_id)
+      VALUES (${legacyId}::uuid,${factoryId},${snapshot.snapshot_id},7,'LIVE','{}'::jsonb,${contentHash({})},${legacyId}::uuid)`;
+    await db.$executeRaw`INSERT INTO decision_case_events (case_id,sequence,type,actor_id,payload_json)
+      VALUES (${legacyId}::uuid,1,'CASE_CREATED',${legacyId}::uuid,'{"status":"CREATED","revision":1}'::jsonb)`;
+    const legacyBefore = await db.$queryRaw`SELECT * FROM decision_cases WHERE id=${legacyId}::uuid`;
+    await db.$disconnect();
+    const newest = '20260925000000_decision_recommendation_persistence';
+    fs.cpSync(path.join(root, 'prisma/migrations', newest), path.join(temp, 'migrations', newest), { recursive: true });
+    deploy();
     deploy(); // No pending migrations on replay.
+    const legacyAfter = await db.$queryRaw`SELECT * FROM decision_cases WHERE id=${legacyId}::uuid`;
+    expect(legacyAfter[0]).toMatchObject({ ...legacyBefore[0], updated_at: legacyBefore[0].created_at,
+      processing_status: 'PENDING', processing_attempt: 0, processing_error_code: null,
+      lease_token: null, lease_owner_id: null, lease_expires_at: null });
+    expect(await db.decisionCaseEvent.findFirst({ where: { caseId: legacyId } })).toMatchObject({ sequence: 1, type: 'CASE_CREATED', actorKind: 'HUMAN' });
     expect(await db.operationsHead.findUnique({ where: { factoryId } })).toEqual(beforeHead);
     expect(await db.operationSchedule.findMany()).toEqual(beforeSchedule);
     const stored = await db.$queryRaw`SELECT * FROM factory_snapshots`;
     expect(stored).toEqual(beforeSnapshot.map(row => ({ ...row, source_id: null })));
     const migrations = await db.$queryRaw`SELECT migration_name, checksum FROM _prisma_migrations WHERE finished_at IS NOT NULL ORDER BY migration_name`;
-    expect(migrations).toHaveLength(beforeMigrations.length + 2);
+    expect(migrations).toHaveLength(beforeMigrations.length + 3);
     expect(migrations.slice(0, beforeMigrations.length)).toEqual(beforeMigrations);
     for (const row of migrations) {
       expect(row.checksum).toBe(createHash('sha256').update(fs.readFileSync(path.join(temp, 'migrations', row.migration_name, 'migration.sql'))).digest('hex'));
@@ -82,7 +99,11 @@ test('upgrades populated main without checksum drift, version backfill or schedu
       request: { mode: 'LIVE', trigger: { type: 'MANUAL_REPLAN', reason: 'Upgrade regression' }, planning_config: { horizon_minutes: 720 } },
     }, 'upgrade-create');
     expect(created.body.data.status).toBe('CREATED');
-    expect(await db.decisionCaseEvent.count()).toBe(1);
+    expect(await db.decisionCaseEvent.count()).toBe(2);
+    const { claimDecisionCase } = require('../../src/services/decision-planning.service');
+    const claim = await claimDecisionCase(db, { caseId: legacyId, expectedRevision: 1, workerId: legacyId });
+    expect(claim).toMatchObject({ revision: 2, attempt: 1 });
+    expect((await db.decisionCaseEvent.findMany({ where: { caseId: legacyId }, orderBy: { sequence: 'asc' } })).map(e => e.sequence)).toEqual([1, 2]);
     await expect(db.factorySnapshot.deleteMany()).rejects.toThrow('immutable');
   } finally {
     try {
