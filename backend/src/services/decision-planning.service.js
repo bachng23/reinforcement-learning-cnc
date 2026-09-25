@@ -59,7 +59,7 @@ async function persistDecisionRecommendation(db, input) {
   if (!row) throw new ApiError(404, 'DECISION_CASE_NOT_FOUND', 'Decision case was not found');
   if (contentHash(row.snapshot.payloadJson) !== row.snapshot.contentHash) throw new ApiError(500, 'OPERATIONS_INTEGRITY_ERROR', 'Stored snapshot failed integrity validation');
   // Expensive deterministic validation is outside the lock; immutable basis cannot change.
-  const payload = await validatePayload({ case_id: row.id, snapshot: row.snapshot.payloadJson, recommendation: args.recommendation }, 'recommendation');
+  const payload = await validatePayload({ case_id: row.id, snapshot: row.snapshot.payloadJson, recommendation: args.recommendation }, 'persisted-recommendation');
   const hash = contentHash(payload);
   if (args.expectedContentHash && args.expectedContentHash !== hash) throw new ApiError(409, 'RECOMMENDATION_CONTENT_CONFLICT', 'Recommendation content hash does not match');
   try {
@@ -118,7 +118,7 @@ async function getDecisionRecommendation(db, user, id) {
     throw new ApiError(500, 'RECOMMENDATION_INTEGRITY_ERROR', 'Stored recommendation failed integrity validation');
   }
   try {
-    const validated = await validatePayload({ case_id: id, snapshot: snapshot.payloadJson, recommendation: artifact.payloadJson }, 'recommendation');
+    const validated = await validatePayload({ case_id: id, snapshot: snapshot.payloadJson, recommendation: artifact.payloadJson }, 'persisted-recommendation');
     if (contentHash(validated) !== artifact.contentHash || validated.recommendation_id !== artifact.recommendationId
       || new Date(validated.generated_at).getTime() !== artifact.generatedAt.getTime()) throw new Error('Integrity mismatch');
   } catch (error) {

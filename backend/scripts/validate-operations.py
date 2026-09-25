@@ -7,13 +7,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "ai_services"))
 from domain.operations.contracts import FactorySnapshot, RunDecisionCaseRequest, RecommendationPackage, DecisionTrigger, PlanningConfig, DecisionMode, DecisionCaseStatusResponse
 from pydantic import TypeAdapter
-from domain.operations.contracts import RecommendationPackage
 from domain.operations.validator import validate_candidate_plan
 
 
 def validate(value):
     mode = value["mode"]
-    if mode == "recommendation":
+    if mode == "persisted-recommendation":
         data = value["payload"]
         raw = data["recommendation"]
         if not isinstance(raw, dict) or raw.get("schema_version") != "3.0":
