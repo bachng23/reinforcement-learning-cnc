@@ -64,6 +64,7 @@ export function createMockOperationsApiClient({
       };
     },
     getDecisionCase: (_caseId, options) => unsupported(options),
+    getDecisionCaseRecommendation: (_caseId, options) => unsupported(options),
     createDecisionCase: (_body, options) => unsupported(options),
     submitDecisionCommand: (_caseId, _body, options) => unsupported(options),
     listEvents: (_caseId, _afterSequence, options) => unsupported(options),

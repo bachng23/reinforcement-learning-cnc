@@ -3,11 +3,22 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { OperationsApiError } from "@/lib/operations-api/client";
-import type {
-  RecommendationCenterData,
-  RecommendationCenterDataSource,
+import {
+  isRecommendationPollingStatus,
+  type RecommendationCenterData,
+  type RecommendationCenterDataSource,
 } from "@/lib/recommendation-center/data-source";
 
+function shouldPoll(data: RecommendationCenterData): boolean {
+  return data.source === "real"
+    && data.artifactState === "pending"
+    && isRecommendationPollingStatus(data.caseStatus.status);
+}
+
+/*
+ * The hook owns one request chain at a time. A retry replaces that chain, while
+ * terminal, blocked and fail-closed mismatch states never schedule another read.
+ */
 export type RecommendationCenterState =
   | { kind: "loading" }
   | { kind: "ready"; data: RecommendationCenterData }
@@ -51,9 +62,11 @@ function failureState(error: unknown): Exclude<RecommendationCenterState, { kind
 export function useRecommendationCenter({
   dataSource,
   caseId,
+  pollIntervalMs = 2_000,
 }: {
   dataSource: RecommendationCenterDataSource;
   caseId?: string;
+  pollIntervalMs?: number;
 }) {
   const resolvedCaseId = caseId?.trim() || dataSource.defaultCaseId;
   const [state, setState] = useState<RecommendationCenterState>(
@@ -68,20 +81,35 @@ export function useRecommendationCenter({
     }
 
     const controller = new AbortController();
-    setState({ kind: "loading" });
-    void dataSource.read(resolvedCaseId, { signal: controller.signal }).then((data) => {
-      if (!controller.signal.aborted) setState({ kind: "ready", data });
-    }).catch((error: unknown) => {
-      if (controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) return;
-      setState(failureState(error));
-    });
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
-    return () => controller.abort();
-  }, [dataSource, requestRevision, resolvedCaseId]);
+    const read = async (showLoading: boolean) => {
+      if (showLoading) setState({ kind: "loading" });
+      try {
+        const data = await dataSource.read(resolvedCaseId, { signal: controller.signal });
+        if (controller.signal.aborted) return;
+        setState({ kind: "ready", data });
+        if (shouldPoll(data)) {
+          timer = setTimeout(() => void read(false), pollIntervalMs);
+        }
+      } catch (error: unknown) {
+        if (controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) return;
+        setState(failureState(error));
+      }
+    };
+
+    void read(true);
+    return () => {
+      if (timer) clearTimeout(timer);
+      controller.abort();
+    };
+  }, [dataSource, pollIntervalMs, requestRevision, resolvedCaseId]);
 
   const retry = useCallback(() => {
     setRequestRevision((value) => value + 1);
   }, []);
 
-  return { state, retry, caseId: resolvedCaseId };
+  const polling = state.kind === "ready" && shouldPoll(state.data);
+
+  return { state, retry, caseId: resolvedCaseId, polling };
 }

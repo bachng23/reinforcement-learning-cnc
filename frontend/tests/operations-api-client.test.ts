@@ -21,9 +21,33 @@ describe("operations wire client", () => {
       method: "POST", credentials: "include", signal, body: JSON.stringify(createBody),
     }));
     fetcher.mockResolvedValue(new Response(JSON.stringify({ success: true, data: status })));
-    await client.getDecisionCase("case/a b");
+    await expect(client.getDecisionCase("case/a b")).resolves.toEqual({ caseStatus: status, meta: undefined });
     expect(fetcher.mock.lastCall?.[0]).toBe("https://example.test/api/v1/decision-cases/case%2Fa%20b");
     expect(createOperationsDemoFixtures().request).not.toBe(request);
+  });
+
+  it("reads the recommendation and immutable basis snapshot without reshaping the contract payload", async () => {
+    const request = createOperationsDemoFixtures().request;
+    const recommendation = {
+      schema_version: "3.0" as const,
+      recommendation_id: "recommendation-live-1",
+      decision_case_id: "case-live-1",
+      snapshot_id: request.factory_snapshot.snapshot_id,
+      generated_at: "2026-09-25T01:00:00Z",
+      recommended_plan_id: "candidate-live-1",
+      candidate_plans: [],
+      explanation: { summary: "Test", primary_reasons: [], tradeoffs: [], evidence_refs: [] },
+    };
+    const artifact = { recommendation, snapshot: request.factory_snapshot };
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ success: true, data: artifact }));
+    const client = createOperationsApiClient({ fetcher, baseUrl: "https://example.test/api/v1" });
+    const signal = new AbortController().signal;
+
+    await expect(client.getDecisionCaseRecommendation("case/a b", { signal })).resolves.toEqual(artifact);
+    expect(fetcher).toHaveBeenCalledWith(
+      "https://example.test/api/v1/decision-cases/case%2Fa%20b/recommendation",
+      expect.objectContaining({ method: "GET", credentials: "include", cache: "no-store", signal }),
+    );
   });
 
   it.each(["APPROVE", "REJECT", "MODIFY", "COMMIT"] as const)("routes %s through the decision command endpoint", async command => {

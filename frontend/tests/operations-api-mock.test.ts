@@ -80,6 +80,7 @@ describe("canonical operations mock / HTTP parity", () => {
   it("fails explicitly for decision workflows outside this mock's scope", async () => {
     const mock = createMockOperationsApiClient();
     await expect(mock.getDecisionCase("case")).rejects.toMatchObject({ status: 501 });
+    await expect(mock.getDecisionCaseRecommendation("case")).rejects.toMatchObject({ status: 501 });
     await expect(mock.listEvents("case")).rejects.toMatchObject({ status: 501 });
     await expect(mock.createDecisionCase({ factory_id: factoryId, schema_version: "3.0", expected_snapshot_id: "snapshot", expected_plan_version: 0, request: {} })).rejects.toMatchObject({ status: 501 });
     await expect(mock.submitDecisionCommand("case", { command: "APPROVE", expected_snapshot_id: "snapshot", expected_plan_version: 0, expected_case_revision: 0, candidate_revision: 0 })).rejects.toMatchObject({ status: 501 });
