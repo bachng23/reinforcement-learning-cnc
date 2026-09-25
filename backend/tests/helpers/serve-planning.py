@@ -82,10 +82,16 @@ async def fault(mode: str, request: Request):
             return await main.plan_operations(RunDecisionCaseRequest.model_validate(await request.json()), request)
         finally:
             main.planning_service = previous
+    if mode == "409":
+        return JSONResponse({"code": "NO_FEASIBLE_PLAN", "retryable": False}, status_code=409)
     if mode in {"500", "503", "503-no-retry", "401", "429"}:
         status = int(mode.split("-")[0])
         return JSONResponse({"retryable": mode in {"500", "503"}}, status_code=status)
-    if mode == "retry-once" and sum(item["path"] == request.url.path for item in requests) == 1:
+    request_id = request.headers.get("x-request-id", "")
+    if mode == "retry-once" and sum(
+        item["path"] == request.url.path and item["request_id"] == request_id
+        for item in requests
+    ) == 1:
         return JSONResponse({"retryable": True}, status_code=503)
     if mode == "malformed":
         return Response("{", media_type="application/json")

@@ -1,6 +1,6 @@
-# Decision case creation and polling
+# Decision case creation, polling and planning worker
 
-This slice persists a case at `CREATED`, revision 1. No AI/planner calls, candidate packages, worker, decisions or commit endpoints are registered.
+Creation persists a case at `CREATED`, revision 1. A dedicated worker, separate from the episode worker, claims the case and can persist one immutable canonical RecommendationPackage. Human decision and schedule commit endpoints remain out of scope.
 
 Subsequent internal processing is described in [leased recommendation persistence](decision-recommendation-persistence.md). Creation still stops at CREATED; leased services can now advance an existing case and attach its recommendation. The status DTO shape is unchanged.
 
@@ -22,7 +22,7 @@ Subsequent internal processing is described in [leased recommendation persistenc
 }
 ```
 
-All HTTP objects are strict. Trigger variants and planning configuration use the canonical v3 validator, except server-owned trigger event ID, timestamp and requesting actor are excluded from the input. Machine/technician/maintenance trigger references must exist in the pinned snapshot. WHAT_IF requires SIMULATION_ONLY. Free-form WHAT_IF assumptions remain canonical JSON, never event output. The normalized HTTP request (including default planning values), SHA-256, actor UUID, factory/snapshot and base plan version are stored immutably. A future worker can build a RunDecisionCaseRequest from these fields and the pinned snapshot, using the stored case UUID, creation timestamp and actor; the HTTP handler does not submit that request.
+All HTTP objects are strict. Trigger variants and planning configuration use the canonical v3 validator, except server-owned trigger event ID, timestamp and requesting actor are excluded from the input. Machine/technician/maintenance trigger references must exist in the pinned snapshot. WHAT_IF requires SIMULATION_ONLY. Free-form WHAT_IF assumptions remain canonical JSON, never event output. The normalized HTTP request (including default planning values), SHA-256, actor UUID, factory/snapshot and base plan version are stored immutably. The worker builds RunDecisionCaseRequest only from those fields and the pinned snapshot, adding the stored case UUID, creation timestamp and actor. The HTTP creation handler does not invoke planning.
 
 Creation returns 202 and `Location: /api/v1/decision-cases/{uuid}`. `data` is exactly generated `DecisionCaseStatusResponse`; `meta` contains factory, base plan version, case revision, current context and staleness. Recommendation, committed schedule and error IDs are null.
 
@@ -36,11 +36,15 @@ After validation, one transaction obtains `pg_advisory_xact_lock(hashtextextende
 
 `GET /api/v1/decision-cases/{uuid}` permits all authenticated roles with factory access. Missing, malformed or inaccessible IDs return the same 404 code/message. Case and head are read in a repeatable-read transaction; status snapshot_id always denotes the historical basis, while meta.current_context denotes the head. Nothing is populated from demo fixtures.
 
+`GET /api/v1/decision-cases/{uuid}/recommendation` returns the stored package only after rechecking its SHA-256 and contract v3. Before persistence it returns `409 RECOMMENDATION_NOT_READY`. Status metadata exposes `QUEUED`, `RUNNING`, `BLOCKED` or `IDLE` processing separately from the canonical case lifecycle.
+
 `GET /api/v1/decision-cases/{uuid}/events?after_sequence=0&limit=100` returns `{success,data:[events],meta:{has_more,next_after_sequence}}`. Cursors are nonnegative decimal integers bounded to PostgreSQL INTEGER; limit is 1–200. Queries reject unknown, repeated or malformed parameters. Rows are sorted ascending and fetched with limit + 1. Empty pages retain the input cursor. Each event exposes UUID, case UUID, sequence, type, actor UUID, server timestamp and an allowlisted payload. Arbitrary stored JSON, request text, credentials, stack traces and reasoning are never serialized. The backend CASE_CREATED event DTO is distinct from the generated AI DecisionEvent enum, which has no CASE_CREATED variant; no AI contract is changed.
 
 ## Migration and verification
 
-Append-only migration `20260924000000_decision_case_creation` adds three tables and UPDATE/DELETE/TRUNCATE guards. UUID keys, per-case sequence uniqueness and the composite factory/snapshot foreign key protect persistence. Case status/revision are intentionally fixed to CREATED/1 in this slice; a future lifecycle implementation must append a migration to extend guards. No historical migration is edited. Existing snapshots and schedules are unchanged. Demo reset safely refuses to delete snapshots referenced by a case; broadening reset to delete durable history is outside this slice.
+Append-only migration `20260924000000_decision_case_creation` adds the initial tables. Migration `20260925000000_decision_case_worker` extends lifecycle/lease fields and adds the immutable recommendation table without editing history. UUID keys, lease fencing, per-case sequence uniqueness and the composite factory/snapshot foreign key protect persistence. Existing snapshots, schedules and OperationsHead are unchanged.
+
+The worker polls queued `CREATED`/`ANALYZING` cases and reclaims expired `RUNNING` leases with `FOR UPDATE SKIP LOCKED`. Only the lifecycle service performs database transitions. The planning client forwards the lease request ID and case correlation ID, performs its bounded retry, and validates both directions. Success transitions to `AWAITING_APPROVAL`; timeout, no-feasible-plan and invalid/unavailable AI responses retain `ANALYZING` with processing `BLOCKED` and a safe error. Graceful shutdown aborts planning and returns the case to `QUEUED`; a crash is recovered after lease expiry.
 
 Tests cover HTTP role/factory access, strict validation, generated status, concurrency, stale head fencing, replay, event/receipt rollback, immutable rows, event pagination and sanitization, and OpenAPI. The historical upgrade test deploys pinned main migrations with existing S1/P1, upgrades, ingests S2 and creates a case against that head.
 
