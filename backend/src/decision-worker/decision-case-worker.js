@@ -39,6 +39,8 @@ class DecisionCaseWorker {
           const owned = await this.lifecycle.heartbeatDecisionCase(this.db, claim, { leaseMs: this.leaseMs });
           if (stopped) return;
           if (!owned) { leaseLost = true; controller.abort(); return; }
+          claim.revision = owned.revision;
+          claim.leaseExpiresAt = owned.leaseExpiresAt;
           scheduleHeartbeat();
         } catch (error) {
           leaseLost = true;
