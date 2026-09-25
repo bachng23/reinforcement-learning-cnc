@@ -67,10 +67,19 @@ model DecisionCase {
   requestHash String @map("request_hash") @db.Char(64)
   actorId String @map("actor_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  processingStatus String @default("PENDING") @map("processing_status")
+  processingAttempt Int @default(0) @map("processing_attempt")
+  processingErrorCode String? @map("processing_error_code")
+  leaseToken String? @map("lease_token") @db.Uuid
+  leaseOwnerId String? @map("lease_owner_id") @db.Uuid
+  leaseExpiresAt DateTime? @map("lease_expires_at") @db.Timestamptz(6)
+  recommendation DecisionRecommendationArtifact?
   snapshot FactorySnapshot @relation(fields: [factoryId, snapshotId], references: [factoryId, snapshotId], onDelete: Restrict, onUpdate: Restrict)
   events DecisionCaseEvent[]
   receipts DecisionCaseIdempotencyReceipt[]
   @@index([factoryId, createdAt])
+  @@unique([id, snapshotId])
   @@map("decision_cases")
 }
 
@@ -80,11 +89,27 @@ model DecisionCaseEvent {
   sequence Int
   type String
   actorId String @map("actor_id") @db.Uuid
+  actorKind String @default("HUMAN") @map("actor_kind")
   occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
   payloadJson Json @map("payload_json") @db.JsonB
   case DecisionCase @relation(fields: [caseId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   @@unique([caseId, sequence])
   @@map("decision_case_events")
+}
+
+model DecisionRecommendationArtifact {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  caseId String @unique @map("case_id") @db.Uuid
+  recommendationId String @unique @map("recommendation_id")
+  snapshotId String @map("snapshot_id")
+  schemaVersion String @map("schema_version")
+  contentHash String @map("content_hash") @db.Char(64)
+  payloadJson Json @map("payload_json") @db.JsonB
+  generatedAt DateTime @map("generated_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  case DecisionCase @relation(fields: [caseId, snapshotId], references: [id, snapshotId], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([caseId, snapshotId])
+  @@map("decision_recommendation_artifacts")
 }
 
 model DecisionCaseIdempotencyReceipt {

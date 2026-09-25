@@ -19,6 +19,15 @@ test('decision status is exactly the generated contract; all referenced schemas 
   };
   visit(api);
 });
+test('recommendation read uses canonical package and snapshot without changing status DTO', () => {
+  const get = api.paths['/decision-cases/{id}/recommendation'].get;
+  const properties = get.responses[200].content['application/json'].schema.properties.data.properties;
+  expect(properties.recommendation.$ref).toBe('#/components/schemas/CaseContractRecommendationPackage');
+  expect(properties.snapshot.$ref).toBe('#/components/schemas/OperationsFactorySnapshot');
+  expect(get.responses[404].description).toContain('RECOMMENDATION_NOT_READY');
+  expect(api.components.schemas.DecisionCaseResponse.properties.data.$ref).toBe('#/components/schemas/CaseContractDecisionCaseStatusResponse');
+  expect(api.components.schemas.DecisionCaseResponse.properties.meta.properties.processing.properties).not.toHaveProperty('lease_token');
+});
 test('creation is strict, requires idempotency and documents 202/409; event cursor is bounded', () => {
   const post = api.paths['/decision-cases'].post;
   expect(post.parameters[0]).toMatchObject({ name: 'Idempotency-Key', required: true });

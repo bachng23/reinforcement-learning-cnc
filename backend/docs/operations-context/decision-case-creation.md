@@ -2,6 +2,8 @@
 
 This slice persists a case at `CREATED`, revision 1. No AI/planner calls, candidate packages, worker, decisions or commit endpoints are registered.
 
+Subsequent internal processing is described in [leased recommendation persistence](decision-recommendation-persistence.md). Creation still stops at CREATED; leased services can now advance an existing case and attach its recommendation. The status DTO shape is unchanged.
+
 ## Create
 
 `POST /api/v1/decision-cases` requires authentication, OPERATOR/ENGINEER/ADMIN, factory access and an `Idempotency-Key` (1–128 visible ASCII characters). ADMIN follows the existing Operations access policy; other roles require an explicit factory grant. Body:
