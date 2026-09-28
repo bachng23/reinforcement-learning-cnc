@@ -99,6 +99,18 @@ Mọi maintenance request active (`OPEN`, `SCHEDULED`, hoặc `IN_PROGRESS`) có
 đã buộc corrective maintenance phải mandatory; constraint này đảm bảo planner
 không thể âm thầm bỏ intervention đó khỏi một candidate.
 
+## HC-10 — Production assignment completeness (`OPERATION_ASSIGNMENT_COMPLETENESS`)
+
+Mỗi operation chưa `COMPLETED` phải xuất hiện đúng một lần trong active production
+assignments của full candidate schedule. Thiếu operation làm KPI completion/tardiness
+không đáng tin cậy; duplicate operation tạo double-processing không hợp lệ.
+
+## HC-11 — Production processing time (`OPERATION_PROCESSING_TIME`)
+
+Duration của production assignment phải bằng `processing_minutes` từ `MachineOption`
+tương ứng với machine được gán. Constraint ngăn candidate làm ngắn thời gian gia công
+để cải thiện KPI một cách không có căn cứ.
+
 ## Mapping verdict
 
 - `VALID`: validator hoàn tất và không có violation severity `ERROR`.

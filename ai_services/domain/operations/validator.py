@@ -100,6 +100,9 @@ class OperationsValidatorV1:
             drafts,
         )
         self._check_work_timing(assignments, jobs, requests, drafts)
+        self._check_production_completeness_and_duration(
+            assignments, operations, drafts
+        )
         self._check_planning_window(factory_snapshot, candidate_plan, assignments, drafts)
         self._check_machine_eligibility(assignments, machines, operations, requests, drafts)
         self._check_machine_overlap(assignments, drafts)
@@ -321,6 +324,67 @@ class OperationsValidatorV1:
                     "scheduled.",
                     request.maintenance_request_id,
                 )
+
+    def _check_production_completeness_and_duration(
+        self,
+        assignments: list[ScheduleAssignment],
+        operations: dict[str, tuple[ProductionJob, Operation]],
+        drafts: list[_ViolationDraft],
+    ) -> None:
+        by_operation: dict[str, list[ScheduleAssignment]] = {}
+        for assignment in assignments:
+            if (
+                assignment.assignment_type is AssignmentType.PRODUCTION
+                and assignment.operation_id in operations
+            ):
+                by_operation.setdefault(assignment.operation_id, []).append(assignment)
+
+        for operation_id, (_, operation) in sorted(operations.items()):
+            scheduled = by_operation.get(operation_id, [])
+            if operation.status is not OperationStatus.COMPLETED and not scheduled:
+                self._add(
+                    drafts,
+                    "OPERATION_ASSIGNMENT_COMPLETENESS",
+                    f"Unfinished operation {operation_id} is not scheduled.",
+                    operation_id,
+                )
+                continue
+            if len(scheduled) > 1:
+                self._add(
+                    drafts,
+                    "OPERATION_ASSIGNMENT_COMPLETENESS",
+                    f"Operation {operation_id} is scheduled more than once.",
+                    operation_id,
+                    *(assignment.assignment_id for assignment in scheduled),
+                )
+            for assignment in scheduled:
+                option = next(
+                    (
+                        item
+                        for item in operation.machine_options
+                        if item.machine_id == assignment.machine_id
+                    ),
+                    None,
+                )
+                if option is None:
+                    continue
+                assigned_minutes = (
+                    assignment.end_at - assignment.start_at
+                ).total_seconds() / 60
+                if assigned_minutes != option.processing_minutes:
+                    self._add(
+                        drafts,
+                        "OPERATION_PROCESSING_TIME",
+                        f"Operation {operation_id} uses {assigned_minutes:g} minutes "
+                        f"instead of {option.processing_minutes} on {assignment.machine_id}.",
+                        assignment.assignment_id,
+                        operation_id,
+                        assignment.machine_id,
+                        time_window=TimeWindow(
+                            start_at=assignment.start_at,
+                            end_at=assignment.end_at,
+                        ),
+                    )
 
     def _check_planning_window(
         self,

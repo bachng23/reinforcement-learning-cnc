@@ -1,9 +1,11 @@
 import json
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
 
 from domain.operations.contracts import (
+    AssignmentType,
     CandidatePlan,
     PlanValidation,
     RunDecisionCaseRequest,
@@ -245,5 +247,69 @@ def test_validator_rejects_candidate_missing_active_mandatory_maintenance(
 
     assert validation.verdict is ValidationVerdict.INVALID
     assert "MANDATORY_MAINTENANCE" in {
+        violation.constraint_code for violation in validation.violations
+    }
+
+
+def test_validator_rejects_candidate_missing_unfinished_operation(
+    canonical_request: RunDecisionCaseRequest,
+    canonical_candidates: list[CandidatePlan],
+) -> None:
+    candidate = canonical_candidates[0]
+    missing_operation_id = canonical_request.factory_snapshot.jobs[0].operations[0].operation_id
+    schedule = candidate.schedule.model_copy(
+        update={
+            "assignments": [
+                assignment
+                for assignment in candidate.schedule.assignments
+                if assignment.operation_id != missing_operation_id
+            ]
+        }
+    )
+    incomplete_candidate = candidate.model_copy(
+        update={"schedule": schedule, "validation": None}
+    )
+
+    validation = OperationsValidatorV1().validate(
+        canonical_request.factory_snapshot, incomplete_candidate
+    )
+
+    assert validation.verdict is ValidationVerdict.INVALID
+    assert "OPERATION_ASSIGNMENT_COMPLETENESS" in {
+        violation.constraint_code for violation in validation.violations
+    }
+
+
+def test_validator_rejects_processing_duration_that_differs_from_machine_option(
+    canonical_request: RunDecisionCaseRequest,
+    canonical_candidates: list[CandidatePlan],
+) -> None:
+    candidate = canonical_candidates[0]
+    original = next(
+        assignment
+        for assignment in candidate.schedule.assignments
+        if assignment.assignment_type is AssignmentType.PRODUCTION
+    )
+    shortened = original.model_copy(
+        update={"end_at": original.end_at - timedelta(minutes=1)}
+    )
+    schedule = candidate.schedule.model_copy(
+        update={
+            "assignments": [
+                shortened if assignment.assignment_id == original.assignment_id else assignment
+                for assignment in candidate.schedule.assignments
+            ]
+        }
+    )
+    malformed_candidate = candidate.model_copy(
+        update={"schedule": schedule, "validation": None}
+    )
+
+    validation = OperationsValidatorV1().validate(
+        canonical_request.factory_snapshot, malformed_candidate
+    )
+
+    assert validation.verdict is ValidationVerdict.INVALID
+    assert "OPERATION_PROCESSING_TIME" in {
         violation.constraint_code for violation in validation.violations
     }
