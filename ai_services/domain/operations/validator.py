@@ -14,6 +14,7 @@ from domain.operations.contracts import (
     Machine,
     MachineStatus,
     MaintenanceRequest,
+    MaintenanceRequestStatus,
     Operation,
     OperationStatus,
     PlanValidation,
@@ -98,6 +99,7 @@ class OperationsValidatorV1:
             requests,
             drafts,
         )
+        self._check_work_timing(assignments, jobs, requests, drafts)
         self._check_planning_window(factory_snapshot, candidate_plan, assignments, drafts)
         self._check_machine_eligibility(assignments, machines, operations, requests, drafts)
         self._check_machine_overlap(assignments, drafts)
@@ -235,6 +237,90 @@ class OperationsValidatorV1:
                             assignment.assignment_id,
                             technician_id,
                         )
+
+    def _check_work_timing(
+        self,
+        assignments: list[ScheduleAssignment],
+        jobs: dict[str, ProductionJob],
+        requests: dict[str, MaintenanceRequest],
+        drafts: list[_ViolationDraft],
+    ) -> None:
+        scheduled_maintenance_ids = {
+            assignment.maintenance_request_id
+            for assignment in assignments
+            if assignment.assignment_type is AssignmentType.MAINTENANCE
+            and assignment.maintenance_request_id in requests
+        }
+        for assignment in assignments:
+            if assignment.assignment_type is AssignmentType.PRODUCTION:
+                job = jobs.get(assignment.job_id)
+                if job is not None and assignment.start_at < job.release_at:
+                    self._add(
+                        drafts,
+                        "OPERATION_RELEASE_TIME",
+                        f"Operation {assignment.operation_id} starts before job "
+                        f"{job.job_id} is released.",
+                        assignment.assignment_id,
+                        job.job_id,
+                        assignment.operation_id or "unknown-operation",
+                        time_window=TimeWindow(
+                            start_at=assignment.start_at,
+                            end_at=assignment.end_at,
+                        ),
+                    )
+            elif assignment.assignment_type is AssignmentType.MAINTENANCE:
+                request = requests.get(assignment.maintenance_request_id)
+                if request is None:
+                    continue
+                if assignment.start_at < request.earliest_start_at:
+                    self._add(
+                        drafts,
+                        "MAINTENANCE_START_WINDOW",
+                        f"Maintenance {request.maintenance_request_id} starts before "
+                        "its earliest allowed start.",
+                        assignment.assignment_id,
+                        request.maintenance_request_id,
+                        time_window=TimeWindow(
+                            start_at=assignment.start_at,
+                            end_at=assignment.end_at,
+                        ),
+                    )
+                if (
+                    request.latest_start_at is not None
+                    and assignment.start_at > request.latest_start_at
+                ):
+                    self._add(
+                        drafts,
+                        "MAINTENANCE_START_WINDOW",
+                        f"Maintenance {request.maintenance_request_id} starts after "
+                        "its latest allowed start.",
+                        assignment.assignment_id,
+                        request.maintenance_request_id,
+                        time_window=TimeWindow(
+                            start_at=assignment.start_at,
+                            end_at=assignment.end_at,
+                        ),
+                    )
+
+        for request in sorted(
+            requests.values(), key=lambda item: item.maintenance_request_id
+        ):
+            if (
+                request.mandatory
+                and request.status
+                not in {
+                    MaintenanceRequestStatus.COMPLETED,
+                    MaintenanceRequestStatus.CANCELLED,
+                }
+                and request.maintenance_request_id not in scheduled_maintenance_ids
+            ):
+                self._add(
+                    drafts,
+                    "MANDATORY_MAINTENANCE",
+                    f"Mandatory maintenance {request.maintenance_request_id} is not "
+                    "scheduled.",
+                    request.maintenance_request_id,
+                )
 
     def _check_planning_window(
         self,

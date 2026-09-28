@@ -79,6 +79,26 @@ Mọi active `MAINTENANCE` assignment đại diện một intervention và phả
 một `technician_id`. `CONTINUE_AND_MONITOR` không tạo maintenance assignment; nếu
 không có intervention thì constraint này không áp dụng.
 
+## HC-07 — Production release time (`OPERATION_RELEASE_TIME`)
+
+Mọi production assignment tham chiếu job phải bắt đầu không sớm hơn
+`job.release_at`. Due date không phải hard constraint: completion muộn vẫn là
+feasible, nhưng phải được phản ánh trong KPI tardiness.
+
+## HC-08 — Maintenance start window (`MAINTENANCE_START_WINDOW`)
+
+Mọi maintenance assignment phải bắt đầu tại hoặc sau
+`maintenance_request.earliest_start_at`; nếu request có `latest_start_at`, nó cũng
+phải bắt đầu tại hoặc trước instant đó. Expected duration là input cho scheduler và
+simulator, không phải equality constraint của validator v1.
+
+## HC-09 — Mandatory maintenance (`MANDATORY_MAINTENANCE`)
+
+Mọi maintenance request active (`OPEN`, `SCHEDULED`, hoặc `IN_PROGRESS`) có
+`mandatory=true` phải có maintenance assignment active trong candidate. Contract
+đã buộc corrective maintenance phải mandatory; constraint này đảm bảo planner
+không thể âm thầm bỏ intervention đó khỏi một candidate.
+
 ## Mapping verdict
 
 - `VALID`: validator hoàn tất và không có violation severity `ERROR`.

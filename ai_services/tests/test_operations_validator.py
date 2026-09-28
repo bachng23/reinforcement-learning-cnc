@@ -165,3 +165,85 @@ def test_overlap_fixture_is_evaluated_without_embedded_verdict(
     assert "MACHINE_CAPACITY_OVERLAP" in {
         violation.constraint_code for violation in original_result.violations
     }
+
+
+def test_validator_rejects_production_before_job_release(
+    canonical_request: RunDecisionCaseRequest,
+    canonical_candidates: list[CandidatePlan],
+) -> None:
+    candidate = canonical_candidates[0]
+    job = canonical_request.factory_snapshot.jobs[0]
+    delayed_job = job.model_copy(update={"release_at": job.release_at.replace(hour=1)})
+    snapshot = canonical_request.factory_snapshot.model_copy(
+        update={
+            "jobs": [
+                delayed_job if item.job_id == job.job_id else item
+                for item in canonical_request.factory_snapshot.jobs
+            ]
+        }
+    )
+
+    validation = OperationsValidatorV1().validate(snapshot, candidate)
+
+    assert validation.verdict is ValidationVerdict.INVALID
+    assert "OPERATION_RELEASE_TIME" in {
+        violation.constraint_code for violation in validation.violations
+    }
+
+
+def test_validator_rejects_maintenance_outside_request_start_window(
+    canonical_request: RunDecisionCaseRequest,
+    canonical_candidates: list[CandidatePlan],
+) -> None:
+    candidate = canonical_candidates[0]
+    request = canonical_request.factory_snapshot.maintenance_requests[0]
+    constrained_request = request.model_copy(
+        update={"latest_start_at": request.earliest_start_at}
+    )
+    snapshot = canonical_request.factory_snapshot.model_copy(
+        update={"maintenance_requests": [constrained_request]}
+    )
+
+    validation = OperationsValidatorV1().validate(snapshot, candidate)
+
+    assert validation.verdict is ValidationVerdict.INVALID
+    assert "MAINTENANCE_START_WINDOW" in {
+        violation.constraint_code for violation in validation.violations
+    }
+
+
+def test_validator_rejects_candidate_missing_active_mandatory_maintenance(
+    canonical_request: RunDecisionCaseRequest,
+    canonical_candidates: list[CandidatePlan],
+) -> None:
+    candidate = canonical_candidates[0]
+    mandatory_request = (
+        canonical_request.factory_snapshot.maintenance_requests[0].model_copy(
+            update={"mandatory": True}
+        )
+    )
+    snapshot = canonical_request.factory_snapshot.model_copy(
+        update={"maintenance_requests": [mandatory_request]}
+    )
+    schedule = candidate.schedule.model_copy(
+        update={
+            "assignments": [
+                assignment
+                for assignment in candidate.schedule.assignments
+                if assignment.maintenance_request_id
+                != mandatory_request.maintenance_request_id
+            ]
+        }
+    )
+    candidate_without_maintenance = candidate.model_copy(
+        update={"schedule": schedule, "validation": None}
+    )
+
+    validation = OperationsValidatorV1().validate(
+        snapshot, candidate_without_maintenance
+    )
+
+    assert validation.verdict is ValidationVerdict.INVALID
+    assert "MANDATORY_MAINTENANCE" in {
+        violation.constraint_code for violation in validation.violations
+    }
