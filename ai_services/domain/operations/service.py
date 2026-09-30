@@ -84,7 +84,12 @@ class DecisionPlanningService:
     def plan(self, request: RunDecisionCaseRequest) -> RecommendationPackage:
         return self.plan_with_diagnostics(request).recommendation
 
-    def plan_with_diagnostics(self, request: RunDecisionCaseRequest) -> PlanningResult:
+    def plan_with_diagnostics(
+        self,
+        request: RunDecisionCaseRequest,
+        *,
+        source_agent_run_ids: tuple[str, ...] = (),
+    ) -> PlanningResult:
         strategies = self._strategies(request)
         deadline = time.monotonic() + request.planning_config.solver_timeout_seconds
         candidates: list[CandidatePlan] = []
@@ -111,6 +116,7 @@ class DecisionPlanningService:
                     source_engine_id=ENGINE_ID,
                     source_engine_version=ENGINE_VERSION,
                     generated_at=request.factory_snapshot.captured_at,
+                    source_agent_run_ids=list(source_agent_run_ids),
                     schedule=scheduled.schedule,
                     kpis=self.simulator.calculate(
                         request.factory_snapshot,

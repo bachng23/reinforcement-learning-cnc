@@ -10,6 +10,9 @@ dependencies = [
     "fastapi>=0.136.1",
     "uvicorn[standard]>=0.46.0",
     "scipy>=1.15.0",
+    "langgraph>=1.2.12",
+    "langchain-openrouter>=0.2.9",
+    "python-dotenv>=1.2.2",
 ]
 
 [tool.uv]
