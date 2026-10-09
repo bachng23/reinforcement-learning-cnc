@@ -1,8 +1,9 @@
 "use client";
 
-import { CalendarClock, ClipboardList, RefreshCw, UserRoundCheck } from "lucide-react";
+import { CalendarClock, ClipboardList, Play, RefreshCw, UserRoundCheck } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
 import { HealthAlertPanel } from "@/components/operations/health-alert-panel";
 import { MachineStatusGrid } from "@/components/operations/machine-status-grid";
@@ -29,7 +30,73 @@ function ResourceCount({ count, label, field }: { count: number; label: string; 
   );
 }
 
-function OperationsOverviewContent({ data }: { data: OperationsContextData }) {
+function CreateDecisionCasePanel({ api, data }: { api: OperationsApiClient; data: OperationsContextData }) {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function createCase() {
+    setSubmitting(true);
+    setError(null);
+    const requestId = crypto.randomUUID();
+    try {
+      const decisionCase = await api.createDecisionCase({
+        schema_version: "3.0",
+        factory_id: data.snapshotResponse.factory_id,
+        expected_snapshot_id: data.snapshotResponse.snapshot_id,
+        expected_plan_version: data.snapshotResponse.plan_version,
+        request: {
+          mode: "LIVE",
+          trigger: {
+            type: "MANUAL_REPLAN",
+            reason: "Operations Overview manual planning request",
+          },
+          planning_config: {
+            horizon_minutes: 720,
+            candidate_limit: 3,
+            solver_timeout_seconds: 30,
+            simulation_runs: 100,
+            base_seed: 20260922,
+            allowed_strategy_ids: ["production-priority", "balanced", "reliability-priority"],
+          },
+        },
+      }, { idempotencyKey: `overview-${requestId}`, requestId });
+      router.push(`/operations/recommendations?caseId=${encodeURIComponent(decisionCase.decision_case_id)}`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Decision Case could not be created.");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <OperationsPanel
+      title="Plan from this snapshot"
+      description="Create a LIVE Decision Case pinned to the snapshot and plan version displayed above."
+    >
+      <div className="flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div>
+          <p className="text-sm">The backend will persist the case; the Decision Case worker will call the configured AI service.</p>
+          <p className="mt-1 font-mono text-[11px] text-[var(--color-ash-gray)]">
+            {data.snapshotResponse.snapshot_id} · plan v{data.snapshotResponse.plan_version}
+          </p>
+          {error ? <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p> : null}
+        </div>
+        <button
+          type="button"
+          data-testid="create-live-decision-case"
+          onClick={() => void createCase()}
+          disabled={submitting}
+          className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md bg-[var(--color-slate-text)] px-4 text-sm font-medium text-white disabled:opacity-60"
+        >
+          <Play className="h-4 w-4" aria-hidden="true" />
+          {submitting ? "Creating case..." : "Create live decision case"}
+        </button>
+      </div>
+    </OperationsPanel>
+  );
+}
+
+function OperationsOverviewContent({ data, api, live }: { data: OperationsContextData; api: OperationsApiClient; live: boolean }) {
   const snapshot = data.snapshotResponse.snapshot;
   const schedule = data.scheduleResponse.schedule;
   const machines = snapshot.machines;
@@ -55,6 +122,8 @@ function OperationsOverviewContent({ data }: { data: OperationsContextData }) {
         <ResourceCount count={jobs.length} label="Jobs" field="FactorySnapshot.jobs" />
         <ResourceCount count={technicians.length} label="Technicians" field="FactorySnapshot.technicians" />
       </section>
+
+      {live ? <CreateDecisionCasePanel api={api} data={data} /> : null}
 
       {!schedule ? <AsyncState kind="empty" compact title="No current schedule" description="The snapshot is available, but the Current Schedule API returned no committed schedule." /> : null}
 
@@ -111,7 +180,7 @@ export function OperationsOverviewPage({ api, factoryId, apiMode }: {
       {state.kind === "unauthorized" ? <AsyncState kind="error" title="Operations access required" description={state.message} action={<Link href="/login" className="inline-flex min-h-10 items-center rounded-md border border-[var(--color-stone-border)] bg-white px-4 text-sm font-medium">Sign in</Link>} /> : null}
       {state.kind === "unavailable" ? <AsyncState kind="empty" title="Operations snapshot unavailable" description={state.message} onRetry={retry} retryLabel="Retry snapshot" /> : null}
       {state.kind === "error" || state.kind === "network-error" || state.kind === "mismatch" ? <AsyncState kind="error" title="Operations data could not be loaded" description={state.message} onRetry={retry} /> : null}
-      {state.kind === "ready" && !hasNoResources ? <OperationsOverviewContent data={state.data} /> : null}
+      {state.kind === "ready" && !hasNoResources ? <OperationsOverviewContent data={state.data} api={client} live={selectedMode === "real"} /> : null}
     </OperationsShell>
   );
 }

@@ -16,10 +16,17 @@ describe("operations wire client", () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ success: true, data: status })));
     const client = createOperationsApiClient({ fetcher, baseUrl: "https://example.test/api/v1/" });
     const signal = new AbortController().signal;
-    expect(await client.createDecisionCase(createBody, { signal })).toEqual(status);
+    expect(await client.createDecisionCase(createBody, {
+      signal,
+      idempotencyKey: "create-case-1",
+      requestId: "request-1",
+    })).toEqual(status);
     expect(fetcher).toHaveBeenLastCalledWith("https://example.test/api/v1/decision-cases", expect.objectContaining({
       method: "POST", credentials: "include", signal, body: JSON.stringify(createBody),
     }));
+    const createHeaders = new Headers(fetcher.mock.lastCall?.[1]?.headers);
+    expect(createHeaders.get("Idempotency-Key")).toBe("create-case-1");
+    expect(createHeaders.get("X-Request-Id")).toBe("request-1");
     fetcher.mockResolvedValue(new Response(JSON.stringify({ success: true, data: status })));
     await expect(client.getDecisionCase("case/a b")).resolves.toEqual({ caseStatus: status, meta: undefined });
     expect(fetcher.mock.lastCall?.[0]).toBe("https://example.test/api/v1/decision-cases/case%2Fa%20b");
