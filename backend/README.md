@@ -1,5 +1,25 @@
 # CNC Research Platform Backend
 
+## Decision Case planning worker
+
+Run `npm run operations:decision-worker` as a process separate from the API and
+the episode worker. It claims queued Decision Cases with a fenced lease, builds
+the planner request from the pinned snapshot and stored case request, calls the
+contract-v3 AI endpoint configured by `AI_SERVICE_URL`, and persists a validated
+recommendation without changing the current schedule. `SIGINT`/`SIGTERM` aborts
+the in-flight AI request and releases the claim for another worker.
+
+Use `GET /api/v1/decision-cases/{id}/recommendation` after the case reaches
+`AWAITING_APPROVAL`. The response contains `{recommendation, snapshot}`, using
+the immutable basis snapshot. Before readiness it returns 404
+`RECOMMENDATION_NOT_READY`. Transport/planner failures set lifecycle and
+`meta.processing.status` to `FAILED` with an allowlisted error. Failed cases
+are not automatically claimed again: transport retries are bounded by the
+planning client, and an operator can create a new case after reviewing failure.
+Expired crash leases are fenced and requeued; graceful shutdown requeues an
+owned case as `CREATED`/`PENDING`. An in-flight heartbeat settles before a final
+write, so persistence/release uses the latest owned revision.
+
 ## Operations snapshot ingestion
 
 The internal `ingestFactorySnapshot` service validates v3 observations, serializes ingestion per factory, and updates the current snapshot with a head-revision CAS while preserving the published schedule and plan version. [Migration impact, concurrency protocol, CLI and test evidence](docs/operations-context/snapshot-ingestion.md). No public mutation endpoint is added.

@@ -1,7 +1,9 @@
 const router = require('express').Router();
 const db = require('../../config/prisma');
 const { requireAuth } = require('../../middlewares/auth.middleware');
-const { createDecisionCase, getDecisionCase, getDecisionCaseEvents } = require('../../services/decision-case.service');
+const { createDecisionCase, getDecisionCase,
+  getDecisionCaseEvents } = require('../../services/decision-case.service');
+const { getDecisionRecommendation } = require('../../services/decision-planning.service');
 router.use(requireAuth);
 router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
 router.post('/', async (req, res) => {
@@ -11,6 +13,6 @@ router.post('/', async (req, res) => {
   res.json(result.body);
 });
 router.get('/:id', async (req, res) => res.json(await getDecisionCase(db, req.user, req.params.id)));
+router.get('/:id/recommendation', async (req, res) => res.json(await getDecisionRecommendation(db, req.user, req.params.id)));
 router.get('/:id/events', async (req, res) => res.json(await getDecisionCaseEvents(db, req.user, req.params.id, req.query)));
-router.get('/:id/recommendation', async (req, res) => res.json(await require('../../services/decision-planning.service').getDecisionRecommendation(db, req.user, req.params.id)));
 module.exports = router;

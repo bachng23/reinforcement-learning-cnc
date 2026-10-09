@@ -54,8 +54,13 @@ test('upgrades populated main without checksum drift, version backfill or schedu
     // Restart runtime connections across DDL; discard pre-upgrade prepared plans.
     await db.$disconnect();
 
+    const persistenceMigration = '20260925000000_decision_recommendation_persistence';
+    const pendingMigrations = fs.readdirSync(path.join(root, 'prisma/migrations'))
+      .filter(name => name >= persistenceMigration).sort();
     for (const name of fs.readdirSync(path.join(root, 'prisma/migrations'))) {
-      if (name === '20260925000000_decision_recommendation_persistence') continue;
+      // Lease renewal depends on persistence columns/guards. Stage the entire
+      // dependent suffix after creating the populated pre-lease case.
+      if (pendingMigrations.includes(name)) continue;
       const target = path.join(temp, 'migrations', name);
       if (!fs.existsSync(target)) fs.cpSync(path.join(root, 'prisma/migrations', name), target, { recursive: true });
     }
@@ -69,8 +74,9 @@ test('upgrades populated main without checksum drift, version backfill or schedu
       VALUES (${legacyId}::uuid,1,'CASE_CREATED',${legacyId}::uuid,'{"status":"CREATED","revision":1}'::jsonb)`;
     const legacyBefore = await db.$queryRaw`SELECT * FROM decision_cases WHERE id=${legacyId}::uuid`;
     await db.$disconnect();
-    const newest = '20260925000000_decision_recommendation_persistence';
-    fs.cpSync(path.join(root, 'prisma/migrations', newest), path.join(temp, 'migrations', newest), { recursive: true });
+    for (const name of pendingMigrations) {
+      fs.cpSync(path.join(root, 'prisma/migrations', name), path.join(temp, 'migrations', name), { recursive: true });
+    }
     deploy();
     deploy(); // No pending migrations on replay.
     const legacyAfter = await db.$queryRaw`SELECT * FROM decision_cases WHERE id=${legacyId}::uuid`;
@@ -83,7 +89,8 @@ test('upgrades populated main without checksum drift, version backfill or schedu
     const stored = await db.$queryRaw`SELECT * FROM factory_snapshots`;
     expect(stored).toEqual(beforeSnapshot.map(row => ({ ...row, source_id: null })));
     const migrations = await db.$queryRaw`SELECT migration_name, checksum FROM _prisma_migrations WHERE finished_at IS NOT NULL ORDER BY migration_name`;
-    expect(migrations).toHaveLength(beforeMigrations.length + 3);
+    expect(migrations).toHaveLength(fs.readdirSync(path.join(root, 'prisma/migrations'))
+      .filter(name => fs.existsSync(path.join(root, 'prisma/migrations', name, 'migration.sql'))).length);
     expect(migrations.slice(0, beforeMigrations.length)).toEqual(beforeMigrations);
     for (const row of migrations) {
       expect(row.checksum).toBe(createHash('sha256').update(fs.readFileSync(path.join(temp, 'migrations', row.migration_name, 'migration.sql'))).digest('hex'));
