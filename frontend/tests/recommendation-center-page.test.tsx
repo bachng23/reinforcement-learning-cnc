@@ -115,7 +115,7 @@ describe("RecommendationCenterPage live integration", () => {
     expect(screen.queryByRole("button", { name: "Reject" })).not.toBeInTheDocument();
   });
 
-  it("renders a ready live package with its immutable basis snapshot and no write controls", async () => {
+  it("renders a ready live package with its immutable basis snapshot and disabled controls when context is stale", async () => {
     const preview = await canonicalPreview();
     const status = liveStatus(preview, "AWAITING_APPROVAL");
     const api = createMockOperationsApiClient();
@@ -134,9 +134,9 @@ describe("RecommendationCenterPage live integration", () => {
     expect(screen.getAllByText(preview.snapshot.snapshot_id).length).toBeGreaterThan(0);
     expect(recommendationRead).toHaveBeenCalledWith(status.decision_case_id, expect.objectContaining({ signal: expect.any(AbortSignal) }));
     expect(currentSnapshotRead).not.toHaveBeenCalled();
-    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Modify" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Reject" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Modify" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeDisabled();
   });
 
   it("shows stage and attempt while a live case is polling without fixture candidates", async () => {

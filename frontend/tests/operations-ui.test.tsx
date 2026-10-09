@@ -22,6 +22,7 @@ vi.mock("@/components/app-shell", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/operations/recommendations",
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 describe("operations fixture UI", () => {

@@ -1,25 +1,64 @@
 import { authFetch, endpoint } from "@/lib/auth";
 import type {
   DecisionCaseStatusResponse, DecisionEvent, ErrorResponse, FactorySnapshot,
-  HumanDecisionType, RecommendationPackage, Schedule,
+  PlanningConfig, RecommendationPackage, RunDecisionCaseRequest, Schedule,
 } from "@/types/generated/operations";
 
 export interface OperationsRequestOptions { signal?: AbortSignal }
+export interface OperationsWriteOptions extends OperationsRequestOptions { idempotencyKey: string }
+type ClientTrigger<T> = T extends { type?: infer K } ? Omit<T, "event_id" | "occurred_at" | "requested_by_user_id" | "type"> & { type: NonNullable<K> } : never;
 export type OperationsCreateDecisionCaseRequest = {
   factory_id: string;
   schema_version: "3.0";
   expected_snapshot_id: string;
   expected_plan_version: number;
-  request: Record<string, unknown>;
+  request: {
+    mode: RunDecisionCaseRequest["mode"];
+    trigger: ClientTrigger<RunDecisionCaseRequest["trigger"]>;
+    planning_config: PlanningConfig;
+  };
 };
-export type OperationsDecisionCommand = {
-  command: HumanDecisionType | "COMMIT";
+type DecisionCommandBasis = {
+  schema_version: "3.0";
+  decision_case_id: string;
+  recommendation_id: string;
   expected_snapshot_id: string;
   expected_plan_version: number;
   expected_case_revision: number;
-  candidate_revision: number;
-  reason?: string;
-  replacement_schedule?: Schedule;
+};
+export type OperationsDecisionCommand = DecisionCommandBasis & (
+  | { command: "APPROVE"; candidate_plan_id: string; candidate_version: number; note?: string }
+  | { command: "REJECT"; note: string }
+  | { command: "COMMIT"; candidate_plan_id: string; candidate_version: number }
+);
+export type OperationsApprovedCandidate = {
+  recommendation_id: string;
+  candidate_plan_id: string;
+  candidate_version: number;
+  candidate_hash: string;
+  schedule_hash: string;
+};
+export type OperationsHumanDecision = {
+  decision: "APPROVE" | "REJECT";
+  recommendation_id: string;
+  candidate_plan_id: string | null;
+  candidate_version: number | null;
+  candidate_hash: string | null;
+  schedule_hash: string | null;
+  note: string | null;
+  actor_id: string;
+  decided_at: string;
+};
+export type OperationsCommitMetadata = {
+  decision_case_id: string;
+  factory_id: string;
+  snapshot_id: string;
+  schedule_id: string;
+  schedule_revision: number;
+  schedule_hash: string;
+  plan_version: number;
+  actor_id: string;
+  committed_at: string;
 };
 export type OperationsSnapshotResponse = {
   factory_id: string;
@@ -36,18 +75,7 @@ export type OperationsCurrentScheduleResponse = {
   plan_version: number;
   schedule: Schedule | null;
   basis_snapshot: FactorySnapshot | null;
-  commit?: Record<string, unknown> | null;
-};
-export type OperationsDecisionCommandResponse = {
-  case_id: string;
-  status: string;
-  case_revision: number;
-  candidate_revision?: number;
-  human_decision_id?: string;
-  actor_id?: string;
-  recorded_at?: string;
-  current_context: { snapshot_id: string; plan_version: number };
-  commit?: Record<string, unknown> | null;
+  commit?: OperationsCommitMetadata | null;
 };
 export type OperationsDecisionCaseProcessing = {
   status: "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED";
@@ -61,11 +89,16 @@ export type OperationsDecisionCaseMeta = {
   current_context: { snapshot_id: string; plan_version: number } | null;
   stale: boolean;
   processing?: OperationsDecisionCaseProcessing;
+  approved_candidate?: OperationsApprovedCandidate | null;
+  human_decision?: OperationsHumanDecision | null;
+  available_commands?: OperationsDecisionCommand["command"][];
+  commit?: OperationsCommitMetadata | null;
 };
 export type OperationsDecisionCaseReadResponse = {
   caseStatus: DecisionCaseStatusResponse;
   meta?: OperationsDecisionCaseMeta;
 };
+export type OperationsDecisionCommandResponse = OperationsDecisionCaseReadResponse;
 export type OperationsDecisionCaseRecommendationResponse = {
   recommendation: RecommendationPackage;
   snapshot: FactorySnapshot;
@@ -92,7 +125,7 @@ export class OperationsApiError extends Error {
   }
 }
 
-/** Proposed v3 HTTP boundary: backend owns HTTP DTO envelopes around canonical payloads.
+/** Backend HTTP DTO envelopes around generated canonical payloads.
  * Types describe wire payloads, not runtime validation. Backend must validate with v3.
  * Inject fetcher/baseUrl to use a mock server while backend routes are implemented.
  */
@@ -102,11 +135,14 @@ export function createOperationsApiClient({
 }: { fetcher?: typeof fetch; baseUrl?: string } = {}) {
   const base = baseUrl.replace(/\/+$/, "");
   const id = encodeURIComponent;
-  async function requestEnvelope<T, TMeta = Record<string, unknown>>(path: string, options: OperationsRequestOptions = {}, body?: unknown): Promise<SuccessEnvelope<T, TMeta>> {
+  async function requestEnvelope<T, TMeta = Record<string, unknown>>(path: string, options: OperationsRequestOptions & Partial<OperationsWriteOptions> = {}, body?: unknown): Promise<SuccessEnvelope<T, TMeta>> {
+    if (body !== undefined && (!options.idempotencyKey || !/^[\x21-\x7e]{1,128}$/.test(options.idempotencyKey))) {
+      throw new Error("A valid Idempotency-Key is required for operations writes.");
+    }
     const response = await fetcher(`${base}${path}`, {
       method: body === undefined ? "GET" : "POST",
       credentials: "include", cache: "no-store", signal: options.signal,
-      headers: { Accept: "application/json", ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+      headers: { Accept: "application/json", ...(body === undefined ? {} : { "Content-Type": "application/json", "Idempotency-Key": options.idempotencyKey! }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     if (!response.ok) {
@@ -123,16 +159,19 @@ export function createOperationsApiClient({
   async function request<T>(path: string, options: OperationsRequestOptions = {}, body?: unknown): Promise<T> {
     return (await requestEnvelope<T>(path, options, body)).data;
   }
+  async function caseRequest(path: string, options: OperationsRequestOptions, body?: unknown): Promise<OperationsDecisionCaseReadResponse> {
+    const envelope = await requestEnvelope<DecisionCaseStatusResponse, OperationsDecisionCaseMeta>(path, options, body);
+    return { caseStatus: envelope.data, meta: envelope.meta };
+  }
   return {
     getOperationsSnapshot: (factoryId: string, options?: OperationsRequestOptions) => request<OperationsSnapshotResponse>(`/operations/snapshot?factory_id=${id(factoryId)}`, options),
     getCurrentSchedule: (factoryId: string, options?: OperationsRequestOptions) => request<OperationsCurrentScheduleResponse>(`/schedules/current?factory_id=${id(factoryId)}`, options),
     getDecisionCase: async (caseId: string, options?: OperationsRequestOptions): Promise<OperationsDecisionCaseReadResponse> => {
-      const envelope = await requestEnvelope<DecisionCaseStatusResponse, OperationsDecisionCaseMeta>(`/decision-cases/${id(caseId)}`, options);
-      return { caseStatus: envelope.data, meta: envelope.meta };
+      return caseRequest(`/decision-cases/${id(caseId)}`, options ?? {});
     },
     getDecisionCaseRecommendation: (caseId: string, options?: OperationsRequestOptions) => request<OperationsDecisionCaseRecommendationResponse>(`/decision-cases/${id(caseId)}/recommendation`, options),
-    createDecisionCase: (body: OperationsCreateDecisionCaseRequest, options?: OperationsRequestOptions) => request<DecisionCaseStatusResponse>("/decision-cases", options, body),
-    submitDecisionCommand: (caseId: string, body: OperationsDecisionCommand, options?: OperationsRequestOptions) => request<OperationsDecisionCommandResponse>(`/decision-cases/${id(caseId)}/decision`, options, body),
+    createDecisionCase: (body: OperationsCreateDecisionCaseRequest, options: OperationsWriteOptions) => caseRequest("/decision-cases", options, body),
+    submitDecisionCommand: (caseId: string, body: OperationsDecisionCommand, options: OperationsWriteOptions) => caseRequest(`/decision-cases/${id(caseId)}/decision`, options, body),
     listEvents: (caseId: string, afterSequence = 0, options?: OperationsRequestOptions) => request<DecisionEvent[]>(`/decision-cases/${id(caseId)}/events?after_sequence=${afterSequence}`, options),
     eventsUrl: (caseId: string) => `${base}/decision-cases/${id(caseId)}/events`,
   };

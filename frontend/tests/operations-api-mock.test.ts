@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
 import canonical from "../../contracts/v3/fixtures/demo-health-alert.json";
-import { createOperationsApiClient, OperationsApiError, type OperationsApiClient } from "@/lib/operations-api/client";
+import { createOperationsApiClient, OperationsApiError, type OperationsApiClient, type OperationsCreateDecisionCaseRequest, type OperationsDecisionCommand } from "@/lib/operations-api/client";
 import { createMockOperationsApiClient } from "@/lib/operations-api/mock";
 
 const factoryId = canonical.factory_snapshot.factory_id;
@@ -77,13 +77,50 @@ describe("canonical operations mock / HTTP parity", () => {
     }
   });
 
-  it("fails explicitly for decision workflows outside this mock's scope", async () => {
+  it("rejects missing preview cases and unsupported event streams", async () => {
     const mock = createMockOperationsApiClient();
-    await expect(mock.getDecisionCase("case")).rejects.toMatchObject({ status: 501 });
-    await expect(mock.getDecisionCaseRecommendation("case")).rejects.toMatchObject({ status: 501 });
+    await expect(mock.getDecisionCase("case")).rejects.toMatchObject({ status: 404 });
+    await expect(mock.getDecisionCaseRecommendation("case")).rejects.toMatchObject({ status: 404 });
     await expect(mock.listEvents("case")).rejects.toMatchObject({ status: 501 });
-    await expect(mock.createDecisionCase({ factory_id: factoryId, schema_version: "3.0", expected_snapshot_id: "snapshot", expected_plan_version: 0, request: {} })).rejects.toMatchObject({ status: 501 });
-    await expect(mock.submitDecisionCommand("case", { command: "APPROVE", expected_snapshot_id: "snapshot", expected_plan_version: 0, expected_case_revision: 0, candidate_revision: 0 })).rejects.toMatchObject({ status: 501 });
     expect(() => mock.eventsUrl("case")).toThrow(OperationsApiError);
+  });
+});
+
+describe("canonical preview decision DTOs and receipts", () => {
+  it("publishes only on COMMIT and replays historical creation/approval/commit receipts after the head advances", async () => {
+    const mock = createMockOperationsApiClient();
+    const context = await mock.getOperationsSnapshot(factoryId);
+    const before = await mock.getCurrentSchedule(factoryId);
+    const body: OperationsCreateDecisionCaseRequest = {
+      schema_version: "3.0", factory_id: factoryId, expected_snapshot_id: context.snapshot_id,
+      expected_plan_version: context.plan_version,
+      request: { mode: "LIVE", trigger: { type: "MANUAL_REPLAN", reason: "Canonical preview" }, planning_config: { horizon_minutes: 720 } },
+    };
+    const created = await mock.createDecisionCase(body, { idempotencyKey: "create" });
+    const caseId = created.caseStatus.decision_case_id;
+    await mock.getDecisionCase(caseId);
+    const ready = await mock.getDecisionCase(caseId);
+    const artifact = await mock.getDecisionCaseRecommendation(caseId);
+    const selected = artifact.recommendation.candidate_plans[1];
+    const approvalBody: OperationsDecisionCommand = {
+      schema_version: "3.0", decision_case_id: caseId, recommendation_id: artifact.recommendation.recommendation_id,
+      expected_snapshot_id: context.snapshot_id, expected_plan_version: context.plan_version,
+      expected_case_revision: ready.meta!.case_revision, command: "APPROVE",
+      candidate_plan_id: selected.candidate_plan_id, candidate_version: selected.plan_version,
+    };
+    const approved = await mock.submitDecisionCommand(caseId, approvalBody, { idempotencyKey: "approve" });
+    expect(await mock.getCurrentSchedule(factoryId)).toEqual(before);
+    const commitBody: OperationsDecisionCommand = { ...approvalBody, command: "COMMIT", expected_case_revision: approved.meta!.case_revision };
+    const committed = await mock.submitDecisionCommand(caseId, commitBody, { idempotencyKey: "commit" });
+    expect((await mock.getCurrentSchedule(factoryId)).schedule).toEqual(selected.schedule);
+    expect(committed.meta?.commit?.plan_version).toBe(context.plan_version + 1);
+    expect((await mock.getDecisionCase(caseId)).caseStatus.status).toBe("COMMITTED");
+    expect(await mock.createDecisionCase(body, { idempotencyKey: "create" })).toEqual(created);
+    expect(await mock.submitDecisionCommand(caseId, approvalBody, { idempotencyKey: "approve" })).toEqual(approved);
+    expect(await mock.submitDecisionCommand(caseId, commitBody, { idempotencyKey: "commit" })).toEqual(committed);
+    await expect(mock.submitDecisionCommand(caseId, commitBody, { idempotencyKey: "approve" })).rejects.toMatchObject({ status: 409 });
+    // Run the persisted DTO through the real HTTP adapter with no package mapping.
+    const wire = createOperationsApiClient({ fetcher: async () => Response.json({ success: true, data: committed.caseStatus, meta: committed.meta }) });
+    expect(await wire.getDecisionCase(caseId)).toEqual(await mock.getDecisionCase(caseId));
   });
 });

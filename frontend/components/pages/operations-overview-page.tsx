@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 
 import { HealthAlertPanel } from "@/components/operations/health-alert-panel";
+import { CreateDecisionCase } from "@/components/operations/create-decision-case";
 import { MachineStatusGrid } from "@/components/operations/machine-status-grid";
 import { OperationsPanel, OperationsShell, OperationsStatus } from "@/components/operations/operations-shell";
 import { AsyncState } from "@/components/research/async-state";
@@ -111,7 +112,7 @@ export function OperationsOverviewPage({ api, factoryId, apiMode }: {
       {state.kind === "unauthorized" ? <AsyncState kind="error" title="Operations access required" description={state.message} action={<Link href="/login" className="inline-flex min-h-10 items-center rounded-md border border-[var(--color-stone-border)] bg-white px-4 text-sm font-medium">Sign in</Link>} /> : null}
       {state.kind === "unavailable" ? <AsyncState kind="empty" title="Operations snapshot unavailable" description={state.message} onRetry={retry} retryLabel="Retry snapshot" /> : null}
       {state.kind === "error" || state.kind === "network-error" || state.kind === "mismatch" ? <AsyncState kind="error" title="Operations data could not be loaded" description={state.message} onRetry={retry} /> : null}
-      {state.kind === "ready" && !hasNoResources ? <OperationsOverviewContent data={state.data} /> : null}
+      {state.kind === "ready" && !hasNoResources ? <><CreateDecisionCase api={client} data={state.data} mode={selectedMode} onRefresh={retry} /><OperationsOverviewContent data={state.data} /></> : null}
     </OperationsShell>
   );
 }

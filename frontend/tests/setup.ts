@@ -5,6 +5,7 @@ import { afterEach } from "vitest";
 
 afterEach(() => {
   cleanup();
+  if (typeof sessionStorage !== "undefined") sessionStorage.clear();
 });
 
 if (!globalThis.requestAnimationFrame) {

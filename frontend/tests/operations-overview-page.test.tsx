@@ -16,6 +16,7 @@ vi.mock("@/components/app-shell", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/operations",
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 const factoryId = createOperationsDemoFixtures().request.factory_snapshot.factory_id;

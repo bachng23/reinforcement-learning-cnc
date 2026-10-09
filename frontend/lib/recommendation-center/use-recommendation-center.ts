@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { OperationsApiError } from "@/lib/operations-api/client";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/lib/recommendation-center/data-source";
 
 function shouldPoll(data: RecommendationCenterData): boolean {
-  return data.source === "real"
+  return data.source !== "mock"
     && data.artifactState === "pending"
     && isRecommendationPollingStatus(data.caseStatus.status);
 }
@@ -73,6 +73,8 @@ export function useRecommendationCenter({
     resolvedCaseId ? { kind: "loading" } : { kind: "missing-case-id" },
   );
   const [requestRevision, setRequestRevision] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const preserveData = useRef(false);
 
   useEffect(() => {
     if (!resolvedCaseId) {
@@ -84,17 +86,21 @@ export function useRecommendationCenter({
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     const read = async (showLoading: boolean) => {
-      if (showLoading) setState({ kind: "loading" });
+      if (showLoading && !preserveData.current) setState({ kind: "loading" });
       try {
         const data = await dataSource.read(resolvedCaseId, { signal: controller.signal });
         if (controller.signal.aborted) return;
         setState({ kind: "ready", data });
+        setRefreshing(false);
+        preserveData.current = false;
         if (shouldPoll(data)) {
           timer = setTimeout(() => void read(false), pollIntervalMs);
         }
       } catch (error: unknown) {
         if (controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) return;
         setState(failureState(error));
+        setRefreshing(false);
+        preserveData.current = false;
       }
     };
 
@@ -106,10 +112,17 @@ export function useRecommendationCenter({
   }, [dataSource, pollIntervalMs, requestRevision, resolvedCaseId]);
 
   const retry = useCallback(() => {
+    preserveData.current = false;
+    setRefreshing(true);
+    setRequestRevision((value) => value + 1);
+  }, []);
+  const refresh = useCallback(() => {
+    preserveData.current = true;
+    setRefreshing(true);
     setRequestRevision((value) => value + 1);
   }, []);
 
   const polling = state.kind === "ready" && shouldPoll(state.data);
 
-  return { state, retry, caseId: resolvedCaseId, polling };
+  return { state, retry, refresh, caseId: resolvedCaseId, polling, refreshing };
 }

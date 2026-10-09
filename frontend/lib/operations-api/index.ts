@@ -25,7 +25,7 @@ export function getOperationsApiClient(): OperationsApiClient {
   const mode = getOperationsApiMode();
   if (!client || activeMode !== mode) {
     client = mode === "mock"
-      ? createMockOperationsApiClient()
+      ? createMockOperationsApiClient({ persist: true })
       : createOperationsApiClient();
     activeMode = mode;
   }

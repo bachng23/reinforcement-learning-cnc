@@ -1,4 +1,4 @@
-# Operations read mock
+# Operations API mock
 
 `createMockOperationsApiClient({ mode })` implements `OperationsApiClient` for
 `getOperationsSnapshot(factoryId)` and `getCurrentSchedule(factoryId)`. It reads
@@ -20,15 +20,27 @@ version zero), `unauthorized` (401 / UNAUTHORIZED), `unavailable` (503 /
 DB_UNAVAILABLE). Errors use `OperationsApiError` with canonical v3 `ErrorResponse`
 payloads, available through `contractError`, matching `backend/workflow` read routes.
 Unknown factories return 404. Pre-aborted read signals reject with AbortError.
-Decision methods and event streams are outside this read mock's scope and fail
-explicitly with 501; they do not simulate successful writes. `/operations`
+Event streams remain outside this mock's scope and fail explicitly with 501.
+Missing preview cases return 404. `/operations`
 selects this adapter by default through `NEXT_PUBLIC_OPERATIONS_API_MODE=mock`.
 Set that variable to `real` and configure `NEXT_PUBLIC_OPERATIONS_FACTORY_ID`
 to run the same page against the authenticated backend endpoints.
 
-The existing HTTP DTOs are retained. Initial plan version is one with a schedule,
-zero when absent, matching the backend seed adapter independently of schedule
-revision. Commit metadata is null because the fixture has none.
+Initial plan version is one with a schedule, zero when absent, matching the
+backend seed adapter independently of schedule revision. Initial commit metadata
+is null. Cases created from Overview use the backend create/decision DTOs and
+generated canonical candidates from the shared demo scenario. The simulated
+worker advances CREATED to AWAITING_APPROVAL on subsequent reads. APPROVE/REJECT
+only record a decision; COMMIT separately publishes the exact approved schedule.
+Keys and historical responses are stored in preview receipts and replayed before
+head fencing, including when the current version has advanced. A key reused with
+different content returns 409. This preview never calculates KPI or validation.
+
+`persist: true` keeps preview cases, receipts and publication in session storage;
+the page's default adapter enables it so mock reload preserves workflow state.
+Tests use isolated in-memory instances unless persistence is explicitly requested.
+Real mode never reads this preview store. See the complete
+[workflow and acceptance notes](../../../docs/frontend-live-decision-workflow.md).
 
 From `frontend`, run `npm test -- tests/operations-api-client.test.ts
 tests/operations-api-mock.test.ts` and `npm run typecheck`. Parity tests compare
