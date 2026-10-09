@@ -1,6 +1,7 @@
 import {
   OperationsApiError,
   type OperationsApiClient,
+  type OperationsDecisionCaseMeta,
   type OperationsRequestOptions,
 } from "@/lib/operations-api/client";
 import { getOperationsFixture } from "@/lib/operations/fixtures";
@@ -19,11 +20,26 @@ export type RecommendationCenterPreviewData = {
   modifiedSchedule: Schedule;
 };
 
-export type RecommendationCenterStatusData = {
+type RecommendationCenterRealBase = {
   source: "real";
   caseStatus: DecisionCaseStatusResponse;
-  recommendation: null;
+  caseMeta?: OperationsDecisionCaseMeta;
 };
+
+export type RecommendationCenterStatusData = RecommendationCenterRealBase & (
+  | {
+    artifactState: "ready";
+    recommendation: RecommendationPackage;
+    snapshot: FactorySnapshot;
+    message?: never;
+  }
+  | {
+    artifactState: "pending" | "blocked" | "mismatch";
+    recommendation: null;
+    snapshot: null;
+    message?: string;
+  }
+);
 
 export type RecommendationCenterData =
   | RecommendationCenterPreviewData
@@ -33,6 +49,46 @@ export interface RecommendationCenterDataSource {
   readonly mode: "mock" | "real";
   readonly defaultCaseId?: string;
   read(caseId: string, options?: OperationsRequestOptions): Promise<RecommendationCenterData>;
+}
+
+const POLLING_STATUSES = new Set<DecisionCaseStatusResponse["status"]>([
+  "CREATED",
+  "ANALYZING",
+  "GENERATING",
+  "VALIDATING",
+  "EXPLAINING",
+]);
+const ARTIFACT_STATUSES = new Set<DecisionCaseStatusResponse["status"]>([
+  "AWAITING_APPROVAL",
+  "APPROVED",
+  "MODIFIED",
+  "REJECTED",
+  "COMMITTED",
+]);
+
+export function isRecommendationPollingStatus(status: DecisionCaseStatusResponse["status"]): boolean {
+  return POLLING_STATUSES.has(status);
+}
+
+function realWithoutArtifact(
+  caseStatus: DecisionCaseStatusResponse,
+  caseMeta: OperationsDecisionCaseMeta | undefined,
+  artifactState: Exclude<RecommendationCenterStatusData["artifactState"], "ready">,
+  message?: string,
+): RecommendationCenterStatusData {
+  return {
+    source: "real",
+    caseStatus,
+    caseMeta,
+    artifactState,
+    recommendation: null,
+    snapshot: null,
+    message,
+  };
+}
+
+function recommendationErrorCode(error: OperationsApiError): string | undefined {
+  return error.apiError?.code ?? error.contractError?.code;
 }
 
 function missingMockCase(caseId: string) {
@@ -90,8 +146,57 @@ export function createRealRecommendationCenterDataSource(
   return {
     mode: "real",
     async read(caseId, options) {
-      const caseStatus = await api.getDecisionCase(caseId, options);
-      return { source: "real", caseStatus, recommendation: null };
+      const { caseStatus, meta: caseMeta } = await api.getDecisionCase(caseId, options);
+      options?.signal?.throwIfAborted();
+
+      if (caseStatus.decision_case_id !== caseId) {
+        return realWithoutArtifact(caseStatus, caseMeta, "mismatch", "The case response does not match the requested decision case.");
+      }
+
+      if (caseStatus.status === "FAILED" || caseStatus.status === "CANCELLED") {
+        return realWithoutArtifact(caseStatus, caseMeta, "blocked");
+      }
+
+      if (!caseStatus.recommendation_id) {
+        if (isRecommendationPollingStatus(caseStatus.status)) {
+          return realWithoutArtifact(caseStatus, caseMeta, "pending");
+        }
+        return realWithoutArtifact(caseStatus, caseMeta, "mismatch", "The terminal case response does not include a recommendation reference.");
+      }
+
+      if (!ARTIFACT_STATUSES.has(caseStatus.status)) {
+        return realWithoutArtifact(caseStatus, caseMeta, "mismatch", "The case exposes a recommendation reference before reaching an artifact-readable stage.");
+      }
+
+      let artifact;
+      try {
+        artifact = await api.getDecisionCaseRecommendation(caseId, options);
+      } catch (error: unknown) {
+        if (error instanceof OperationsApiError && error.status === 404 && recommendationErrorCode(error) === "RECOMMENDATION_NOT_READY") {
+          return realWithoutArtifact(caseStatus, caseMeta, "pending", "The recommendation artifact is not ready yet.");
+        }
+        throw error;
+      }
+      options?.signal?.throwIfAborted();
+
+      const { recommendation, snapshot } = artifact;
+      if (
+        recommendation.decision_case_id !== caseStatus.decision_case_id
+        || recommendation.snapshot_id !== caseStatus.snapshot_id
+        || snapshot.snapshot_id !== caseStatus.snapshot_id
+        || recommendation.recommendation_id !== caseStatus.recommendation_id
+      ) {
+        return realWithoutArtifact(caseStatus, caseMeta, "mismatch", "The recommendation artifact identifiers do not match the authoritative case and basis snapshot.");
+      }
+
+      return {
+        source: "real",
+        caseStatus,
+        caseMeta,
+        artifactState: "ready",
+        recommendation,
+        snapshot,
+      };
     },
   };
 }

@@ -1,7 +1,7 @@
 import { authFetch, endpoint } from "@/lib/auth";
 import type {
   DecisionCaseStatusResponse, DecisionEvent, ErrorResponse, FactorySnapshot,
-  HumanDecisionType, Schedule,
+  HumanDecisionType, RecommendationPackage, Schedule,
 } from "@/types/generated/operations";
 
 export interface OperationsRequestOptions { signal?: AbortSignal }
@@ -49,7 +49,28 @@ export type OperationsDecisionCommandResponse = {
   current_context: { snapshot_id: string; plan_version: number };
   commit?: Record<string, unknown> | null;
 };
-type SuccessEnvelope<T> = { success: true; data: T; request_id?: string; meta?: Record<string, unknown> };
+export type OperationsDecisionCaseProcessing = {
+  status: "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED";
+  attempt: number;
+  error_code: string | null;
+};
+export type OperationsDecisionCaseMeta = {
+  factory_id: string;
+  base_plan_version: number;
+  case_revision: number;
+  current_context: { snapshot_id: string; plan_version: number } | null;
+  stale: boolean;
+  processing?: OperationsDecisionCaseProcessing;
+};
+export type OperationsDecisionCaseReadResponse = {
+  caseStatus: DecisionCaseStatusResponse;
+  meta?: OperationsDecisionCaseMeta;
+};
+export type OperationsDecisionCaseRecommendationResponse = {
+  recommendation: RecommendationPackage;
+  snapshot: FactorySnapshot;
+};
+type SuccessEnvelope<T, TMeta = Record<string, unknown>> = { success: true; data: T; request_id?: string; meta?: TMeta };
 type FailureEnvelope = { success: false; error?: { code?: string; message?: string; details?: unknown }; request_id?: string };
 
 export class OperationsApiError extends Error {
@@ -81,7 +102,7 @@ export function createOperationsApiClient({
 }: { fetcher?: typeof fetch; baseUrl?: string } = {}) {
   const base = baseUrl.replace(/\/+$/, "");
   const id = encodeURIComponent;
-  async function request<T>(path: string, options: OperationsRequestOptions = {}, body?: unknown): Promise<T> {
+  async function requestEnvelope<T, TMeta = Record<string, unknown>>(path: string, options: OperationsRequestOptions = {}, body?: unknown): Promise<SuccessEnvelope<T, TMeta>> {
     const response = await fetcher(`${base}${path}`, {
       method: body === undefined ? "GET" : "POST",
       credentials: "include", cache: "no-store", signal: options.signal,
@@ -93,16 +114,23 @@ export function createOperationsApiClient({
       throw new OperationsApiError(response.status, payload);
     }
     const payload: unknown = await response.json();
-    const envelope = payload as Partial<SuccessEnvelope<T>> | null;
+    const envelope = payload as Partial<SuccessEnvelope<T, TMeta>> | null;
     if (!envelope || envelope.success !== true || !("data" in envelope)) {
       throw new OperationsApiError(response.status, payload);
     }
-    return envelope.data as T;
+    return envelope as SuccessEnvelope<T, TMeta>;
+  }
+  async function request<T>(path: string, options: OperationsRequestOptions = {}, body?: unknown): Promise<T> {
+    return (await requestEnvelope<T>(path, options, body)).data;
   }
   return {
     getOperationsSnapshot: (factoryId: string, options?: OperationsRequestOptions) => request<OperationsSnapshotResponse>(`/operations/snapshot?factory_id=${id(factoryId)}`, options),
     getCurrentSchedule: (factoryId: string, options?: OperationsRequestOptions) => request<OperationsCurrentScheduleResponse>(`/schedules/current?factory_id=${id(factoryId)}`, options),
-    getDecisionCase: (caseId: string, options?: OperationsRequestOptions) => request<DecisionCaseStatusResponse>(`/decision-cases/${id(caseId)}`, options),
+    getDecisionCase: async (caseId: string, options?: OperationsRequestOptions): Promise<OperationsDecisionCaseReadResponse> => {
+      const envelope = await requestEnvelope<DecisionCaseStatusResponse, OperationsDecisionCaseMeta>(`/decision-cases/${id(caseId)}`, options);
+      return { caseStatus: envelope.data, meta: envelope.meta };
+    },
+    getDecisionCaseRecommendation: (caseId: string, options?: OperationsRequestOptions) => request<OperationsDecisionCaseRecommendationResponse>(`/decision-cases/${id(caseId)}/recommendation`, options),
     createDecisionCase: (body: OperationsCreateDecisionCaseRequest, options?: OperationsRequestOptions) => request<DecisionCaseStatusResponse>("/decision-cases", options, body),
     submitDecisionCommand: (caseId: string, body: OperationsDecisionCommand, options?: OperationsRequestOptions) => request<OperationsDecisionCommandResponse>(`/decision-cases/${id(caseId)}/decision`, options, body),
     listEvents: (caseId: string, afterSequence = 0, options?: OperationsRequestOptions) => request<DecisionEvent[]>(`/decision-cases/${id(caseId)}/events?after_sequence=${afterSequence}`, options),
