@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { createRequire } from "node:module";
 
 import { expect, test, type APIRequestContext, type APIResponse } from "@playwright/test";
 
@@ -11,6 +12,25 @@ const adminPassword = required("OPERATIONS_E2E_ADMIN_PASSWORD");
 const evidenceFile = required("OPERATIONS_E2E_EVIDENCE_FILE");
 
 type JsonObject = Record<string, unknown>;
+
+// Read-only assertions against the harness-owned schema, never a dev DB.
+async function databaseQuery(sql: string): Promise<unknown> {
+  const url = new URL(required("OPERATIONS_E2E_DATABASE_URL"));
+  if (!/_(test|ci)$/.test(url.pathname) || !/^product_api_it_browser_/.test(url.searchParams.get("schema") || "")) {
+    throw new Error("Database assertions require a harness-owned test schema");
+  }
+  const backendRequire = createRequire(path.resolve("../backend/package.json"));
+  const { PrismaClient } = backendRequire("@prisma/client");
+  const db = new PrismaClient({ datasources: { db: { url: url.toString() } } });
+  try { return await db.$queryRawUnsafe(sql); }
+  finally { await db.$disconnect(); }
+}
+
+const publicationState = () => databaseQuery(`SELECT jsonb_build_object(
+  'head', (SELECT jsonb_agg(to_jsonb(h)) FROM operations_heads h),
+  'schedules', (SELECT jsonb_agg(to_jsonb(s) ORDER BY schedule_id) FROM operation_schedules s),
+  'publications', (SELECT jsonb_agg(to_jsonb(c) ORDER BY case_id) FROM decision_commits c)
+) AS state`);
 
 function required(name: string): string {
   const value = process.env[name]?.trim();
@@ -192,8 +212,28 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
   const contextBefore = await currentContext(page.request);
   const scheduleBefore = await currentSchedule(page.request);
 
+  // Let the real backend commit, then drop only the response seen by the UI.
+  const submitted: Array<{ body: string | null; key: string | undefined; caseId: unknown }> = [];
+  await page.route(`${apiBase}/api/v1/decision-cases`, async route => {
+    if (route.request().method() !== "POST") return route.continue();
+    const response = await route.fetch();
+    expect(response.status()).toBe(202);
+    const payload = await response.json();
+    submitted.push({ body: route.request().postData(), key: route.request().headers()["idempotency-key"], caseId: payload.data.decision_case_id });
+    if (submitted.length === 1) await route.abort("failed");
+    else {
+      expect(response.headers()["idempotency-replayed"]).toBe("true");
+      await route.fulfill({ response });
+    }
+  });
+  await page.getByTestId("create-live-decision-case").click();
+  await expect(page.getByRole("alert")).toBeVisible();
   await page.getByTestId("create-live-decision-case").click();
   await expect(page).toHaveURL(/\/operations\/recommendations\?caseId=/);
+  expect(submitted).toHaveLength(2);
+  expect(submitted[1]).toEqual(submitted[0]);
+  expect(await databaseQuery('SELECT count(*)::int AS count FROM decision_cases')).toEqual([{ count: 1 }]);
+  await page.unroute(`${apiBase}/api/v1/decision-cases`);
   const caseId = new URL(page.url()).searchParams.get("caseId");
   expect(caseId).toBeTruthy();
   await expect(page.getByText("AWAITING_APPROVAL", { exact: true })).toBeVisible({ timeout: 90_000 });
@@ -284,21 +324,54 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
   expect(envelopeData(await json(replayAgain.response)).decision_case_id).toBe(replayCase.decision_case_id);
 
   const simulationCaseId = string(replayCase.decision_case_id, "simulation case id");
-  const simulationCommit = await page.request.post(
+  await waitForCase(page.request, simulationCaseId, ["AWAITING_APPROVAL"]);
+  const simulationRead = await page.request.get(`${apiBase}/api/v1/decision-cases/${simulationCaseId}`);
+  const simulationMeta = record((await json(simulationRead)).meta);
+  const simulationArtifact = await page.request.get(`${apiBase}/api/v1/decision-cases/${simulationCaseId}/recommendation`);
+  const simulationPackage = record(envelopeData(await json(simulationArtifact)).recommendation);
+  const simulationCandidate = array(simulationPackage.candidate_plans).map(record)
+    .find(candidate => candidate.candidate_plan_id === simulationPackage.recommended_plan_id)!;
+  const commandIdentity = {
+    schema_version: "3.0", decision_case_id: simulationCaseId,
+    recommendation_id: simulationPackage.recommendation_id,
+    candidate_plan_id: simulationCandidate.candidate_plan_id,
+    candidate_version: simulationCandidate.plan_version,
+    expected_snapshot_id: contextBefore.snapshotId,
+    expected_plan_version: contextBefore.planVersion,
+  };
+  const approve = await page.request.post(`${apiBase}/api/v1/decision-cases/${simulationCaseId}/decision`, {
+    headers: { "Idempotency-Key": `sim-approve-${randomUUID()}` },
+    data: { ...commandIdentity, command: "APPROVE", expected_case_revision: simulationMeta.case_revision },
+  });
+  let simulationEnforcement = "blocked_by_missing_decision_endpoint";
+  let decisionWriteStatus = approve.status();
+  if (approve.status() === 404) {
+    expect(record((await json(approve)).error).code).toBe("ROUTE_NOT_FOUND");
+  } else {
+    expect(approve.status()).toBe(200);
+    const approved = await json(approve);
+    expect(envelopeData(approved).status).toBe("APPROVED");
+    const beforeCommit = await currentSchedule(page.request);
+    const publicationBefore = await publicationState();
+    const simulationCommit = await page.request.post(
     `${apiBase}/api/v1/decision-cases/${encodeURIComponent(simulationCaseId)}/decision`,
     {
       headers: { "Idempotency-Key": `sim-commit-${randomUUID()}` },
       data: {
-        command: "COMMIT",
-        expected_snapshot_id: contextBefore.snapshotId,
-        expected_plan_version: contextBefore.planVersion,
-        expected_case_revision: 1,
-        candidate_revision: 1,
+        ...commandIdentity, command: "COMMIT",
+        expected_case_revision: record(approved.meta).case_revision,
       },
     },
   );
-  expect(simulationCommit.status()).toBeGreaterThanOrEqual(400);
-  expect(simulationCommit.status()).toBeLessThan(500);
+    expect(simulationCommit.status()).toBe(409);
+    expect(record((await json(simulationCommit)).error).code).toBe("SIMULATION_ONLY");
+    expect(await currentSchedule(page.request)).toEqual(beforeCommit);
+    expect(await publicationState()).toEqual(publicationBefore);
+    const afterCommit = await page.request.get(`${apiBase}/api/v1/decision-cases/${simulationCaseId}`);
+    expect(await json(afterCommit)).toEqual(approved);
+    simulationEnforcement = "passed";
+    decisionWriteStatus = simulationCommit.status();
+  }
 
   const failure = await createCase(page.request, contextBefore, liveRequest("LIVE", {
     planning_config: {
@@ -339,14 +412,14 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
       unauthorized_access: "passed",
       stale_case_creation: "passed",
       lost_create_response_receipt_replay: "passed",
-      simulation_commit_rejected: simulationCommit.status() === 404 ? "blocked_by_missing_decision_endpoint" : "passed",
+      simulation_commit_rejected: simulationEnforcement,
       planner_failure_preserved_schedule: "passed",
       reload_preserved_recommendation: "passed",
-      decision_write_http_status: simulationCommit.status(),
-      full_approval_commit_flow: simulationCommit.status() === 404 ? "not_available_on_base" : "requires_backend_frontend_write_capability",
-      stale_decision_command: simulationCommit.status() === 404 ? "not_available_on_base" : "not_executed",
-      competing_commits: simulationCommit.status() === 404 ? "not_available_on_base" : "not_executed",
-      decision_command_receipt_replay: simulationCommit.status() === 404 ? "not_available_on_base" : "not_executed",
+      decision_write_http_status: decisionWriteStatus,
+      full_approval_commit_flow: "not_executed",
+      stale_decision_command: "not_executed",
+      competing_commits: "not_executed",
+      decision_command_receipt_replay: "not_executed",
     },
   };
   await mkdir(path.dirname(evidenceFile), { recursive: true });

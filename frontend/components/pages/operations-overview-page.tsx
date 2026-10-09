@@ -3,7 +3,8 @@
 import { CalendarClock, ClipboardList, Play, RefreshCw, UserRoundCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import type { OperationsCreateDecisionCaseRequest } from "@/lib/operations-api/client";
 
 import { HealthAlertPanel } from "@/components/operations/health-alert-panel";
 import { MachineStatusGrid } from "@/components/operations/machine-status-grid";
@@ -34,13 +35,16 @@ function CreateDecisionCasePanel({ api, data }: { api: OperationsApiClient; data
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pendingAction = useRef<{ body: OperationsCreateDecisionCaseRequest; requestId: string } | null>(null);
+  const inFlight = useRef(false);
 
   async function createCase() {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setSubmitting(true);
     setError(null);
-    const requestId = crypto.randomUUID();
     try {
-      const decisionCase = await api.createDecisionCase({
+      if (!pendingAction.current) pendingAction.current = { requestId: crypto.randomUUID(), body: {
         schema_version: "3.0",
         factory_id: data.snapshotResponse.factory_id,
         expected_snapshot_id: data.snapshotResponse.snapshot_id,
@@ -60,11 +64,18 @@ function CreateDecisionCasePanel({ api, data }: { api: OperationsApiClient; data
             allowed_strategy_ids: ["production-priority", "balanced", "reliability-priority"],
           },
         },
-      }, { idempotencyKey: `overview-${requestId}`, requestId });
+      } };
+      // An error may occur after the backend committed. Replay the frozen action
+      // until its receipt is known, even if newer context props arrive.
+      const { body, requestId } = pendingAction.current;
+      const decisionCase = await api.createDecisionCase(body, { idempotencyKey: `overview-${requestId}`, requestId });
+      pendingAction.current = null;
       router.push(`/operations/recommendations?caseId=${encodeURIComponent(decisionCase.decision_case_id)}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Decision Case could not be created.");
       setSubmitting(false);
+    } finally {
+      inFlight.current = false;
     }
   }
 

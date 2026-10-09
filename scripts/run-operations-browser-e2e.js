@@ -348,6 +348,7 @@ async function runOnce({ baseUrl, sha, run, artifactRoot, journal, operationsPyt
       env: {
         ...process.env,
         OPERATIONS_E2E_WEB_URL: webUrl,
+        OPERATIONS_E2E_DATABASE_URL: isolatedUrl.toString(),
         OPERATIONS_E2E_API_URL: apiUrl,
         OPERATIONS_E2E_AI_URL: serviceEnv.AI_SERVICE_URL,
         OPERATIONS_E2E_ADMIN_PASSWORD: adminPassword,

@@ -90,6 +90,23 @@ describe("OperationsOverviewPage API integration", () => {
     );
   });
 
+  it("replays the same logical action after a committed response is lost", async () => {
+    const api = createMockOperationsApiClient();
+    const fixtures = createOperationsDemoFixtures();
+    const create = vi.spyOn(api, "createDecisionCase")
+      .mockRejectedValueOnce(new TypeError("Response lost after commit"))
+      .mockResolvedValueOnce(fixtures.status);
+    const user = userEvent.setup();
+    render(<OperationsOverviewPage api={api} factoryId={factoryId} apiMode="real" />);
+    await user.click(await screen.findByRole("button", { name: "Create live decision case" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Response lost after commit");
+    const first = structuredClone(create.mock.calls[0]);
+    await user.click(screen.getByRole("button", { name: "Create live decision case" }));
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[1]).toEqual(first);
+    expect(routerPush).toHaveBeenLastCalledWith(`/operations/recommendations?caseId=${fixtures.status.decision_case_id}`);
+  });
+
   it("keeps loading visible until both API reads complete", async () => {
     const snapshot = deferred<OperationsSnapshotResponse>();
     const schedule = deferred<OperationsCurrentScheduleResponse>();
