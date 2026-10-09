@@ -57,9 +57,9 @@ stage 'Install locked backend dependencies' npm ci --include=dev --prefix backen
 stage 'Fresh migrations and upgrade from base SHA' node scripts/check-migration-paths.js
 stage 'Install locked frontend dependencies' npm ci --include=dev --prefix frontend
 if [[ "${GITHUB_ACTIONS:-}" == 'true' ]]; then
-  stage 'Install Chromium and Linux browser dependencies' npm --prefix frontend exec playwright install --with-deps chromium
+  stage 'Install Chromium and Linux browser dependencies' node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium
 else
-  stage 'Install Chromium for browser E2E' npm --prefix frontend exec playwright install chromium
+  stage 'Install Chromium for browser E2E' node frontend/node_modules/@playwright/test/cli.js install chromium
 fi
 stage 'Install locked Python dependencies' uv sync --frozen --group dev --python 3.12 --project ai_services
 export OPERATIONS_PYTHON
