@@ -11,6 +11,12 @@ router.post('/', async (req, res) => {
   res.json(result.body);
 });
 router.get('/:id', async (req, res) => res.json(await getDecisionCase(db, req.user, req.params.id)));
+router.post('/:id/decision', async (req, res) => {
+  const { executeDecisionCommand } = require('../../services/decision-command.service');
+  const result = await executeDecisionCommand(db, req.user, req.params.id, req.body, req.get('Idempotency-Key'));
+  if (result.replayed) res.set('Idempotency-Replayed', 'true');
+  res.status(200).json(result.body);
+});
 router.get('/:id/events', async (req, res) => res.json(await getDecisionCaseEvents(db, req.user, req.params.id, req.query)));
 router.get('/:id/recommendation', async (req, res) => res.json(await require('../../services/decision-planning.service').getDecisionRecommendation(db, req.user, req.params.id)));
 module.exports = router;

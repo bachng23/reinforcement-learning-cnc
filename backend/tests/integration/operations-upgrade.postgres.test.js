@@ -55,7 +55,7 @@ test('upgrades populated main without checksum drift, version backfill or schedu
     await db.$disconnect();
 
     for (const name of fs.readdirSync(path.join(root, 'prisma/migrations'))) {
-      if (name === '20260925000000_decision_recommendation_persistence') continue;
+      if (name >= '20260925000000_decision_recommendation_persistence' && name !== 'migration_lock.toml') continue;
       const target = path.join(temp, 'migrations', name);
       if (!fs.existsSync(target)) fs.cpSync(path.join(root, 'prisma/migrations', name), target, { recursive: true });
     }
@@ -71,6 +71,8 @@ test('upgrades populated main without checksum drift, version backfill or schedu
     await db.$disconnect();
     const newest = '20260925000000_decision_recommendation_persistence';
     fs.cpSync(path.join(root, 'prisma/migrations', newest), path.join(temp, 'migrations', newest), { recursive: true });
+    fs.cpSync(path.join(root, 'prisma/migrations/20261009000000_decision_commands'),
+      path.join(temp, 'migrations/20261009000000_decision_commands'), { recursive: true });
     deploy();
     deploy(); // No pending migrations on replay.
     const legacyAfter = await db.$queryRaw`SELECT * FROM decision_cases WHERE id=${legacyId}::uuid`;
@@ -83,7 +85,7 @@ test('upgrades populated main without checksum drift, version backfill or schedu
     const stored = await db.$queryRaw`SELECT * FROM factory_snapshots`;
     expect(stored).toEqual(beforeSnapshot.map(row => ({ ...row, source_id: null })));
     const migrations = await db.$queryRaw`SELECT migration_name, checksum FROM _prisma_migrations WHERE finished_at IS NOT NULL ORDER BY migration_name`;
-    expect(migrations).toHaveLength(beforeMigrations.length + 3);
+    expect(migrations).toHaveLength(beforeMigrations.length + 4);
     expect(migrations.slice(0, beforeMigrations.length)).toEqual(beforeMigrations);
     for (const row of migrations) {
       expect(row.checksum).toBe(createHash('sha256').update(fs.readFileSync(path.join(temp, 'migrations', row.migration_name, 'migration.sql'))).digest('hex'));

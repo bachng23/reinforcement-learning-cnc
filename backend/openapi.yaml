@@ -24,6 +24,473 @@ security:
   - cookieAuth: []
   - bearerAuth: []
 paths:
+  '/decision-cases/{id}/decision':
+    post:
+      summary: 'Approve, reject or commit a decision case'
+      description: >-
+        OPERATOR, ENGINEER or ADMIN with factory access; inaccessible cases return 404.
+
+        APPROVE and REJECT require AWAITING_APPROVAL and never alter the published schedule. REJECT must not
+        select a candidate.
+
+        COMMIT is a separate transport command, NOT a HumanDecisionType. It requires APPROVED, LIVE, the exact
+        approved candidate/hash, and current basis.
+
+        This transport adapts command to canonical HumanDecisionRequest.decision and candidate_version to its
+        expected_plan_version. The transport expected_plan_version instead fences OperationsHead.plan_version.
+        expected_case_revision fences case state; Schedule.revision is a fourth independent value and is
+        published unchanged.
+
+        All commands require snapshot and head tokens matching the case basis and current head. Publish stores
+        the exact candidate schedule and increments head plan_version once.
+
+        Idempotency-Key is 1-128 printable non-space ASCII characters, scoped to factory + authenticated actor,
+        shared with case creation and all commands/cases in that factory. Use a NEW key for each logical
+        command. Same key/body returns the original 200 body with Idempotency-Replayed: true even after
+        context/status changes; different body/command/case returns 409 IDEMPOTENCY_KEY_REUSED. Authorization is
+        rechecked before replay. Receipts have no expiry; failed transactions leave no receipt. Request property
+        order is ignored; omitted and explicit fields are distinct.
+
+        Server owns actor, time, hashes and status. Unknown fields, MODIFY, replacement schedules, and
+        actor/time input are rejected. Do not reuse the older frontend DTO with candidate_revision/reason.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: '^[!-~]+$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionCommandRequest'
+            examples:
+              APPROVE:
+                value:
+                  schema_version: '3.0'
+                  decision_case_id: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                  recommendation_id: recommendation-1
+                  expected_snapshot_id: snapshot-1
+                  expected_case_revision: 6
+                  expected_plan_version: 0
+                  command: APPROVE
+                  candidate_plan_id: candidate-1
+                  candidate_version: 17
+              REJECT:
+                value:
+                  schema_version: '3.0'
+                  decision_case_id: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                  recommendation_id: recommendation-1
+                  expected_snapshot_id: snapshot-1
+                  expected_case_revision: 6
+                  expected_plan_version: 0
+                  command: REJECT
+                  note: Maintenance conflict
+              COMMIT:
+                value:
+                  schema_version: '3.0'
+                  decision_case_id: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                  recommendation_id: recommendation-1
+                  expected_snapshot_id: snapshot-1
+                  expected_case_revision: 7
+                  expected_plan_version: 0
+                  command: COMMIT
+                  candidate_plan_id: candidate-1
+                  candidate_version: 17
+      responses:
+        '200':
+          description: 'Atomic receipt. Replay returns the original response, not a fresh read.'
+          headers:
+            Idempotency-Replayed:
+              schema:
+                const: 'true'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionCaseResponse'
+              examples:
+                APPROVE:
+                  value:
+                    success: true
+                    data:
+                      schema_version: '3.0'
+                      decision_case_id: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                      mode: LIVE
+                      status: APPROVED
+                      snapshot_id: snapshot-1
+                      created_at: '2026-10-09T04:00:00.000Z'
+                      updated_at: '2026-10-09T04:00:00.000Z'
+                      recommendation_id: recommendation-1
+                      committed_schedule_id: null
+                      error_code: null
+                    meta:
+                      factory_id: factory-1
+                      base_plan_version: 0
+                      case_revision: 7
+                      processing:
+                        status: SUCCEEDED
+                        attempt: 1
+                        error_code: null
+                      current_context:
+                        snapshot_id: snapshot-1
+                        plan_version: 0
+                      stale: false
+                      approved_candidate:
+                        recommendation_id: recommendation-1
+                        candidate_plan_id: candidate-1
+                        candidate_version: 17
+                        candidate_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                        schedule_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                      human_decision:
+                        decision: APPROVE
+                        recommendation_id: recommendation-1
+                        candidate_plan_id: candidate-1
+                        candidate_version: 17
+                        candidate_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                        schedule_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                        note: null
+                        actor_id: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+                        decided_at: '2026-10-09T04:00:00.000Z'
+                      available_commands:
+                        - COMMIT
+                      commit: null
+                REJECT:
+                  value:
+                    success: true
+                    data:
+                      schema_version: '3.0'
+                      decision_case_id: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                      mode: LIVE
+                      status: REJECTED
+                      snapshot_id: snapshot-1
+                      created_at: '2026-10-09T04:00:00.000Z'
+                      updated_at: '2026-10-09T04:00:00.000Z'
+                      recommendation_id: recommendation-1
+                      committed_schedule_id: null
+                      error_code: null
+                    meta:
+                      factory_id: factory-1
+                      base_plan_version: 0
+                      case_revision: 7
+                      processing:
+                        status: SUCCEEDED
+                        attempt: 1
+                        error_code: null
+                      current_context:
+                        snapshot_id: snapshot-1
+                        plan_version: 0
+                      stale: false
+                      approved_candidate: null
+                      human_decision:
+                        decision: REJECT
+                        recommendation_id: recommendation-1
+                        candidate_plan_id: null
+                        candidate_version: null
+                        candidate_hash: null
+                        schedule_hash: null
+                        note: Maintenance conflict
+                        actor_id: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+                        decided_at: '2026-10-09T04:00:00.000Z'
+                      available_commands: []
+                      commit: null
+                COMMIT:
+                  value:
+                    success: true
+                    data:
+                      schema_version: '3.0'
+                      decision_case_id: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                      mode: LIVE
+                      status: COMMITTED
+                      snapshot_id: snapshot-1
+                      created_at: '2026-10-09T04:00:00.000Z'
+                      updated_at: '2026-10-09T04:00:00.000Z'
+                      recommendation_id: recommendation-1
+                      committed_schedule_id: schedule-1
+                      error_code: null
+                    meta:
+                      factory_id: factory-1
+                      base_plan_version: 0
+                      case_revision: 8
+                      processing:
+                        status: SUCCEEDED
+                        attempt: 1
+                        error_code: null
+                      current_context:
+                        snapshot_id: snapshot-1
+                        plan_version: 1
+                      stale: true
+                      approved_candidate:
+                        recommendation_id: recommendation-1
+                        candidate_plan_id: candidate-1
+                        candidate_version: 17
+                        candidate_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                        schedule_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                      human_decision:
+                        decision: APPROVE
+                        recommendation_id: recommendation-1
+                        candidate_plan_id: candidate-1
+                        candidate_version: 17
+                        candidate_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                        schedule_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                        note: null
+                        actor_id: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+                        decided_at: '2026-10-09T04:00:00.000Z'
+                      available_commands: []
+                      commit:
+                        decision_case_id: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                        factory_id: factory-1
+                        snapshot_id: snapshot-1
+                        schedule_id: schedule-1
+                        schedule_revision: 9
+                        schedule_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                        plan_version: 1
+                        actor_id: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+                        committed_at: '2026-10-09T04:00:00.000Z'
+        '400':
+          description: >-
+            VALIDATION_ERROR, INVALID_OPERATIONS_SCHEMA, CASE_ID_MISMATCH. Malformed strict body, missing key,
+            blank rejection note or mismatched path ID.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - error
+                  - requestId
+                properties:
+                  success:
+                    const: false
+                  error:
+                    type: object
+                    required:
+                      - code
+                      - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                  requestId:
+                    type: string
+              example:
+                success: false
+                error:
+                  code: VALIDATION_ERROR
+                  message: 'Malformed strict body, missing key, blank rejection note or mismatched path ID.'
+                requestId: request-1
+        '401':
+          description: UNAUTHORIZED. Authentication required.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - error
+                  - requestId
+                properties:
+                  success:
+                    const: false
+                  error:
+                    type: object
+                    required:
+                      - code
+                      - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                  requestId:
+                    type: string
+              example:
+                success: false
+                error:
+                  code: UNAUTHORIZED
+                  message: Authentication required.
+                requestId: request-1
+        '403':
+          description: FORBIDDEN. Role cannot decide/commit.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - error
+                  - requestId
+                properties:
+                  success:
+                    const: false
+                  error:
+                    type: object
+                    required:
+                      - code
+                      - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                  requestId:
+                    type: string
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Role cannot decide/commit.
+                requestId: request-1
+        '404':
+          description: DECISION_CASE_NOT_FOUND. Missing or inaccessible case.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - error
+                  - requestId
+                properties:
+                  success:
+                    const: false
+                  error:
+                    type: object
+                    required:
+                      - code
+                      - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                  requestId:
+                    type: string
+              example:
+                success: false
+                error:
+                  code: DECISION_CASE_NOT_FOUND
+                  message: Missing or inaccessible case.
+                requestId: request-1
+        '409':
+          description: >-
+            IDEMPOTENCY_KEY_REUSED, CASE_REVISION_CONFLICT, SNAPSHOT_CONFLICT, PLAN_VERSION_CONFLICT,
+            CASE_STATE_CONFLICT, RECOMMENDATION_CONFLICT, CANDIDATE_NOT_FOUND, CANDIDATE_VERSION_CONFLICT,
+            CANDIDATE_NOT_VALID, APPROVED_CANDIDATE_CONFLICT, SIMULATION_ONLY, SCHEDULE_ALREADY_PUBLISHED. No
+            writes persist. Refresh context before a new command; retry unchanged key/body when outcome is
+            unknown.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - error
+                  - requestId
+                properties:
+                  success:
+                    const: false
+                  error:
+                    type: object
+                    required:
+                      - code
+                      - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                  requestId:
+                    type: string
+              example:
+                success: false
+                error:
+                  code: IDEMPOTENCY_KEY_REUSED
+                  message: >-
+                    No writes persist. Refresh context before a new command; retry unchanged key/body when
+                    outcome is unknown.
+                requestId: request-1
+        '500':
+          description: 'OPERATIONS_INTEGRITY_ERROR, INTERNAL_ERROR. Transaction rolled back.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - error
+                  - requestId
+                properties:
+                  success:
+                    const: false
+                  error:
+                    type: object
+                    required:
+                      - code
+                      - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                  requestId:
+                    type: string
+              example:
+                success: false
+                error:
+                  code: OPERATIONS_INTEGRITY_ERROR
+                  message: Transaction rolled back.
+                requestId: request-1
+        '503':
+          description: >-
+            DB_UNAVAILABLE, OPERATIONS_VALIDATOR_UNAVAILABLE, FACTORY_ACCESS_UNAVAILABLE. Retry with original
+            key/body.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - error
+                  - requestId
+                properties:
+                  success:
+                    const: false
+                  error:
+                    type: object
+                    required:
+                      - code
+                      - message
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                  requestId:
+                    type: string
+              example:
+                success: false
+                error:
+                  code: DB_UNAVAILABLE
+                  message: Retry with original key/body.
+                requestId: request-1
   '/decision-cases/{id}/recommendation':
     get:
       summary: Read immutable recommendation and its pinned snapshot
@@ -335,8 +802,7 @@ paths:
                           - type: 'null'
                       commit:
                         anyOf:
-                          - type: object
-                            additionalProperties: true
+                          - $ref: '#/components/schemas/DecisionCommitMetadata'
                           - type: 'null'
                   meta:
                     $ref: '#/components/schemas/OperationsReadMeta'
@@ -2473,6 +2939,308 @@ components:
                   type: object
             planning_config:
               $ref: '#/components/schemas/CaseContractPlanningConfig'
+    DecisionApprovedCandidate:
+      type: object
+      additionalProperties: false
+      required:
+        - recommendation_id
+        - candidate_plan_id
+        - candidate_version
+        - candidate_hash
+        - schedule_hash
+      properties:
+        recommendation_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        candidate_plan_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        candidate_version:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        candidate_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        schedule_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+    DecisionHumanRecord:
+      type: object
+      additionalProperties: false
+      required:
+        - decision
+        - recommendation_id
+        - candidate_plan_id
+        - candidate_version
+        - candidate_hash
+        - schedule_hash
+        - note
+        - actor_id
+        - decided_at
+      properties:
+        decision:
+          enum:
+            - APPROVE
+            - REJECT
+        recommendation_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        candidate_plan_id:
+          anyOf:
+            - type: string
+              minLength: 1
+              maxLength: 128
+              pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+            - type: 'null'
+        candidate_version:
+          anyOf:
+            - type: integer
+              minimum: 1
+              maximum: 2147483647
+            - type: 'null'
+        candidate_hash:
+          anyOf:
+            - type: string
+              pattern: '^[a-f0-9]{64}$'
+            - type: 'null'
+        schedule_hash:
+          anyOf:
+            - type: string
+              pattern: '^[a-f0-9]{64}$'
+            - type: 'null'
+        note:
+          anyOf:
+            - type: string
+            - type: 'null'
+        actor_id:
+          type: string
+          format: uuid
+        decided_at:
+          type: string
+          format: date-time
+    DecisionCommitMetadata:
+      type: object
+      additionalProperties: false
+      required:
+        - decision_case_id
+        - factory_id
+        - snapshot_id
+        - schedule_id
+        - schedule_revision
+        - schedule_hash
+        - plan_version
+        - actor_id
+        - committed_at
+      properties:
+        decision_case_id:
+          type: string
+          format: uuid
+        factory_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        snapshot_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        schedule_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        schedule_revision:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        schedule_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        plan_version:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        actor_id:
+          type: string
+          format: uuid
+        committed_at:
+          type: string
+          format: date-time
+    DecisionApproveCommand:
+      type: object
+      additionalProperties: false
+      required:
+        - schema_version
+        - command
+        - decision_case_id
+        - recommendation_id
+        - expected_snapshot_id
+        - expected_case_revision
+        - expected_plan_version
+        - candidate_plan_id
+        - candidate_version
+      properties:
+        schema_version:
+          const: '3.0'
+        command:
+          const: APPROVE
+        decision_case_id:
+          type: string
+          format: uuid
+          description: Must equal path id.
+        recommendation_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        expected_snapshot_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          description: Both case basis and current head snapshot.
+        expected_case_revision:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Case revision from meta.case_revision.
+        expected_plan_version:
+          type: integer
+          minimum: 0
+          maximum: 2147483646
+          description: Current head plan_version AND case base_plan_version; not candidate version or schedule revision.
+        candidate_plan_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        candidate_version:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Exact CandidatePlan.plan_version; canonical HumanDecisionRequest.expected_plan_version.
+        note:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          pattern: \S
+          description: Non-whitespace text. Required for REJECT.
+    DecisionRejectCommand:
+      type: object
+      additionalProperties: false
+      required:
+        - schema_version
+        - command
+        - decision_case_id
+        - recommendation_id
+        - expected_snapshot_id
+        - expected_case_revision
+        - expected_plan_version
+        - note
+      properties:
+        schema_version:
+          const: '3.0'
+        command:
+          const: REJECT
+        decision_case_id:
+          type: string
+          format: uuid
+          description: Must equal path id.
+        recommendation_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        expected_snapshot_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          description: Both case basis and current head snapshot.
+        expected_case_revision:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Case revision from meta.case_revision.
+        expected_plan_version:
+          type: integer
+          minimum: 0
+          maximum: 2147483646
+          description: Current head plan_version AND case base_plan_version; not candidate version or schedule revision.
+        note:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          pattern: \S
+          description: Non-whitespace text. Required for REJECT.
+    DecisionCommitCommand:
+      type: object
+      additionalProperties: false
+      required:
+        - schema_version
+        - command
+        - decision_case_id
+        - recommendation_id
+        - expected_snapshot_id
+        - expected_case_revision
+        - expected_plan_version
+        - candidate_plan_id
+        - candidate_version
+      properties:
+        schema_version:
+          const: '3.0'
+        command:
+          const: COMMIT
+        decision_case_id:
+          type: string
+          format: uuid
+          description: Must equal path id.
+        recommendation_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        expected_snapshot_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+          description: Both case basis and current head snapshot.
+        expected_case_revision:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Case revision from meta.case_revision.
+        expected_plan_version:
+          type: integer
+          minimum: 0
+          maximum: 2147483646
+          description: Current head plan_version AND case base_plan_version; not candidate version or schedule revision.
+        candidate_plan_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+        candidate_version:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Exact CandidatePlan.plan_version; canonical HumanDecisionRequest.expected_plan_version.
+    DecisionCommandRequest:
+      oneOf:
+        - $ref: '#/components/schemas/DecisionApproveCommand'
+        - $ref: '#/components/schemas/DecisionRejectCommand'
+        - $ref: '#/components/schemas/DecisionCommitCommand'
+      discriminator:
+        propertyName: command
     DecisionCaseResponse:
       type: object
       required:
@@ -2493,6 +3261,26 @@ components:
             - current_context
             - stale
           properties:
+            approved_candidate:
+              anyOf:
+                - $ref: '#/components/schemas/DecisionApprovedCandidate'
+                - type: 'null'
+            human_decision:
+              anyOf:
+                - $ref: '#/components/schemas/DecisionHumanRecord'
+                - type: 'null'
+            available_commands:
+              type: array
+              items:
+                enum:
+                  - APPROVE
+                  - REJECT
+                  - COMMIT
+              description: 'Advisory commands for actor, state and current basis; execution rechecks all tokens.'
+            commit:
+              anyOf:
+                - $ref: '#/components/schemas/DecisionCommitMetadata'
+                - type: 'null'
             factory_id:
               type: string
               minLength: 1
@@ -2588,6 +3376,35 @@ components:
           properties:
             status:
               const: CREATED
+            command:
+              enum:
+                - APPROVE
+                - REJECT
+                - COMMIT
+            recommendation_id:
+              type: string
+            candidate_plan_id:
+              type:
+                - string
+                - 'null'
+            candidate_version:
+              type:
+                - integer
+                - 'null'
+              minimum: 1
+            candidate_hash:
+              type:
+                - string
+                - 'null'
+              pattern: '^[a-f0-9]{64}$'
+            schedule_hash:
+              type:
+                - string
+                - 'null'
+              pattern: '^[a-f0-9]{64}$'
+            plan_version:
+              type: integer
+              minimum: 0
             revision:
               type: integer
               minimum: 1
