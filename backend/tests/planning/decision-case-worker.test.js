@@ -4,8 +4,8 @@ const { PrismaClient } = require('@prisma/client');
 const { OperationsPlanningClient } = require('../../src/services/operations-planning.client');
 const { DecisionCaseWorker } = require('../../src/decision-worker/decision-case-worker');
 const lifecycle = require('../../src/services/decision-case-lifecycle.service');
-const { createDecisionCase, getDecisionCase,
-  getDecisionCaseRecommendation } = require('../../src/services/decision-case.service');
+const { createDecisionCase, getDecisionCase } = require('../../src/services/decision-case.service');
+const { getDecisionRecommendation } = require('../../src/services/decision-planning.service');
 const { seedOperations } = require('../../src/services/operations-context.service');
 const { loadCanonicalSeedPlan, validatePayload } = require('../../src/services/operations-contract.service');
 
@@ -67,9 +67,11 @@ test('seed -> create -> dedicated worker -> real FastAPI -> persist -> AWAITING_
   expect(result).toMatchObject({ outcome: 'completed', caseId });
 
   const row = await db.decisionCase.findUnique({ where: { id: caseId }, include: { recommendation: true } });
-  expect(row).toMatchObject({ status: 'AWAITING_APPROVAL', processingStatus: 'IDLE',
-    processingStage: null, attempt: 1, leaseToken: null, leaseExpiresAt: null });
-  const read = await getDecisionCaseRecommendation(db, actor, caseId);
+  expect(row).toMatchObject({ status: 'AWAITING_APPROVAL', processingStatus: 'SUCCEEDED',
+    processingAttempt: 1, leaseToken: null, leaseExpiresAt: null });
+  const response = await getDecisionRecommendation(db, actor, caseId);
+  expect(response.data.snapshot.snapshot_id).toBe(snapshotId);
+  const read = { data: response.data.recommendation };
   expect(read.data).toEqual(await validatePayload(read.data, 'recommendation'));
   expect(read.data).toMatchObject({ decision_case_id: caseId, snapshot_id: snapshotId });
   expect(read.data.candidate_plans.length).toBeGreaterThanOrEqual(1);
@@ -93,18 +95,19 @@ test('duplicate workers claim a case once and persist one immutable recommendati
   const results = await Promise.all([worker().runOnce(), worker().runOnce()]);
   expect(results.map(result => result.outcome).sort()).toEqual(['completed', 'idle']);
   expect(results.find(result => result.outcome === 'completed').caseId).toBe(caseId);
-  expect(await db.decisionCaseRecommendation.count({ where: { caseId } })).toBe(1);
+  expect(await db.decisionRecommendationArtifact.count({ where: { caseId } })).toBe(1);
 });
 
 test('expired crash lease is reclaimed with fencing and a new attempt', async () => {
   const caseId = await createCase('crash-reclaim');
-  const crashed = await lifecycle.claimNextDecisionCase(db, { leaseMs: 100,
-    now: new Date(Date.now() - 10000) });
+  const crashed = await lifecycle.claimNextDecisionCase(db, { leaseMs: 100 });
+  // Expiry is authoritative PostgreSQL time; do not inject a fake JS clock.
+  await delay(1100);
   expect(crashed.id).toBe(caseId);
   const reclaimed = await lifecycle.claimNextDecisionCase(db, { leaseMs: 5000 });
   expect(reclaimed).toMatchObject({ id: caseId, reclaimed: true, attempt: 2 });
   expect(reclaimed.leaseToken).not.toBe(crashed.leaseToken);
-  expect(await lifecycle.heartbeatDecisionCase(db, crashed, { leaseMs: 5000 })).toBe(false);
+  expect(await lifecycle.heartbeatDecisionCase(db, crashed, { leaseMs: 5000 })).toBe(null);
   const request = await lifecycle.buildPlanningRequest(reclaimed);
   const recommendation = await planningClient().plan(request, {
     requestId: reclaimed.requestId, correlationId: reclaimed.correlationId,
@@ -134,9 +137,12 @@ test.each([
   const countBefore = await db.operationSchedule.count({ where: { factoryId } });
   expect(await worker(planningClient(mode)).runOnce()).toMatchObject({ outcome: 'blocked', caseId, code });
   const row = await db.decisionCase.findUnique({ where: { id: caseId } });
-  expect(row).toMatchObject({ status: 'ANALYZING', processingStatus: 'BLOCKED',
-    processingStage: 'PLANNING', errorCode: code, leaseToken: null, leaseExpiresAt: null });
-  expect(row.errorMessage).not.toMatch(/trace|stack|127\.0\.0\.1|FastAPI/i);
+  expect(row).toMatchObject({ status: 'FAILED', processingStatus: 'FAILED',
+    processingErrorCode: lifecycle.SAFE_FAILURES[code], leaseToken: null, leaseExpiresAt: null });
+  const publicCase = await getDecisionCase(db, actor, caseId);
+  expect(publicCase.data.error_code).toBe(lifecycle.SAFE_FAILURES[code]);
+  expect(JSON.stringify(publicCase)).not.toMatch(/trace|stack|127\.0\.0\.1|FastAPI|lease_token/i);
+  expect(await worker().runOnce()).toEqual({ outcome: 'idle' });
   expect((await calls()).length - callCount).toBe(1);
   expect(await db.operationsHead.findUnique({ where: { factoryId } })).toEqual(headBefore);
   expect(await db.operationSchedule.count({ where: { factoryId } })).toBe(countBefore);
@@ -149,7 +155,7 @@ test('timeout is bounded and leaves the case blocked without a lease', async () 
   expect(result).toMatchObject({ outcome: 'blocked', caseId, code: 'PLANNING_TIMEOUT' });
   expect(Date.now() - started).toBeLessThan(3000);
   expect(await db.decisionCase.findUnique({ where: { id: caseId } })).toMatchObject({
-    processingStatus: 'BLOCKED', leaseToken: null, leaseExpiresAt: null,
+    processingStatus: 'FAILED', leaseToken: null, leaseExpiresAt: null,
   });
 });
 
@@ -162,7 +168,7 @@ test('graceful shutdown aborts the AI call and releases the lease for another wo
   controller.abort();
   expect(await pending).toMatchObject({ outcome: 'released', caseId });
   expect(await db.decisionCase.findUnique({ where: { id: caseId } })).toMatchObject({
-    status: 'ANALYZING', processingStatus: 'QUEUED', leaseToken: null, leaseExpiresAt: null,
+    status: 'CREATED', processingStatus: 'PENDING', leaseToken: null, leaseExpiresAt: null,
   });
   expect(await worker().runOnce()).toMatchObject({ outcome: 'completed', caseId });
 });
@@ -176,5 +182,5 @@ test('the same pinned request has deterministic planner replay before persistenc
   const second = await planningClient().plan(request, options);
   expect(second).toEqual(first);
   await lifecycle.persistDecisionRecommendation(db, claim, first);
-  expect((await getDecisionCaseRecommendation(db, actor, caseId)).data).toEqual(first);
+  expect((await getDecisionRecommendation(db, actor, caseId)).data.recommendation).toEqual(first);
 });

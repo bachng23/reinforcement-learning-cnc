@@ -104,6 +104,28 @@ async function releaseExpiredDecisionCaseLease(db, input) {
   });
 }
 
+async function renewDecisionCaseLease(db, input) {
+  const args = parse(owned.extend({ leaseSeconds: z.number().int().min(1).max(900) }).strict(), input);
+  return transaction(db, async tx => {
+    const row = await lock(tx, args.caseId), at = await now(tx);
+    check(row, args, at);
+    const result = await tx.decisionCase.update({ where: { id: row.id }, data: {
+      revision: { increment: 1 }, leaseExpiresAt: new Date(at.getTime() + args.leaseSeconds * 1000),
+    } });
+    return { revision: result.revision, leaseExpiresAt: result.leaseExpiresAt };
+  });
+}
+
+async function releaseDecisionCaseLease(db, input) {
+  const args = parse(owned.strict(), input);
+  return transaction(db, async tx => {
+    const row = await lock(tx, args.caseId), at = await now(tx);
+    check(row, args, at);
+    return transition(tx, row, at, { status: 'CREATED', processingStatus: 'PENDING',
+      processingErrorCode: 'WORKER_SHUTDOWN', ...clearLease }, row.leaseOwnerId);
+  });
+}
+
 async function getDecisionRecommendation(db, user, id) {
   const result = await db.$transaction(async tx => {
     const row = await accessible(tx, user, id);
@@ -127,4 +149,5 @@ async function getDecisionRecommendation(db, user, id) {
   }
   return { success: true, data: { recommendation: artifact.payloadJson, snapshot: snapshot.payloadJson } };
 }
-module.exports = { claimDecisionCase, persistDecisionRecommendation, recordDecisionPlanningFailure, releaseExpiredDecisionCaseLease, getDecisionRecommendation };
+module.exports = { claimDecisionCase, persistDecisionRecommendation, recordDecisionPlanningFailure,
+  releaseExpiredDecisionCaseLease, renewDecisionCaseLease, releaseDecisionCaseLease, getDecisionRecommendation };

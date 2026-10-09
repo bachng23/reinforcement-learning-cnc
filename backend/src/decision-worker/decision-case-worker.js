@@ -32,12 +32,17 @@ class DecisionCaseWorker {
     let timer;
     let leaseLost = false;
     let stopped = false;
+    let heartbeat;
+    const stopHeartbeat = async () => {
+      stopped = true;
+      clearTimeout(timer);
+      await heartbeat;
+    };
     const scheduleHeartbeat = () => {
       if (stopped) return;
-      timer = setTimeout(async () => {
+      timer = setTimeout(() => { heartbeat = (async () => {
         try {
           const owned = await this.lifecycle.heartbeatDecisionCase(this.db, claim, { leaseMs: this.leaseMs });
-          if (stopped) return;
           if (!owned) { leaseLost = true; controller.abort(); return; }
           claim.revision = owned.revision;
           claim.leaseExpiresAt = owned.leaseExpiresAt;
@@ -47,7 +52,7 @@ class DecisionCaseWorker {
           this.logger.error?.('Decision Case heartbeat failed', { caseId: claim.id, code: error.code || 'HEARTBEAT_FAILED' });
           controller.abort();
         }
-      }, this.heartbeatMs);
+      })(); }, this.heartbeatMs);
       timer.unref?.();
     };
     scheduleHeartbeat();
@@ -55,28 +60,32 @@ class DecisionCaseWorker {
       const request = await this.lifecycle.buildPlanningRequest(claim, { signal: combined });
       const recommendation = await this.client.plan(request, { signal: combined,
         requestId: claim.requestId, correlationId: claim.correlationId });
+      // Drain an in-flight renewal before passing its revision to persistence.
+      // Validation/persistence has its own lease fence and transaction deadline.
+      await stopHeartbeat();
+      combined.throwIfAborted();
       await this.lifecycle.persistDecisionRecommendation(this.db, claim, recommendation);
       return { outcome: 'completed', caseId: claim.id, recommendationId: recommendation.recommendation_id };
     } catch (error) {
-      if (leaseLost || error?.code === 'DECISION_CASE_LEASE_LOST') {
+      await stopHeartbeat();
+      if (leaseLost || lifecycle.leaseConflict(error)) {
         return { outcome: 'lease-lost', caseId: claim.id };
       }
       if (signal?.aborted) {
         const released = await this.lifecycle.releaseDecisionCaseClaim(this.db, claim).catch(releaseError => {
-          if (releaseError?.code !== 'DECISION_CASE_LEASE_LOST') throw releaseError;
+          if (!lifecycle.leaseConflict(releaseError)) throw releaseError;
           return false;
         });
         return { outcome: released ? 'released' : 'lease-lost', caseId: claim.id };
       }
       try { await this.lifecycle.blockDecisionCase(this.db, claim, error); }
       catch (blockError) {
-        if (blockError?.code === 'DECISION_CASE_LEASE_LOST') return { outcome: 'lease-lost', caseId: claim.id };
+        if (lifecycle.leaseConflict(blockError)) return { outcome: 'lease-lost', caseId: claim.id };
         throw blockError;
       }
       return { outcome: 'blocked', caseId: claim.id, code: error.code || 'AI_UNAVAILABLE' };
     } finally {
-      stopped = true;
-      clearTimeout(timer);
+      await stopHeartbeat();
       controller.abort();
     }
   }
