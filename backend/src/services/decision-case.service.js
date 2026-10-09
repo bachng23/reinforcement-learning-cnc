@@ -3,6 +3,7 @@ const { z } = require('zod');
 const { ApiError, fromZodError } = require('../lib/api-error');
 const { authorizeFactory } = require('./operations-context.service');
 const { validatePayload, contentHash } = require('./operations-contract.service');
+const { commitMetadata, humanMetadata } = require('./decision-metadata');
 
 const identifier = z.string().min(1).max(128).regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/);
 const createSchema = z.object({ factory_id: identifier, schema_version: z.literal('3.0'),
@@ -20,7 +21,7 @@ function parse(schema, value) {
 function status(row) {
   return { schema_version: '3.0', decision_case_id: row.id, mode: row.mode, status: row.status,
     snapshot_id: row.snapshotId, created_at: row.createdAt.toISOString(), updated_at: row.updatedAt.toISOString(),
-    recommendation_id: row.recommendation?.recommendationId ?? null, committed_schedule_id: null,
+    recommendation_id: row.recommendation?.recommendationId ?? null, committed_schedule_id: row.commit?.scheduleId ?? null,
     error_code: row.status === 'FAILED' ? row.processingErrorCode : null };
 }
 function meta(row, head) {
@@ -31,11 +32,27 @@ function meta(row, head) {
 }
 async function accessible(tx, user, id) {
   if (!z.string().uuid().safeParse(id).success) throw notFound();
-  const row = await tx.decisionCase.findUnique({ where: { id }, include: { recommendation: { select: { recommendationId: true } } } });
+  const row = await tx.decisionCase.findUnique({ where: { id }, include: { recommendation: true, humanDecision: true, commit: true } });
   if (!row) throw notFound();
   try { authorizeFactory(user, row.factoryId); }
   catch (error) { if (error.statusCode === 404) throw notFound(); throw error; }
   return row;
+}
+function caseResponse(row, head, user) {
+  const metadata = meta(row, head);
+  const human = humanMetadata(row.humanDecision);
+  const writable = ['OPERATOR', 'ENGINEER', 'ADMIN'].includes(user.role) && !metadata.stale;
+  const commands = [];
+  if (writable && row.status === 'AWAITING_APPROVAL') {
+    if (row.recommendation?.payloadJson.candidate_plans.some(p => p.validation?.verdict === 'VALID')) commands.push('APPROVE');
+    commands.push('REJECT');
+  }
+  if (writable && row.status === 'APPROVED' && row.mode === 'LIVE') commands.push('COMMIT');
+  return { success: true, data: status(row), meta: { ...metadata,
+    approved_candidate: human?.decision === 'APPROVE' ? { recommendation_id: human.recommendation_id,
+      candidate_plan_id: human.candidate_plan_id, candidate_version: human.candidate_version,
+      candidate_hash: human.candidate_hash, schedule_hash: human.schedule_hash } : null,
+    human_decision: human, available_commands: commands, commit: commitMetadata(row.commit) } };
 }
 async function createDecisionCase(db, user, rawBody, rawKey) {
   if (!['OPERATOR', 'ENGINEER', 'ADMIN'].includes(user.role)) throw new ApiError(403, 'FORBIDDEN', 'This role cannot create decision cases');
@@ -73,7 +90,7 @@ async function createDecisionCase(db, user, rawBody, rawKey) {
       requestJson: body, requestHash: hash, actorId: user.id } });
     await tx.decisionCaseEvent.create({ data: { caseId: row.id, sequence: 1, type: 'CASE_CREATED', actorId: user.id,
       payloadJson: { status: 'CREATED', revision: 1 } } });
-    const response = { success: true, data: status(row), meta: meta(row, head) };
+    const response = caseResponse(row, head, user);
     await tx.decisionCaseIdempotencyReceipt.create({ data: { factoryId: row.factoryId, actorId: user.id, key,
       requestHash: hash, caseId: row.id, responseJson: response } });
     return { body: response, location: `/api/v1/decision-cases/${row.id}`, replayed: false };
@@ -83,7 +100,7 @@ async function getDecisionCase(db, user, id) {
   return db.$transaction(async tx => {
     const row = await accessible(tx, user, id);
     const head = await tx.operationsHead.findUnique({ where: { factoryId: row.factoryId } });
-    return { success: true, data: status(row), meta: meta(row, head) };
+    return caseResponse(row, head, user);
   }, { isolationLevel: 'RepeatableRead' });
 }
 const cursor = z.string().regex(/^(0|[1-9][0-9]*)$/).transform(Number).pipe(z.number().int().max(2147483647));
@@ -106,8 +123,13 @@ async function getDecisionCaseEvents(db, user, id, rawQuery) {
   }, { isolationLevel: 'RepeatableRead' });
 }
 function safeTransition(payload) {
-  const states = z.enum(['CREATED', 'ANALYZING', 'GENERATING', 'VALIDATING', 'EXPLAINING', 'AWAITING_APPROVAL', 'FAILED']);
-  const parsed = z.object({ from_status: states, to_status: states, revision: z.number().int().positive() }).safeParse(payload);
+  const states = z.enum(['CREATED', 'ANALYZING', 'GENERATING', 'VALIDATING', 'EXPLAINING', 'AWAITING_APPROVAL', 'FAILED', 'APPROVED', 'REJECTED', 'COMMITTED']);
+  const parsed = z.object({ from_status: states, to_status: states, revision: z.number().int().positive(),
+    command: z.enum(['APPROVE', 'REJECT', 'COMMIT']).optional(), recommendation_id: identifier.optional(),
+    candidate_plan_id: identifier.nullable().optional(), candidate_version: z.number().int().positive().nullable().optional(),
+    candidate_hash: z.string().regex(/^[a-f0-9]{64}$/).nullable().optional(),
+    schedule_hash: z.string().regex(/^[a-f0-9]{64}$/).nullable().optional(),
+    plan_version: z.number().int().nonnegative().optional() }).safeParse(payload);
   return parsed.success ? parsed.data : {};
 }
-module.exports = { createDecisionCase, getDecisionCase, getDecisionCaseEvents, accessible, parse };
+module.exports = { createDecisionCase, getDecisionCase, getDecisionCaseEvents, accessible, parse, caseResponse };

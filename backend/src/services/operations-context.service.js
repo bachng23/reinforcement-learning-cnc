@@ -1,5 +1,6 @@
 const { ApiError } = require('../lib/api-error');
 const { contentHash, validatePayload } = require('./operations-contract.service');
+const { commitMetadata } = require('./decision-metadata');
 const notFound = () => new ApiError(404, 'FACTORY_NOT_FOUND', 'Factory was not found');
 const conflict = () => new ApiError(409, 'OPERATIONS_SEED_CONFLICT', 'Immutable seed content or current head differs; seed will not overwrite it');
 
@@ -51,7 +52,7 @@ async function seedOperations(db, plan, { factoryId } = {}) {
 async function readOperations(db, user, factoryId, { signal } = {}) {
   signal?.throwIfAborted();
   authorizeFactory(user, factoryId);
-  const head = await db.$transaction((tx) => tx.operationsHead.findUnique({ where: { factoryId }, include: { snapshot: true, schedule: { include: { snapshot: true } } } }), { isolationLevel: 'RepeatableRead' });
+  const head = await db.$transaction((tx) => tx.operationsHead.findUnique({ where: { factoryId }, include: { snapshot: true, schedule: { include: { snapshot: true, commit: true } } } }), { isolationLevel: 'RepeatableRead' });
   if (!head) throw notFound();
   signal?.throwIfAborted();
   const { snapshot, schedule } = head;
@@ -70,7 +71,9 @@ async function readOperations(db, user, factoryId, { signal } = {}) {
   if (schedule) {
     basis = schedule.snapshotId === snapshot.snapshotId ? payload : await checkSnapshot(schedule.snapshot);
     if (schedule.schemaVersion !== '3.0' || schedule.factoryId !== factoryId
-      || contentHash(schedule.payloadJson) !== schedule.contentHash || contentHash(basis.current_schedule) !== schedule.contentHash
+      || contentHash(schedule.payloadJson) !== schedule.contentHash
+      || (schedule.commit ? schedule.commit.scheduleHash !== schedule.contentHash || schedule.commit.snapshotId !== schedule.snapshotId
+        || schedule.commit.planVersion !== head.planVersion : contentHash(basis.current_schedule) !== schedule.contentHash)
       || schedule.payloadJson.schedule_id !== schedule.scheduleId || schedule.payloadJson.revision !== schedule.revision) throw corrupt();
   }
   const currentSchedule = schedule?.payloadJson ?? null;
@@ -90,7 +93,7 @@ async function readOperations(db, user, factoryId, { signal } = {}) {
       plan_version: head.planVersion,
       schedule: currentSchedule,
       basis_snapshot: basis,
-      commit: null,
+      commit: commitMetadata(schedule?.commit),
     },
     meta: {
       factory_id: factoryId, snapshot_id: snapshot.snapshotId, schema_version: '3.0', plan_version: head.planVersion,

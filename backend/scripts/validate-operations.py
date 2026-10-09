@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "ai_services"))
-from domain.operations.contracts import FactorySnapshot, RunDecisionCaseRequest, RecommendationPackage, DecisionTrigger, PlanningConfig, DecisionMode, DecisionCaseStatusResponse
+from domain.operations.contracts import FactorySnapshot, RunDecisionCaseRequest, RecommendationPackage, DecisionTrigger, PlanningConfig, DecisionMode, DecisionCaseStatusResponse, HumanDecisionRequest
 from pydantic import TypeAdapter
 from domain.operations.validator import validate_candidate_plan
 
@@ -29,6 +29,8 @@ def validate(value):
             if validate_candidate_plan(snapshot, candidate).verdict.value != "VALID":
                 raise ValueError("Candidate failed semantic validation")
         return recommendation.model_dump(mode="json")
+    if mode == "human-decision":
+        return HumanDecisionRequest.model_validate(value["payload"]).model_dump(mode="json")
     if mode == "case-status":
         return DecisionCaseStatusResponse.model_validate(value["payload"]).model_dump(mode="json")
     if mode == "case-request":
