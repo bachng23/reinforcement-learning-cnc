@@ -19,7 +19,9 @@
     "operations:decision-worker": "node src/decision-worker/index.js",
     "test:operations-planning": "node tests/planning/run-planning-tests.js",
     "test:operations-flow": "node tests/integration/run-integration-tests.js --operations-flow",
-    "operations:ingest": "node scripts/ingest-operations-snapshot.js"
+    "operations:ingest": "node scripts/ingest-operations-snapshot.js",
+    "test:operations-browser-e2e": "node ../scripts/run-operations-browser-e2e.js",
+    "operations:e2e-reset": "node ../scripts/reset-operations-e2e.js"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",

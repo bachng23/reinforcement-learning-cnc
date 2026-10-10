@@ -129,11 +129,15 @@ test("pending confirmation disables duplicate commands", async ({ page }, info) 
   const harness = await backendContractHarness(page);
   await createThroughOverview(page);
   harness.options.pending = true;
+  const decisionPosted = page.waitForRequest(request => request.method() === "POST" && new URL(request.url()).pathname.endsWith("/decision"));
   await page.getByRole("button", { name: "Approve", exact: true }).click();
   await page.getByRole("button", { name: "Confirm approve", exact: true }).dblclick();
   await expect(page.getByRole("dialog").getByRole("button", { name: "Submitting…" })).toBeDisabled();
-  expect(harness.writes).toHaveLength(1);
+  await decisionPosted;
+  await expect.poll(() => harness.writes.length).toBe(1);
   await capture(page, info, "pending", "Confirm approve");
+  // The command remains pending during capture, allowing duplicate POSTs to be observed.
+  expect(harness.writes).toHaveLength(1);
 });
 
 test("stale basis fails closed and requires a new case", async ({ page }, info) => {

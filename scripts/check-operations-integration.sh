@@ -56,6 +56,11 @@ stage 'Existing migration history is immutable' node scripts/check-migration-his
 stage 'Install locked backend dependencies' npm ci --include=dev --prefix backend
 stage 'Fresh migrations and upgrade from base SHA' node scripts/check-migration-paths.js
 stage 'Install locked frontend dependencies' npm ci --include=dev --prefix frontend
+if [[ "${GITHUB_ACTIONS:-}" == 'true' ]]; then
+  stage 'Install Chromium and Linux browser dependencies' node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium
+else
+  stage 'Install Chromium for browser E2E' node frontend/node_modules/@playwright/test/cli.js install chromium
+fi
 stage 'Install locked Python dependencies' uv sync --frozen --group dev --python 3.12 --project ai_services
 export OPERATIONS_PYTHON
 OPERATIONS_PYTHON="$(uv run --no-sync --project ai_services python -c 'import sys; print(sys.executable)')"
@@ -70,5 +75,7 @@ stage 'Frontend generated types' npm --prefix frontend run contracts:check
 stage 'Frontend typecheck' npm --prefix frontend run typecheck
 stage 'Frontend mock/client and UI tests' npm --prefix frontend test -- --run
 stage 'Full snapshot flow' npm --prefix backend run test:operations-flow
+stage 'Frontend browser decision workflow' npm --prefix frontend run test:browser
+stage 'Browser E2E through PostgreSQL, backend, worker and FastAPI' node scripts/run-operations-browser-e2e.js
 stage 'Frontend production build' env NODE_ENV=production npm --prefix frontend run build
 stage 'Backend production image and validator smoke check' docker build -f backend/Dockerfile -t cnc-backend:test .
