@@ -4,7 +4,12 @@ import type {
   HumanDecisionType, RecommendationPackage, Schedule,
 } from "@/types/generated/operations";
 
-export interface OperationsRequestOptions { signal?: AbortSignal }
+export interface OperationsRequestOptions {
+  signal?: AbortSignal;
+  idempotencyKey?: string;
+  requestId?: string;
+}
+export interface OperationsWriteOptions extends OperationsRequestOptions { idempotencyKey: string }
 export type OperationsCreateDecisionCaseRequest = {
   factory_id: string;
   schema_version: "3.0";
@@ -106,7 +111,12 @@ export function createOperationsApiClient({
     const response = await fetcher(`${base}${path}`, {
       method: body === undefined ? "GET" : "POST",
       credentials: "include", cache: "no-store", signal: options.signal,
-      headers: { Accept: "application/json", ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+      headers: {
+        Accept: "application/json",
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...(options.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}),
+        ...(options.requestId ? { "X-Request-Id": options.requestId } : {}),
+      },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     if (!response.ok) {

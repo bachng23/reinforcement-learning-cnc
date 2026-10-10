@@ -10,12 +10,17 @@ import { createOperationsDemoFixtures } from "@/lib/operations-api/fixtures";
 import { createMockOperationsApiClient } from "@/lib/operations-api/mock";
 import { deferred } from "@/tests/product-api-test-utils";
 
+const routerPush = vi.hoisted(() => vi.fn());
+
 vi.mock("@/components/app-shell", () => ({
   AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock("@/lib/operations-api/actor", () => ({ getOperationsActorId: vi.fn(async () => "test-operator") }));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/operations",
+  useRouter: () => ({ push: routerPush }),
 }));
 
 const factoryId = createOperationsDemoFixtures().request.factory_snapshot.factory_id;
@@ -58,6 +63,53 @@ describe("OperationsOverviewPage API integration", () => {
       "/api/v1/operations/snapshot",
       "/api/v1/schedules/current",
     ]);
+  });
+
+  it("creates a live case pinned to the displayed context and opens its recommendation", async () => {
+    const user = userEvent.setup();
+    const api = createMockOperationsApiClient();
+    const fixtures = createOperationsDemoFixtures();
+    const create = vi.spyOn(api, "createDecisionCase").mockResolvedValue(fixtures.status);
+
+    render(<OperationsOverviewPage api={api} factoryId={factoryId} apiMode="real" />);
+
+    await user.click(await screen.findByRole("button", { name: "Create live decision case" }));
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      factory_id: factoryId,
+      expected_snapshot_id: fixtures.request.factory_snapshot.snapshot_id,
+      expected_plan_version: fixtures.request.factory_snapshot.current_schedule?.revision,
+      request: expect.objectContaining({
+        mode: "LIVE",
+        trigger: expect.objectContaining({ type: "MANUAL_REPLAN" }),
+        planning_config: expect.objectContaining({ horizon_minutes: 720, candidate_limit: 3 }),
+      }),
+    }), expect.objectContaining({
+      idempotencyKey: expect.any(String),
+      requestId: expect.any(String),
+    }));
+    expect(routerPush).toHaveBeenCalledWith(
+      `/operations/recommendations?caseId=${encodeURIComponent(fixtures.status.decision_case_id)}`,
+    );
+  });
+
+  it("recovers the same logical action after a committed response is lost and the page remounts", async () => {
+    const api = createMockOperationsApiClient();
+    const fixtures = createOperationsDemoFixtures();
+    const create = vi.spyOn(api, "createDecisionCase")
+      .mockRejectedValueOnce(new TypeError("Response lost after commit"))
+      .mockResolvedValueOnce(fixtures.status);
+    const user = userEvent.setup();
+    const view = render(<OperationsOverviewPage api={api} factoryId={factoryId} apiMode="real" />);
+    await user.click(await screen.findByRole("button", { name: "Create live decision case" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("response was not confirmed");
+    const first = { body: structuredClone(create.mock.calls[0][0]), key: create.mock.calls[0][1]?.idempotencyKey };
+    view.unmount();
+    render(<OperationsOverviewPage api={api} factoryId={factoryId} apiMode="real" />);
+    await user.click(await screen.findByRole("button", { name: "Recover create outcome" }));
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[1][0]).toEqual(first.body);
+    expect(create.mock.calls[1][1]?.idempotencyKey).toEqual(first.key);
+    expect(routerPush).toHaveBeenLastCalledWith(`/operations/recommendations?caseId=${fixtures.status.decision_case_id}`);
   });
 
   it("keeps loading visible until both API reads complete", async () => {
