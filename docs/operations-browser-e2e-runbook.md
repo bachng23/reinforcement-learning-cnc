@@ -102,22 +102,19 @@ The current suite verifies:
 
 - unauthenticated Operations API access returns `401`;
 - a stale plan version cannot create a case;
-- discarding the first create response and replaying its idempotency key returns
-  the stored receipt without creating another case;
+- losing the first create response, reloading Overview, and explicitly recovering
+  reuses the stored key/body and returns the original case; no new case is created;
+- recovery is scoped to the original actor; a different signed-in actor cannot replay it;
 - a `SIMULATION_ONLY` case cannot commit;
 - a real planner failure leaves the current snapshot, plan version, and schedule
   byte-for-byte unchanged;
 - a browser reload reads the same persisted recommendation and complete event
   sequence.
 
-The base revision used when this harness was added exposes read/create and
-planning APIs through `AWAITING_APPROVAL`, but it does not expose the
-`POST /decision-cases/:id/decision` approval/commit capability or live frontend
-decision controls. Evidence records this as `not_available_on_base` when the
-endpoint returns `404`. The harness must not claim that APPROVE/COMMIT, competing
-commits, command receipt replay, actor attribution, or plan-version publication
-passed until those Backend/Frontend capabilities land. Adding that domain logic
-or its migration here would violate this integration task's scope.
+The harness now includes main's decision endpoint. Simulation approval must return
+`200`, and its commit must return `409 SIMULATION_ONLY` with no change to the case,
+head, schedules, or publications. A missing endpoint is a failure. Full LIVE
+approval/commit UI acceptance remains separate from these negative checks.
 
 ## Explicit long-lived demo schema reset
 

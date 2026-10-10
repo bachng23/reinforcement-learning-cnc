@@ -16,6 +16,8 @@ vi.mock("@/components/app-shell", () => ({
   AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock("@/lib/operations-api/actor", () => ({ getOperationsActorId: vi.fn(async () => "test-operator") }));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/operations",
   useRouter: () => ({ push: routerPush }),
@@ -82,7 +84,7 @@ describe("OperationsOverviewPage API integration", () => {
         planning_config: expect.objectContaining({ horizon_minutes: 720, candidate_limit: 3 }),
       }),
     }), expect.objectContaining({
-      idempotencyKey: expect.stringMatching(/^overview-/),
+      idempotencyKey: expect.any(String),
       requestId: expect.any(String),
     }));
     expect(routerPush).toHaveBeenCalledWith(
@@ -90,20 +92,23 @@ describe("OperationsOverviewPage API integration", () => {
     );
   });
 
-  it("replays the same logical action after a committed response is lost", async () => {
+  it("recovers the same logical action after a committed response is lost and the page remounts", async () => {
     const api = createMockOperationsApiClient();
     const fixtures = createOperationsDemoFixtures();
     const create = vi.spyOn(api, "createDecisionCase")
       .mockRejectedValueOnce(new TypeError("Response lost after commit"))
       .mockResolvedValueOnce(fixtures.status);
     const user = userEvent.setup();
-    render(<OperationsOverviewPage api={api} factoryId={factoryId} apiMode="real" />);
+    const view = render(<OperationsOverviewPage api={api} factoryId={factoryId} apiMode="real" />);
     await user.click(await screen.findByRole("button", { name: "Create live decision case" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Response lost after commit");
-    const first = structuredClone(create.mock.calls[0]);
-    await user.click(screen.getByRole("button", { name: "Create live decision case" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("response was not confirmed");
+    const first = { body: structuredClone(create.mock.calls[0][0]), key: create.mock.calls[0][1]?.idempotencyKey };
+    view.unmount();
+    render(<OperationsOverviewPage api={api} factoryId={factoryId} apiMode="real" />);
+    await user.click(await screen.findByRole("button", { name: "Recover create outcome" }));
     expect(create).toHaveBeenCalledTimes(2);
-    expect(create.mock.calls[1]).toEqual(first);
+    expect(create.mock.calls[1][0]).toEqual(first.body);
+    expect(create.mock.calls[1][1]?.idempotencyKey).toEqual(first.key);
     expect(routerPush).toHaveBeenLastCalledWith(`/operations/recommendations?caseId=${fixtures.status.decision_case_id}`);
   });
 

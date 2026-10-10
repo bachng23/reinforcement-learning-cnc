@@ -227,8 +227,11 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
     }
   });
   await page.getByTestId("create-live-decision-case").click();
-  await expect(page.getByRole("alert")).toBeVisible();
-  await page.getByTestId("create-live-decision-case").click();
+  await expect(page.getByRole("button", { name: "Recover create outcome" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId("create-live-decision-case")).toBeDisabled();
+  expect(submitted).toHaveLength(1);
+  await page.getByRole("button", { name: "Recover create outcome" }).click();
   await expect(page).toHaveURL(/\/operations\/recommendations\?caseId=/);
   expect(submitted).toHaveLength(2);
   expect(submitted[1]).toEqual(submitted[0]);
@@ -343,11 +346,6 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
     headers: { "Idempotency-Key": `sim-approve-${randomUUID()}` },
     data: { ...commandIdentity, command: "APPROVE", expected_case_revision: simulationMeta.case_revision },
   });
-  let simulationEnforcement = "blocked_by_missing_decision_endpoint";
-  let decisionWriteStatus = approve.status();
-  if (approve.status() === 404) {
-    expect(record((await json(approve)).error).code).toBe("ROUTE_NOT_FOUND");
-  } else {
     expect(approve.status()).toBe(200);
     const approved = await json(approve);
     expect(envelopeData(approved).status).toBe("APPROVED");
@@ -369,9 +367,7 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
     expect(await publicationState()).toEqual(publicationBefore);
     const afterCommit = await page.request.get(`${apiBase}/api/v1/decision-cases/${simulationCaseId}`);
     expect(await json(afterCommit)).toEqual(approved);
-    simulationEnforcement = "passed";
-    decisionWriteStatus = simulationCommit.status();
-  }
+
 
   const failure = await createCase(page.request, contextBefore, liveRequest("LIVE", {
     planning_config: {
@@ -412,10 +408,10 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
       unauthorized_access: "passed",
       stale_case_creation: "passed",
       lost_create_response_receipt_replay: "passed",
-      simulation_commit_rejected: simulationEnforcement,
+      simulation_commit_rejected: "passed",
       planner_failure_preserved_schedule: "passed",
       reload_preserved_recommendation: "passed",
-      decision_write_http_status: decisionWriteStatus,
+      decision_write_http_status: simulationCommit.status(),
       full_approval_commit_flow: "not_executed",
       stale_decision_command: "not_executed",
       competing_commits: "not_executed",

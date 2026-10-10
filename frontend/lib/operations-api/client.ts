@@ -9,6 +9,7 @@ export interface OperationsRequestOptions {
   idempotencyKey?: string;
   requestId?: string;
 }
+export interface OperationsWriteOptions extends OperationsRequestOptions { idempotencyKey: string }
 export type OperationsCreateDecisionCaseRequest = {
   factory_id: string;
   schema_version: "3.0";
