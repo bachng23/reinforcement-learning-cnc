@@ -1,0 +1,194 @@
+{
+  "requests": {
+    "APPROVE": {
+      "schema_version": "3.0",
+      "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "recommendation_id": "recommendation-1",
+      "expected_snapshot_id": "snapshot-1",
+      "expected_case_revision": 6,
+      "expected_plan_version": 0,
+      "command": "APPROVE",
+      "candidate_plan_id": "candidate-1",
+      "candidate_version": 17
+    },
+    "REJECT": {
+      "schema_version": "3.0",
+      "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "recommendation_id": "recommendation-1",
+      "expected_snapshot_id": "snapshot-1",
+      "expected_case_revision": 6,
+      "expected_plan_version": 0,
+      "command": "REJECT",
+      "note": "Maintenance conflict"
+    },
+    "COMMIT": {
+      "schema_version": "3.0",
+      "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "recommendation_id": "recommendation-1",
+      "expected_snapshot_id": "snapshot-1",
+      "expected_case_revision": 7,
+      "expected_plan_version": 0,
+      "command": "COMMIT",
+      "candidate_plan_id": "candidate-1",
+      "candidate_version": 17
+    }
+  },
+  "responses": {
+    "APPROVE": {
+      "success": true,
+      "data": {
+        "schema_version": "3.0",
+        "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "mode": "LIVE",
+        "status": "APPROVED",
+        "snapshot_id": "snapshot-1",
+        "created_at": "2026-10-09T04:00:00.000Z",
+        "updated_at": "2026-10-09T04:00:00.000Z",
+        "recommendation_id": "recommendation-1",
+        "committed_schedule_id": null,
+        "error_code": null
+      },
+      "meta": {
+        "factory_id": "factory-1",
+        "base_plan_version": 0,
+        "case_revision": 7,
+        "processing": {
+          "status": "SUCCEEDED",
+          "attempt": 1,
+          "error_code": null
+        },
+        "current_context": {
+          "snapshot_id": "snapshot-1",
+          "plan_version": 0
+        },
+        "stale": false,
+        "approved_candidate": {
+          "recommendation_id": "recommendation-1",
+          "candidate_plan_id": "candidate-1",
+          "candidate_version": 17,
+          "candidate_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "human_decision": {
+          "decision": "APPROVE",
+          "recommendation_id": "recommendation-1",
+          "candidate_plan_id": "candidate-1",
+          "candidate_version": 17,
+          "candidate_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "note": null,
+          "actor_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "decided_at": "2026-10-09T04:00:00.000Z"
+        },
+        "available_commands": [
+          "COMMIT"
+        ],
+        "commit": null
+      }
+    },
+    "REJECT": {
+      "success": true,
+      "data": {
+        "schema_version": "3.0",
+        "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "mode": "LIVE",
+        "status": "REJECTED",
+        "snapshot_id": "snapshot-1",
+        "created_at": "2026-10-09T04:00:00.000Z",
+        "updated_at": "2026-10-09T04:00:00.000Z",
+        "recommendation_id": "recommendation-1",
+        "committed_schedule_id": null,
+        "error_code": null
+      },
+      "meta": {
+        "factory_id": "factory-1",
+        "base_plan_version": 0,
+        "case_revision": 7,
+        "processing": {
+          "status": "SUCCEEDED",
+          "attempt": 1,
+          "error_code": null
+        },
+        "current_context": {
+          "snapshot_id": "snapshot-1",
+          "plan_version": 0
+        },
+        "stale": false,
+        "approved_candidate": null,
+        "human_decision": {
+          "decision": "REJECT",
+          "recommendation_id": "recommendation-1",
+          "candidate_plan_id": null,
+          "candidate_version": null,
+          "candidate_hash": null,
+          "schedule_hash": null,
+          "note": "Maintenance conflict",
+          "actor_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "decided_at": "2026-10-09T04:00:00.000Z"
+        },
+        "available_commands": [],
+        "commit": null
+      }
+    },
+    "COMMIT": {
+      "success": true,
+      "data": {
+        "schema_version": "3.0",
+        "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "mode": "LIVE",
+        "status": "COMMITTED",
+        "snapshot_id": "snapshot-1",
+        "created_at": "2026-10-09T04:00:00.000Z",
+        "updated_at": "2026-10-09T04:00:00.000Z",
+        "recommendation_id": "recommendation-1",
+        "committed_schedule_id": "schedule-1",
+        "error_code": null
+      },
+      "meta": {
+        "factory_id": "factory-1",
+        "base_plan_version": 0,
+        "case_revision": 8,
+        "processing": {
+          "status": "SUCCEEDED",
+          "attempt": 1,
+          "error_code": null
+        },
+        "current_context": {
+          "snapshot_id": "snapshot-1",
+          "plan_version": 1
+        },
+        "stale": true,
+        "approved_candidate": {
+          "recommendation_id": "recommendation-1",
+          "candidate_plan_id": "candidate-1",
+          "candidate_version": 17,
+          "candidate_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "human_decision": {
+          "decision": "APPROVE",
+          "recommendation_id": "recommendation-1",
+          "candidate_plan_id": "candidate-1",
+          "candidate_version": 17,
+          "candidate_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "note": null,
+          "actor_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "decided_at": "2026-10-09T04:00:00.000Z"
+        },
+        "available_commands": [],
+        "commit": {
+          "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "factory_id": "factory-1",
+          "snapshot_id": "snapshot-1",
+          "schedule_id": "schedule-1",
+          "schedule_revision": 9,
+          "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "plan_version": 1,
+          "actor_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "committed_at": "2026-10-09T04:00:00.000Z"
+        }
+      }
+    }
+  }
+}

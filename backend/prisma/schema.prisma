@@ -13,6 +13,7 @@ model FactorySnapshot {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   schedules OperationSchedule[]
   heads OperationsHead[]
+
   decisionCases DecisionCase[]
 
   @@id([factoryId, snapshotId])
@@ -30,6 +31,7 @@ model OperationSchedule {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   snapshot FactorySnapshot @relation(fields: [factoryId, snapshotId], references: [factoryId, snapshotId], onDelete: Restrict)
   heads OperationsHead[]
+  commit DecisionCommit?
 
   @@id([factoryId, scheduleId, revision])
   @@unique([factoryId, snapshotId, scheduleId, revision], map: "operation_schedules_snapshot_schedule_key")
@@ -75,12 +77,48 @@ model DecisionCase {
   leaseOwnerId String? @map("lease_owner_id") @db.Uuid
   leaseExpiresAt DateTime? @map("lease_expires_at") @db.Timestamptz(6)
   recommendation DecisionRecommendationArtifact?
+  humanDecision DecisionHumanRecord?
+  commit DecisionCommit?
   snapshot FactorySnapshot @relation(fields: [factoryId, snapshotId], references: [factoryId, snapshotId], onDelete: Restrict, onUpdate: Restrict)
   events DecisionCaseEvent[]
   receipts DecisionCaseIdempotencyReceipt[]
   @@index([factoryId, createdAt])
   @@unique([id, snapshotId])
   @@map("decision_cases")
+}
+
+model DecisionHumanRecord {
+  caseId String @id @map("case_id") @db.Uuid
+  decision String
+  recommendationId String @map("recommendation_id")
+  candidateId String? @map("candidate_id")
+  candidateVersion Int? @map("candidate_version")
+  candidateHash String? @map("candidate_hash") @db.Char(64)
+  scheduleHash String? @map("schedule_hash") @db.Char(64)
+  note String?
+  actorId String @map("actor_id") @db.Uuid
+  decidedAt DateTime @default(now()) @map("decided_at") @db.Timestamptz(6)
+  case DecisionCase @relation(fields: [caseId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  recommendation DecisionRecommendationArtifact @relation(fields: [recommendationId], references: [recommendationId], onDelete: NoAction, onUpdate: NoAction)
+  @@map("decision_human_records")
+}
+
+model DecisionCommit {
+  caseId String @id @map("case_id") @db.Uuid
+  factoryId String @map("factory_id")
+  snapshotId String @map("snapshot_id")
+  scheduleId String @map("schedule_id")
+  scheduleRevision Int @map("schedule_revision")
+  scheduleHash String @map("schedule_hash") @db.Char(64)
+  planVersion Int @map("plan_version")
+  actorId String @map("actor_id") @db.Uuid
+  committedAt DateTime @default(now()) @map("committed_at") @db.Timestamptz(6)
+  case DecisionCase @relation(fields: [caseId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  schedule OperationSchedule @relation(fields: [factoryId, snapshotId, scheduleId, scheduleRevision], references: [factoryId, snapshotId, scheduleId, revision], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([factoryId, scheduleId, scheduleRevision])
+  @@unique([factoryId, snapshotId, scheduleId, scheduleRevision])
+  @@unique([factoryId, planVersion])
+  @@map("decision_commits")
 }
 
 model DecisionCaseEvent {
@@ -98,6 +136,7 @@ model DecisionCaseEvent {
 }
 
 model DecisionRecommendationArtifact {
+  decisions DecisionHumanRecord[]
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   caseId String @unique @map("case_id") @db.Uuid
   recommendationId String @unique @map("recommendation_id")
