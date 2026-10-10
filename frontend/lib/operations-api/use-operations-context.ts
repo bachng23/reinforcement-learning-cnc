@@ -110,5 +110,13 @@ export function useOperationsContext({
     setRequestRevision((value) => value + 1);
   }, []);
 
+  useEffect(() => {
+    const changed = (event: Event) => {
+      if ((event as CustomEvent<{ factoryId: string }>).detail.factoryId === factoryId) retry();
+    };
+    window.addEventListener("operations-context-changed", changed);
+    return () => window.removeEventListener("operations-context-changed", changed);
+  }, [factoryId, retry]);
+
   return { state, retry };
 }

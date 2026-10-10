@@ -75,6 +75,7 @@ stage 'Frontend generated types' npm --prefix frontend run contracts:check
 stage 'Frontend typecheck' npm --prefix frontend run typecheck
 stage 'Frontend mock/client and UI tests' npm --prefix frontend test -- --run
 stage 'Full snapshot flow' npm --prefix backend run test:operations-flow
+stage 'Frontend browser decision workflow' npm --prefix frontend run test:browser
 stage 'Browser E2E through PostgreSQL, backend, worker and FastAPI' node scripts/run-operations-browser-e2e.js
 stage 'Frontend production build' env NODE_ENV=production npm --prefix frontend run build
 stage 'Backend production image and validator smoke check' docker build -f backend/Dockerfile -t cnc-backend:test .

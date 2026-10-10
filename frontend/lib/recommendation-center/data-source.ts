@@ -21,7 +21,7 @@ export type RecommendationCenterPreviewData = {
 };
 
 type RecommendationCenterRealBase = {
-  source: "real";
+  source: "real" | "mock-workflow";
   caseStatus: DecisionCaseStatusResponse;
   caseMeta?: OperationsDecisionCaseMeta;
 };
@@ -47,6 +47,7 @@ export type RecommendationCenterData =
 
 export interface RecommendationCenterDataSource {
   readonly mode: "mock" | "real";
+  readonly client?: OperationsApiClient;
   readonly defaultCaseId?: string;
   read(caseId: string, options?: OperationsRequestOptions): Promise<RecommendationCenterData>;
 }
@@ -103,15 +104,21 @@ function missingMockCase(caseId: string) {
   });
 }
 
-export function createMockRecommendationCenterDataSource(): RecommendationCenterDataSource {
+export function createMockRecommendationCenterDataSource(api?: OperationsApiClient): RecommendationCenterDataSource {
   const initialFixture = getOperationsFixture();
   const defaultCaseId = initialFixture.decision_cases[0]?.decision_case_id;
 
   return {
     mode: "mock",
+    client: api,
     defaultCaseId,
     async read(caseId, options) {
       options?.signal?.throwIfAborted();
+      if (api && caseId !== defaultCaseId) {
+        const data = await createRealRecommendationCenterDataSource(api).read(caseId, options);
+        if (data.source === "mock") throw new Error("Unexpected preview source");
+        return { ...data, source: "mock-workflow" };
+      }
       const fixture = getOperationsFixture();
       const caseStatus = fixture.decision_cases.find((item) => item.decision_case_id === caseId);
       if (!caseStatus) throw missingMockCase(caseId);
@@ -145,6 +152,7 @@ export function createRealRecommendationCenterDataSource(
 ): RecommendationCenterDataSource {
   return {
     mode: "real",
+    client: api,
     async read(caseId, options) {
       const { caseStatus, meta: caseMeta } = await api.getDecisionCase(caseId, options);
       options?.signal?.throwIfAborted();
@@ -180,11 +188,30 @@ export function createRealRecommendationCenterDataSource(
       options?.signal?.throwIfAborted();
 
       const { recommendation, snapshot } = artifact;
+      const approved = caseMeta?.approved_candidate;
+      const approvedPlan = recommendation.candidate_plans.find(candidate => candidate.candidate_plan_id === approved?.candidate_plan_id);
       if (
         recommendation.decision_case_id !== caseStatus.decision_case_id
         || recommendation.snapshot_id !== caseStatus.snapshot_id
         || snapshot.snapshot_id !== caseStatus.snapshot_id
         || recommendation.recommendation_id !== caseStatus.recommendation_id
+        || (caseMeta && caseMeta.factory_id !== snapshot.factory_id)
+        || (caseMeta?.approved_candidate && (
+          caseMeta.approved_candidate.recommendation_id !== recommendation.recommendation_id
+          || !recommendation.candidate_plans.some(candidate =>
+            candidate.candidate_plan_id === caseMeta.approved_candidate?.candidate_plan_id
+            && candidate.plan_version === caseMeta.approved_candidate.candidate_version)
+        ))
+        || (caseMeta?.commit && (
+          caseMeta.commit.decision_case_id !== caseStatus.decision_case_id
+          || caseMeta.commit.snapshot_id !== snapshot.snapshot_id
+          || caseMeta.commit.factory_id !== snapshot.factory_id
+          || caseMeta.commit.schedule_id !== caseStatus.committed_schedule_id
+          || caseMeta.commit.schedule_id !== approvedPlan?.schedule.schedule_id
+          || caseMeta.commit.schedule_revision !== approvedPlan?.schedule.revision
+          || caseMeta.commit.schedule_hash !== approved?.schedule_hash
+        ))
+        || (caseStatus.status === "COMMITTED" && !caseMeta?.commit)
       ) {
         return realWithoutArtifact(caseStatus, caseMeta, "mismatch", "The recommendation artifact identifiers do not match the authoritative case and basis snapshot.");
       }

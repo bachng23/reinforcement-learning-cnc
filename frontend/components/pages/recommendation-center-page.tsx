@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { DecisionControls } from "@/components/operations/decision-controls";
+import { LiveDecisionControls, PublishedDecisionSchedule } from "@/components/operations/live-decision-controls";
 import { OperationsPanel, OperationsShell, OperationsStatus } from "@/components/operations/operations-shell";
 import { isSelectableRecommendationCandidate, RecommendationPackageView } from "@/components/operations/recommendation-package-view";
 import { AsyncState } from "@/components/research/async-state";
@@ -57,6 +58,7 @@ function PreviewRecommendation({ data }: { data: RecommendationCenterPreviewData
             recommendationId={recommendation.recommendation_id}
             snapshotId={recommendation.snapshot_id}
             selectedCandidate={selected}
+            allowModify={false}
             modifiedSchedule={data.modifiedSchedule}
             onDecision={setPreview}
           />
@@ -64,7 +66,7 @@ function PreviewRecommendation({ data }: { data: RecommendationCenterPreviewData
       ) : null}
 
       {preview ? (
-        <OperationsPanel title="Fixture payload preview" description="This request has not been sent. Real mode does not expose these controls until a write contract is available.">
+        <OperationsPanel title="Fixture payload preview" description="This comparison fixture does not submit requests. Create a case from Overview to use the complete mock or live workflow.">
           <div className="p-4 sm:p-5">
             <p role="status" className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-700"><FileJson2 className="h-4 w-4" />{preview.decision} request ready for adapter integration</p>
             <pre className="max-h-96 overflow-auto rounded-md bg-stone-950 p-4 text-xs text-stone-100">{JSON.stringify(preview, null, 2)}</pre>
@@ -117,17 +119,21 @@ function RealRecommendation({
   data,
   polling,
   onRetry,
+  api,
+  refreshing,
 }: {
   data: RecommendationCenterStatusData;
   polling: boolean;
   onRetry: () => void;
+  api: OperationsApiClient;
+  refreshing: boolean;
 }) {
   const decisionCase = data.caseStatus;
   const processing = data.caseMeta?.processing;
   const safeErrorCode = decisionCase.error_code ?? processing?.error_code;
   const safeError = safePlanningError(decisionCase.status, safeErrorCode);
   const [selectedCandidateId, setSelectedCandidateId] = useState(
-    data.artifactState === "ready" ? data.recommendation.recommended_plan_id : "",
+    data.artifactState === "ready" ? data.caseMeta?.approved_candidate?.candidate_plan_id ?? data.recommendation.recommended_plan_id : "",
   );
   const effectiveCandidateId = data.artifactState === "ready"
     && data.recommendation.candidate_plans.some((candidate) => candidate.candidate_plan_id === selectedCandidateId)
@@ -149,6 +155,8 @@ function RealRecommendation({
           <div><p className="text-xs text-[var(--color-ash-gray)]">Safe error</p><p className="mt-1 text-sm font-semibold">{safeErrorCode ? safeError.title : "None reported"}</p>{safeErrorCode ? <code className="mt-1 block break-all text-[11px] text-[var(--color-ash-gray)]">{safeErrorCode}</code> : null}</div>
         </div>
       </OperationsPanel>
+
+      {data.caseMeta?.stale && decisionCase.status !== "COMMITTED" ? <AsyncState kind="error" compact title="Case basis is stale" description="The factory context has changed. This case cannot approve or publish against the new basis. Create a new case from the latest Overview context." action={<Link href="/operations" className="min-h-10 rounded-md border bg-white px-4 py-2 text-sm font-semibold">Create a new case</Link>} /> : null}
 
       {polling ? (
         <AsyncState
@@ -197,9 +205,8 @@ function RealRecommendation({
         />
       ) : null}
 
-      <div role="note" className="rounded-md border border-dashed border-[var(--color-stone-border)] bg-white p-4 text-sm text-[var(--color-ash-gray)]">
-        Live mode reads the immutable basis snapshot returned with the recommendation artifact. Approval, modify and reject controls remain disabled in this task.
-      </div>
+      {data.artifactState === "ready" ? <LiveDecisionControls api={api} data={data} selectedCandidateId={effectiveCandidateId} refreshing={refreshing} onRefresh={onRetry} /> : null}
+      {data.artifactState === "ready" && decisionCase.status === "COMMITTED" && data.caseMeta?.commit ? <PublishedDecisionSchedule api={api} commit={data.caseMeta.commit} /> : null}
     </>
   );
 }
@@ -216,13 +223,14 @@ export function RecommendationCenterPage({
   apiMode?: OperationsApiMode;
 } = {}) {
   const configuredMode = dataSource?.mode ?? apiMode ?? getOperationsApiMode();
+  const client = useMemo(() => api ?? dataSource?.client ?? getOperationsApiClient(), [api, dataSource]);
   const source = useMemo(() => {
     if (dataSource) return dataSource;
-    if (configuredMode === "mock") return createMockRecommendationCenterDataSource();
-    return createRealRecommendationCenterDataSource(api ?? getOperationsApiClient());
-  }, [api, configuredMode, dataSource]);
+    if (configuredMode === "mock") return createMockRecommendationCenterDataSource(client);
+    return createRealRecommendationCenterDataSource(client);
+  }, [client, configuredMode, dataSource]);
   const selectedCaseId = caseId ?? getRecommendationCenterCaseId();
-  const { state, retry, polling } = useRecommendationCenter({ dataSource: source, caseId: selectedCaseId });
+  const { state, retry, refresh, polling, refreshing } = useRecommendationCenter({ dataSource: source, caseId: selectedCaseId });
 
   return (
     <OperationsShell
@@ -231,12 +239,12 @@ export function RecommendationCenterPage({
       dataSource={source.mode === "real" ? "live" : "fixture"}
       dataSourceMessage={source.mode === "real"
         ? "Live Operations API mode. Status and immutable recommendation artifacts are rendered exactly as returned; fixture fallback is disabled."
-        : "Preview mode uses the canonical recommendation fixture. Decision controls build a payload preview and do not submit it."}
+        : "Preview mode uses canonical fixtures. Created cases use the mock workflow and do not write to the backend."}
       actions={state.kind === "missing-case-id" ? undefined : (
         <button
           type="button"
-          onClick={retry}
-          disabled={state.kind === "loading"}
+          onClick={refresh}
+          disabled={state.kind === "loading" || refreshing}
           className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[var(--color-stone-border)] bg-white px-4 text-sm font-medium disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${state.kind === "loading" || polling ? "animate-spin" : ""}`} />
@@ -252,7 +260,7 @@ export function RecommendationCenterPage({
       {state.kind === "unavailable" ? <AsyncState kind="empty" title="Recommendation service unavailable" description={state.message} onRetry={retry} retryLabel="Retry case" /> : null}
       {state.kind === "network-error" || state.kind === "error" ? <AsyncState kind="error" title="Recommendation data could not be loaded" description={state.message} onRetry={retry} /> : null}
       {state.kind === "ready" && state.data.source === "mock" ? <PreviewRecommendation key={state.data.recommendation.recommendation_id} data={state.data} /> : null}
-      {state.kind === "ready" && state.data.source === "real" ? <RealRecommendation data={state.data} polling={polling} onRetry={retry} /> : null}
+      {state.kind === "ready" && state.data.source !== "mock" ? <RealRecommendation key={state.data.caseStatus.decision_case_id} api={client} data={state.data} polling={polling} refreshing={refreshing} onRetry={refresh} /> : null}
     </OperationsShell>
   );
 }

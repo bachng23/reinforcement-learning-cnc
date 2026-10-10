@@ -113,8 +113,11 @@ The current suite verifies:
 
 The harness now includes main's decision endpoint. Simulation approval must return
 `200`, and its commit must return `409 SIMULATION_ONLY` with no change to the case,
-head, schedules, or publications. A missing endpoint is a failure. Full LIVE
-approval/commit UI acceptance remains separate from these negative checks.
+head, schedules, or publications. A missing endpoint is a failure. The LIVE UI also approves and commits the original case. Each response is dropped
+after the backend succeeds, then recovered after reload with the same key/body.
+Approval leaves the schedule unchanged; commit publishes the exact approved
+schedule once and advances the plan version by one. Reload never sends a POST.
+The committed actor is checked against the authenticated creator.
 
 ## Explicit long-lived demo schema reset
 

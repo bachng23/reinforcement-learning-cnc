@@ -1,15 +1,11 @@
 "use client";
 
-import { CalendarClock, ClipboardList, Play, RefreshCw, UserRoundCheck } from "lucide-react";
+import { CalendarClock, ClipboardList, RefreshCw, UserRoundCheck } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { OperationsApiError, type OperationsCreateDecisionCaseRequest } from "@/lib/operations-api/client";
-
-import { useOperationsAction } from "@/lib/operations-api/use-operations-action";
-import { getOperationsActorId } from "@/lib/operations-api/actor";
 
 import { HealthAlertPanel } from "@/components/operations/health-alert-panel";
+import { CreateDecisionCase } from "@/components/operations/create-decision-case";
 import { MachineStatusGrid } from "@/components/operations/machine-status-grid";
 import { OperationsPanel, OperationsShell, OperationsStatus } from "@/components/operations/operations-shell";
 import { AsyncState } from "@/components/research/async-state";
@@ -34,50 +30,7 @@ function ResourceCount({ count, label, field }: { count: number; label: string; 
   );
 }
 
-function CreateDecisionCasePanel({ api, data, onRefresh }: { api: OperationsApiClient; data: OperationsContextData; onRefresh: () => void }) {
-  const router = useRouter();
-  const context = data.snapshotResponse;
-  const action = useOperationsAction<OperationsCreateDecisionCaseRequest, Awaited<ReturnType<OperationsApiClient["createDecisionCase"]>>>({
-    scope: `real:create:${context.factory_id}`,
-    getActorId: getOperationsActorId,
-    send: async (body, options) => {
-      const response = await api.createDecisionCase(body, { ...options, requestId: options.idempotencyKey });
-      if (!response.decision_case_id || response.snapshot_id !== body.expected_snapshot_id) throw new OperationsApiError(502, null);
-      return response;
-    },
-    onAccepted: response => {
-      action.acknowledge();
-      router.push(`/operations/recommendations?caseId=${encodeURIComponent(response.decision_case_id)}`);
-    },
-  });
-  const blocked = action.busy || action.hasUnresolvedAction || action.state.kind === "conflict";
-  return (
-    <OperationsPanel title="Plan from this snapshot" description="Create a LIVE Decision Case pinned to the snapshot and plan version displayed above.">
-      <div className="space-y-3 p-4 sm:p-5">
-        <p className="text-sm">Request planning from the backend using this snapshot.</p>
-        <p className="break-all font-mono text-[11px]">{context.snapshot_id} · plan v{context.plan_version}</p>
-        {action.state.kind !== "idle" ? <p role={action.busy ? "status" : "alert"} className="text-sm">{action.state.message}</p> : null}
-        <div className="flex flex-wrap gap-2">
-          <button type="button" data-testid="create-live-decision-case" disabled={blocked}
-            onClick={() => action.start({ schema_version: "3.0", factory_id: context.factory_id,
-              expected_snapshot_id: context.snapshot_id, expected_plan_version: context.plan_version,
-              request: { mode: "LIVE", trigger: { type: "MANUAL_REPLAN", reason: "Operations Overview manual planning request" },
-                planning_config: { horizon_minutes: 720, candidate_limit: 3, solver_timeout_seconds: 30,
-                  simulation_runs: 100, base_seed: 20260922,
-                  allowed_strategy_ids: ["production-priority", "balanced", "reliability-priority"] } } })}
-            className="inline-flex min-h-10 items-center gap-2 rounded-md bg-[var(--color-slate-text)] px-4 text-sm font-medium text-white disabled:opacity-60">
-            <Play className="h-4 w-4" aria-hidden="true" />{action.busy ? "Creating case..." : "Create live decision case"}
-          </button>
-          {action.state.kind === "recoverable" || action.state.kind === "unauthorized" ? <button type="button" disabled={action.busy} onClick={action.recover} className="min-h-10 rounded-md border px-4 text-sm">Recover create outcome</button> : null}
-          {action.state.kind === "conflict" ? <button type="button" onClick={() => { action.acknowledge(); onRefresh(); }} className="min-h-10 rounded-md border px-4 text-sm">Refresh context and review</button> : null}
-          {action.state.kind === "unauthorized" ? <Link href="/login" className="text-sm underline">Sign in with decision permission</Link> : null}
-        </div>
-      </div>
-    </OperationsPanel>
-  );
-}
-
-function OperationsOverviewContent({ data, api, live, onRefresh }: { data: OperationsContextData; api: OperationsApiClient; live: boolean; onRefresh: () => void }) {
+function OperationsOverviewContent({ data }: { data: OperationsContextData }) {
   const snapshot = data.snapshotResponse.snapshot;
   const schedule = data.scheduleResponse.schedule;
   const machines = snapshot.machines;
@@ -103,8 +56,6 @@ function OperationsOverviewContent({ data, api, live, onRefresh }: { data: Opera
         <ResourceCount count={jobs.length} label="Jobs" field="FactorySnapshot.jobs" />
         <ResourceCount count={technicians.length} label="Technicians" field="FactorySnapshot.technicians" />
       </section>
-
-      {live ? <CreateDecisionCasePanel api={api} data={data} onRefresh={onRefresh} /> : null}
 
       {!schedule ? <AsyncState kind="empty" compact title="No current schedule" description="The snapshot is available, but the Current Schedule API returned no committed schedule." /> : null}
 
@@ -161,7 +112,7 @@ export function OperationsOverviewPage({ api, factoryId, apiMode }: {
       {state.kind === "unauthorized" ? <AsyncState kind="error" title="Operations access required" description={state.message} action={<Link href="/login" className="inline-flex min-h-10 items-center rounded-md border border-[var(--color-stone-border)] bg-white px-4 text-sm font-medium">Sign in</Link>} /> : null}
       {state.kind === "unavailable" ? <AsyncState kind="empty" title="Operations snapshot unavailable" description={state.message} onRetry={retry} retryLabel="Retry snapshot" /> : null}
       {state.kind === "error" || state.kind === "network-error" || state.kind === "mismatch" ? <AsyncState kind="error" title="Operations data could not be loaded" description={state.message} onRetry={retry} /> : null}
-      {state.kind === "ready" && !hasNoResources ? <OperationsOverviewContent data={state.data} api={client} live={selectedMode === "real"} onRefresh={retry} /> : null}
+      {state.kind === "ready" && !hasNoResources ? <><CreateDecisionCase api={client} data={state.data} mode={selectedMode} onRefresh={retry} /><OperationsOverviewContent data={state.data} /></> : null}
     </OperationsShell>
   );
 }

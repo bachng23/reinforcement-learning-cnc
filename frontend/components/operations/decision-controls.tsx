@@ -12,12 +12,13 @@ export interface DecisionControlsProps {
   selectedCandidate: CandidatePlan;
   modifiedSchedule?: Schedule;
   busy?: boolean;
+  allowModify?: boolean;
   onDecision: (request: HumanDecisionRequest) => void | Promise<void>;
 }
 
 type Choice = "APPROVE" | "MODIFY" | "REJECT";
 
-export function DecisionControls({ decisionCaseId, recommendationId, snapshotId, selectedCandidate, modifiedSchedule, busy = false, onDecision }: DecisionControlsProps) {
+export function DecisionControls({ decisionCaseId, recommendationId, snapshotId, selectedCandidate, modifiedSchedule, busy = false, allowModify = true, onDecision }: DecisionControlsProps) {
   const [choice, setChoice] = useState<Choice | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
@@ -47,9 +48,10 @@ export function DecisionControls({ decisionCaseId, recommendationId, snapshotId,
       <p className="text-sm text-[var(--color-ash-gray)]">Controls build a contract-shaped <code>HumanDecisionRequest</code>. In fixture mode the payload is previewed only.</p>
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => { setChoice("APPROVE"); setError(""); }} className="inline-flex items-center gap-2 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white"><Check className="h-4 w-4" />Approve</button>
-        <button type="button" onClick={() => { setChoice("MODIFY"); setError(""); }} className="inline-flex items-center gap-2 rounded-md border border-violet-300 bg-white px-4 py-2 text-sm font-semibold text-violet-700"><PenLine className="h-4 w-4" />Modify</button>
+        <button type="button" disabled={!allowModify} title={!allowModify ? "Backend MODIFY and revalidation are not available." : undefined} onClick={() => { setChoice("MODIFY"); setError(""); }} className="inline-flex items-center gap-2 rounded-md border border-violet-300 bg-white px-4 py-2 text-sm font-semibold text-violet-700 disabled:opacity-50"><PenLine className="h-4 w-4" />Modify</button>
         <button type="button" onClick={() => { setChoice("REJECT"); setError(""); }} className="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700"><X className="h-4 w-4" />Reject</button>
       </div>
+      {!allowModify ? <p className="mt-3 text-xs text-[var(--color-ash-gray)]">Modify is unavailable: the backend does not provide modification and revalidation commands.</p> : null}
       {choice ? <div className="mt-4 rounded-md border border-[var(--color-stone-border)] bg-stone-50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-sm">Confirm {choice.toLowerCase()}</strong><span className="font-mono text-xs text-[var(--color-ash-gray)]">{selectedCandidate.candidate_plan_id} · expected v{selectedCandidate.plan_version}</span></div>
         <label htmlFor="decision-note" className="mt-3 block text-xs font-semibold">Decision note {choice === "REJECT" ? "(required)" : "(optional)"}</label>

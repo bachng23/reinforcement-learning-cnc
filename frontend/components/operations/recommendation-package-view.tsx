@@ -68,7 +68,7 @@ export function isSelectableRecommendationCandidate(
   return candidateRejectionReason(candidate, recommendation, snapshot) === undefined;
 }
 
-function packageFailure(
+export function recommendationPackageFailure(
   recommendation: RecommendationPackage,
   snapshot: FactorySnapshot,
 ): string | undefined {
@@ -101,7 +101,7 @@ export function RecommendationPackageView({
   selectedCandidateId,
   onSelectCandidate,
 }: RecommendationPackageViewProps) {
-  const failure = packageFailure(recommendation, snapshot);
+  const failure = recommendationPackageFailure(recommendation, snapshot);
   if (failure) {
     return (
       <AsyncState

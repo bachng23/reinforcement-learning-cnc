@@ -343,7 +343,7 @@ async function runOnce({ baseUrl, sha, run, artifactRoot, journal, operationsPyt
     });
     await waitForHttp(`${webUrl}/api/health`, frontend, 'Frontend');
 
-    await command(process.execPath, [playwright, 'test', '--config', 'playwright.config.ts'], {
+    await command(process.execPath, [playwright, 'test', '--config', 'playwright.e2e.config.ts'], {
       cwd: frontendRoot,
       env: {
         ...process.env,

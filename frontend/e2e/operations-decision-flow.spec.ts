@@ -14,7 +14,7 @@ const evidenceFile = required("OPERATIONS_E2E_EVIDENCE_FILE");
 type JsonObject = Record<string, unknown>;
 
 // Read-only assertions against the harness-owned schema, never a dev DB.
-async function databaseQuery(sql: string): Promise<unknown> {
+async function databaseQuery(sql: string, ...parameters: unknown[]): Promise<unknown> {
   const url = new URL(required("OPERATIONS_E2E_DATABASE_URL"));
   if (!/_(test|ci)$/.test(url.pathname) || !/^product_api_it_browser_/.test(url.searchParams.get("schema") || "")) {
     throw new Error("Database assertions require a harness-owned test schema");
@@ -22,7 +22,7 @@ async function databaseQuery(sql: string): Promise<unknown> {
   const backendRequire = createRequire(path.resolve("../backend/package.json"));
   const { PrismaClient } = backendRequire("@prisma/client");
   const db = new PrismaClient({ datasources: { db: { url: url.toString() } } });
-  try { return await db.$queryRawUnsafe(sql); }
+  try { return await db.$queryRawUnsafe(sql, ...parameters); }
   finally { await db.$disconnect(); }
 }
 
@@ -226,10 +226,11 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
       await route.fulfill({ response });
     }
   });
-  await page.getByTestId("create-live-decision-case").click();
+  await page.getByLabel("Planning reason").fill("Browser E2E planning request");
+  await page.getByRole("button", { name: "Create case", exact: true }).click();
   await expect(page.getByRole("button", { name: "Recover create outcome" })).toBeVisible();
   await page.reload();
-  await expect(page.getByTestId("create-live-decision-case")).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Create case", exact: true })).toBeDisabled();
   expect(submitted).toHaveLength(1);
   await page.getByRole("button", { name: "Recover create outcome" }).click();
   await expect(page).toHaveURL(/\/operations\/recommendations\?caseId=/);
@@ -272,19 +273,21 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
 
   const persistedCase = await waitForCase(page.request, caseId!, ["AWAITING_APPROVAL"]);
   const actorId = string(record(record(events[0]).actor).id, "case actor id");
+  const storedRequestRows = array(await databaseQuery('SELECT request_json FROM decision_cases WHERE id = $1::uuid', caseId));
+  const storedRequest = record(record(storedRequestRows[0]).request_json);
+  const storedCaseRequest = record(storedRequest.request);
   const replayRequest = {
     schema_version: "3.0",
     decision_case_id: caseId,
     mode: "LIVE",
     factory_snapshot: snapshot,
     trigger: {
-      type: "MANUAL_REPLAN",
+      ...record(storedCaseRequest.trigger),
       event_id: caseId,
       occurred_at: persistedCase.created_at,
       requested_by_user_id: actorId,
-      reason: "Operations Overview manual planning request",
     },
-    planning_config: planningConfig(),
+    planning_config: storedCaseRequest.planning_config,
     requested_by_user_id: actorId,
   };
   const replayHeaders = { "X-Request-Id": `replay-${caseId}`, "X-Correlation-Id": caseId! };
@@ -346,28 +349,24 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
     headers: { "Idempotency-Key": `sim-approve-${randomUUID()}` },
     data: { ...commandIdentity, command: "APPROVE", expected_case_revision: simulationMeta.case_revision },
   });
-    expect(approve.status()).toBe(200);
-    const approved = await json(approve);
-    expect(envelopeData(approved).status).toBe("APPROVED");
-    const beforeCommit = await currentSchedule(page.request);
-    const publicationBefore = await publicationState();
-    const simulationCommit = await page.request.post(
+  expect(approve.status()).toBe(200);
+  const approved = await json(approve);
+  expect(envelopeData(approved).status).toBe("APPROVED");
+  const beforeCommit = await currentSchedule(page.request);
+  const publicationBefore = await publicationState();
+  const simulationCommit = await page.request.post(
     `${apiBase}/api/v1/decision-cases/${encodeURIComponent(simulationCaseId)}/decision`,
     {
       headers: { "Idempotency-Key": `sim-commit-${randomUUID()}` },
-      data: {
-        ...commandIdentity, command: "COMMIT",
-        expected_case_revision: record(approved.meta).case_revision,
-      },
+      data: { ...commandIdentity, command: "COMMIT", expected_case_revision: record(approved.meta).case_revision },
     },
   );
-    expect(simulationCommit.status()).toBe(409);
-    expect(record((await json(simulationCommit)).error).code).toBe("SIMULATION_ONLY");
-    expect(await currentSchedule(page.request)).toEqual(beforeCommit);
-    expect(await publicationState()).toEqual(publicationBefore);
-    const afterCommit = await page.request.get(`${apiBase}/api/v1/decision-cases/${simulationCaseId}`);
-    expect(await json(afterCommit)).toEqual(approved);
-
+  expect(simulationCommit.status()).toBe(409);
+  expect(record((await json(simulationCommit)).error).code).toBe("SIMULATION_ONLY");
+  expect(await currentSchedule(page.request)).toEqual(beforeCommit);
+  expect(await publicationState()).toEqual(publicationBefore);
+  const afterCommit = await page.request.get(`${apiBase}/api/v1/decision-cases/${simulationCaseId}`);
+  expect(await json(afterCommit)).toEqual(approved);
 
   const failure = await createCase(page.request, contextBefore, liveRequest("LIVE", {
     planning_config: {
@@ -389,6 +388,62 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
   expect(scheduleAfter.plan_version).toBe(scheduleBefore.plan_version);
   expect(scheduleAfter.schedule).toEqual(scheduleBefore.schedule);
 
+  // Exercise the actual LIVE UI and actor-scoped decision receipts after the negative checks.
+  const decisionSubmissions: Array<{ command: string; key: string | undefined; body: string | null }> = [];
+  const decisionCounts = new Map<string, number>();
+  const decisionUrl = `${apiBase}/api/v1/decision-cases/${caseId}/decision`;
+  await page.route(decisionUrl, async route => {
+    const request = route.request();
+    if (request.method() !== "POST") return route.continue();
+    const command = request.postDataJSON().command as string;
+    const response = await route.fetch();
+    expect(response.status()).toBe(200);
+    const count = (decisionCounts.get(command) ?? 0) + 1;
+    decisionCounts.set(command, count);
+    decisionSubmissions.push({ command, key: request.headers()["idempotency-key"], body: request.postData() });
+    if (count === 1) await route.abort("failed");
+    else {
+      expect(response.headers()["idempotency-replayed"]).toBe("true");
+      await route.fulfill({ response });
+    }
+  });
+  await page.getByRole("button", { name: "Approve", exact: true }).click();
+  await page.getByLabel("Decision note").fill("Approve after real services acceptance review");
+  await page.getByRole("button", { name: "Confirm approve", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Recover decision outcome" })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Recover decision outcome" }).click();
+  await expect(page.getByRole("button", { name: "Commit approved schedule" })).toBeEnabled();
+  expect(await currentSchedule(page.request)).toEqual(scheduleAfter);
+  const approvedRead = await page.request.get(`${apiBase}/api/v1/decision-cases/${caseId}`);
+  const approvedPayload = await json(approvedRead);
+  const approvedIdentity = record(record(approvedPayload.meta).approved_candidate);
+  expect(record(record(approvedPayload.meta).human_decision).actor_id).toBe(actorId);
+  await page.getByRole("button", { name: "Commit approved schedule" }).click();
+  await page.getByRole("button", { name: "Confirm commit", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Recover decision outcome" })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Recover decision outcome" }).click();
+  await expect(page.getByRole("heading", { name: "Published schedule", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Current committed schedule", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Recover decision outcome" })).toHaveCount(0);
+  const published = await currentSchedule(page.request);
+  expect(published.plan_version).toBe(contextBefore.planVersion + 1);
+  const approvedCandidate = candidates.find(candidate => candidate.candidate_plan_id === approvedIdentity.candidate_plan_id)!;
+  expect(published.schedule).toEqual(approvedCandidate.schedule);
+  expect(record(published.commit).actor_id).toBe(actorId);
+  expect(record(published.commit).decision_case_id).toBe(caseId);
+  expect(await databaseQuery('SELECT count(*)::int AS count FROM decision_commits')).toEqual([{ count: 1 }]);
+  for (const command of ["APPROVE", "COMMIT"]) {
+    const pair = decisionSubmissions.filter(item => item.command === command);
+    expect(pair).toHaveLength(2);
+    expect(pair[1]).toEqual(pair[0]);
+  }
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Published schedule", exact: true })).toBeVisible();
+  expect(decisionSubmissions).toHaveLength(4);
+  await page.unroute(decisionUrl);
+
   const evidence = {
     schema_version: "1.0",
     run: process.env.OPERATIONS_E2E_RUN || "1",
@@ -402,6 +457,8 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
     candidate_count: candidates.length,
     recommendation_fingerprint: recommendationFingerprint(recommendation),
     event_sequences: events.map(value => record(value).sequence),
+    published_plan_version: published.plan_version,
+    decision_submissions: decisionSubmissions,
     checks: {
       real_fastapi_recommendation: "passed",
       exact_same_request_replay: "passed",
@@ -412,10 +469,10 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
       planner_failure_preserved_schedule: "passed",
       reload_preserved_recommendation: "passed",
       decision_write_http_status: simulationCommit.status(),
-      full_approval_commit_flow: "not_executed",
+      full_approval_commit_flow: "passed",
       stale_decision_command: "not_executed",
       competing_commits: "not_executed",
-      decision_command_receipt_replay: "not_executed",
+      decision_command_receipt_replay: "passed",
     },
   };
   await mkdir(path.dirname(evidenceFile), { recursive: true });

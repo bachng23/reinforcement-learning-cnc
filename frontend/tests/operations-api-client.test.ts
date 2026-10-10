@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
-import { createOperationsApiClient, OperationsApiError } from "@/lib/operations-api/client";
+import { createOperationsApiClient, OperationsApiError, type OperationsDecisionCommand } from "@/lib/operations-api/client";
 import { createOperationsDemoFixtures } from "@/lib/operations-api/fixtures";
 
 describe("operations wire client", () => {
@@ -10,23 +10,16 @@ describe("operations wire client", () => {
       factory_id: request.factory_snapshot.factory_id,
       schema_version: "3.0" as const,
       expected_snapshot_id: request.factory_snapshot.snapshot_id,
-      expected_plan_version: request.factory_snapshot.current_schedule?.revision ?? 0,
-      request: { trigger: request.trigger, planning_config: request.planning_config },
+      expected_plan_version: 1,
+      request: { mode: "LIVE" as const, trigger: { type: "MANUAL_REPLAN" as const, reason: "Review" }, planning_config: request.planning_config },
     };
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ success: true, data: status })));
     const client = createOperationsApiClient({ fetcher, baseUrl: "https://example.test/api/v1/" });
     const signal = new AbortController().signal;
-    expect(await client.createDecisionCase(createBody, {
-      signal,
-      idempotencyKey: "create-case-1",
-      requestId: "request-1",
-    })).toEqual(status);
+    expect(await client.createDecisionCase(createBody, { signal, idempotencyKey: "create-key" })).toEqual({ caseStatus: status, meta: undefined });
     expect(fetcher).toHaveBeenLastCalledWith("https://example.test/api/v1/decision-cases", expect.objectContaining({
-      method: "POST", credentials: "include", signal, body: JSON.stringify(createBody),
+      method: "POST", credentials: "include", signal, body: JSON.stringify(createBody), headers: expect.objectContaining({ "Idempotency-Key": "create-key" }),
     }));
-    const createHeaders = new Headers(fetcher.mock.lastCall?.[1]?.headers);
-    expect(createHeaders.get("Idempotency-Key")).toBe("create-case-1");
-    expect(createHeaders.get("X-Request-Id")).toBe("request-1");
     fetcher.mockResolvedValue(new Response(JSON.stringify({ success: true, data: status })));
     await expect(client.getDecisionCase("case/a b")).resolves.toEqual({ caseStatus: status, meta: undefined });
     expect(fetcher.mock.lastCall?.[0]).toBe("https://example.test/api/v1/decision-cases/case%2Fa%20b");
@@ -57,21 +50,23 @@ describe("operations wire client", () => {
     );
   });
 
-  it.each(["APPROVE", "REJECT", "MODIFY", "COMMIT"] as const)("routes %s through the decision command endpoint", async command => {
-    const data = { case_id: "case-1", status: command, case_revision: 7, current_context: { snapshot_id: "snapshot-1", plan_version: 2 } };
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ success: true, data })));
+  it.each(["APPROVE", "REJECT", "COMMIT"] as const)("routes %s through the decision command endpoint", async command => {
+    const data = createOperationsDemoFixtures().status;
+    const meta = { case_revision: 7, current_context: { snapshot_id: "snapshot-1", plan_version: 0 } };
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ success: true, data, meta })));
     const client = createOperationsApiClient({ fetcher, baseUrl: "/api/v1" });
-    const body = {
-      command,
+    const common = {
+      schema_version: "3.0" as const,
+      decision_case_id: "case-1",
+      recommendation_id: "recommendation-1",
       expected_snapshot_id: "snapshot-1",
-      expected_plan_version: 2,
+      expected_plan_version: 0,
       expected_case_revision: 6,
-      candidate_revision: 1,
-      reason: "Review",
-      ...(command === "MODIFY" ? { replacement_schedule: createOperationsDemoFixtures().request.factory_snapshot.current_schedule! } : {}),
     };
-    await expect(client.submitDecisionCommand("case-1", body)).resolves.toEqual(data);
-    expect(fetcher).toHaveBeenCalledWith("/api/v1/decision-cases/case-1/decision", expect.objectContaining({ body: JSON.stringify(body) }));
+    const body: OperationsDecisionCommand = command === "REJECT" ? { ...common, command, note: "Maintenance conflict" }
+      : { ...common, command, candidate_plan_id: "candidate-1", candidate_version: 17 };
+    await expect(client.submitDecisionCommand("case-1", body, { idempotencyKey: `${command}-key` })).resolves.toEqual({ caseStatus: data, meta });
+    expect(fetcher).toHaveBeenCalledWith("/api/v1/decision-cases/case-1/decision", expect.objectContaining({ body: JSON.stringify(body), headers: expect.objectContaining({ "Idempotency-Key": `${command}-key` }) }));
   });
 
   it("preserves domain conflicts, malformed success envelopes and non-JSON failures without retrying writes", async () => {
@@ -84,5 +79,15 @@ describe("operations wire client", () => {
     await expect(client.getDecisionCase("case-1")).rejects.toBeInstanceOf(OperationsApiError);
     fetcher.mockResolvedValue(new Response("unavailable", { status: 503 }));
     await expect(client.getDecisionCase("case-1")).rejects.toBeInstanceOf(OperationsApiError);
+  });
+
+  it.each(["", "contains space", "x".repeat(129)])("rejects invalid write keys before calling HTTP", async idempotencyKey => {
+    const fetcher = vi.fn<typeof fetch>();
+    const client = createOperationsApiClient({ fetcher });
+    const body: OperationsDecisionCommand = { schema_version: "3.0", command: "REJECT", decision_case_id: "case-1",
+      recommendation_id: "recommendation-1", expected_snapshot_id: "snapshot-1", expected_plan_version: 0,
+      expected_case_revision: 6, note: "Maintenance conflict" };
+    await expect(client.submitDecisionCommand("case-1", body, { idempotencyKey })).rejects.toThrow("Idempotency-Key");
+    expect(fetcher).not.toHaveBeenCalled();
   });
 });
