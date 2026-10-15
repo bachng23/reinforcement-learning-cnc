@@ -530,12 +530,28 @@ paths:
                         $ref: '#/components/schemas/OperationsFactorySnapshot'
         '401':
           description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: DECISION_CASE_NOT_FOUND or RECOMMENDATION_NOT_READY
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Stored artifact/snapshot integrity failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '503':
           description: Contract validator unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /decision-cases:
     get:
       summary: Find decision cases within one authorized factory
@@ -732,16 +748,40 @@ paths:
                 const: 'true'
         '400':
           description: 'Invalid strict body, trigger, idempotency key or cursor'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Role cannot create cases
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Unknown or inaccessible resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '409':
           description: 'IDEMPOTENCY_KEY_REUSED, SNAPSHOT_CONFLICT or PLAN_VERSION_CONFLICT'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Operation failed atomically; no private details exposed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   '/decision-cases/{id}':
     get:
       summary: Read generated status and consistent current head
@@ -761,8 +801,16 @@ paths:
                 $ref: '#/components/schemas/DecisionCaseResponse'
         '401':
           description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Unknown or inaccessible resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   '/decision-cases/{id}/events':
     get:
       summary: Read sanitized events ascending by sequence; limit + 1 determines has_more
@@ -853,10 +901,22 @@ paths:
                   next_after_sequence: 8
         '400':
           description: 'VALIDATION_ERROR: invalid, unknown or repeated after_sequence/limit query parameters.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Unknown or inaccessible resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /operations/snapshot:
     get:
       tags:

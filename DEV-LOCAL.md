@@ -169,6 +169,7 @@ From the repository root (Node 22.22.2+ and uv):
 
 ```sh
 npm ci --prefix frontend
+npm ci --ignore-scripts --prefix backend
 uv sync --frozen --group dev --project ai_services
 uv run --frozen --project ai_services python scripts/check-contracts.py
 ```
@@ -354,3 +355,17 @@ rolls back data and trigger changes. Other sessions cannot observe disabled
 triggers. Truncate guards and foreign keys stay enabled. Current backend has
 no decision/event persistence; if such dependencies are added later, reset must
 be extended explicitly (unhandled foreign keys fail and roll back).
+
+### Frozen P0 HTTP boundary
+
+See [P0 contract v1.0](contracts/v3/p0-contract.md). After an intentional Operations
+HTTP change, update backend/openapi.yaml and regenerate its self-contained slice:
+
+```sh
+node backend/scripts/export-operations-http-contract.js
+node backend/scripts/export-operations-http-contract.js --check
+```
+
+Commit contracts/v3/operations-http.openapi.json with the source specification.
+The contract gate checks this artifact as well as the canonical domain schema;
+unrelated research routes are excluded from the HTTP slice.

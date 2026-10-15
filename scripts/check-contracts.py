@@ -27,6 +27,10 @@ def main() -> None:
     npm = shutil.which("npm.cmd" if sys.platform == "win32" else "npm")
     if not npm:
         raise SystemExit("npm is required; install frontend dependencies with npm ci first")
+    node = shutil.which("node")
+    if not node:
+        raise SystemExit("node is required")
+    run(node, "backend/scripts/export-operations-http-contract.js", "--check")
     run(npm, "run", "contracts:check", cwd=ROOT / "frontend")
     run(npm, "run", "typecheck", cwd=ROOT / "frontend")
     run(npm, "exec", "--", "vitest", "run", "tests/operations-api-client.test.ts", cwd=ROOT / "frontend")

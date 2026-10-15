@@ -1,0 +1,4751 @@
+{
+  "components": {
+    "schemas": {
+      "CaseContractAssignmentStatus": {
+        "enum": [
+          "PROPOSED",
+          "COMMITTED",
+          "RUNNING",
+          "COMPLETED",
+          "CANCELLED"
+        ],
+        "title": "AssignmentStatus",
+        "type": "string"
+      },
+      "CaseContractAssignmentType": {
+        "enum": [
+          "PRODUCTION",
+          "MAINTENANCE",
+          "BLOCKED_TIME"
+        ],
+        "title": "AssignmentType",
+        "type": "string"
+      },
+      "CaseContractCandidatePlan": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "candidate_plan_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Candidate Plan Id",
+            "type": "string"
+          },
+          "decision_case_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Decision Case Id",
+            "type": "string"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "kpis": {
+            "$ref": "#/components/schemas/CaseContractPlanKPIs"
+          },
+          "plan_version": {
+            "minimum": 1,
+            "title": "Plan Version",
+            "type": "integer"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/CaseContractSchedule"
+          },
+          "schema_version": {
+            "const": "3.0",
+            "default": "3.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "source_agent_run_ids": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            "title": "Source Agent Run Ids",
+            "type": "array"
+          },
+          "source_engine_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Source Engine Id",
+            "type": "string"
+          },
+          "source_engine_version": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Source Engine Version",
+            "type": "string"
+          },
+          "strategy": {
+            "$ref": "#/components/schemas/CaseContractPlanStrategy"
+          },
+          "validation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaseContractPlanValidation"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "warnings": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "candidate_plan_id",
+          "decision_case_id",
+          "snapshot_id",
+          "plan_version",
+          "strategy",
+          "source_engine_id",
+          "source_engine_version",
+          "generated_at",
+          "schedule",
+          "kpis"
+        ],
+        "title": "CandidatePlan",
+        "type": "object"
+      },
+      "CaseContractConstraintSeverity": {
+        "enum": [
+          "ERROR",
+          "WARNING"
+        ],
+        "title": "ConstraintSeverity",
+        "type": "string"
+      },
+      "CaseContractConstraintViolation": {
+        "additionalProperties": false,
+        "properties": {
+          "constraint_code": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Constraint Code",
+            "type": "string"
+          },
+          "entity_refs": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            "title": "Entity Refs",
+            "type": "array"
+          },
+          "message": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/CaseContractConstraintSeverity"
+          },
+          "time_window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaseContractTimeWindow"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "violation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Violation Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "violation_id",
+          "constraint_code",
+          "severity",
+          "message"
+        ],
+        "title": "ConstraintViolation",
+        "type": "object"
+      },
+      "CaseContractDecisionCaseStatus": {
+        "enum": [
+          "CREATED",
+          "ANALYZING",
+          "GENERATING",
+          "VALIDATING",
+          "EXPLAINING",
+          "AWAITING_APPROVAL",
+          "APPROVED",
+          "MODIFIED",
+          "REJECTED",
+          "COMMITTED",
+          "FAILED",
+          "CANCELLED"
+        ],
+        "title": "DecisionCaseStatus",
+        "type": "string"
+      },
+      "CaseContractDecisionCaseStatusResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "committed_schedule_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Committed Schedule Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decision_case_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Decision Case Id",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error Code"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/CaseContractDecisionMode"
+          },
+          "recommendation_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Recommendation Id"
+          },
+          "schema_version": {
+            "const": "3.0",
+            "default": "3.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CaseContractDecisionCaseStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision_case_id",
+          "mode",
+          "status",
+          "snapshot_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DecisionCaseStatusResponse",
+        "type": "object"
+      },
+      "CaseContractDecisionMode": {
+        "enum": [
+          "LIVE",
+          "SIMULATION_ONLY"
+        ],
+        "title": "DecisionMode",
+        "type": "string"
+      },
+      "CaseContractObjectiveWeights": {
+        "additionalProperties": false,
+        "properties": {
+          "maintenance": {
+            "default": 1,
+            "minimum": 0,
+            "title": "Maintenance",
+            "type": "number"
+          },
+          "production": {
+            "default": 1,
+            "minimum": 0,
+            "title": "Production",
+            "type": "number"
+          },
+          "reliability": {
+            "default": 1,
+            "minimum": 0,
+            "title": "Reliability",
+            "type": "number"
+          },
+          "schedule_stability": {
+            "default": 0.25,
+            "minimum": 0,
+            "title": "Schedule Stability",
+            "type": "number"
+          },
+          "workforce": {
+            "default": 1,
+            "minimum": 0,
+            "title": "Workforce",
+            "type": "number"
+          }
+        },
+        "title": "ObjectiveWeights",
+        "type": "object"
+      },
+      "CaseContractPlanKPIs": {
+        "additionalProperties": false,
+        "properties": {
+          "decision_latency_ms": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Decision Latency Ms"
+          },
+          "expected_emergency_downtime_minutes": {
+            "minimum": 0,
+            "title": "Expected Emergency Downtime Minutes",
+            "type": "number"
+          },
+          "expected_failure_count": {
+            "minimum": 0,
+            "title": "Expected Failure Count",
+            "type": "number"
+          },
+          "failure_probability": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Failure Probability",
+            "type": "number"
+          },
+          "maintenance_cost": {
+            "minimum": 0,
+            "title": "Maintenance Cost",
+            "type": "number"
+          },
+          "makespan_minutes": {
+            "minimum": 0,
+            "title": "Makespan Minutes",
+            "type": "number"
+          },
+          "maximum_tardiness_minutes": {
+            "minimum": 0,
+            "title": "Maximum Tardiness Minutes",
+            "type": "number"
+          },
+          "on_time_completion_rate": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "On Time Completion Rate",
+            "type": "number"
+          },
+          "schedule_changes": {
+            "minimum": 0,
+            "title": "Schedule Changes",
+            "type": "integer"
+          },
+          "technician_utilization": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Technician Utilization",
+            "type": "number"
+          },
+          "total_tardiness_minutes": {
+            "minimum": 0,
+            "title": "Total Tardiness Minutes",
+            "type": "number"
+          }
+        },
+        "required": [
+          "makespan_minutes",
+          "total_tardiness_minutes",
+          "maximum_tardiness_minutes",
+          "on_time_completion_rate",
+          "expected_failure_count",
+          "failure_probability",
+          "expected_emergency_downtime_minutes",
+          "maintenance_cost",
+          "technician_utilization",
+          "schedule_changes"
+        ],
+        "title": "PlanKPIs",
+        "type": "object"
+      },
+      "CaseContractPlanStrategy": {
+        "enum": [
+          "CURRENT",
+          "PRODUCTION_PRIORITY",
+          "BALANCED",
+          "RELIABILITY_PRIORITY",
+          "MANUAL",
+          "EXPERIMENTAL"
+        ],
+        "title": "PlanStrategy",
+        "type": "string"
+      },
+      "CaseContractPlanValidation": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_plan_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Candidate Plan Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "3.0",
+            "default": "3.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "simulation_runs": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Simulation Runs",
+            "type": "integer"
+          },
+          "validated_at": {
+            "format": "date-time",
+            "title": "Validated At",
+            "type": "string"
+          },
+          "validation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Validation Id",
+            "type": "string"
+          },
+          "validator_version": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Validator Version",
+            "type": "string"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/CaseContractValidationVerdict"
+          },
+          "violations": {
+            "items": {
+              "$ref": "#/components/schemas/CaseContractConstraintViolation"
+            },
+            "title": "Violations",
+            "type": "array"
+          },
+          "warnings": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "validation_id",
+          "candidate_plan_id",
+          "validator_version",
+          "verdict",
+          "validated_at"
+        ],
+        "title": "PlanValidation",
+        "type": "object"
+      },
+      "CaseContractPlanningConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_strategy_ids": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            "title": "Allowed Strategy Ids",
+            "type": "array"
+          },
+          "base_seed": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Base Seed",
+            "type": "integer"
+          },
+          "candidate_limit": {
+            "default": 3,
+            "maximum": 5,
+            "minimum": 1,
+            "title": "Candidate Limit",
+            "type": "integer"
+          },
+          "horizon_minutes": {
+            "minimum": 1,
+            "title": "Horizon Minutes",
+            "type": "integer"
+          },
+          "objective_weights": {
+            "$ref": "#/components/schemas/CaseContractObjectiveWeights"
+          },
+          "simulation_runs": {
+            "default": 100,
+            "maximum": 10000,
+            "minimum": 1,
+            "title": "Simulation Runs",
+            "type": "integer"
+          },
+          "solver_timeout_seconds": {
+            "default": 30,
+            "maximum": 300,
+            "minimum": 1,
+            "title": "Solver Timeout Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "horizon_minutes"
+        ],
+        "title": "PlanningConfig",
+        "type": "object"
+      },
+      "CaseContractRecommendationExplanation": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_refs": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Evidence Refs",
+            "type": "array"
+          },
+          "primary_reasons": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Primary Reasons",
+            "type": "array"
+          },
+          "residual_risks": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Residual Risks",
+            "type": "array"
+          },
+          "summary": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "tradeoffs": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Tradeoffs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "summary",
+          "primary_reasons",
+          "tradeoffs",
+          "evidence_refs"
+        ],
+        "title": "RecommendationExplanation",
+        "type": "object"
+      },
+      "CaseContractRecommendationPackage": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_plans": {
+            "items": {
+              "$ref": "#/components/schemas/CaseContractCandidatePlan"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Candidate Plans",
+            "type": "array"
+          },
+          "decision_case_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Decision Case Id",
+            "type": "string"
+          },
+          "explanation": {
+            "$ref": "#/components/schemas/CaseContractRecommendationExplanation"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "recommendation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Recommendation Id",
+            "type": "string"
+          },
+          "recommended_plan_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Recommended Plan Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "3.0",
+            "default": "3.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Snapshot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recommendation_id",
+          "decision_case_id",
+          "snapshot_id",
+          "generated_at",
+          "recommended_plan_id",
+          "candidate_plans",
+          "explanation"
+        ],
+        "title": "RecommendationPackage",
+        "type": "object"
+      },
+      "CaseContractSchedule": {
+        "additionalProperties": false,
+        "properties": {
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/CaseContractScheduleAssignment"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "factory_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Factory Id",
+            "type": "string"
+          },
+          "planning_window": {
+            "$ref": "#/components/schemas/CaseContractTimeWindow"
+          },
+          "revision": {
+            "minimum": 1,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "schedule_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Schedule Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schedule_id",
+          "factory_id",
+          "revision",
+          "planning_window",
+          "created_at"
+        ],
+        "title": "Schedule",
+        "type": "object"
+      },
+      "CaseContractScheduleAssignment": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Assignment Id",
+            "type": "string"
+          },
+          "assignment_type": {
+            "$ref": "#/components/schemas/CaseContractAssignmentType"
+          },
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Job Id"
+          },
+          "locked": {
+            "default": false,
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "machine_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Machine Id",
+            "type": "string"
+          },
+          "maintenance_request_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Maintenance Request Id"
+          },
+          "operation_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Operation Id"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CaseContractAssignmentStatus"
+          },
+          "technician_ids": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            "title": "Technician Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "assignment_type",
+          "status",
+          "machine_id",
+          "start_at",
+          "end_at"
+        ],
+        "title": "ScheduleAssignment",
+        "type": "object"
+      },
+      "CaseContractTimeWindow": {
+        "additionalProperties": false,
+        "properties": {
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_at",
+          "end_at"
+        ],
+        "title": "TimeWindow",
+        "type": "object"
+      },
+      "CaseContractValidationVerdict": {
+        "enum": [
+          "VALID",
+          "INVALID",
+          "ERROR"
+        ],
+        "title": "ValidationVerdict",
+        "type": "string"
+      },
+      "DecisionApproveCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_plan_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "candidate_version": {
+            "description": "Exact CandidatePlan.plan_version; canonical HumanDecisionRequest.expected_plan_version.",
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "command": {
+            "const": "APPROVE"
+          },
+          "decision_case_id": {
+            "description": "Must equal path id.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "expected_case_revision": {
+            "description": "Case revision from meta.case_revision.",
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "expected_plan_version": {
+            "description": "Current head plan_version AND case base_plan_version; not candidate version or schedule revision.",
+            "maximum": 2147483646,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "expected_snapshot_id": {
+            "description": "Both case basis and current head snapshot.",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "note": {
+            "description": "Non-whitespace text. Required for REJECT.",
+            "maxLength": 4000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "recommendation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "3.0"
+          }
+        },
+        "required": [
+          "schema_version",
+          "command",
+          "decision_case_id",
+          "recommendation_id",
+          "expected_snapshot_id",
+          "expected_case_revision",
+          "expected_plan_version",
+          "candidate_plan_id",
+          "candidate_version"
+        ],
+        "type": "object"
+      },
+      "DecisionApprovedCandidate": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_hash": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "candidate_plan_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "candidate_version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "recommendation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "schedule_hash": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recommendation_id",
+          "candidate_plan_id",
+          "candidate_version",
+          "candidate_hash",
+          "schedule_hash"
+        ],
+        "type": "object"
+      },
+      "DecisionCaseCreateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_plan_version": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "expected_snapshot_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "factory_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "request": {
+            "additionalProperties": false,
+            "properties": {
+              "mode": {
+                "$ref": "#/components/schemas/CaseContractDecisionMode"
+              },
+              "planning_config": {
+                "$ref": "#/components/schemas/CaseContractPlanningConfig"
+              },
+              "trigger": {
+                "oneOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "alert_threshold": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "title": "Alert Threshold",
+                        "type": "number"
+                      },
+                      "failure_probability": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "title": "Failure Probability",
+                        "type": "number"
+                      },
+                      "machine_id": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                        "title": "Machine Id",
+                        "type": "string"
+                      },
+                      "type": {
+                        "const": "HEALTH_ALERT",
+                        "default": "HEALTH_ALERT",
+                        "title": "Type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "machine_id",
+                      "failure_probability",
+                      "alert_threshold"
+                    ],
+                    "title": "HealthAlertTrigger",
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "failure_code": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                        "title": "Failure Code",
+                        "type": "string"
+                      },
+                      "machine_id": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                        "title": "Machine Id",
+                        "type": "string"
+                      },
+                      "type": {
+                        "const": "MACHINE_FAILURE",
+                        "default": "MACHINE_FAILURE",
+                        "title": "Type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "machine_id",
+                      "failure_code"
+                    ],
+                    "title": "MachineFailureTrigger",
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                      },
+                      "technician_id": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                        "title": "Technician Id",
+                        "type": "string"
+                      },
+                      "type": {
+                        "const": "TECHNICIAN_UNAVAILABLE",
+                        "default": "TECHNICIAN_UNAVAILABLE",
+                        "title": "Type",
+                        "type": "string"
+                      },
+                      "unavailable_window": {
+                        "$ref": "#/components/schemas/CaseContractTimeWindow"
+                      }
+                    },
+                    "required": [
+                      "technician_id",
+                      "unavailable_window",
+                      "reason"
+                    ],
+                    "title": "TechnicianUnavailableTrigger",
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "maintenance_request_id": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                        "title": "Maintenance Request Id",
+                        "type": "string"
+                      },
+                      "type": {
+                        "const": "MAINTENANCE_REQUESTED",
+                        "default": "MAINTENANCE_REQUESTED",
+                        "title": "Type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "maintenance_request_id"
+                    ],
+                    "title": "MaintenanceRequestedTrigger",
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": {
+                        "maxLength": 4000,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                      },
+                      "type": {
+                        "const": "MANUAL_REPLAN",
+                        "default": "MANUAL_REPLAN",
+                        "title": "Type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "reason"
+                    ],
+                    "title": "ManualReplanTrigger",
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "assumptions": {
+                        "additionalProperties": true,
+                        "title": "Assumptions",
+                        "type": "object"
+                      },
+                      "scenario_id": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                        "title": "Scenario Id",
+                        "type": "string"
+                      },
+                      "type": {
+                        "const": "WHAT_IF",
+                        "default": "WHAT_IF",
+                        "title": "Type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "scenario_id",
+                      "assumptions"
+                    ],
+                    "title": "WhatIfTrigger",
+                    "type": "object"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "mode",
+              "trigger",
+              "planning_config"
+            ],
+            "type": "object"
+          },
+          "schema_version": {
+            "const": "3.0"
+          }
+        },
+        "required": [
+          "factory_id",
+          "schema_version",
+          "expected_snapshot_id",
+          "expected_plan_version",
+          "request"
+        ],
+        "type": "object"
+      },
+      "DecisionCaseEventsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionCaseHistoryEvent"
+            },
+            "type": "array"
+          },
+          "meta": {
+            "properties": {
+              "has_more": {
+                "type": "boolean"
+              },
+              "next_after_sequence": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "has_more",
+              "next_after_sequence"
+            ],
+            "type": "object"
+          },
+          "success": {
+            "const": true
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "DecisionCaseHistoryEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "actor": {
+            "properties": {
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "HUMAN",
+                  "SYSTEM"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "id"
+            ],
+            "type": "object"
+          },
+          "case_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": false,
+            "properties": {
+              "candidate_hash": {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "candidate_plan_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "candidate_version": {
+                "minimum": 1,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "command": {
+                "enum": [
+                  "APPROVE",
+                  "REJECT",
+                  "COMMIT"
+                ]
+              },
+              "from_status": {
+                "type": "string"
+              },
+              "plan_version": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "recommendation_id": {
+                "type": "string"
+              },
+              "revision": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "schedule_hash": {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "const": "CREATED"
+              },
+              "to_status": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "sequence": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "sequence",
+          "type",
+          "actor",
+          "occurred_at",
+          "payload"
+        ],
+        "type": "object"
+      },
+      "DecisionCaseListHumanSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "actor_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "candidate_plan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "candidate_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decided_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "APPROVE",
+              "REJECT"
+            ]
+          },
+          "recommendation_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "recommendation_id",
+          "candidate_plan_id",
+          "candidate_version",
+          "actor_id",
+          "decided_at"
+        ],
+        "type": "object"
+      },
+      "DecisionCaseListItem": {
+        "additionalProperties": false,
+        "properties": {
+          "base_plan_version": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "case_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "committed_schedule_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Committed Schedule Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "current_context": {
+            "additionalProperties": false,
+            "properties": {
+              "plan_version": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "snapshot_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "snapshot_id",
+              "plan_version"
+            ],
+            "type": "object"
+          },
+          "decision_case_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Decision Case Id",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error Code"
+          },
+          "factory_id": {
+            "type": "string"
+          },
+          "human_decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionCaseListHumanSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mode": {
+            "$ref": "#/components/schemas/CaseContractDecisionMode"
+          },
+          "publication": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionCaseListPublicationSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recommendation_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Recommendation Id"
+          },
+          "schema_version": {
+            "const": "3.0",
+            "default": "3.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CaseContractDecisionCaseStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "committed_schedule_id",
+          "created_at",
+          "decision_case_id",
+          "error_code",
+          "mode",
+          "recommendation_id",
+          "schema_version",
+          "snapshot_id",
+          "status",
+          "updated_at",
+          "factory_id",
+          "base_plan_version",
+          "case_revision",
+          "current_context",
+          "stale",
+          "human_decision",
+          "publication"
+        ],
+        "type": "object"
+      },
+      "DecisionCaseListPublicationSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "actor_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "committed_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "plan_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "schedule_id": {
+            "type": "string"
+          },
+          "schedule_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "snapshot_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "schedule_id",
+          "schedule_revision",
+          "plan_version",
+          "snapshot_id",
+          "actor_id",
+          "committed_at"
+        ],
+        "type": "object"
+      },
+      "DecisionCaseListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionCaseListItem"
+            },
+            "type": "array"
+          },
+          "meta": {
+            "additionalProperties": false,
+            "properties": {
+              "factory_id": {
+                "type": "string"
+              },
+              "has_more": {
+                "type": "boolean"
+              },
+              "limit": {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "next_cursor": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "factory_id",
+              "limit",
+              "has_more",
+              "next_cursor"
+            ],
+            "type": "object"
+          },
+          "success": {
+            "const": true
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "DecisionCaseResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CaseContractDecisionCaseStatusResponse"
+          },
+          "meta": {
+            "properties": {
+              "approved_candidate": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DecisionApprovedCandidate"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "available_commands": {
+                "description": "Advisory commands for actor, state and current basis; execution rechecks all tokens.",
+                "items": {
+                  "enum": [
+                    "APPROVE",
+                    "REJECT",
+                    "COMMIT"
+                  ]
+                },
+                "type": "array"
+              },
+              "base_plan_version": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "case_revision": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "commit": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DecisionCommitMetadata"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "current_context": {
+                "anyOf": [
+                  {
+                    "properties": {
+                      "plan_version": {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "snapshot_id": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "snapshot_id",
+                      "plan_version"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "factory_id": {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              "human_decision": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DecisionHumanRecord"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "processing": {
+                "additionalProperties": false,
+                "properties": {
+                  "attempt": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "error_code": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "status": {
+                    "enum": [
+                      "PENDING",
+                      "RUNNING",
+                      "SUCCEEDED",
+                      "FAILED"
+                    ]
+                  }
+                },
+                "required": [
+                  "status",
+                  "attempt",
+                  "error_code"
+                ],
+                "type": "object"
+              },
+              "stale": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "factory_id",
+              "base_plan_version",
+              "case_revision",
+              "current_context",
+              "stale"
+            ],
+            "type": "object"
+          },
+          "success": {
+            "const": true
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "DecisionCommandRequest": {
+        "discriminator": {
+          "propertyName": "command"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/DecisionApproveCommand"
+          },
+          {
+            "$ref": "#/components/schemas/DecisionRejectCommand"
+          },
+          {
+            "$ref": "#/components/schemas/DecisionCommitCommand"
+          }
+        ]
+      },
+      "DecisionCommitCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_plan_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "candidate_version": {
+            "description": "Exact CandidatePlan.plan_version; canonical HumanDecisionRequest.expected_plan_version.",
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "command": {
+            "const": "COMMIT"
+          },
+          "decision_case_id": {
+            "description": "Must equal path id.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "expected_case_revision": {
+            "description": "Case revision from meta.case_revision.",
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "expected_plan_version": {
+            "description": "Current head plan_version AND case base_plan_version; not candidate version or schedule revision.",
+            "maximum": 2147483646,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "expected_snapshot_id": {
+            "description": "Both case basis and current head snapshot.",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "recommendation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "3.0"
+          }
+        },
+        "required": [
+          "schema_version",
+          "command",
+          "decision_case_id",
+          "recommendation_id",
+          "expected_snapshot_id",
+          "expected_case_revision",
+          "expected_plan_version",
+          "candidate_plan_id",
+          "candidate_version"
+        ],
+        "type": "object"
+      },
+      "DecisionCommitMetadata": {
+        "additionalProperties": false,
+        "properties": {
+          "actor_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "committed_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decision_case_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "factory_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "plan_version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "schedule_hash": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "schedule_revision": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "snapshot_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision_case_id",
+          "factory_id",
+          "snapshot_id",
+          "schedule_id",
+          "schedule_revision",
+          "schedule_hash",
+          "plan_version",
+          "actor_id",
+          "committed_at"
+        ],
+        "type": "object"
+      },
+      "DecisionHumanRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "actor_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "candidate_hash": {
+            "anyOf": [
+              {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "candidate_plan_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "candidate_version": {
+            "anyOf": [
+              {
+                "maximum": 2147483647,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decided_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "APPROVE",
+              "REJECT"
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recommendation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "schedule_hash": {
+            "anyOf": [
+              {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "decision",
+          "recommendation_id",
+          "candidate_plan_id",
+          "candidate_version",
+          "candidate_hash",
+          "schedule_hash",
+          "note",
+          "actor_id",
+          "decided_at"
+        ],
+        "type": "object"
+      },
+      "DecisionRejectCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "const": "REJECT"
+          },
+          "decision_case_id": {
+            "description": "Must equal path id.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "expected_case_revision": {
+            "description": "Case revision from meta.case_revision.",
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "expected_plan_version": {
+            "description": "Current head plan_version AND case base_plan_version; not candidate version or schedule revision.",
+            "maximum": 2147483646,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "expected_snapshot_id": {
+            "description": "Both case basis and current head snapshot.",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "note": {
+            "description": "Non-whitespace text. Required for REJECT.",
+            "maxLength": 4000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "recommendation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "3.0"
+          }
+        },
+        "required": [
+          "schema_version",
+          "command",
+          "decision_case_id",
+          "recommendation_id",
+          "expected_snapshot_id",
+          "expected_case_revision",
+          "expected_plan_version",
+          "note"
+        ],
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "details": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "path": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "code",
+                    "message"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "type": "object"
+          },
+          "requestId": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "type": "string"
+          },
+          "success": {
+            "const": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "error"
+        ],
+        "type": "object"
+      },
+      "OperationsAssignmentStatus": {
+        "enum": [
+          "PROPOSED",
+          "COMMITTED",
+          "RUNNING",
+          "COMPLETED",
+          "CANCELLED"
+        ],
+        "title": "AssignmentStatus",
+        "type": "string"
+      },
+      "OperationsAssignmentType": {
+        "enum": [
+          "PRODUCTION",
+          "MAINTENANCE",
+          "BLOCKED_TIME"
+        ],
+        "title": "AssignmentType",
+        "type": "string"
+      },
+      "OperationsDiscreteRULDistribution": {
+        "additionalProperties": false,
+        "properties": {
+          "model_version": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Model Version",
+            "type": "string"
+          },
+          "probability_mass": {
+            "items": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            "minItems": 2,
+            "title": "Probability Mass",
+            "type": "array"
+          },
+          "support_minutes": {
+            "items": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "minItems": 2,
+            "title": "Support Minutes",
+            "type": "array"
+          },
+          "survival_beyond_horizon": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Survival Beyond Horizon",
+            "type": "number"
+          }
+        },
+        "required": [
+          "support_minutes",
+          "probability_mass",
+          "survival_beyond_horizon",
+          "model_version"
+        ],
+        "title": "DiscreteRULDistribution",
+        "type": "object"
+      },
+      "OperationsErrorDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Code",
+            "type": "string"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Field"
+          },
+          "message": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "OperationsErrorResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Code",
+            "type": "string"
+          },
+          "correlation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsErrorDetail"
+            },
+            "title": "Details",
+            "type": "array"
+          },
+          "error_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Error Id",
+            "type": "string"
+          },
+          "message": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "retryable": {
+            "default": false,
+            "title": "Retryable",
+            "type": "boolean"
+          },
+          "schema_version": {
+            "const": "3.0",
+            "default": "3.0",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "error_id",
+          "code",
+          "message",
+          "correlation_id"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "OperationsFactorySnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "captured_at": {
+            "format": "date-time",
+            "title": "Captured At",
+            "type": "string"
+          },
+          "current_schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationsSchedule"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "factory_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Factory Id",
+            "type": "string"
+          },
+          "health_snapshots": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsHealthSnapshot"
+            },
+            "title": "Health Snapshots",
+            "type": "array"
+          },
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsProductionJob"
+            },
+            "title": "Jobs",
+            "type": "array"
+          },
+          "machines": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsMachine"
+            },
+            "minItems": 1,
+            "title": "Machines",
+            "type": "array"
+          },
+          "maintenance_requests": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsMaintenanceRequest"
+            },
+            "title": "Maintenance Requests",
+            "type": "array"
+          },
+          "planning_window": {
+            "$ref": "#/components/schemas/OperationsTimeWindow"
+          },
+          "schema_version": {
+            "const": "3.0",
+            "default": "3.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "technicians": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsTechnician"
+            },
+            "title": "Technicians",
+            "type": "array"
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "factory_id",
+          "captured_at",
+          "planning_window",
+          "machines"
+        ],
+        "title": "FactorySnapshot",
+        "type": "object"
+      },
+      "OperationsHealthSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ],
+            "title": "Confidence",
+            "type": "string"
+          },
+          "failure_probability": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Failure Probability",
+            "type": "number"
+          },
+          "failure_probability_horizon_minutes": {
+            "minimum": 1,
+            "title": "Failure Probability Horizon Minutes",
+            "type": "integer"
+          },
+          "health_index": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Health Index",
+            "type": "number"
+          },
+          "health_snapshot_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Health Snapshot Id",
+            "type": "string"
+          },
+          "machine_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Machine Id",
+            "type": "string"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "observed_wear_um": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Observed Wear Um"
+          },
+          "rul_distribution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationsDiscreteRULDistribution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "source_model_version": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Source Model Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "health_snapshot_id",
+          "machine_id",
+          "observed_at",
+          "health_index",
+          "failure_probability_horizon_minutes",
+          "failure_probability",
+          "confidence",
+          "source_model_version"
+        ],
+        "title": "HealthSnapshot",
+        "type": "object"
+      },
+      "OperationsMachine": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilities": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsMachineCapability"
+            },
+            "minItems": 1,
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "display_name": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "machine_family": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Machine Family",
+            "type": "string"
+          },
+          "machine_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Machine Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OperationsMachineStatus"
+          }
+        },
+        "required": [
+          "machine_id",
+          "display_name",
+          "machine_family",
+          "status",
+          "capabilities"
+        ],
+        "title": "Machine",
+        "type": "object"
+      },
+      "OperationsMachineCapability": {
+        "additionalProperties": false,
+        "properties": {
+          "damage_factor": {
+            "default": 1,
+            "exclusiveMinimum": 0,
+            "title": "Damage Factor",
+            "type": "number"
+          },
+          "load_factor": {
+            "default": 1,
+            "exclusiveMinimum": 0,
+            "title": "Load Factor",
+            "type": "number"
+          },
+          "nominal_processing_minutes": {
+            "minimum": 1,
+            "title": "Nominal Processing Minutes",
+            "type": "integer"
+          },
+          "operation_type": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Operation Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_type",
+          "nominal_processing_minutes"
+        ],
+        "title": "MachineCapability",
+        "type": "object"
+      },
+      "OperationsMachineOption": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_damage": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Damage"
+          },
+          "load_factor": {
+            "default": 1,
+            "exclusiveMinimum": 0,
+            "title": "Load Factor",
+            "type": "number"
+          },
+          "machine_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Machine Id",
+            "type": "string"
+          },
+          "processing_minutes": {
+            "minimum": 1,
+            "title": "Processing Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "machine_id",
+          "processing_minutes"
+        ],
+        "title": "MachineOption",
+        "type": "object"
+      },
+      "OperationsMachineStatus": {
+        "enum": [
+          "IDLE",
+          "RUNNING",
+          "WARNING",
+          "MAINTENANCE",
+          "FAILED",
+          "UNAVAILABLE"
+        ],
+        "title": "MachineStatus",
+        "type": "string"
+      },
+      "OperationsMaintenancePriority": {
+        "enum": [
+          "LOW",
+          "NORMAL",
+          "HIGH",
+          "CRITICAL"
+        ],
+        "title": "MaintenancePriority",
+        "type": "string"
+      },
+      "OperationsMaintenanceRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "action_type": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Action Type",
+            "type": "string"
+          },
+          "earliest_start_at": {
+            "format": "date-time",
+            "title": "Earliest Start At",
+            "type": "string"
+          },
+          "expected_duration_minutes": {
+            "minimum": 1,
+            "title": "Expected Duration Minutes",
+            "type": "integer"
+          },
+          "latest_start_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Latest Start At"
+          },
+          "machine_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Machine Id",
+            "type": "string"
+          },
+          "maintenance_request_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Maintenance Request Id",
+            "type": "string"
+          },
+          "maintenance_type": {
+            "$ref": "#/components/schemas/OperationsMaintenanceType"
+          },
+          "mandatory": {
+            "default": false,
+            "title": "Mandatory",
+            "type": "boolean"
+          },
+          "minimum_skill_level": {
+            "default": 1,
+            "maximum": 5,
+            "minimum": 1,
+            "title": "Minimum Skill Level",
+            "type": "integer"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/OperationsMaintenancePriority"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "required_skill_ids": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Required Skill Ids",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OperationsMaintenanceRequestStatus"
+          }
+        },
+        "required": [
+          "maintenance_request_id",
+          "machine_id",
+          "maintenance_type",
+          "action_type",
+          "priority",
+          "status",
+          "requested_at",
+          "earliest_start_at",
+          "expected_duration_minutes",
+          "required_skill_ids"
+        ],
+        "title": "MaintenanceRequest",
+        "type": "object"
+      },
+      "OperationsMaintenanceRequestStatus": {
+        "enum": [
+          "OPEN",
+          "SCHEDULED",
+          "IN_PROGRESS",
+          "COMPLETED",
+          "CANCELLED"
+        ],
+        "title": "MaintenanceRequestStatus",
+        "type": "string"
+      },
+      "OperationsMaintenanceType": {
+        "enum": [
+          "PREVENTIVE",
+          "CORRECTIVE"
+        ],
+        "title": "MaintenanceType",
+        "type": "string"
+      },
+      "OperationsOperation": {
+        "additionalProperties": false,
+        "properties": {
+          "machine_options": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsMachineOption"
+            },
+            "minItems": 1,
+            "title": "Machine Options",
+            "type": "array"
+          },
+          "operation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "operation_type": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Operation Type",
+            "type": "string"
+          },
+          "predecessor_operation_ids": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            "title": "Predecessor Operation Ids",
+            "type": "array"
+          },
+          "sequence": {
+            "minimum": 0,
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OperationsOperationStatus",
+            "default": "PENDING"
+          }
+        },
+        "required": [
+          "operation_id",
+          "sequence",
+          "operation_type",
+          "machine_options"
+        ],
+        "title": "Operation",
+        "type": "object"
+      },
+      "OperationsOperationStatus": {
+        "enum": [
+          "PENDING",
+          "READY",
+          "SCHEDULED",
+          "RUNNING",
+          "COMPLETED",
+          "BLOCKED"
+        ],
+        "title": "OperationStatus",
+        "type": "string"
+      },
+      "OperationsProductionJob": {
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "due_at": {
+            "format": "date-time",
+            "title": "Due At",
+            "type": "string"
+          },
+          "job_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsOperation"
+            },
+            "minItems": 1,
+            "title": "Operations",
+            "type": "array"
+          },
+          "priority": {
+            "default": 50,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Priority",
+            "type": "integer"
+          },
+          "release_at": {
+            "format": "date-time",
+            "title": "Release At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "display_name",
+          "release_at",
+          "due_at",
+          "operations"
+        ],
+        "title": "ProductionJob",
+        "type": "object"
+      },
+      "OperationsReadMeta": {
+        "properties": {
+          "factory_id": {
+            "type": "string"
+          },
+          "head_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "plan_version": {
+            "description": "Published plan version; observation ingestion never increments this value.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "schedule_basis_snapshot_id": {
+            "description": "Immutable basis of the published schedule, which can differ from the current snapshot_id.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "schedule_hash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "schedule_revision": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "schema_version": {
+            "const": "3.0"
+          },
+          "snapshot_hash": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "factory_id",
+          "snapshot_id",
+          "schema_version",
+          "plan_version",
+          "snapshot_hash",
+          "schedule_hash",
+          "schedule_revision",
+          "schedule_basis_snapshot_id",
+          "head_revision"
+        ],
+        "type": "object"
+      },
+      "OperationsSchedule": {
+        "additionalProperties": false,
+        "properties": {
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsScheduleAssignment"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "factory_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Factory Id",
+            "type": "string"
+          },
+          "planning_window": {
+            "$ref": "#/components/schemas/OperationsTimeWindow"
+          },
+          "revision": {
+            "minimum": 1,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "schedule_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Schedule Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schedule_id",
+          "factory_id",
+          "revision",
+          "planning_window",
+          "created_at"
+        ],
+        "title": "Schedule",
+        "type": "object"
+      },
+      "OperationsScheduleAssignment": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Assignment Id",
+            "type": "string"
+          },
+          "assignment_type": {
+            "$ref": "#/components/schemas/OperationsAssignmentType"
+          },
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Job Id"
+          },
+          "locked": {
+            "default": false,
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "machine_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Machine Id",
+            "type": "string"
+          },
+          "maintenance_request_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Maintenance Request Id"
+          },
+          "operation_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Operation Id"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OperationsAssignmentStatus"
+          },
+          "technician_ids": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            "title": "Technician Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "assignment_type",
+          "status",
+          "machine_id",
+          "start_at",
+          "end_at"
+        ],
+        "title": "ScheduleAssignment",
+        "type": "object"
+      },
+      "OperationsTechnician": {
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsTimeWindow"
+            },
+            "title": "Availability",
+            "type": "array"
+          },
+          "display_name": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsTechnicianSkill"
+            },
+            "minItems": 1,
+            "title": "Skills",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OperationsTechnicianStatus"
+          },
+          "technician_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Technician Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "technician_id",
+          "display_name",
+          "status",
+          "skills"
+        ],
+        "title": "Technician",
+        "type": "object"
+      },
+      "OperationsTechnicianSkill": {
+        "additionalProperties": false,
+        "properties": {
+          "certified_action_types": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            "title": "Certified Action Types",
+            "type": "array"
+          },
+          "certified_machine_families": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            "title": "Certified Machine Families",
+            "type": "array"
+          },
+          "level": {
+            "maximum": 5,
+            "minimum": 1,
+            "title": "Level",
+            "type": "integer"
+          },
+          "skill_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "title": "Skill Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skill_id",
+          "level"
+        ],
+        "title": "TechnicianSkill",
+        "type": "object"
+      },
+      "OperationsTechnicianStatus": {
+        "enum": [
+          "AVAILABLE",
+          "ASSIGNED",
+          "OFF_SHIFT",
+          "UNAVAILABLE"
+        ],
+        "title": "TechnicianStatus",
+        "type": "string"
+      },
+      "OperationsTimeWindow": {
+        "additionalProperties": false,
+        "properties": {
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_at",
+          "end_at"
+        ],
+        "title": "TimeWindow",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "cookieAuth": {
+        "description": "HttpOnly browser session cookie issued by POST /auth/login.",
+        "in": "cookie",
+        "name": "pdm_token",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "Generated from backend/openapi.yaml. Domain schema 3.0. See p0-contract.md for semantics and acceptance.",
+    "title": "CNC Operations P0 HTTP contract",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/decision-cases": {
+      "get": {
+        "description": "Read-only summary list. All authenticated roles require factory access; ADMIN can access any existing factory. Missing/inaccessible factories return the same 404. Sort: created_at DESC, id DESC; full PostgreSQL microsecond precision is retained in the cursor. Single-value filters combine with AND. No raw request, snapshot, artifact, note, lease or receipt. Each page uses repeatable-read for consistent case/head/provenance. stale compares original case basis with current head, including after its own commit. Opaque signed cursors bind actor/factory/status/mode; keep this scope on subsequent requests. Limit may change. Malformed, tampered, unsupported or scope-mismatched cursors return INVALID_CURSOR. No time expiry; signing-key rotation invalidates cursors. Every page rechecks authorization. Fixed data has no duplicated/missing items; pages are not a cross-request snapshot, so restart without a cursor when refreshing a changing dataset. has_more uses limit+1; next_cursor is null on final/empty pages. No total count.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "factory_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CaseContractDecisionCaseStatus"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "enum": [
+                "LIVE",
+                "SIMULATION_ONLY"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 2048,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "committed": {
+                    "value": {
+                      "data": [
+                        {
+                          "base_plan_version": 0,
+                          "case_revision": 8,
+                          "committed_schedule_id": "schedule-1",
+                          "created_at": "2026-10-09T04:00:00.000Z",
+                          "current_context": {
+                            "plan_version": 1,
+                            "snapshot_id": "snapshot-1"
+                          },
+                          "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                          "error_code": null,
+                          "factory_id": "factory-1",
+                          "human_decision": {
+                            "actor_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                            "candidate_plan_id": "candidate-1",
+                            "candidate_version": 17,
+                            "decided_at": "2026-10-09T04:00:00.000Z",
+                            "decision": "APPROVE",
+                            "recommendation_id": "recommendation-1"
+                          },
+                          "mode": "LIVE",
+                          "publication": {
+                            "actor_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                            "committed_at": "2026-10-09T04:00:00.000Z",
+                            "plan_version": 1,
+                            "schedule_id": "schedule-1",
+                            "schedule_revision": 9,
+                            "snapshot_id": "snapshot-1"
+                          },
+                          "recommendation_id": "recommendation-1",
+                          "schema_version": "3.0",
+                          "snapshot_id": "snapshot-1",
+                          "stale": true,
+                          "status": "COMMITTED",
+                          "updated_at": "2026-10-09T04:00:00.000Z"
+                        }
+                      ],
+                      "meta": {
+                        "factory_id": "factory-1",
+                        "has_more": false,
+                        "limit": 25,
+                        "next_cursor": null
+                      },
+                      "success": true
+                    }
+                  },
+                  "empty": {
+                    "value": {
+                      "data": [],
+                      "meta": {
+                        "factory_id": "factory-1",
+                        "has_more": false,
+                        "limit": 25,
+                        "next_cursor": null
+                      },
+                      "success": true
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionCaseListResponse"
+                }
+              }
+            },
+            "description": "Summary page. Cache-Control: no-store."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_CURSOR",
+                    "message": "VALIDATION_ERROR: missing/invalid/unknown/repeated query parameters or invalid limit. INVALID_CURSOR: cursor format, signature, version or scope error."
+                  },
+                  "requestId": "list-request-1",
+                  "success": false
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR: missing/invalid/unknown/repeated query parameters or invalid limit. INVALID_CURSOR: cursor format, signature, version or scope error."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "UNAUTHORIZED"
+                  },
+                  "requestId": "list-request-1",
+                  "success": false
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FACTORY_NOT_FOUND",
+                    "message": "FACTORY_NOT_FOUND: absent or inaccessible factory"
+                  },
+                  "requestId": "list-request-1",
+                  "success": false
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FACTORY_NOT_FOUND: absent or inaccessible factory"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FACTORY_ACCESS_UNAVAILABLE",
+                    "message": "FACTORY_ACCESS_UNAVAILABLE or DB_UNAVAILABLE"
+                  },
+                  "requestId": "list-request-1",
+                  "success": false
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FACTORY_ACCESS_UNAVAILABLE or DB_UNAVAILABLE; CURSOR_SIGNING_UNAVAILABLE"
+          }
+        },
+        "summary": "Find decision cases within one authorized factory"
+      },
+      "post": {
+        "description": "OPERATOR, ENGINEER or ADMIN. Key scoped to actor and factory. Replays return the original 202 response. Server owns IDs, actor, timestamp, revision and status.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[!-~]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionCaseCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionCaseResponse"
+                }
+              }
+            },
+            "description": "Persisted, sanitized response",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "const": "true"
+                }
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid strict body, trigger, idempotency key or cursor"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication required"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Role cannot create cases"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown or inaccessible resource"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "IDEMPOTENCY_KEY_REUSED, SNAPSHOT_CONFLICT or PLAN_VERSION_CONFLICT"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Operation failed atomically; no private details exposed"
+          }
+        },
+        "summary": "Create a case without executing a planner"
+      }
+    },
+    "/decision-cases/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionCaseResponse"
+                }
+              }
+            },
+            "description": "Persisted, sanitized response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication required"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown or inaccessible resource"
+          }
+        },
+        "summary": "Read generated status and consistent current head"
+      }
+    },
+    "/decision-cases/{id}/decision": {
+      "post": {
+        "description": "OPERATOR, ENGINEER or ADMIN with factory access; inaccessible cases return 404.\nAPPROVE and REJECT require AWAITING_APPROVAL and never alter the published schedule. REJECT must not select a candidate.\nCOMMIT is a separate transport command, NOT a HumanDecisionType. It requires APPROVED, LIVE, the exact approved candidate/hash, and current basis.\nThis transport adapts command to canonical HumanDecisionRequest.decision and candidate_version to its expected_plan_version. The transport expected_plan_version instead fences OperationsHead.plan_version. expected_case_revision fences case state; Schedule.revision is a fourth independent value and is published unchanged.\nAll commands require snapshot and head tokens matching the case basis and current head. Publish stores the exact candidate schedule and increments head plan_version once.\nIdempotency-Key is 1-128 printable non-space ASCII characters, scoped to factory + authenticated actor, shared with case creation and all commands/cases in that factory. Use a NEW key for each logical command. Same key/body returns the original 200 body with Idempotency-Replayed: true even after context/status changes; different body/command/case returns 409 IDEMPOTENCY_KEY_REUSED. Authorization is rechecked before replay. Receipts have no expiry; failed transactions leave no receipt. Request property order is ignored; omitted and explicit fields are distinct.\nServer owns actor, time, hashes and status. Unknown fields, MODIFY, replacement schedules, and actor/time input are rejected. Do not reuse the older frontend DTO with candidate_revision/reason.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[!-~]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "APPROVE": {
+                  "value": {
+                    "candidate_plan_id": "candidate-1",
+                    "candidate_version": 17,
+                    "command": "APPROVE",
+                    "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                    "expected_case_revision": 6,
+                    "expected_plan_version": 0,
+                    "expected_snapshot_id": "snapshot-1",
+                    "recommendation_id": "recommendation-1",
+                    "schema_version": "3.0"
+                  }
+                },
+                "COMMIT": {
+                  "value": {
+                    "candidate_plan_id": "candidate-1",
+                    "candidate_version": 17,
+                    "command": "COMMIT",
+                    "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                    "expected_case_revision": 7,
+                    "expected_plan_version": 0,
+                    "expected_snapshot_id": "snapshot-1",
+                    "recommendation_id": "recommendation-1",
+                    "schema_version": "3.0"
+                  }
+                },
+                "REJECT": {
+                  "value": {
+                    "command": "REJECT",
+                    "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                    "expected_case_revision": 6,
+                    "expected_plan_version": 0,
+                    "expected_snapshot_id": "snapshot-1",
+                    "note": "Maintenance conflict",
+                    "recommendation_id": "recommendation-1",
+                    "schema_version": "3.0"
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/DecisionCommandRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "APPROVE": {
+                    "value": {
+                      "data": {
+                        "committed_schedule_id": null,
+                        "created_at": "2026-10-09T04:00:00.000Z",
+                        "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                        "error_code": null,
+                        "mode": "LIVE",
+                        "recommendation_id": "recommendation-1",
+                        "schema_version": "3.0",
+                        "snapshot_id": "snapshot-1",
+                        "status": "APPROVED",
+                        "updated_at": "2026-10-09T04:00:00.000Z"
+                      },
+                      "meta": {
+                        "approved_candidate": {
+                          "candidate_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                          "candidate_plan_id": "candidate-1",
+                          "candidate_version": 17,
+                          "recommendation_id": "recommendation-1",
+                          "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                        },
+                        "available_commands": [
+                          "COMMIT"
+                        ],
+                        "base_plan_version": 0,
+                        "case_revision": 7,
+                        "commit": null,
+                        "current_context": {
+                          "plan_version": 0,
+                          "snapshot_id": "snapshot-1"
+                        },
+                        "factory_id": "factory-1",
+                        "human_decision": {
+                          "actor_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                          "candidate_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                          "candidate_plan_id": "candidate-1",
+                          "candidate_version": 17,
+                          "decided_at": "2026-10-09T04:00:00.000Z",
+                          "decision": "APPROVE",
+                          "note": null,
+                          "recommendation_id": "recommendation-1",
+                          "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                        },
+                        "processing": {
+                          "attempt": 1,
+                          "error_code": null,
+                          "status": "SUCCEEDED"
+                        },
+                        "stale": false
+                      },
+                      "success": true
+                    }
+                  },
+                  "COMMIT": {
+                    "value": {
+                      "data": {
+                        "committed_schedule_id": "schedule-1",
+                        "created_at": "2026-10-09T04:00:00.000Z",
+                        "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                        "error_code": null,
+                        "mode": "LIVE",
+                        "recommendation_id": "recommendation-1",
+                        "schema_version": "3.0",
+                        "snapshot_id": "snapshot-1",
+                        "status": "COMMITTED",
+                        "updated_at": "2026-10-09T04:00:00.000Z"
+                      },
+                      "meta": {
+                        "approved_candidate": {
+                          "candidate_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                          "candidate_plan_id": "candidate-1",
+                          "candidate_version": 17,
+                          "recommendation_id": "recommendation-1",
+                          "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                        },
+                        "available_commands": [],
+                        "base_plan_version": 0,
+                        "case_revision": 8,
+                        "commit": {
+                          "actor_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                          "committed_at": "2026-10-09T04:00:00.000Z",
+                          "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                          "factory_id": "factory-1",
+                          "plan_version": 1,
+                          "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                          "schedule_id": "schedule-1",
+                          "schedule_revision": 9,
+                          "snapshot_id": "snapshot-1"
+                        },
+                        "current_context": {
+                          "plan_version": 1,
+                          "snapshot_id": "snapshot-1"
+                        },
+                        "factory_id": "factory-1",
+                        "human_decision": {
+                          "actor_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                          "candidate_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                          "candidate_plan_id": "candidate-1",
+                          "candidate_version": 17,
+                          "decided_at": "2026-10-09T04:00:00.000Z",
+                          "decision": "APPROVE",
+                          "note": null,
+                          "recommendation_id": "recommendation-1",
+                          "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                        },
+                        "processing": {
+                          "attempt": 1,
+                          "error_code": null,
+                          "status": "SUCCEEDED"
+                        },
+                        "stale": true
+                      },
+                      "success": true
+                    }
+                  },
+                  "REJECT": {
+                    "value": {
+                      "data": {
+                        "committed_schedule_id": null,
+                        "created_at": "2026-10-09T04:00:00.000Z",
+                        "decision_case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                        "error_code": null,
+                        "mode": "LIVE",
+                        "recommendation_id": "recommendation-1",
+                        "schema_version": "3.0",
+                        "snapshot_id": "snapshot-1",
+                        "status": "REJECTED",
+                        "updated_at": "2026-10-09T04:00:00.000Z"
+                      },
+                      "meta": {
+                        "approved_candidate": null,
+                        "available_commands": [],
+                        "base_plan_version": 0,
+                        "case_revision": 7,
+                        "commit": null,
+                        "current_context": {
+                          "plan_version": 0,
+                          "snapshot_id": "snapshot-1"
+                        },
+                        "factory_id": "factory-1",
+                        "human_decision": {
+                          "actor_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                          "candidate_hash": null,
+                          "candidate_plan_id": null,
+                          "candidate_version": null,
+                          "decided_at": "2026-10-09T04:00:00.000Z",
+                          "decision": "REJECT",
+                          "note": "Maintenance conflict",
+                          "recommendation_id": "recommendation-1",
+                          "schedule_hash": null
+                        },
+                        "processing": {
+                          "attempt": 1,
+                          "error_code": null,
+                          "status": "SUCCEEDED"
+                        },
+                        "stale": false
+                      },
+                      "success": true
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionCaseResponse"
+                }
+              }
+            },
+            "description": "Atomic receipt. Replay returns the original response, not a fresh read.",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "const": "true"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Malformed strict body, missing key, blank rejection note or mismatched path ID."
+                  },
+                  "requestId": "request-1",
+                  "success": false
+                },
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "details": {},
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR, INVALID_OPERATIONS_SCHEMA, CASE_ID_MISMATCH. Malformed strict body, missing key, blank rejection note or mismatched path ID."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required."
+                  },
+                  "requestId": "request-1",
+                  "success": false
+                },
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "details": {},
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED. Authentication required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Role cannot decide/commit."
+                  },
+                  "requestId": "request-1",
+                  "success": false
+                },
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "details": {},
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN. Role cannot decide/commit."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "DECISION_CASE_NOT_FOUND",
+                    "message": "Missing or inaccessible case."
+                  },
+                  "requestId": "request-1",
+                  "success": false
+                },
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "details": {},
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "DECISION_CASE_NOT_FOUND. Missing or inaccessible case."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "IDEMPOTENCY_KEY_REUSED",
+                    "message": "No writes persist. Refresh context before a new command; retry unchanged key/body when outcome is unknown."
+                  },
+                  "requestId": "request-1",
+                  "success": false
+                },
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "details": {},
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "IDEMPOTENCY_KEY_REUSED, CASE_REVISION_CONFLICT, SNAPSHOT_CONFLICT, PLAN_VERSION_CONFLICT, CASE_STATE_CONFLICT, RECOMMENDATION_CONFLICT, CANDIDATE_NOT_FOUND, CANDIDATE_VERSION_CONFLICT, CANDIDATE_NOT_VALID, APPROVED_CANDIDATE_CONFLICT, SIMULATION_ONLY, SCHEDULE_ALREADY_PUBLISHED. No writes persist. Refresh context before a new command; retry unchanged key/body when outcome is unknown."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "OPERATIONS_INTEGRITY_ERROR",
+                    "message": "Transaction rolled back."
+                  },
+                  "requestId": "request-1",
+                  "success": false
+                },
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "details": {},
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OPERATIONS_INTEGRITY_ERROR, INTERNAL_ERROR. Transaction rolled back."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "DB_UNAVAILABLE",
+                    "message": "Retry with original key/body."
+                  },
+                  "requestId": "request-1",
+                  "success": false
+                },
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "details": {},
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "DB_UNAVAILABLE, OPERATIONS_VALIDATOR_UNAVAILABLE, FACTORY_ACCESS_UNAVAILABLE. Retry with original key/body."
+          }
+        },
+        "summary": "Approve, reject or commit a decision case"
+      }
+    },
+    "/decision-cases/{id}/events": {
+      "get": {
+        "description": "Read-only factory-authorized history; missing/inaccessible cases return 404 DECISION_CASE_NOT_FOUND. after_sequence is exclusive, default 0; limit defaults to 100 and is bounded 1..200. Sort by sequence ASC, never timestamp. Sequence is unique per case and need not equal case_revision (worker heartbeat revisions can have no event). Continue or poll using meta.next_after_sequence, even when has_more=false; empty pages echo the supplied sequence. Actor kind/id and occurred_at are server-owned. HUMAN CASE_STATUS_CHANGED events for APPROVE/REJECT/COMMIT include command, recommendation_id, candidate_plan_id/version/hash, schedule_hash and head plan_version. REJECT has null candidate fields. APPROVE/REJECT report unchanged head version; COMMIT reports the new version. Publication schedule ID/basis/time are available in case meta.commit or current-schedule commit metadata. Worker transitions have SYSTEM actors and may omit command fields. Unknown event types expose an empty payload. Raw request/artifact/snapshot, notes and leases are excluded. Every page rechecks authentication/factory access. Cache-Control: no-store.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after_sequence",
+            "schema": {
+              "default": 0,
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "actor": {
+                        "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                        "kind": "HUMAN"
+                      },
+                      "case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                      "id": "cccccccc-cccc-4ccc-8ccc-ccccccccccc0",
+                      "occurred_at": "2026-10-11T02:00:00.000Z",
+                      "payload": {
+                        "candidate_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        "candidate_plan_id": "candidate-1",
+                        "candidate_version": 17,
+                        "command": "APPROVE",
+                        "from_status": "AWAITING_APPROVAL",
+                        "plan_version": 0,
+                        "recommendation_id": "recommendation-1",
+                        "revision": 7,
+                        "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                        "to_status": "APPROVED"
+                      },
+                      "sequence": 7,
+                      "type": "CASE_STATUS_CHANGED"
+                    },
+                    {
+                      "actor": {
+                        "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                        "kind": "HUMAN"
+                      },
+                      "case_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                      "id": "cccccccc-cccc-4ccc-8ccc-ccccccccccc1",
+                      "occurred_at": "2026-10-11T02:01:00.000Z",
+                      "payload": {
+                        "candidate_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        "candidate_plan_id": "candidate-1",
+                        "candidate_version": 17,
+                        "command": "COMMIT",
+                        "from_status": "APPROVED",
+                        "plan_version": 1,
+                        "recommendation_id": "recommendation-1",
+                        "revision": 8,
+                        "schedule_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                        "to_status": "COMMITTED"
+                      },
+                      "sequence": 8,
+                      "type": "CASE_STATUS_CHANGED"
+                    }
+                  ],
+                  "meta": {
+                    "has_more": false,
+                    "next_after_sequence": 8
+                  },
+                  "success": true
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionCaseEventsResponse"
+                }
+              }
+            },
+            "description": "Persisted, sanitized response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR: invalid, unknown or repeated after_sequence/limit query parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication required"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown or inaccessible resource"
+          }
+        },
+        "summary": "Read sanitized events ascending by sequence; limit + 1 determines has_more"
+      }
+    },
+    "/decision-cases/{id}/recommendation": {
+      "get": {
+        "description": "Factory-scoped read. Missing/inaccessible cases return the same 404. An accessible case without an artifact returns RECOMMENDATION_NOT_READY. Never uses the current head snapshot.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "recommendation": {
+                          "$ref": "#/components/schemas/CaseContractRecommendationPackage"
+                        },
+                        "snapshot": {
+                          "$ref": "#/components/schemas/OperationsFactorySnapshot"
+                        }
+                      },
+                      "required": [
+                        "recommendation",
+                        "snapshot"
+                      ],
+                      "type": "object"
+                    },
+                    "success": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Immutable recommendation and basis"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication required"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "DECISION_CASE_NOT_FOUND or RECOMMENDATION_NOT_READY"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Stored artifact/snapshot integrity failure"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Contract validator unavailable"
+          }
+        },
+        "summary": "Read immutable recommendation and its pinned snapshot"
+      }
+    },
+    "/operations/snapshot": {
+      "get": {
+        "description": "Authenticated database read. ADMIN can read all factories; other roles need their database user UUID in OPERATIONS_FACTORY_ACCESS. Unknown or inaccessible factories return 404. Validates canonical schema 3.0 and SHA-256 content hashes. Cache-Control: no-store. Schedule is null if none exists. Schedule has no embedded schema_version per the canonical contract; meta supplies version 3.0.",
+        "operationId": "getOperationsSnapshot",
+        "parameters": [
+          {
+            "example": "factory-demo-01",
+            "in": "query",
+            "name": "factory_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "captured_at": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "current_schedule_id": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "factory_id": {
+                          "type": "string"
+                        },
+                        "plan_version": {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "schema_version": {
+                          "const": "3.0"
+                        },
+                        "snapshot": {
+                          "$ref": "#/components/schemas/OperationsFactorySnapshot"
+                        },
+                        "snapshot_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "factory_id",
+                        "snapshot_id",
+                        "schema_version",
+                        "captured_at",
+                        "plan_version",
+                        "current_schedule_id",
+                        "snapshot"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OperationsReadMeta"
+                    },
+                    "success": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Canonical payload and integrity metadata"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid query"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication required"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown or inaccessible factory"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsErrorResponse"
+                }
+              }
+            },
+            "description": "Stored content failed integrity checks"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsErrorResponse"
+                }
+              }
+            },
+            "description": "Database or validator unavailable"
+          }
+        },
+        "summary": "Read current immutable FactorySnapshot",
+        "tags": [
+          "Operations"
+        ]
+      }
+    },
+    "/schedules/current": {
+      "get": {
+        "description": "Authenticated database read. ADMIN can read all factories; other roles need their database user UUID in OPERATIONS_FACTORY_ACCESS. Unknown or inaccessible factories return 404. Validates canonical schema 3.0 and SHA-256 content hashes. Cache-Control: no-store. Schedule is null if none exists. Schedule has no embedded schema_version per the canonical contract; meta supplies version 3.0.",
+        "operationId": "getCurrentOperationSchedule",
+        "parameters": [
+          {
+            "example": "factory-demo-01",
+            "in": "query",
+            "name": "factory_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "basis_snapshot": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/components/schemas/OperationsFactorySnapshot"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "Immutable basis for the published schedule's resources, priorities and dependencies; null when no schedule exists. This can differ from the current observation identified by snapshot_id."
+                        },
+                        "commit": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/components/schemas/DecisionCommitMetadata"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "factory_id": {
+                          "type": "string"
+                        },
+                        "plan_version": {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "schedule": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/components/schemas/OperationsSchedule"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "snapshot_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "factory_id",
+                        "snapshot_id",
+                        "plan_version",
+                        "schedule",
+                        "basis_snapshot",
+                        "commit"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OperationsReadMeta"
+                    },
+                    "success": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Canonical payload and integrity metadata"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid query"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication required"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown or inaccessible factory"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsErrorResponse"
+                }
+              }
+            },
+            "description": "Stored content failed integrity checks"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsErrorResponse"
+                }
+              }
+            },
+            "description": "Database or validator unavailable"
+          }
+        },
+        "summary": "Read current immutable Schedule",
+        "tags": [
+          "Operations"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "cookieAuth": []
+    },
+    {
+      "bearerAuth": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Local backend",
+      "url": "http://localhost:5000/api/v1"
+    }
+  ]
+}

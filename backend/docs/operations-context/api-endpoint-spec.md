@@ -1,5 +1,10 @@
 # Operations Context — API endpoint spec draft v1
 
+> Historical design draft. Superseded for P0 integration by the
+> [frozen Operations contract](../../../contracts/v3/p0-contract.md) and
+> [implemented HTTP specification](../../openapi.yaml). Do not implement the
+> proposed DTOs, MODIFY flow or error envelope below as the current API.
+
 Status: DESIGN DRAFT, 2026-09-21; not registered in the running API or existing openapi.yaml. This draft targets Operations and Multi-Agent Contract v3.0. Payload shapes below are proposed HTTP DTOs around canonical contract payloads, not a generated OpenAPI contract.
 
 Related: [Prisma design note](prisma-design-note.md), [state transitions](state-machine.md).
