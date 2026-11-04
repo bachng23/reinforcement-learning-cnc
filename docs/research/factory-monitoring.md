@@ -62,4 +62,14 @@ registry/checkpoint/DEMO-01 bundle is available. Full real Start→failure→rev
 completion/reload acceptance and its actual video remain unverified; generated
 DTOs, static examples or a green component test do not close that requirement.
 
+Local verification on code/capture SHA
+`5e32a2f1bf4cd41ffd0be8554ff0c3f95dc43b35`: **242 tests / 35 files**, generated
+contract checks, typecheck, lint without warnings and isolated production build
+passed. Four intercepted-HTTP browser tests passed at both required desktop
+sizes, with a 390×844 overflow check. All three map machines fit the 1440×900
+viewport; the dialog retains its close control while scrolling the timeline.
+[12 unmodified screenshots, a component-only navigation video and hashes](../design/screenshots/live-factory-component/README.md)
+are committed separately from product code. The actual learned-policy browser
+test is present but remains **not run** until its producer artifacts are supplied.
+
 Component/API tests cover loading/error/missing context, selected machine/incident, recurrence/filter/timeline evidence, focus/Escape, stale responses and playback scheduling. Run frontend tests, generated-contract checks, typecheck and isolated production build. Real acceptance additionally requires actual PostgreSQL, registered S/F learned releases and the existing JCST runtime; mocked screenshots cannot establish DONE. Capture 1440×900 and 1920×1080 plus a short Start→failure→inspect→approve→completion video. Record exact head/integrated/producer SHAs and cleanup in the final evidence, with any missing producer artifact stated explicitly.
