@@ -1,24 +1,21 @@
-import { useId, useState } from 'react';
+import { useId } from 'react';
 import { Cpu, Wrench } from 'lucide-react';
-import { MachineDetail, demoMachines } from './machine-detail';
 import type { Config } from '@/types/generated/jcst';
 import type { Lane, Matching } from '@/lib/simulation/types';
 
-export function FleetView({ lane, config, proposal = [], compact = false }: { lane: Lane; config: Config; proposal?: Matching; compact?: boolean }) {
-  const [selected,setSelected]=useState<number | null>(null);
+export function FleetView({ lane, config, proposal = [], compact = false, onInspect }: { lane: Lane; config: Config; proposal?: Matching; compact?: boolean; onInspect?: (id: string) => void }) {
   const { state } = lane;
   const markerId = useId().replaceAll(':','');
   const links = state.jobs.flatMap((job,j) => job ? [{machine:job.machine,technician:j,proposed:false}] : []);
   for (const [m,,j] of proposal) if (!state.jobs[j]) links.push({machine:m,technician:j,proposed:true});
   return <div className={`sim-fleet ${compact ? 'sim-fleet-compact' : ''}`}>
-    {selected!==null&&<MachineDetail machine={selected} lane={lane} config={config} proposal={proposal} onClose={()=>setSelected(null)}/>}
     <div className="sim-machine-grid">{state.components.map((components,m) => {
       const job = state.jobs.find(j => j?.machine === m);
       const assignment = proposal.find(a => a[0] === m);
       const failed = components.some(c => c.failed);
       const status = job ? 'In service' : failed ? 'Breakdown' : 'Working';
       return <article key={m} className={`sim-machine ${job ? 'is-servicing' : failed ? 'is-failed' : ''}`}>
-        <header><span><Cpu size={18} aria-hidden="true" /><button className="sim-machine-open" aria-label={`Inspect machine M${m+1}`} onClick={()=>setSelected(m)}>M{m+1}<span>{demoMachines[m]?.name ?? 'Machine details'} ↗</span></button></span><span className="sim-state-label">{status}</span></header>
+        <header><span><Cpu size={18} aria-hidden="true" />{onInspect ? <button className="sim-machine-open" aria-label={`Inspect components of machine M${m+1}`} onClick={()=>onInspect(`M${m+1}`)}>M{m+1}<span>Machine details ↗</span></button> : <strong>M{m+1}</strong>}</span><span className="sim-state-label">{status}</span></header>
         <div className="sim-components">{components.map((c,i) => <div className={c.failed ? 'component-failed' : ''} key={i}><span>C{i+1}<strong>{c.failed ? 'FAILED' : 'Healthy'}</strong></span><span>Age <b>{c.age}</b></span></div>)}</div>
         <footer>{job ? <><Wrench size={13} aria-hidden="true" /> T{job.technician+1} · {job.kind} C{job.component+1} · {job.remaining} ticks left</> : assignment ? <span className="sim-proposed">Proposed: T{assignment[2]+1} → C{assignment[1]+1}</span> : 'No technician assigned'}</footer>
       </article>;

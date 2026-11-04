@@ -1,26 +1,46 @@
-import { X, MapPin } from 'lucide-react';
+import Link from 'next/link';
+import { X } from 'lucide-react';
 import { ReviewDialog } from '@/components/research/review-dialog';
-import type { Config } from '@/types/generated/jcst';
-import type { Lane, Matching } from '@/lib/simulation/types';
+import { liveApi } from '@/lib/simulation/live-api';
+import { useLiveRead } from '@/lib/simulation/use-live-read';
+import type { Simulation } from '@/lib/simulation/types';
+import type { DemoIncident } from '@/types/generated/demo-read';
+import { machineStateLabel } from './factory-map';
+import { IncidentTimeline } from './incident-timeline';
+import { incidentStatusLabel } from './incident-center';
 
-// Presentation context only. These labels do not enter JCST policy observations.
-export const demoMachines = [
-  { name:'CNC turning center', operation:'Rough turning', product:'Pump housing', batch:'DEMO-PH-001', position:'Zone A · Bay A1', x:0,y:0 },
-  { name:'CNC milling center', operation:'Precision milling', product:'Pump housing', batch:'DEMO-PH-001', position:'Zone A · Bay A2', x:1,y:0 },
-  { name:'CNC finishing center', operation:'Finishing & inspection', product:'Pump housing', batch:'DEMO-PH-001', position:'Zone B · Bay B1', x:2,y:1 },
-];
-export function MachineDetail({machine,lane,config,proposal,onClose}:{machine:number;lane:Lane;config:Config;proposal:Matching;onClose:()=>void}) {
-  const info=demoMachines[machine];const components=lane.state.components[machine];
-  const job=lane.state.jobs.find(j=>j?.machine===machine);const next=proposal.find(a=>a[0]===machine);
-  const status=job?'In service':components.some(c=>c.failed)?'Breakdown':'Working';
-  const title=`machine-detail-${machine}`;
-  return <ReviewDialog labelledBy={title} busy={false} onClose={onClose}><div className="sim-machine-detail">
-    <header><div><p className="research-eyebrow">Machine M{machine+1} · {status} · tick {lane.state.tick}</p><h2 id={title}>{info?.name ?? `Machine M${machine+1}`}</h2></div><button className="sim-button" aria-label="Close machine details" onClick={onClose}><X size={17} aria-hidden="true"/></button></header>
-    <p className="sim-inline-note">Factory context below is an illustrative demo scenario. Line, batch and location do not affect the JCST simulator or policy.</p>
-    <dl className="sim-machine-facts"><div><dt>Production line</dt><dd>{info?'Line P1 · Pump housing':'Not configured'}</dd></div><div><dt>Operation</dt><dd>{info?.operation??'Not configured'}</dd></div><div><dt>Assigned batch</dt><dd>{info?.batch??'Not configured'}</dd></div><div><dt>Product</dt><dd>{info?.product??'Not configured'}</dd></div><div><dt>Factory location</dt><dd>{info?.position??'Not configured'}</dd></div><div><dt>Current service</dt><dd>{job?`T${job.technician+1} · ${job.kind} · ${job.remaining} ticks left`:next?`Proposed T${next[2]+1} → C${next[1]+1}`:'No technician assigned'}</dd></div></dl>
-    <h3>Illustrative production sequence</h3><ol className="sim-production-chain">{demoMachines.map((m,i)=><li aria-current={i===machine?'step':undefined} key={m.name}>M{i+1}<span>{m.operation}</span></li>)}</ol>
-    <h3><MapPin size={14} aria-hidden="true"/> Factory position · schematic</h3><div className="sim-factory-map" aria-label="Illustrative factory layout">{demoMachines.map((m,i)=><div key={m.name} className={i===machine?'is-selected':''} style={{gridColumn:m.x+1,gridRow:m.y+1}}>M{i+1}<span>{m.position}</span></div>)}</div>
-    <h3>Live simulator components</h3><table className="sim-metrics-table"><thead><tr><th>Component</th><th>Condition</th><th>Age</th><th>Qualified service durations</th></tr></thead><tbody>{components.map((c,i)=><tr key={i}><th>C{i+1}</th><td>{c.failed?'FAILED':'Healthy'}</td><td>{c.age} ticks</td><td>{config.duration[machine][i].map((d,j)=>`T${j+1}: ${d?`${d} ticks`:'not qualified'}`).join(' · ')}</td></tr>)}</tbody></table>
-    <h3>Recent machine events</h3><ul className="sim-event-list">{lane.records.flatMap(r=>r.events).filter(e=>e.machine===machine&&e.type!=='occupancy').slice(-6).reverse().map((e,i)=><li key={i}>t{e.tick} · {e.type} · C{e.component+1}{e.technician==null?'':` · T${e.technician+1}`}</li>)}</ul>{!lane.records.some(r=>r.events.some(e=>e.machine===machine&&e.type!=='occupancy'))&&<p className="sim-footnote">No recorded events for this machine yet.</p>}
+export function MachineDetail({session, machine, incident, incidents, onInspectIncident, onClose, onPrepare, canPrepare}: {
+  session: Simulation; machine?: string; incident?: string; incidents: DemoIncident[];
+  onInspectIncident: (incident: DemoIncident) => void; onClose: () => void; onPrepare: () => void; canPrepare: boolean;
+}) {
+  const prefix = `${session.id}:${session.revision}`;
+  const selected = useLiveRead(incident ? `${prefix}:incident:${incident}` : undefined, signal => liveApi.incident(session.id, session.revision, incident!, signal));
+  const id = machine ?? selected.data?.incident.machineId;
+  const detail = useLiveRead(id ? `${prefix}:machine:${id}` : undefined, signal => liveApi.machine(session.id, session.revision, id!, signal));
+  const data = detail.data;
+  const mismatch = !!selected.data && !!id && selected.data.incident.machineId !== id;
+  const query = new URLSearchParams({session: session.id}); if (id) query.set('machine', id); if (incident) query.set('incident', incident);
+  return <ReviewDialog labelledBy="live-machine-title" busy={false} onClose={onClose}><div className="sim-machine-detail">
+    <header><div><p className="research-eyebrow">Session revision {session.revision} · current tick {session.primary.state.tick}</p><h2 id="live-machine-title">{data?.profile?.name ?? (id ? `Machine ${id}` : 'Incident details')}</h2></div><button className="sim-button" aria-label="Close machine details" onClick={onClose}><X size={17} aria-hidden="true" /></button></header>
+    {mismatch ? <p role="alert" className="sim-error">Selected incident does not belong to this machine. Close and select the incident again.</p> : <>
+      {incident && selected.loading && <p role="status">Loading incident evidence…</p>}
+      {selected.error !== undefined && <div role="alert" className="sim-error">{selected.message}<button onClick={selected.retry}>Retry incident</button></div>}
+      {detail.loading && <p role="status">Loading machine profile…</p>}
+      {detail.error !== undefined && <div role="alert" className="sim-error">{detail.message}<button onClick={detail.retry}>Retry machine</button></div>}
+      {data && <>
+        <p className="sim-inline-note">{data.contextOrigin === 'ILLUSTRATIVE_DEMO' ? `Illustrative factory context · ${data.contextVersion}. Batch/line metadata is not actual production simulation or MES. State and service history below come from this simulator revision.` : 'Machine context not available. Simulator state remains available; no sample profile is substituted.'}</p>
+        <dl className="sim-machine-facts"><div><dt>Machine / current state</dt><dd>{data.machineId} · {machineStateLabel[data.machineState]}</dd></div><div><dt>Machine type</dt><dd>{data.profile?.type ?? 'Not provided'}</dd></div><div><dt>Production line</dt><dd>{data.profile ? `${data.profile.lineId} · ${data.context?.lines.find(line => line.lineId === data.profile?.lineId)?.name ?? ''}` : 'Not provided'}</dd></div><div><dt>Operation</dt><dd>{data.profile?.operation ?? 'Not provided'}</dd></div><div><dt>Assigned illustrative batch / product</dt><dd>{data.assignedBatch ? `${data.assignedBatch.batchId} · ${data.assignedBatch.productName}` : 'Not provided'}</dd></div><div><dt>Location</dt><dd>{data.profile ? `Zone ${data.profile.location.zone} · Bay ${data.profile.location.bay}` : 'Not provided'}</dd></div>
+          {data.assignedBatch?.quantity != null && <div><dt>Quantity</dt><dd>{data.assignedBatch.quantity}</dd></div>}{data.assignedBatch?.dueAt && <div><dt>Deadline</dt><dd>{data.assignedBatch.dueAt}</dd></div>}
+        </dl>
+        <h3>Current technician commitments</h3>{data.currentJobs.length ? data.currentJobs.map(job => <p key={job.technicianId}>{job.technicianId} → {data.machineId}/{job.componentId} · {job.kind} · {job.remainingTicks} ticks remaining</p>) : <p className="sim-footnote">No technician assigned at this boundary.</p>}
+        <h3>Live simulator components</h3><div className="sim-table-scroll"><table className="sim-metrics-table"><thead><tr><th>Component</th><th>Condition</th><th>Age</th><th>Qualified service durations</th></tr></thead><tbody>{!data.components.length && <tr><td colSpan={4}>No component state provided for this machine.</td></tr>}{data.components.map((component, index) => <tr key={component.componentId}><th>{component.componentId}</th><td>{component.failed ? 'FAILED' : 'Healthy'}</td><td>{component.ageTicks} ticks</td><td>{session.config.duration[data.simulatorMachineIndex][index].map((duration, technician) => `T${technician + 1}: ${duration ? `${duration} ticks` : 'not qualified'}`).join(' · ')}</td></tr>)}</tbody></table></div>
+        <h3>Incidents on this machine</h3><ul className="live-machine-incidents">{incidents.filter(item => item.machineId === id).map(item => <li key={item.incidentId}><button className="sim-button" aria-current={item.incidentId === incident ? 'true' : undefined} onClick={() => onInspectIncident(item)}>{item.componentId} · failure tick {item.openedAtTick} · {incidentStatusLabel[item.status]}</button></li>)}</ul>
+        {!data.incidentIds.length && <p className="sim-footnote">No recorded incidents for this machine.</p>}
+        <h3>Service history</h3>{!data.maintenanceHistory.length ? <p className="sim-footnote">No recorded services yet.</p> : <div className="sim-table-scroll"><table className="sim-metrics-table"><thead><tr><th>Service</th><th>Technician</th><th>Start</th><th>Duration</th><th>Completion</th></tr></thead><tbody>{data.maintenanceHistory.map(service => <tr key={service.serviceId}><th>{service.componentId} · {service.kind}</th><td>{service.technicianId}</td><td>Tick {service.startedAtTick}</td><td>{service.durationTicks} ticks</td><td>{service.completedAtTick === null ? 'Pending' : `Tick ${service.completedAtTick}`}</td></tr>)}</tbody></table></div>}
+      </>}
+      {selected.data && <IncidentTimeline incident={selected.data.incident} session={session} />}
+      <div className="live-detail-actions">{session.status === 'RUNNING' && <button className="sim-button" disabled={!canPrepare} onClick={onPrepare}>Request policy proposal / step</button>}{session.status === 'REVIEW' && <Link className="research-primary" href={`/decisions?${query}`}>Review full matching</Link>}</div>
+      <p className="sim-footnote">A policy step may advance one interval if only WAIT is legal. Reading this dialog never sends a command.</p>
+    </>}
   </div></ReviewDialog>;
 }
