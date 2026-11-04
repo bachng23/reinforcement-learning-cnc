@@ -270,9 +270,7 @@ describe("workspace/read/result boundaries", () => {
       () => new Promise(() => {}),
     );
     await user.click(screen.getByRole("button", { name: "Refresh workspace" }));
-    expect(
-      screen.getByRole("button", { name: "Run baseline" }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Run baseline" })).toBeDisabled();
     expect(choice).toBeEnabled();
     await user.click(choice);
     expect(push.mock.calls.at(-1)?.[0]).toContain(`compare=${runId}`);
@@ -532,6 +530,45 @@ describe("workspace/read/result boundaries", () => {
       screen.getByRole("button", { name: "Start sensitivity job" }),
     ).toBeEnabled();
     expect(enqueue).not.toHaveBeenCalled();
+  });
+  it("resolves the frozen duration target when baseline entities arrive after the saved result, preserving an explicit selection", async () => {
+    const user = userEvent.setup();
+    const api = stub();
+    const enqueue = vi.spyOn(api, "enqueueSensitivity");
+    const snapshot = engineEntities();
+    const props = {
+      workspace: engineWorkspace(),
+      source: engineJob(),
+      api,
+      actor: scenarioActor,
+      onAccepted: vi.fn(),
+    };
+    const view = render(<SensitivityInputs {...props} fresh={false} />);
+    const target = screen.getByRole("combobox", {
+      name: "Baseline maintenance target",
+    });
+    expect(target).toBeDisabled();
+    view.rerender(<SensitivityInputs {...props} snapshot={snapshot} fresh />);
+    expect(target).toHaveValue(
+      snapshot.maintenance_requests[0].maintenance_request_id,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Review sweep inputs" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "Start sensitivity job" }),
+    ).toBeEnabled();
+    expect(enqueue).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Back to editor" }));
+    await user.selectOptions(target, "");
+    view.rerender(
+      <SensitivityInputs
+        {...props}
+        snapshot={structuredClone(snapshot)}
+        fresh
+      />,
+    );
+    expect(target).toHaveValue("");
   });
   it("LIVE review shows S1/P1 vs S2/P2, requires supported frozen mapping and never commits simulation", async () => {
     const user = userEvent.setup();

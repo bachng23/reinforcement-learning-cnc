@@ -462,11 +462,7 @@ function SweepForm({
   const [type, setType] = useState<EnqueueSensitivity["axis"]["type"]>(
     "MAINTENANCE_DURATION",
   );
-  const [target, setTarget] = useState(
-    snapshot?.maintenance_requests.find(
-      (item) => !["COMPLETED", "CANCELLED"].includes(item.status),
-    )?.maintenance_request_id ?? "",
-  );
+  const [target, setTarget] = useState<string>();
   const [weight, setWeight] =
     useState<(typeof weightNames)[number]>("reliability");
   const [values, setValues] = useState([30, 60, 90, 120, 150]);
@@ -474,6 +470,21 @@ function SweepForm({
   const [error, setError] = useState<ScenarioError>();
   const result =
     source?.result && "scenario" in source.result ? source.result : undefined;
+  // The immutable entities and saved result are independent reads. Derive an
+  // untouched default when both arrive; never overwrite the user's choice.
+  const eligibleRequests = snapshot?.maintenance_requests.filter(
+    (item) => !["COMPLETED", "CANCELLED"].includes(item.status),
+  );
+  const frozenDuration = result?.effective.overrides.find(
+    (item) => item.type === "MAINTENANCE_DURATION",
+  );
+  const defaultTarget = frozenDuration
+    ? eligibleRequests?.find(
+        (item) =>
+          item.maintenance_request_id === frozenDuration.maintenance_request_id,
+      )?.maintenance_request_id
+    : eligibleRequests?.[0]?.maintenance_request_id;
+  const selectedTarget = target ?? defaultTarget ?? "";
   const allowed = ["ADMIN", "ENGINEER"].includes(actor.role);
   const complete =
     source?.kind === "RUN" && source.status === "SUCCEEDED" && Boolean(result);
@@ -534,7 +545,7 @@ function SweepForm({
               type === "MAINTENANCE_DURATION"
                 ? {
                     type,
-                    maintenance_request_id: target,
+                    maintenance_request_id: selectedTarget,
                     values: values as [number, ...number[]],
                   }
                 : { type, weight, values: values as [number, ...number[]] };
@@ -545,7 +556,7 @@ function SweepForm({
               !result.effective.overrides.some(
                 (item) =>
                   item.type === "MAINTENANCE_DURATION" &&
-                  item.maintenance_request_id === target,
+                  item.maintenance_request_id === selectedTarget,
               )
             )
               throw new ScenarioError(400, "INVALID_INPUT");
@@ -597,7 +608,7 @@ function SweepForm({
                 <select
                   className={scenarioInput}
                   required
-                  value={target}
+                  value={selectedTarget}
                   disabled={!snapshot}
                   onChange={(event) => {
                     setTarget(event.target.value);
