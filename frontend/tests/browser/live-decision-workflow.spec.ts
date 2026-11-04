@@ -122,7 +122,8 @@ test("create → select → approve → commit → published Gantt; reload never
   await expect(page).toHaveURL(/\/operations\/schedule$/);
   await expect(page.getByRole("heading", { name: "Current committed schedule", exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Schedule context" }).getByText(committed.schedule!.schedule_id, { exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await page.getByRole("navigation", { name: "Operations screens" })
+    .getByRole("link", { name: "Resources", exact: true }).click();
   await expect(page).toHaveURL(/\/operations$/);
   await expect(page.getByRole("region", { name: "Snapshot context" }).getByText(committed.schedule!.schedule_id, { exact: true })).toBeVisible();
   expect(harness.writes).toHaveLength(2);

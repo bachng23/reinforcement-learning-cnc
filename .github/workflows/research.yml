@@ -18,6 +18,9 @@ jobs:
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Upgrade tests materialize migrations from exact historical commits.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - uses: astral-sh/setup-uv@v6
