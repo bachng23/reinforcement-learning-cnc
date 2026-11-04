@@ -1,4 +1,6 @@
-/** M0 proposal. Engine result/metric contract requires Flex review before freeze. */
+/** Historical M0 proposal only. Current consumer types are generated in
+ * frontend/types/generated/scenario-planning.ts from the integrated OpenAPI.
+ * Do not use UnfrozenEngineResult below as the current result contract. */
 export type UUID = string;
 export type Hash = string;
 export type Timestamp = string;

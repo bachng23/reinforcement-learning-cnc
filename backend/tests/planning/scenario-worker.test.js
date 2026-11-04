@@ -1,4 +1,7 @@
 const { randomUUID } = require('node:crypto');
+const { fork, execFile } = require('node:child_process');
+const path = require('node:path');
+const { pythonExecutable } = require('../../src/services/operations-contract.service');
 const db = require('../../src/config/prisma');
 const app = require('../../src/app');
 const { fixture } = require('../helpers/work-order-fixtures');
@@ -142,4 +145,79 @@ test('invalid responses fail safely; transport retries use same frozen input; ca
   expect((await read(interrupted)).status).toBe('QUEUED');
   await worker().runOnce();
   expect((await read(interrupted)).status).toBe('SUCCEEDED');
+}, 60000);
+
+test('a killed Node worker is reclaimed by a fresh process with unchanged input and no late overwrite', async () => {
+  const queued = await enqueue();
+  const children = [];
+  function start(mode) {
+    const child = fork(path.resolve(__dirname, '../helpers/scenario-worker-process.js'), [mode], {
+      env: process.env, silent: true, windowsHide: true,
+    });
+    children.push(child);
+    let error = '';
+    child.stderr.on('data', part => { error += part; }); child.stdout.resume();
+    const closed = new Promise((resolve, reject) => { child.once('error', reject); child.once('close', code => resolve({ code, error })); });
+    const message = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(Error('Worker probe IPC timeout')), 20000);
+      child.once('message', value => { clearTimeout(timer); resolve(value); });
+      child.once('error', e => { clearTimeout(timer); reject(e); });
+      child.once('close', () => { clearTimeout(timer); reject(Error(error || 'Worker exited before reporting')); });
+    });
+    return { child, closed, message };
+  }
+  try {
+    const first = start('pause-after-claim');
+    expect(await first.message).toMatchObject({ phase: 'claimed', jobId: queued.job_id, inputHash: queued.input_hash });
+    const [old] = await db.$queryRaw`SELECT * FROM scenario_jobs WHERE id=${queued.job_id}::uuid`;
+    const lateResult = await new ScenarioEngineClient().execute(requestForJob(old, 10000));
+    first.child.kill('SIGKILL'); await first.closed;
+    const [abandoned] = await db.$queryRaw`SELECT * FROM scenario_jobs WHERE id=${queued.job_id}::uuid`;
+    expect(abandoned.status).toBe('RUNNING');
+    await new Promise(resolve => setTimeout(resolve, Math.max(0, abandoned.lease_expires_at - Date.now()) + 100));
+    const second = start('complete');
+    expect(await second.message).toMatchObject({ phase: 'done', result: { outcome: 'completed', jobId: queued.job_id } });
+    expect(await second.closed).toMatchObject({ code: 0 });
+    const [saved] = await db.$queryRaw`SELECT * FROM scenario_jobs WHERE id=${queued.job_id}::uuid`;
+    expect(saved).toMatchObject({ status: 'SUCCEEDED', attempt: 2, input_hash: old.input_hash, input_json: old.input_json });
+    await expect(lease.persist(db, old, lateResult)).rejects.toMatchObject({ code: 'SCENARIO_LEASE_CONFLICT' });
+    const attempts = await db.$queryRaw`SELECT status FROM scenario_attempts WHERE job_id=${queued.job_id}::uuid ORDER BY attempt`;
+    expect(attempts.map(a => a.status)).toEqual(['EXPIRED', 'SUCCEEDED']);
+    expect((await read(queued)).result).toEqual(saved.result_json);
+  } finally {
+    await Promise.all(children.map(child => new Promise(resolve => {
+      if (child.exitCode !== null || child.signalCode !== null) return resolve();
+      child.once('close', resolve); child.kill('SIGKILL');
+    })));
+  }
+}, 60000);
+
+test('HTTP sensitivity persists completed samples and explicit TIMEOUT points without synthetic KPIs', async () => {
+  const beforeHead = await db.operationsHead.findUnique({ where: { factoryId: snapshot.factory_id } });
+  const source = await enqueue(); expect((await worker().runOnce()).outcome).toBe('completed');
+  const response = await f.http(url('/sensitivity-jobs'), { method: 'POST', body: { source_run_id: source.job_id,
+    axis: { type: 'MAINTENANCE_DURATION', maintenance_request_id: snapshot.maintenance_requests[0].maintenance_request_id, values: [30, 60, 90] } } });
+  expect(response.status).toBe(202);
+  const timeoutWorker = new ScenarioWorker({ db, client: { execute: async request => {
+    // Real engine output under a deterministic clock fault; this is not a latency benchmark.
+    const child = execFile(pythonExecutable(), [path.resolve(__dirname, '../helpers/scenario-partial-timeout.py')],
+      { timeout: 15000, maxBuffer: 16 * 1024 * 1024, windowsHide: true });
+    const output = new Promise((resolve, reject) => {
+      let stdout = '', stderr = ''; child.stdout.on('data', part => { stdout += part; });
+      child.stderr.on('data', part => { stderr += part; }); child.once('error', reject);
+      child.once('close', code => code === 0 ? resolve(stdout) : reject(Error(stderr)));
+    });
+    child.stdin.end(JSON.stringify(request)); return JSON.parse(await output);
+  } } });
+  expect((await timeoutWorker.runOnce()).outcome).toBe('completed');
+  const saved = await read(response.body.data, 'sensitivity-jobs');
+  expect(saved.status).toBe('SUCCEEDED'); expect(saved.result.outcome).toBe('PARTIAL_FAILED');
+  expect(saved.points.map(p => p.status)).toEqual(['FEASIBLE', 'TIMEOUT', 'TIMEOUT']);
+  expect(saved.result.points.map(p => p.value)).toEqual([30, 60, 90]);
+  for (const point of saved.result.points.slice(1)) {
+    expect(point.evaluation.candidates).toEqual([]); expect(point.evaluation.selected_candidate_id).toBeNull();
+    expect(point.evaluation.diagnostics[0].code).toBe('NOT_STARTED_BEFORE_DEADLINE');
+    expect(point.comparison.metrics.every(metric => metric.scenario === null && metric.absolute_delta === null)).toBe(true);
+  }
+  expect(await db.operationsHead.findUnique({ where: { factoryId: snapshot.factory_id } })).toEqual(beforeHead);
 }, 60000);

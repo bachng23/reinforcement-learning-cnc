@@ -97,6 +97,15 @@ run sequentially. The benchmark measures actual typed physical and weight sweeps
 at 1/5/7 points and 100/1000 draws, with environment and dirty-tree metadata; these
 local callable timings do not establish production latency guarantees.
 
+The Scenario worker PostgreSQL suite also starts two actual Node processes: it
+kills an owner after the persisted claim, waits for its lease to expire and lets
+a fresh process complete the same frozen input through the real FastAPI engine.
+It verifies attempt history and rejects the old owner's late result. A separate
+HTTP/PostgreSQL test injects deterministic monotonic deadline exhaustion after
+one real physical sample, preserving that result and persisting later TIMEOUT
+points as PARTIAL_FAILED with no invented KPI. This is fault-injection evidence,
+not a measured latency claim. Consumer setup/curl: `backend/docs/scenario-handoff.md`.
+
 Public strategy enum names are mapped explicitly to the planner's canonical
 lowercase IDs by `scenario-engine.adapter.js`. Generated result schemas come from
 Python and are consumed by Backend/OpenAPI and Frontend; never hand-edit generated

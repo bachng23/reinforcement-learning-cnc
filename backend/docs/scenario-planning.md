@@ -1,5 +1,12 @@
 # Scenario Planning — M0 contract proposal
 
+Historical proposal and early Backend checkpoint. Current integrated implementation,
+engine versions and executable acceptance commands are documented in
+`../../docs/scenario-engine-runbook.md`. The authoritative current wire contract is
+`scenario-planning.openapi.json`, including generated `contracts/scenario/v1` models.
+Statements below about pending engine work describe the original checkpoint only.
+See `scenario-handoff.md` for consumer curl/setup and boundary semantics.
+
 Base: `c926d5d24566834850cf4a16af0792af9c7d50fd` (fetched 2026-10-27).
 Branch: `feat/scenario-planning-backend`. Status: M0 in progress, not API_READY or VERIFIED_DONE.
 Scope follows the shared 2026-10-27 brief. No dependency on Incident APIs.
