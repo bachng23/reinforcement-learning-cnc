@@ -1,4 +1,4 @@
-// Deterministic M0 proposal export. Runtime policy remains the request authority.
+// Deterministic integrated API export. Runtime policy remains the request authority.
 const fs = require('node:fs');
 const path = require('node:path');
 const { z } = require('zod');
@@ -61,6 +61,7 @@ const errors = { 400: 'VALIDATION_ERROR / SCENARIO_INVALID_TARGET / SCENARIO_INV
   401: 'UNAUTHORIZED: invalid token or inactive user', 403: 'FORBIDDEN: ADMIN or ENGINEER required for writes',
   404: 'SCENARIO_NOT_FOUND: missing or inaccessible scope',
   409: 'SCENARIO_REVISION_CONFLICT / IDEMPOTENCY_KEY_REUSED / SCENARIO_HEAD_CONFLICT / SCENARIO_RUN_NOT_READY / SCENARIO_LIVE_MAPPING_UNSUPPORTED / SCENARIO_ENGINE_VERSION_CONFLICT',
+  500: 'SCENARIO_INTERNAL_ERROR / SCENARIO_SOURCE_INTEGRITY_ERROR / OPERATIONS_INTEGRITY_ERROR',
   503: 'DB_UNAVAILABLE / SCENARIO_ENGINE_UNAVAILABLE / SCENARIO_ENGINE_CONTRACT_UNAVAILABLE (no fallback)' };
 const query = (name, schema, required = false) => ({ name, in: 'query', required, schema });
 const pagination = [query('limit', { type: 'integer', minimum: 1, maximum: 100, default: 20 }), query('cursor', { type: 'string', maxLength: 2048 })];
@@ -100,8 +101,8 @@ operation(`${workspace}/sensitivity-jobs`, 'post', 'EnqueueSensitivity', envelop
 operation(`${workspace}/sensitivity-jobs`, 'get', null, page('Job'), 200, pagination);
 operation(`${workspace}/sensitivity-jobs/{job_id}`, 'get', null, envelope(ref('Job')));
 operation(`${workspace}/live-evaluations`, 'post', 'LiveEvaluation', envelope(ref('LiveCreated')), 201);
-const document = { openapi: '3.1.0', info: { title: 'Scenario Planning M0 proposal', version: '0.1.0',
-  description: 'Not API_READY. Reject unknown/repeated query fields and unknown body fields. List ordering created_at DESC,id DESC; opaque cursor binds actor/factory/workspace/filter. Draft PATCH replaces all editable fields and checks expected_revision. Canonical override order is type then target; hash independent of override ordering. Weights finite 0..1e6 with sum >1e-12. Duration 1..43200 minutes. Sweep values explicit, unique, 1..7; Frontend default 5. FLEX engine/result/metric/sampling and DEFER LIVE mapping remain joint dependencies.' },
+const document = { openapi: '3.1.0', info: { title: 'Scenario Planning API', version: '1.0.0',
+  description: 'Integrated contract using scenario-engine:1.0, scenario-evaluator:1.0.0 and scenario-crn:1. Reject unknown/repeated query fields and unknown body fields. List ordering created_at DESC,id DESC; opaque cursor binds actor/factory/workspace/filter. Draft PATCH replaces all editable fields and checks expected_revision. Canonical override order is type then target; hash independent of override ordering. Weights finite 0..1e6 with sum >1e-12. Duration is integer 1..43200 minutes. Sweep values explicit, unique, 1..7; Frontend default 5. A SUCCEEDED job has accepted output; inspect aggregate and per-point outcomes for partial failure, timeout or no-feasible results. LIVE handoff supports objective weights and typed defer bounds, creates a fresh case and requires new planning/review; physical assumptions require authorized ingestion of actual facts.' },
   servers: [{ url: '/api/v1' }], security: [{ cookieAuth: [] }, { bearerAuth: [] }], paths,
   components: { schemas, securitySchemes: { cookieAuth: { type: 'apiKey', in: 'cookie', name: 'pdm_token' }, bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } } } };
 const target = path.resolve(__dirname, '../docs/scenario-planning.openapi.json');

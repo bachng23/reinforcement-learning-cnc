@@ -1,6 +1,6 @@
 {
-  "status": "M0_PROPOSAL_NOT_API_READY",
-  "note": "Illustrative identities only; real run IDs and Flex DTO evidence will replace these in the implementation handoff.",
+  "status": "INTEGRATED_CONTRACT",
+  "note": "Illustrative contract identities only. See scenario-handoff.md and acceptance artifacts for real API run IDs, result DTOs and provenance; ephemeral test IDs are not persistent demo records.",
   "create_workspace": {
     "factory_id": "factory-a",
     "name": "October maintenance planning",
