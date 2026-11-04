@@ -454,6 +454,9 @@ test("real baseline → overrides → run → compare → sensitivity → reload
       .fill(deferAt.slice(0, 16));
     await page.getByRole("button", { name: "Review draft changes" }).click();
     await page.getByRole("button", { name: "Save reviewed draft" }).click();
+    // Saving a new draft changes route identity; the old RunReview can remain
+    // mounted until App Router commits that destination.
+    await expect(page).toHaveURL(/scenario_id=/);
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await enqueue(page, "Run saved scenario");
     await expect
@@ -611,6 +614,7 @@ test("real baseline → overrides → run → compare → sensitivity → reload
     await page.getByLabel("Assumption 1 duration").fill("60");
     await page.getByRole("button", { name: "Review draft changes" }).click();
     await page.getByRole("button", { name: "Save reviewed draft" }).click();
+    await expect(page).toHaveURL(/scenario_id=/);
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await enqueue(page, "Run saved scenario");
     await expect(page).toHaveURL(/run_id=/);
