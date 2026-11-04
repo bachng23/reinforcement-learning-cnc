@@ -56,6 +56,54 @@ def test_common_draws_ignore_schedule_uuid_but_preserve_actual_model():
         draws(health, request.sampling.sample_count)
 
 
+def protected_reservation(reservation):
+    payload = engine_payload()
+    evaluator = ScenarioEvaluator()
+    planned = evaluator.evaluate(EvaluationRequest.model_validate(payload))
+    publication = planned.baseline.candidates[0].schedule.model_dump(mode="json")
+    original = publication["assignments"][0]
+    original["locked"] = reservation == "locked"
+    if reservation != "locked":
+        original["status"] = reservation
+    snapshot = payload["baseline"]["snapshot"]
+    snapshot["current_schedule"] = publication
+    payload["baseline"]["snapshot_hash"] = content_hash(snapshot)
+    return payload, original
+
+
+@pytest.mark.parametrize("reservation", ["locked", "RUNNING", "COMPLETED"])
+def test_replanning_retains_immutable_reservations_exactly(reservation):
+    payload, original = protected_reservation(reservation)
+    source_before = copy.deepcopy(payload)
+
+    # Replanning must retain every field, including identity and timestamps.
+    unchanged = ScenarioEvaluator().evaluate(EvaluationRequest.model_validate(payload))
+    assert unchanged.baseline.outcome == "FEASIBLE"
+    for candidate in unchanged.baseline.candidates:
+        assert candidate.schedule.assignments[0].model_dump(mode="json") == original
+    assert payload == source_before
+
+
+@pytest.mark.parametrize("reservation", ["locked", "RUNNING"])
+def test_physical_override_cannot_stretch_a_locked_or_running_reservation(reservation):
+    payload, _ = protected_reservation(reservation)
+    source_before = copy.deepcopy(payload)
+    evaluator = ScenarioEvaluator()
+    unchanged = evaluator.evaluate(EvaluationRequest.model_validate(payload))
+
+    # The accepted 60-minute reservation cannot become a hypothetical 90-minute
+    # assignment. Infeasibility is a domain outcome with no invented result KPI.
+    payload["overrides"] = [duration(90)]
+    result = evaluator.evaluate(EvaluationRequest.model_validate(payload))
+    assert result.baseline == unchanged.baseline
+    assert result.scenario.outcome == "NO_FEASIBLE_PLAN"
+    assert result.scenario.candidates == []
+    assert result.scenario.ranking is None
+    assert all(metric.scenario is None for metric in result.comparison.metrics)
+    assert all(point.outcome == "NO_FEASIBLE_PLAN" for point in result.scenario.candidate_availability)
+    assert payload["baseline"] == source_before["baseline"]
+
+
 @pytest.mark.parametrize("minutes,expected", [(30, "FEASIBLE"), (90, "FEASIBLE"), (91, "NO_FEASIBLE_PLAN")])
 def test_evaluation_physically_changes_schedule_and_never_fills_failed_kpis(minutes, expected):
     request = EvaluationRequest.model_validate(engine_payload([duration(minutes)]))
