@@ -75,12 +75,8 @@ function CreateWorkspacePanel({
     const window = context.data.snapshot.planning_window;
     setConfig((old) => ({
       ...old,
-      horizon_minutes: Math.min(
-        old.horizon_minutes,
-        Math.floor(
-          (Date.parse(window.end_at) - Date.parse(window.start_at)) / 60000,
-        ),
-      ),
+      horizon_minutes:
+        (Date.parse(window.end_at) - Date.parse(window.start_at)) / 60000,
     }));
     setInitialized(true);
   }, [context.kind, context.data, initialized]);
@@ -152,7 +148,7 @@ function CreateWorkspacePanel({
                 throw new ScenarioError(400, "INVALID_INPUT");
               const window = current.snapshot.planning_window;
               if (
-                config.horizon_minutes >
+                config.horizon_minutes !==
                 (Date.parse(window.end_at) - Date.parse(window.start_at)) /
                   60000
               )
@@ -215,6 +211,7 @@ function CreateWorkspacePanel({
                   className={scenarioInput}
                   required
                   type="number"
+                  readOnly={key === "horizon_minutes"}
                   step={1}
                   min={key === "base_seed" ? 0 : 1}
                   max={max}

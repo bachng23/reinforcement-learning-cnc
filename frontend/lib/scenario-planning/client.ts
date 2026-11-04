@@ -6,7 +6,105 @@ import {
   createOperationsApiClient,
   type OperationsApiClient,
 } from "@/lib/operations-api/client";
-import type { FactorySnapshot } from "@/types/generated/operations";
+
+export function sameScenarioHead(left: DTO.Head, right: DTO.Head) {
+  return (
+    left.snapshot_id === right.snapshot_id &&
+    left.plan_version === right.plan_version &&
+    left.revision === right.revision
+  );
+}
+export function assertScenarioContext(
+  job: DTO.Job,
+  workspace: DTO.Workspace,
+  source?: DTO.Job,
+) {
+  if (!matchesScenarioSchema(job, "Job"))
+    throw new ScenarioError(502, "INVALID_RESPONSE");
+  if (
+    job.workspace_id !== workspace.workspace_id ||
+    job.engine_version !== workspace.engine_version ||
+    job.contract_version !== workspace.contract_version
+  )
+    throw new ScenarioError(502, "CONTEXT_MISMATCH");
+  const result = job.result;
+  if (!result) return;
+  if (
+    result.identity.factory_id !== workspace.baseline.factory_id ||
+    result.identity.workspace_id !== workspace.workspace_id ||
+    result.engine_version !== job.engine_version ||
+    result.contract_version !== job.contract_version
+  )
+    throw new ScenarioError(502, "CONTEXT_MISMATCH");
+  const validateEvaluation = (value: DTO.Evaluation) => {
+    const candidates = value.candidates ?? [];
+    const ids = candidates.map((candidate) => candidate.candidate_plan_id);
+    if (
+      new Set(ids).size !== ids.length ||
+      (value.outcome === "FEASIBLE"
+        ? !ids.length ||
+          !value.selected_candidate_id ||
+          !ids.includes(value.selected_candidate_id) ||
+          !value.ranking ||
+          value.ranking.rows.length !== ids.length ||
+          value.ranking.rows[0]?.candidate_plan_id !==
+            value.selected_candidate_id ||
+          new Set(value.ranking.rows.map((row) => row.candidate_plan_id))
+            .size !== ids.length ||
+          value.ranking.rows.some((row) => !ids.includes(row.candidate_plan_id))
+        : ids.length > 0 ||
+          value.selected_candidate_id != null ||
+          value.ranking != null) ||
+      candidates.some(
+        (candidate) =>
+          candidate.validation?.verdict !== "VALID" ||
+          candidate.validation.candidate_plan_id !==
+            candidate.candidate_plan_id ||
+          candidate.schedule.factory_id !== workspace.baseline.factory_id ||
+          candidate.snapshot_id !== workspace.baseline.snapshot_id,
+      )
+    )
+      throw new ScenarioError(502, "INVALID_RESPONSE");
+  };
+  if (job.kind === "RUN") {
+    if (
+      !("scenario" in result) ||
+      result.identity.run_id !== job.job_id ||
+      result.identity.frozen_input_hash !== job.input_hash ||
+      result.effective.source_hash !== workspace.baseline.snapshot_hash ||
+      (result.effective.snapshot &&
+        (result.effective.snapshot.snapshot_id !==
+          workspace.baseline.snapshot_id ||
+          result.effective.snapshot.factory_id !==
+            workspace.baseline.factory_id))
+    )
+      throw new ScenarioError(502, "CONTEXT_MISMATCH");
+    validateEvaluation(result.baseline);
+    validateEvaluation(result.scenario);
+  } else {
+    if (
+      !("points" in result) ||
+      result.identity.run_id !== job.source_run_id ||
+      (source &&
+        (source.job_id !== job.source_run_id ||
+          source.input_hash !== result.identity.frozen_input_hash))
+    )
+      throw new ScenarioError(502, "CONTEXT_MISMATCH");
+    if (
+      result.points.length !== result.axis.values.length ||
+      new Set(result.points.map((point) => point.value)).size !==
+        result.points.length ||
+      result.points.some(
+        (point) =>
+          !result.axis.values.includes(point.value) ||
+          point.status !== point.evaluation.outcome,
+      )
+    )
+      throw new ScenarioError(502, "INVALID_RESPONSE");
+    validateEvaluation(result.baseline_point);
+    result.points.forEach((point) => validateEvaluation(point.evaluation));
+  }
+}
 
 type JsonSchema = {
   $ref?: string;
@@ -15,7 +113,7 @@ type JsonSchema = {
   type?: string | string[];
   properties?: Record<string, JsonSchema>;
   required?: string[];
-  additionalProperties?: boolean;
+  additionalProperties?: boolean | JsonSchema;
   items?: JsonSchema;
   minimum?: number;
   maximum?: number;
@@ -23,6 +121,10 @@ type JsonSchema = {
   maxLength?: number;
   minItems?: number;
   maxItems?: number;
+  uniqueItems?: boolean;
+  exclusiveMinimum?: number;
+  exclusiveMaximum?: number;
+  allOf?: JsonSchema[];
   pattern?: string;
   format?: string;
   anyOf?: JsonSchema[];
@@ -38,6 +140,8 @@ export function matchesScenarioSchema(
   const s =
     typeof definition === "string" ? definitions[definition] : definition;
   if (!s) return false;
+  if (s.allOf && !s.allOf.every((item) => matchesScenarioSchema(value, item)))
+    return false;
   if (s.$ref) return matchesScenarioSchema(value, s.$ref.split("/").at(-1)!);
   if (s.anyOf && !s.anyOf.some((item) => matchesScenarioSchema(value, item)))
     return false;
@@ -70,6 +174,12 @@ export function matchesScenarioSchema(
       (s.maximum !== undefined && value > s.maximum))
   )
     return false;
+  if (
+    typeof value === "number" &&
+    ((s.exclusiveMinimum !== undefined && value <= s.exclusiveMinimum) ||
+      (s.exclusiveMaximum !== undefined && value >= s.exclusiveMaximum))
+  )
+    return false;
   if (typeof value === "string") {
     if (
       (s.minLength !== undefined && value.length < s.minLength) ||
@@ -93,6 +203,9 @@ export function matchesScenarioSchema(
     Array.isArray(value) &&
     ((s.minItems !== undefined && value.length < s.minItems) ||
       (s.maxItems !== undefined && value.length > s.maxItems) ||
+      (s.uniqueItems &&
+        new Set(value.map((item) => JSON.stringify(item))).size !==
+          value.length) ||
       (s.items && value.some((item) => !matchesScenarioSchema(item, s.items!))))
   )
     return false;
@@ -102,7 +215,9 @@ export function matchesScenarioSchema(
       Object.entries(value).some(([key, item]) =>
         s.properties?.[key]
           ? !matchesScenarioSchema(item, s.properties[key])
-          : s.additionalProperties === false,
+          : s.additionalProperties === false ||
+            (typeof s.additionalProperties === "object" &&
+              !matchesScenarioSchema(item, s.additionalProperties)),
       )
     )
       return false;
@@ -152,7 +267,7 @@ export function scenarioErrorText(error: ScenarioError) {
     INVALID_CURSOR:
       "The cursor does not match your current user/factory scope. Restart from the first page.",
     INVALID_INPUT:
-      "Review the required fields, allowed targets, bounds and planning window.",
+      "Review the required fields, allowed targets, bounds and planning window. A sweep may not create more than five effective overrides.",
     DUPLICATE_OVERRIDE:
       "Each type/target pair may appear only once. Review the duplicate assumption.",
     INVALID_WINDOW:
@@ -264,6 +379,21 @@ export function createScenarioClient({
         job.points.length
     )
       throw new ScenarioError(502, "INVALID_RESPONSE");
+    if (job.result) {
+      const result = job.result;
+      if (
+        result.identity.workspace_id !== workspace ||
+        result.identity.run_id !==
+          (job.kind === "RUN" ? job.job_id : job.source_run_id) ||
+        result.engine_version !== job.engine_version ||
+        result.contract_version !== job.contract_version ||
+        (job.kind === "RUN"
+          ? !("scenario" in result) ||
+            result.identity.frozen_input_hash !== job.input_hash
+          : !("points" in result))
+      )
+        throw new ScenarioError(502, "CONTEXT_MISMATCH");
+    }
   }
   return {
     async identity(options: ReadOptions = {}): Promise<TokenUser> {
@@ -455,33 +585,62 @@ export function createScenarioClient({
     async baselineEntities(
       workspace: DTO.Workspace,
       options?: ReadOptions,
-    ): Promise<FactorySnapshot> {
+    ): Promise<DTO.BaselineEntities> {
+      const response =
+        await request<DTO.GetScenarioWorkspacesByWorkspaceIdBaselineEntities>(
+          `${path(workspace.workspace_id)}/baseline-entities`,
+          "get_scenario_workspaces_by_workspace_id_baseline_entities",
+          options,
+        );
+      const entities = response.data;
+      const basis = entities.baseline;
+      const expected = workspace.baseline;
       if (
-        workspace.current_head?.snapshot_id !== workspace.baseline.snapshot_id
+        entities.workspace_id !== workspace.workspace_id ||
+        basis.factory_id !== expected.factory_id ||
+        basis.snapshot_id !== expected.snapshot_id ||
+        basis.snapshot_hash !== expected.snapshot_hash ||
+        basis.plan_version !== expected.plan_version ||
+        (basis.publication === null
+          ? expected.publication !== null
+          : !expected.publication ||
+            basis.publication.schedule_id !==
+              expected.publication.schedule_id ||
+            basis.publication.schedule_revision !==
+              expected.publication.schedule_revision ||
+            basis.publication.schedule_hash !==
+              expected.publication.schedule_hash) ||
+        new Set(entities.technicians.map((item) => item.technician_id)).size !==
+          entities.technicians.length ||
+        new Set(
+          entities.maintenance_requests.map(
+            (item) => item.maintenance_request_id,
+          ),
+        ).size !== entities.maintenance_requests.length
       )
-        throw new ScenarioError(503, "BASELINE_ENTITIES_UNAVAILABLE");
-      const response = await operations.getOperationsSnapshot(
-        workspace.baseline.factory_id,
-        options,
-      );
-      if (
-        response.factory_id !== workspace.baseline.factory_id ||
-        response.snapshot_id !== workspace.baseline.snapshot_id ||
-        response.snapshot.snapshot_id !== workspace.baseline.snapshot_id ||
-        response.snapshot.factory_id !== workspace.baseline.factory_id
-      )
-        throw new ScenarioError(503, "BASELINE_ENTITIES_UNAVAILABLE");
-      return response.snapshot;
+        throw new ScenarioError(502, "CONTEXT_MISMATCH");
+      return entities;
     },
     async enqueueRun(
       workspace: string,
       body: DTO.EnqueueRun,
       options: WriteOptions,
     ): Promise<DTO.Job> {
-      const result = await request<DTO.PostScenarioWorkspacesByWorkspaceIdRuns>(`${path(workspace)}/runs`,
-        "post_scenario_workspaces_by_workspace_id_runs", options,
-        { method: "POST", body, key: options.key, schema: "EnqueueRun" });
+      const result = await request<DTO.PostScenarioWorkspacesByWorkspaceIdRuns>(
+        `${path(workspace)}/runs`,
+        "post_scenario_workspaces_by_workspace_id_runs",
+        options,
+        { method: "POST", body, key: options.key, schema: "EnqueueRun" },
+      );
       assertJob(result.data, workspace);
+      if (
+        result.data.kind !== "RUN" ||
+        result.data.source_scenario_id !==
+          (body.kind === "SCENARIO" ? body.scenario_id : null) ||
+        result.data.source_revision !==
+          (body.kind === "SCENARIO" ? body.expected_revision : null)
+      )
+        throw new ScenarioError(502, "INVALID_RESPONSE");
       return result.data;
     },
     async compare(
@@ -489,11 +648,26 @@ export function createScenarioClient({
       ids: string[],
       options?: ReadOptions,
     ): Promise<DTO.CompareResult> {
-      const result = await request<DTO.GetScenarioWorkspacesByWorkspaceIdCompare>(
-        `${path(workspace)}/compare?${query({run_ids: ids.map(id).join(",")})}`,
-        "get_scenario_workspaces_by_workspace_id_compare", options);
-      if (result.data.reference_identity.workspace_id !== workspace || result.data.reference_identity.run_id !== ids[0]
-        || result.data.runs.some((run, index) => run.identity.workspace_id !== workspace || run.identity.run_id !== ids[index + 1]))
+      if (ids.length < 2 || ids.length > 4 || new Set(ids).size !== ids.length)
+        throw new ScenarioError(400, "INVALID_INPUT");
+      const result =
+        await request<DTO.GetScenarioWorkspacesByWorkspaceIdCompare>(
+          `${path(workspace)}/compare?${query({ run_ids: ids.map(id).join(",") })}`,
+          "get_scenario_workspaces_by_workspace_id_compare",
+          options,
+        );
+      if (
+        result.data.reference_identity.workspace_id !== workspace ||
+        result.data.reference_identity.run_id !== ids[0] ||
+        result.data.runs.length !== ids.length - 1 ||
+        result.data.runs.some(
+          (run, index) =>
+            run.identity.workspace_id !== workspace ||
+            run.identity.run_id !== ids[index + 1] ||
+            run.identity.factory_id !==
+              result.data.reference_identity.factory_id,
+        )
+      )
         throw new ScenarioError(502, "INVALID_RESPONSE");
       return result.data;
     },
@@ -502,16 +676,40 @@ export function createScenarioClient({
       body: DTO.EnqueueSensitivity,
       options: WriteOptions,
     ): Promise<DTO.Job> {
-      const result = await request<DTO.PostScenarioWorkspacesByWorkspaceIdSensitivityJobs>(`${path(workspace)}/sensitivity-jobs`,
-        "post_scenario_workspaces_by_workspace_id_sensitivity_jobs", options,
-        { method: "POST", body, key: options.key, schema: "EnqueueSensitivity" });
+      const result =
+        await request<DTO.PostScenarioWorkspacesByWorkspaceIdSensitivityJobs>(
+          `${path(workspace)}/sensitivity-jobs`,
+          "post_scenario_workspaces_by_workspace_id_sensitivity_jobs",
+          options,
+          {
+            method: "POST",
+            body,
+            key: options.key,
+            schema: "EnqueueSensitivity",
+          },
+        );
       assertJob(result.data, workspace);
+      if (
+        result.data.kind !== "SENSITIVITY" ||
+        result.data.source_run_id !== body.source_run_id
+      )
+        throw new ScenarioError(502, "INVALID_RESPONSE");
       return result.data;
     },
-    async sensitivity(workspace: string, job: string, options?: ReadOptions): Promise<DTO.Job> {
-      const result = await request<DTO.GetScenarioWorkspacesByWorkspaceIdSensitivityJobsByJobId>(`${path(workspace)}/sensitivity-jobs/${id(job)}`,
-        "get_scenario_workspaces_by_workspace_id_sensitivity_jobs_by_job_id", options);
+    async sensitivity(
+      workspace: string,
+      job: string,
+      options?: ReadOptions,
+    ): Promise<DTO.Job> {
+      const result =
+        await request<DTO.GetScenarioWorkspacesByWorkspaceIdSensitivityJobsByJobId>(
+          `${path(workspace)}/sensitivity-jobs/${id(job)}`,
+          "get_scenario_workspaces_by_workspace_id_sensitivity_jobs_by_job_id",
+          options,
+        );
       assertJob(result.data, workspace, job);
+      if (result.data.kind !== "SENSITIVITY")
+        throw new ScenarioError(502, "INVALID_RESPONSE");
       return result.data;
     },
     async evaluateLive(
@@ -519,11 +717,38 @@ export function createScenarioClient({
       body: DTO.LiveEvaluation,
       options: WriteOptions,
     ): Promise<DTO.LiveCreated> {
-      const result = await request<DTO.PostScenarioWorkspacesByWorkspaceIdLiveEvaluations>(`${path(workspace)}/live-evaluations`,
-        "post_scenario_workspaces_by_workspace_id_live_evaluations", options,
-        { method: "POST", body, key: options.key, schema: "LiveEvaluation" });
-      if (result.data.workspace_id !== workspace || result.data.source_run_id !== body.source_run_id) throw new ScenarioError(502, "INVALID_RESPONSE");
+      const result =
+        await request<DTO.PostScenarioWorkspacesByWorkspaceIdLiveEvaluations>(
+          `${path(workspace)}/live-evaluations`,
+          "post_scenario_workspaces_by_workspace_id_live_evaluations",
+          options,
+          { method: "POST", body, key: options.key, schema: "LiveEvaluation" },
+        );
+      if (
+        result.data.workspace_id !== workspace ||
+        result.data.source_run_id !== body.source_run_id ||
+        !sameScenarioHead(result.data.current_head, body.expected_head)
+      )
+        throw new ScenarioError(502, "INVALID_RESPONSE");
       return result.data;
+    },
+    async verifyLiveCase(
+      created: DTO.LiveCreated,
+      factoryId: string,
+      options?: ReadOptions,
+    ) {
+      const response = await operations.getDecisionCase(
+        created.decision_case_id,
+        options,
+      );
+      if (
+        response.meta?.factory_id !== factoryId ||
+        response.caseStatus.decision_case_id !== created.decision_case_id ||
+        response.caseStatus.mode !== "LIVE" ||
+        response.caseStatus.snapshot_id !== created.current_head.snapshot_id
+      )
+        throw new ScenarioError(502, "CONTEXT_MISMATCH");
+      return created;
     },
   };
 }

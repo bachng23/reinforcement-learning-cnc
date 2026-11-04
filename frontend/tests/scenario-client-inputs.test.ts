@@ -23,7 +23,7 @@ import {
   scenarioDraft,
   scenarioDraftInput,
   scenarioJob,
-  scenarioSnapshot,
+  scenarioEntities,
   workspaceId,
   draftId,
   runId,
@@ -121,21 +121,19 @@ describe("pinned Scenario producer proposal", () => {
     "keeps safe %s errors and support request ID",
     async (status) => {
       const api = createScenarioClient({
-        fetcher: vi
-          .fn()
-          .mockResolvedValue(
-            Response.json(
-              {
-                success: false,
-                error: {
-                  code: "SCENARIO_FAILURE",
-                  message: "Private stack/report",
-                },
-                requestId: "req-support",
+        fetcher: vi.fn().mockResolvedValue(
+          Response.json(
+            {
+              success: false,
+              error: {
+                code: "SCENARIO_FAILURE",
+                message: "Private stack/report",
               },
-              { status },
-            ),
+              requestId: "req-support",
+            },
+            { status },
           ),
+        ),
       });
       const error = await api
         .workspace(workspaceId, "F")
@@ -146,37 +144,52 @@ describe("pinned Scenario producer proposal", () => {
       );
     },
   );
-  it("never reads current S2 for an unavailable historical S1 basis", async () => {
+  it("reads immutable S1 entities even after current head advances to S2", async () => {
     const operations = createMockOperationsApiClient();
     const current = vi.spyOn(operations, "getOperationsSnapshot");
     const workspace = scenarioWorkspace();
     workspace.current_head!.snapshot_id = "S2";
     workspace.stale = true;
-    const api = createScenarioClient({ operations });
-    await expect(api.baselineEntities(workspace)).rejects.toMatchObject({
-      code: "BASELINE_ENTITIES_UNAVAILABLE",
-    });
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        Response.json({ success: true, data: scenarioEntities() }),
+      );
+    const api = createScenarioClient({ operations, fetcher });
+    expect((await api.baselineEntities(workspace)).baseline.snapshot_id).toBe(
+      workspace.baseline.snapshot_id,
+    );
+    expect(String(fetcher.mock.calls[0][0])).toContain(
+      `/scenario-workspaces/${workspaceId}/baseline-entities`,
+    );
     expect(current).not.toHaveBeenCalled();
   });
   it("rejects an S2 response arriving during an S1 basis read", async () => {
     const operations = createMockOperationsApiClient();
-    const original = operations.getOperationsSnapshot.bind(operations);
-    vi.spyOn(operations, "getOperationsSnapshot").mockImplementation(
-      async (...args) => ({ ...(await original(...args)), snapshot_id: "S2" }),
-    );
+    const entities = scenarioEntities();
+    entities.baseline.snapshot_id = "S2";
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ success: true, data: entities }));
     await expect(
-      createScenarioClient({ operations }).baselineEntities(
+      createScenarioClient({ operations, fetcher }).baselineEntities(
         scenarioWorkspace(),
       ),
-    ).rejects.toMatchObject({ code: "BASELINE_ENTITIES_UNAVAILABLE" });
+    ).rejects.toMatchObject({ code: "CONTEXT_MISMATCH" });
   });
   it("rejects malformed responses on every integrated engine operation", async () => {
-    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => Response.json({success: true, data: {invented: true}}));
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () =>
+        Response.json({ success: true, data: { invented: true } }),
+      );
     const api = createScenarioClient({ fetcher });
     await expect(
       api.enqueueRun(workspaceId, { kind: "BASELINE" }, { key: "run" }),
     ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
-    await expect(api.compare(workspaceId, [runId])).rejects.toMatchObject({
+    await expect(
+      api.compare(workspaceId, [runId, draftId]),
+    ).rejects.toMatchObject({
       code: "INVALID_RESPONSE",
     });
     await expect(
@@ -210,7 +223,7 @@ describe("pinned Scenario producer proposal", () => {
 
 describe("requested assumptions only; no effective transform/scoring", () => {
   it("validates all three templates against real baseline resource types without mutating it", () => {
-    const snapshot = scenarioSnapshot();
+    const snapshot = scenarioEntities();
     const before = structuredClone(snapshot);
     const draft = scenarioDraftInput();
     draft.overrides.push(
@@ -234,7 +247,7 @@ describe("requested assumptions only; no effective transform/scoring", () => {
     });
   });
   it("rejects duplicate target/type, User-as-Technician, out-of-window and invalid numerics", () => {
-    const snapshot = scenarioSnapshot();
+    const snapshot = scenarioEntities();
     const draft = scenarioDraftInput();
     expect(() =>
       validateDraft(

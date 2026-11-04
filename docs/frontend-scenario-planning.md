@@ -1,61 +1,130 @@
-# Scenario Planning frontend — contract and route handoff
+# Scenario Planning workspace — routes, contract and boundaries
 
-Base main: `c926d5d24566834850cf4a16af0792af9c7d50fd`, 2026-10-27.
-Branch: `frontend/scenario-planning-workspace`. Backend draft #56 dependency:
-`aa56ecfceb85b6d6f78158ac34d37440103942a4`. #54 is actually merged on this base;
-#55 remains separate acceptance work. No Scenario dependency on Incident.
+Frontend branch: `frontend/scenario-planning-workspace`. Producer dependency:
+[Backend/Flex integration #58](https://github.com/AIVIETNAM-AIO-BachNguyen/reinforcement-learning-cnc/pull/58)
+at `d49ddfbbe3ffddb51cea03077aa032e4acb2ee1e`. The frontend is stacked on that
+integration until it reaches main; its review diff must exclude Backend/Flex
+implementation changes. Previous main was `c926d5d24566834850cf4a16af0792af9c7d50fd`.
 
-The shared brief and the supplied Flex task are requirements, not frozen DTOs.
-Backend explicitly labels its OpenAPI M0 proposal, NOT_API_READY, with
-EngineResult/Comparison PENDING_FLEX. No executable Scenario worker or implemented
-compare/sensitivity routes exist on that dependency. This frontend must not
-manufacture those response fields or claim full completion from contract tests.
+The integrated producer now supplies immutable baseline entities, executable
+Scenario jobs, comparison, sensitivity and supported LIVE mapping. Earlier M0
+gaps G1–G5 are addressed by this pinned dependency. `INTEGRATED_CONTRACT` in the
+consumer manifest describes the contract, not frontend `VERIFIED_DONE`.
+Three clean-schema browser runs, screenshots, cleanup and final CI remain the
+promotion gate; see the [runbook](frontend-scenario-planning-runbook.md).
 
-## Routes and desktop wireframe
+## Routes and selection
 
 | Route | Responsibility |
 | --- | --- |
-| `/operations/scenarios?factory_id=F&cursor=opaque` | Scoped workspace list and current-context creation review |
-| `/operations/scenarios/[workspaceId]?factory_id=F&scenario_id=D&run_id=R&compare=R1,R2&sensitivity_id=S` | Immutable baseline, editor/review, run inspector, comparison selection and sensitivity |
-| `/operations/what-if` | Production entry redirects to Scenario Planning; old fixture is only accessible with explicit `demo=1` |
+| `/operations/scenarios?factory_id=F&cursor=opaque` | Factory-scoped workspace directory, current-context creation review and cursor pagination |
+| `/operations/scenarios/[workspaceId]?factory_id=F` | Immutable baseline and editor, saved drafts/runs, comparison, sensitivity and LIVE handoff |
+| `/operations/what-if?factory_id=F` | Production entry redirects to Scenario Planning |
+| `/operations/what-if?demo=1` | Explicit legacy fixture preview, never production Scenario data |
+
+Workspace query parameters preserve `scenario_id`, `run_id`, `compare` (one
+baseline followed by up to three scenarios), `sensitivity_id`, `candidate_id`,
+`point`, `metric`, `draft_cursor` and `run_cursor`. Candidate and point selection
+updates URL and local presentation without enqueueing, rerunning or resetting the
+editor. Refresh/reload reads saved records. Section links preserve unsaved input;
+leaving the draft/workspace warns before discarding it.
 
 ```text
-Scenario Planning                         Factory / create / refresh
-Saved workspace | baseline snapshot / publication | versions | stale
+AppShell / Scenario Planning                     Factory / directory / refresh
+Workspace sections: Draft | Runs / Compare | Selected run | Sensitivity result
+Pinned snapshot + plan / publication / engine + contract / historical status
 
-Workspace: baseline S1/P1 — config / engine — creator — historical flag
-Draft selector + revision     | Targeted overrides + 5 objective weights
-Review requested changes     | Save explicit revision / Run (gated)
-Saved runs + status/attempt   | Baseline + <=3 scenarios / compare
-Sensitivity inputs <=7 points| Result/diagnostics/intervals (gated)
-Evaluate LIVE: current context + confirmation (gated)
+Saved drafts + revision | Technician/request target forms + five raw weights
+                       | Requested diff + Save / explicit saved-revision Run
+Saved runs: status, attempt, source revision | baseline + <=3 scenario selection
+Authoritative comparison: units / raw / delta / direction / tradeoffs
+Selected run: effective diff / constraints / model + sampling / valid candidates
+Candidate ranking context + contributions | large machine/technician Gantt
+Sensitivity: one axis / <=7 explicit samples / frozen-input confirmation
+Saved sensitivity: KPI chart / baseline marker / gaps / per-point inspection
+Evaluate LIVE: supported mapping / current context / separate confirmation
+              -> new Decision Case -> existing planning and human approval
 ```
 
-Hashes belong in expandable provenance. Reuse AppShell/tokens, sticky tables,
-labelled keyboard forms and 1440×900 / 1920×1080 / 2560×1440 layouts. No mobile
-redesign. No changes to Incident/Work Order product flows.
+Desktop sizes are 1440×900, 1920×1080 and 2560×1440. Forms reuse AppShell and
+existing tokens. Wide records have labelled scroll regions and sticky headers;
+candidate, sample and section controls support keyboard navigation. This task
+does not redesign mobile or change Incident/Work Order flows.
 
-## API map and concrete dependencies
+## Generated contract and API mapping
 
-| Contract surface | Frontend implementation / safe boundary |
+Source: `backend/docs/scenario-planning.openapi.json` from the pinned
+producer SHA. Normalized source SHA-256:
+`8a00e38c96b307df531f5963e176d931a19ce63b1dc5604437aa88fc05853ac5`.
+`frontend/scripts/generate-scenario-types.mjs` verifies that pin and generates
+the DTOs, response schemas and capability manifest under `types/generated`.
+There is no parallel frontend result/KPI model or independent proposal schema.
+
+Paths below are relative to `/api/v1`. All calls use authenticated, no-store
+HTTP; Scenario production has no fixture adapter or fixture fallback.
+
+| Client method / API | UI and identity checks |
 | --- | --- |
-| Workspace POST/list/detail | Pinned generated producer-proposal DTOs; real HTTP only; idempotency/head fence; no snapshot from fixtures |
-| Draft POST/list/detail/PATCH | Full replacement fields, expected_revision, duplicate/window/bounds validation, explicit review on conflict |
-| Baseline entities | **G1 Backend:** Workspace DTO lacks immutable snapshot/entities read. Reuse current Operations snapshot only if factory + snapshot ID exactly match immutable workspace basis. When S2 differs, historical metadata/drafts remain readable, target editor fails closed; never substitute S2. Need scoped immutable basis/entities and sampling/reference read DTO. |
-| Run enqueue/list/detail | **G2 Backend/Flex:** no executable worker, frozen-input/attempt-history read or reviewed engine result/sampling DTO. Read existing job metadata; prepare explicit run review but disable enqueue until reviewed/callable integration. Never render unknown `result` fields as KPI. |
-| Compare | **G3 Flex/Backend:** `Comparison` is explicitly unfrozen and route unimplemented. Prepare URL-bound <=4 completed selections (baseline + <=3 scenario), no score/delta/calculated KPI model. Need authoritative metrics/units/direction/null reasons/contributions/normalization/tie-break, schedule and constraints DTOs and golden outputs. |
-| Sensitivity | **G4 Flex/Backend:** proposal-only endpoints; authoritative per-point aggregate/interval/result/sampling contract missing. Build bounded input review and existing job metadata inspector; no fake chart, reranking, breakpoints or confidence. |
-| Evaluate LIVE | **G5 Backend/Flex:** weights-only route exists in proposal; DEFER cannot map through current canonical LIVE schema. No frozen override/mapping eligibility read. Keep handoff disabled until saved-source eligibility and reviewed schema are available. No WHAT_IF-in-LIVE workaround, approval or COMMIT simulation. |
-| Retry attempts | **G6 Backend:** no public retry-attempt endpoint in proposal. Read attempt number, retry GETs / original uncertain HTTP intent only; never enqueue draft-latest as a job retry. |
+| `currentContext(factory)` via Operations API | Synchronizes current snapshot/head for creation and LIVE review only |
+| `GET/POST /scenario-workspaces` | Scoped directory; create freezes expected head and the pinned planning window |
+| `GET /scenario-workspaces/:workspace` | Basis/publication/config/engine metadata and historical flag |
+| `GET .../baseline-entities` | Generated `BaselineEntities`, matching factory, snapshot, hash, plan and publication; never substitutes a current snapshot |
+| `GET/POST .../scenarios`, `GET/PATCH .../scenarios/:scenario` | Saved draft revision, full replacement of editable inputs and explicit conflict review |
+| `GET/POST .../runs`, `GET .../runs/:run` | Explicit saved-revision/baseline run; persisted job status, attempt, frozen hash and typed engine result |
+| `GET .../compare?run_ids=baseline,scenario,...` | Ordered result identities/hashes, backend metrics/deltas/units/direction and tradeoff evidence |
+| `POST .../sensitivity-jobs`, `GET .../sensitivity-jobs/:job` | Frozen source, one axis, point outcomes, sampled rank intervals and model/sampling metadata |
+| `POST .../live-evaluations` | Separate supported mapping and expected-head confirmation; verify new LIVE case by authoritative Operations GET before navigation |
 
-Proposed APIs are consumed as an explicit pinned proposal, not added to shared
-OpenAPI by Frontend. `frontend/contracts/scenario-planning.proposal.openapi.json`
-is a mechanical consumer snapshot from the exact producer SHA. Generated DTOs,
-response schemas and a dependency manifest preserve its unresolved schemas.
-`contracts:check` verifies deterministic consumer generation. A backend merge alone
-does not change manifest capabilities or prove Flex compatibility.
+`assertScenarioContext` rejects a result with the wrong workspace, factory,
+engine/contract version, immutable basis/hash, source run/hash, candidate
+validation, selected candidate or ranking identity. Sensitivity points must
+match their requested axis/order and individual outcomes. Invalid or mismatched
+payloads are withheld rather than rendered as plausible results.
 
-No external messages/task assignment, merge, deployment, backend/engine edits or
-database modifications. Continue independent UI/client/read/editor/test work.
-M2/M3 and three actual engine-backed clean-schema browser runs remain pending;
-component/HTTP contract fixtures are isolated evidence only.
+## Input and result semantics
+
+- Three templates: Technician unavailability, maintenance duration and
+  maintenance earliest start (`DEFER_MAINTENANCE`). Targets come from immutable
+  scoped entities; completed/cancelled requests cannot be selected. No raw UUID
+  or JSON editor appears in the critical flow.
+- At most five unique type/target override pairs. UTC windows must fit the pinned
+  window; duration is an integer 1–43200 minutes. Five raw weights are finite
+  0–1000000, with positive total above the producer tolerance. This is input
+  validation, not snapshot transformation, schedule validation or scoring.
+- Saved revision and requested diff are reviewed before a run. Unsaved edits are
+  excluded. Historical metadata and saved draft fields remain readable even when
+  the immutable entities service is unavailable; target editing fails closed.
+- KPI values, raw/delta/percent, unit, preferred direction, change verdict,
+  feasibility, constraints, ranks, normalized weights/contributions and
+  tradeoffs are displayed from the engine response. Missing/null values retain
+  their reason; they are never filled with zero. Colors use the backend change
+  verdict, including metrics for which higher is worse.
+- Scores retain their candidate-set/reference context. Comparing runs does not
+  create an absolute score or rerank in React. Candidate Gantt uses the selected
+  validated plan and that result's effective immutable snapshot.
+- Sensitivity reranks/replans on the server. Chart geometry and axis ticks are
+  presentation calculations only. Failed/infeasible points break the line and
+  have no plotted KPI; a sampled rank interval is not an exact threshold.
+  Sampling/model assumptions are visible; no confidence band is invented.
+- LIVE requires a completed saved scenario, feasible result, backend-supported
+  mapping, ADMIN/ENGINEER access and reviewed current context. Physical
+  assumptions marked unsupported stay unsupported. A new case replans; it does
+  not copy simulation candidates, approve automatically or publish simulation.
+
+## Commands, access and remaining boundary
+
+Writes freeze `Idempotency-Key`, body and revision in scoped RAM, prevent double
+submit, and verify a receipt through GET. Lost responses retry the same intent;
+409 requires refetch and manual review, never silent token replacement. Reload
+does not POST. Hard reload discards unsaved RAM inputs/keys and requires saved
+record reconciliation; no automatic replacement command is sent.
+
+Read polling backs off 2s → 4s → 8s → 15s, stops at terminal/error, and aborts
+on scope change/unmount. Auth/factory changes clear protected results; 401/403,
+404, 409, unavailable/network and unknown-result states remain explicit.
+
+The producer still exposes no public retry-attempt/history endpoint. The UI
+shows the authoritative attempt and supports read/original HTTP-intent retry;
+it never labels a new latest-draft run as a retry of an old engine attempt.
+No simulation COMMIT, manual schedule editor, backend changes or other module
+redesign is part of this frontend diff.

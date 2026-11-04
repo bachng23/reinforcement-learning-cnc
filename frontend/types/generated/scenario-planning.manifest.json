@@ -1,6 +1,6 @@
 {
   "status": "INTEGRATED_CONTRACT",
-  "producer_sha": "scenario-engine:1.0",
+  "producer_sha": "d49ddfbbe3ffddb51cea03077aa032e4acb2ee1e",
   "source_sha256": "8a00e38c96b307df531f5963e176d931a19ce63b1dc5604437aa88fc05853ac5",
   "engine_result": "scenario-engine:1.0",
   "comparison": "scenario-engine:1.0",

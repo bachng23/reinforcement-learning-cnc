@@ -7,6 +7,11 @@ import {
   scenarioDraft,
   scenarioJob,
   scenarioSnapshot,
+  scenarioEntities,
+  engineWorkspace,
+  engineEntities,
+  engineJob,
+  engineSensitivity,
   scenarioWorkspace,
   workspaceId,
   draftId,
@@ -115,7 +120,8 @@ async function contractHarness(page: Page) {
         },
       });
     let data: unknown;
-    if (url.pathname.endsWith("/scenario-workspaces"))
+    if (url.pathname.endsWith("/baseline-entities")) data = scenarioEntities();
+    else if (url.pathname.endsWith("/scenario-workspaces"))
       data = {
         items: state.empty ? [] : [workspace],
         next_cursor: url.searchParams.has("cursor") ? null : "opaque:cursor+/=",
@@ -278,7 +284,10 @@ test("historical S1 stays pinned without reading S2 entities; untyped results ne
     page.getByRole("heading", { name: "Saved historical draft" }),
   ).toBeVisible();
   await capture(page, info, "historical-baseline");
-  api.job.result = { kpis: { makespan_minutes: 987654 }, score: 0.95 } as unknown as NonNullable<typeof api.job.result>;
+  api.job.result = {
+    kpis: { makespan_minutes: 987654 },
+    score: 0.95,
+  } as unknown as NonNullable<typeof api.job.result>;
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Scenario data unavailable" }),
@@ -287,7 +296,9 @@ test("historical S1 stays pinned without reading S2 entities; untyped results ne
   await expect(page.getByText("987654", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /commit/i })).toHaveCount(0);
   await capture(page, info, "unfrozen-result");
-  await expect(page.getByRole("button", { name: "Review LIVE handoff" })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Review LIVE handoff" }),
+  ).toHaveCount(0);
   expect(api.writes).toHaveLength(0);
 });
 
@@ -329,4 +340,122 @@ test("error, retry, VIEWER and explicit preview never trigger product writes", a
     page.getByRole("heading", { name: "Scenario Planning is live-only" }),
   ).toBeVisible();
   expect(api.writes).toHaveLength(0);
+});
+
+test("computed candidate, KPI and sensitivity selection stay in the URL and never submit on inspection", async ({
+  page,
+}, info) => {
+  const workspace = engineWorkspace();
+  const source = engineJob();
+  const sweepId = "50000000-0000-4000-8000-000000000001";
+  const sweep = {
+    ...source,
+    job_id: sweepId,
+    kind: "SENSITIVITY",
+    source_scenario_id: null,
+    source_revision: null,
+    source_run_id: runId,
+    result: engineSensitivity(),
+  };
+  const writes: string[] = [];
+  const reads: string[] = [];
+  await page.route("**/api/v1/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/auth/me"))
+      return route.fulfill({ json: { success: true, user: scenarioActor } });
+    if (route.request().method() !== "GET") {
+      writes.push(url.pathname);
+      return route.fulfill({
+        status: 403,
+        json: {
+          success: false,
+          error: { code: "READ_ONLY_TEST", message: "Read only" },
+          requestId: "component-evidence",
+        },
+      });
+    }
+    reads.push(url.pathname);
+    let data: unknown;
+    if (url.pathname.endsWith("/baseline-entities")) data = engineEntities();
+    else if (url.pathname.endsWith("/scenarios"))
+      data = { items: [], next_cursor: null };
+    else if (url.pathname.endsWith(`/sensitivity-jobs/${sweepId}`))
+      data = sweep;
+    else if (url.pathname.endsWith(`/runs/${runId}`)) data = source;
+    else if (url.pathname.endsWith("/runs"))
+      data = { items: [source], next_cursor: null };
+    else data = workspace;
+    return route.fulfill({ json: { success: true, data } });
+  });
+  await page.goto(
+    `/operations/scenarios/${workspaceId}?factory_id=${workspace.baseline.factory_id}&run_id=${runId}`,
+  );
+  await expect(
+    page.getByRole("region", { name: "Evaluated scenario", exact: true }),
+  ).toBeVisible();
+  if (!source.result || !("scenario" in source.result))
+    throw new Error("Expected generated evaluation");
+  const evaluation = source.result;
+  const other = evaluation.scenario.candidates!.find(
+    (candidate) =>
+      candidate.candidate_plan_id !==
+      evaluation.scenario.selected_candidate_id,
+  )!;
+  await page
+    .getByRole("radio", {
+      name: `Select candidate ${other.candidate_plan_id}`,
+      exact: true,
+    })
+    .click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("candidate_id"))
+    .toBe(other.candidate_plan_id);
+  await expect(
+    page.getByRole("region", {
+      name: "Selected candidate details",
+      exact: true,
+    }),
+  ).toContainText(other.schedule.schedule_id);
+  await page
+    .getByRole("region", {
+      name: "Scenario candidate preview resource timeline",
+    })
+    .scrollIntoViewIfNeeded();
+  await capture(page, info, "computed-candidate-gantt");
+  await page.goto(
+    `/operations/scenarios/${workspaceId}?factory_id=${workspace.baseline.factory_id}&run_id=${runId}&sensitivity_id=${sweepId}`,
+  );
+  await expect(
+    page.getByRole("region", { name: "Evaluated sensitivity", exact: true }),
+  ).toBeVisible();
+  const previousReads = reads.filter((path) =>
+    path.includes("/sensitivity-jobs/"),
+  ).length;
+  await page
+    .getByRole("button", { name: "Inspect sensitivity sample 91", exact: true })
+    .click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("point"))
+    .toBe("91");
+  await expect(
+    page.getByRole("region", {
+      name: "Selected sensitivity sample",
+      exact: true,
+    }),
+  ).toContainText("NO_FEASIBLE_PLAN");
+  expect(
+    reads.filter((path) => path.includes("/sensitivity-jobs/")),
+  ).toHaveLength(previousReads);
+  await page
+    .getByRole("region", { name: "Sensitivity chart", exact: true })
+    .scrollIntoViewIfNeeded();
+  await capture(page, info, "computed-sensitivity-gaps");
+  await page.reload();
+  await expect(
+    page.getByRole("region", {
+      name: "Selected sensitivity sample",
+      exact: true,
+    }),
+  ).toContainText("NO_FEASIBLE_PLAN");
+  expect(writes).toHaveLength(0);
 });

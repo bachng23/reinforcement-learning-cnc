@@ -5,6 +5,9 @@ export type ScenarioSelection = {
   run_id?: string;
   compare?: string[];
   sensitivity_id?: string;
+  candidate_id?: string;
+  point?: string;
+  metric?: string;
   draft_cursor?: string;
   run_cursor?: string;
 };
@@ -35,6 +38,9 @@ export function parseScenarioSelection(
     run_id: first("run_id"),
     compare: first("compare")?.split(",").filter(Boolean),
     sensitivity_id: first("sensitivity_id"),
+    candidate_id: first("candidate_id"),
+    point: first("point"),
+    metric: first("metric"),
     draft_cursor: first("draft_cursor"),
     run_cursor: first("run_cursor"),
   };

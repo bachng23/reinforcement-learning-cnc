@@ -2,8 +2,8 @@ import type {
   CreateDraft,
   EnqueueSensitivity,
   PlanningConfig,
+  BaselineEntities,
 } from "@/types/generated/scenario-planning";
-import type { FactorySnapshot } from "@/types/generated/operations";
 import { matchesScenarioSchema, ScenarioError } from "./client";
 export const weightNames = [
   "production",
@@ -35,21 +35,22 @@ export function defaultPlanningConfig(): PlanningConfig {
     ],
   };
 }
-export function validateWeights(weights: Weights) {
+export function validateWeights(weights: Partial<Weights>) {
   if (
     weightNames.some(
       (name) =>
+        weights[name] === undefined ||
         !Number.isFinite(weights[name]) ||
-        weights[name] < 0 ||
-        weights[name] > 1e6,
+        weights[name]! < 0 ||
+        weights[name]! > 1e6,
     ) ||
-    weightNames.reduce((sum, name) => sum + weights[name], 0) <= 1e-12
+    weightNames.reduce((sum, name) => sum + weights[name]!, 0) <= 1e-12
   )
     throw new ScenarioError(400, "INVALID_WEIGHTS");
 }
 export function validateDraft(
   input: CreateDraft,
-  snapshot: FactorySnapshot,
+  snapshot: BaselineEntities,
 ): CreateDraft {
   const draft = { ...input, name: input.name.trim(), note: input.note.trim() };
   if (!matchesScenarioSchema(draft, "CreateDraft"))
@@ -78,7 +79,9 @@ export function validateDraft(
     } else {
       if (
         !snapshot.maintenance_requests?.some(
-          (r) => r.maintenance_request_id === target,
+          (r) =>
+            r.maintenance_request_id === target &&
+            !["COMPLETED", "CANCELLED"].includes(r.status),
         )
       )
         throw new ScenarioError(400, "INVALID_TARGET");
@@ -96,7 +99,7 @@ export function validateDraft(
 }
 export function validateSweep(
   axis: EnqueueSensitivity["axis"],
-  snapshot?: FactorySnapshot,
+  snapshot?: BaselineEntities,
 ) {
   if (
     !axis.values.length ||
@@ -105,6 +108,7 @@ export function validateSweep(
     axis.values.some(
       (v) =>
         !Number.isFinite(v) ||
+        (axis.type === "MAINTENANCE_DURATION" && !Number.isInteger(v)) ||
         v < (axis.type === "MAINTENANCE_DURATION" ? 1 : 0) ||
         v > (axis.type === "MAINTENANCE_DURATION" ? 43200 : 1e6),
     )
@@ -113,14 +117,16 @@ export function validateSweep(
   if (
     axis.type === "MAINTENANCE_DURATION" &&
     !snapshot?.maintenance_requests?.some(
-      (r) => r.maintenance_request_id === axis.maintenance_request_id,
+      (r) =>
+        r.maintenance_request_id === axis.maintenance_request_id &&
+        !["COMPLETED", "CANCELLED"].includes(r.status),
     )
   )
     throw new ScenarioError(400, "INVALID_INPUT");
 }
 export function requestedChanges(
   draft: CreateDraft,
-  snapshot: FactorySnapshot,
+  snapshot: BaselineEntities,
 ) {
   return draft.overrides.map((item) => {
     if (item.type === "TECHNICIAN_UNAVAILABLE") {

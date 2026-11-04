@@ -8,6 +8,7 @@ import {
   clearScenarioMemory,
   useScenarioIntent,
   useScenarioRead,
+  useUnsavedScenario,
 } from "@/lib/scenario-planning/hooks";
 import { deferred } from "./product-api-test-utils";
 import { scenarioActor, scenarioJob } from "./scenario-fixtures";
@@ -20,6 +21,30 @@ function apiStub() {
 }
 
 describe("Scenario read lifecycle", () => {
+  it("disabling a dependent read aborts and clears its previous scoped data", async () => {
+    const api = apiStub();
+    const read = vi.fn().mockResolvedValue("saved source entities");
+    const hook = renderHook(
+      ({ enabled }) =>
+        useScenarioRead({
+          api,
+          actor: scenarioActor,
+          scope: "entities",
+          read,
+          enabled,
+        }),
+      { initialProps: { enabled: true } },
+    );
+    await waitFor(() =>
+      expect(hook.result.current.data).toBe("saved source entities"),
+    );
+    const signal = read.mock.calls[0][0].signal;
+    hook.rerender({ enabled: false });
+    expect(signal.aborted).toBe(true);
+    expect(hook.result.current.data).toBeUndefined();
+    act(() => hook.result.current.refresh());
+    expect(read).toHaveBeenCalledTimes(1);
+  });
   it("aborts old factory reads and drops late responses without flashing old data", async () => {
     const api = apiStub();
     const old = deferred<string>();
@@ -123,6 +148,39 @@ describe("Scenario read lifecycle", () => {
     );
     expect(hook.result.current.data).toBeUndefined();
   });
+});
+
+it("warns before discarding a draft, while section and result selection keep the same editor", () => {
+  const previous = location.href;
+  history.replaceState(
+    null,
+    "",
+    "/operations/scenarios/one?factory_id=F&scenario_id=D",
+  );
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+  const hook = renderHook(() => useUnsavedScenario(true));
+  const anchor = document.createElement("a");
+  anchor.addEventListener("click", (event) => event.preventDefault());
+  document.body.append(anchor);
+  try {
+    anchor.href = "#scenario-runs";
+    anchor.click();
+    anchor.href =
+      "/operations/scenarios/one?factory_id=F&scenario_id=D&run_id=R";
+    anchor.click();
+    expect(confirm).not.toHaveBeenCalled();
+    anchor.href = "/operations/scenarios/one?factory_id=F&scenario_id=another";
+    anchor.click();
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(
+      window.dispatchEvent(new Event("beforeunload", { cancelable: true })),
+    ).toBe(false);
+  } finally {
+    hook.unmount();
+    anchor.remove();
+    confirm.mockRestore();
+    history.replaceState(null, "", previous);
+  }
 });
 
 describe("Scenario immutable intent recovery", () => {

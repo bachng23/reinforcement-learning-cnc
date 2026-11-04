@@ -15,12 +15,14 @@ export function useScenarioRead<T>({
   scope,
   read,
   polling,
+  enabled = true,
 }: {
   api: ScenarioClient;
   actor: TokenUser;
   scope: string;
   read: (options: ReadOptions) => Promise<T>;
   polling?: (data: T) => boolean;
+  enabled?: boolean;
 }) {
   const key = `${actor.id}:${actor.role}:${scope}`;
   const [state, setState] = useState<{
@@ -48,8 +50,9 @@ export function useScenarioRead<T>({
       setState((old) => ({
         key,
         kind: "loading",
-        ...(old.key === key ? { data: old.data } : {}),
+        ...(enabled && old.key === key ? { data: old.data } : {}),
       }));
+      if (!enabled) return;
       const execute = async () => {
         const data = await source.current.read({ signal: controller.signal });
         const current = await api.identity({ signal: controller.signal });
@@ -77,7 +80,7 @@ export function useScenarioRead<T>({
             setState({ key, kind: "error", error: scenarioError(failure) });
         });
     },
-    [api, key, cancel],
+    [api, key, cancel, enabled],
   );
   useEffect(() => {
     load();
@@ -104,6 +107,17 @@ export function useScenarioRead<T>({
 }
 
 type FrozenIntent<T> = { key: string; body: T; rejection?: ScenarioError };
+export async function verifyScenarioWriteRead<T>(
+  read: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await read();
+  } catch (failure: unknown) {
+    if ([401, 403].includes(scenarioError(failure).status))
+      window.dispatchEvent(new Event("scenario-access-invalidated"));
+    throw new ScenarioError(503, "OUTCOME_UNVERIFIED");
+  }
+}
 const intents = new Map<string, FrozenIntent<unknown>>();
 let identityScope: string | undefined;
 export function clearScenarioMemory() {
@@ -261,6 +275,29 @@ export function useUnsavedScenario(dirty: boolean) {
         link.href === location.href
       )
         return;
+      const next = new URL(link.href);
+      if (
+        next.origin === location.origin &&
+        next.pathname === location.pathname
+      ) {
+        if (next.search === location.search) return;
+        // These selections keep the same editor mounted; they do not discard a draft.
+        const pinned = [
+          "factory_id",
+          "scenario_id",
+          "draft_cursor",
+          "run_cursor",
+        ];
+        if (
+          next.pathname.startsWith("/operations/scenarios/") &&
+          pinned.every(
+            (name) =>
+              next.searchParams.get(name) ===
+              new URL(location.href).searchParams.get(name),
+          )
+        )
+          return;
+      }
       if (
         !window.confirm(
           "Leave this scenario? Unsaved drafts and uncertain request bodies are memory-only. Reconcile saved records after reload.",

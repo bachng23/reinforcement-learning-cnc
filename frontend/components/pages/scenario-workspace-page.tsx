@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MetricTable } from "@/components/scenario-planning/engine-result";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,16 +20,21 @@ import {
 } from "@/components/scenario-planning/run-panels";
 import {
   scenarioApi,
+  assertScenarioContext,
   ScenarioError,
   type ScenarioClient,
 } from "@/lib/scenario-planning/client";
 import { useScenarioRead } from "@/lib/scenario-planning/hooks";
+import { weightNames } from "@/lib/scenario-planning/inputs";
 import {
   scenarioHref,
   type ScenarioSelection,
 } from "@/lib/scenario-planning/navigation";
-import type { Job, Workspace } from "@/types/generated/scenario-planning";
-import { weightNames } from "@/lib/scenario-planning/inputs";
+import type {
+  Draft,
+  Job,
+  Workspace,
+} from "@/types/generated/scenario-planning";
 import { scenarioTime } from "./scenario-workspaces-page";
 
 export function ScenarioWorkspacePage({
@@ -62,11 +67,13 @@ function BaselineEditor({
   actor,
   fresh,
   children,
+  fallback,
 }: {
   workspace: Workspace;
   api: ScenarioClient;
   actor: TokenUser;
   fresh: boolean;
+  fallback?: React.ReactNode;
   children: (
     snapshot: Awaited<ReturnType<ScenarioClient["baselineEntities"]>>,
     fresh: boolean,
@@ -92,8 +99,53 @@ function BaselineEditor({
       ) : null}
       {baseline.data
         ? children(baseline.data, fresh && baseline.kind === "ready")
-        : null}
+        : fallback}
     </>
+  );
+}
+function SavedDraftReadOnly({
+  draft,
+  historical,
+}: {
+  draft: Draft;
+  historical: boolean;
+}) {
+  return (
+    <section className="space-y-3 rounded-lg border bg-white p-5">
+      <h2 className="font-semibold">
+        {historical ? "Saved historical draft" : "Saved draft"}
+      </h2>
+      <p className="break-words text-sm">
+        {draft.name} · revision {draft.revision}
+      </p>
+      <p className="whitespace-pre-wrap break-words text-sm">
+        {draft.note || "No note supplied"}
+      </p>
+      <ul className="space-y-2 text-sm">
+        {draft.overrides.map((override, index) => (
+          <li key={index} className="break-words">
+            {override.type} ·{" "}
+            {override.type === "TECHNICIAN_UNAVAILABLE"
+              ? `${override.technician_id} · ${override.start_at} → ${override.end_at}`
+              : override.type === "MAINTENANCE_DURATION"
+                ? `${override.maintenance_request_id} · ${override.expected_duration_minutes} minutes`
+                : `${override.maintenance_request_id} · earliest start ${override.earliest_start_at}`}
+          </li>
+        ))}
+      </ul>
+      <dl className="grid gap-3 text-xs lg:grid-cols-3">
+        {weightNames.map((name) => (
+          <div key={name}>
+            <dt>{name.replaceAll("_", " ")}</dt>
+            <dd>{draft.objective_weights[name]}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-xs text-slate-500">
+        Saved values remain readable. Target editing and new runs require the
+        immutable baseline entities; the current snapshot is never substituted.
+      </p>
+    </section>
   );
 }
 function SelectedRun({
@@ -102,30 +154,60 @@ function SelectedRun({
   workspace,
   runId,
   sensitivity = false,
+  fresh = false,
+  selection,
+  onSelection,
+  onAcceptedSensitivity,
+  onSettled,
 }: {
   api: ScenarioClient;
   actor: TokenUser;
   workspace: Workspace;
   runId: string;
   sensitivity?: boolean;
+  fresh?: boolean;
+  selection: ScenarioSelection;
+  onSelection: (patch: Partial<ScenarioSelection>) => void;
+  onAcceptedSensitivity?: (job: Job) => void;
+  onSettled?: (job: Job) => void;
 }) {
   const run = useScenarioRead({
     api,
     actor,
     scope: `run:${workspace.baseline.factory_id}:${workspace.workspace_id}:${runId}`,
     read: async (options) => {
-      const result = await (sensitivity ? api.sensitivity(workspace.workspace_id, runId, options) : api.run(workspace.workspace_id, runId, options));
-      if (
-        result.engine_version !== workspace.engine_version ||
-        result.contract_version !== workspace.contract_version
-      )
-        throw new ScenarioError(502, "CONTEXT_MISMATCH");
-      return result;
+      const result = await (sensitivity
+        ? api.sensitivity(workspace.workspace_id, runId, options)
+        : api.run(workspace.workspace_id, runId, options));
+      const source =
+        sensitivity && result.source_run_id
+          ? await api.run(workspace.workspace_id, result.source_run_id, options)
+          : undefined;
+      if (source) assertScenarioContext(source, workspace);
+      assertScenarioContext(result, workspace, source);
+      return { job: result, source };
     },
-    polling: (data) => data.status === "QUEUED" || data.status === "RUNNING",
+    polling: (data) =>
+      data.job.status === "QUEUED" || data.job.status === "RUNNING",
   });
+  const entities = useScenarioRead({
+    api,
+    actor,
+    scope: `sweep-entities:${workspace.workspace_id}`,
+    enabled: !sensitivity,
+    read: (options) => api.baselineEntities(workspace, options),
+  });
+  const settled = useRef(onSettled);
+  settled.current = onSettled;
+  useEffect(() => {
+    if (run.data && ["SUCCEEDED", "FAILED"].includes(run.data.job.status))
+      settled.current?.(run.data.job);
+  }, [run.data]);
   return (
-    <div className="space-y-5">
+    <div
+      id={sensitivity ? "saved-sensitivity" : "selected-run"}
+      className="scroll-mt-32 space-y-5"
+    >
       {run.kind === "loading" ? (
         <p role="status" className="text-sm text-slate-500">
           {run.data
@@ -138,13 +220,58 @@ function SelectedRun({
       ) : null}
       {run.data ? (
         <>
-          <RunInspector job={run.data} />
-          {!sensitivity && <LiveHandoffReview
-            source={run.data}
-            workspace={workspace}
-            api={api}
-            actor={actor}
-          />}
+          <RunInspector
+            job={run.data.job}
+            source={
+              run.data.source?.result && "scenario" in run.data.source.result
+                ? run.data.source.result
+                : undefined
+            }
+            selection={{
+              ...selection,
+              candidate_id:
+                !sensitivity && selection.sensitivity_id
+                  ? undefined
+                  : selection.candidate_id,
+            }}
+            onSelection={(patch) =>
+              onSelection(
+                sensitivity
+                  ? patch
+                  : { sensitivity_id: undefined, point: undefined, ...patch },
+              )
+            }
+          />
+          {!sensitivity && onAcceptedSensitivity ? (
+            <>
+              {entities.error ? (
+                <ScenarioFailure
+                  error={entities.error}
+                  retry={entities.refresh}
+                />
+              ) : null}
+              <SensitivityInputs
+                workspace={workspace}
+                source={run.data.job}
+                snapshot={entities.data}
+                api={api}
+                actor={actor}
+                onAccepted={onAcceptedSensitivity}
+                fresh={
+                  fresh && run.kind === "ready" && entities.kind === "ready"
+                }
+              />
+            </>
+          ) : null}
+          {!sensitivity && (
+            <LiveHandoffReview
+              source={run.data.job}
+              workspace={workspace}
+              api={api}
+              actor={actor}
+              fresh={fresh && run.kind === "ready"}
+            />
+          )}
         </>
       ) : null}
     </div>
@@ -170,6 +297,8 @@ export function validateCompareSelection(ids: string[], jobs: Job[]) {
     selected.filter((job) => job?.source_scenario_id === null).length !== 1
   )
     return "Select one completed no-overrides baseline for direct comparison.";
+  if (ids.length >= 2 && selected[0]?.source_scenario_id !== null)
+    return "The no-overrides baseline must be the comparison reference. Select the baseline first.";
   return undefined;
 }
 function WorkspaceContent({
@@ -198,9 +327,10 @@ function WorkspaceContent({
         new Set(selectedIds).size !== selectedIds.length
       )
         throw new ScenarioError(400, "INVALID_INPUT");
-      return Promise.all(
+      const jobs = await Promise.all(
         selectedIds.map((id) => api.run(workspaceId, id, options)),
       );
+      return jobs;
     },
   });
   const read = useScenarioRead({
@@ -233,6 +363,17 @@ function WorkspaceContent({
   });
   const data = read.data;
   const fresh = sessionFresh && read.kind === "ready";
+  const syncRunList = (job: Job) => {
+    const row = data?.runs.items.find((item) => item.job_id === job.job_id);
+    // New commands already refresh the list. Reopening an immutable terminal
+    // result must not repeatedly disable unrelated draft/run controls.
+    if (
+      job.kind === "RUN" &&
+      row &&
+      (row.status !== job.status || row.attempt !== job.attempt)
+    )
+      read.refresh();
+  };
   const navigate = (patch: Partial<ScenarioSelection>) =>
     router.push(
       scenarioHref(selection.factory_id, workspaceId, {
@@ -252,9 +393,6 @@ function WorkspaceContent({
     data && comparisonReads.kind === "ready"
       ? validateCompareSelection(selectedIds, comparisonRows)
       : undefined;
-  const selectedSummary = comparisonRows.find(
-    (run) => run.job_id === selection.run_id,
-  );
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -293,6 +431,30 @@ function WorkspaceContent({
       ) : null}
       {data ? (
         <>
+          <nav
+            aria-label="Scenario workspace sections"
+            className="sticky top-16 z-10 flex flex-wrap gap-4 rounded-lg border bg-white p-3 text-sm text-blue-800 shadow-sm"
+          >
+            <a className="underline underline-offset-4" href="#scenario-editor">
+              Draft editor
+            </a>
+            <a className="underline underline-offset-4" href="#scenario-runs">
+              Saved runs / compare
+            </a>
+            {selection.run_id ? (
+              <a className="underline underline-offset-4" href="#selected-run">
+                Selected run
+              </a>
+            ) : null}
+            {selection.sensitivity_id ? (
+              <a
+                className="underline underline-offset-4"
+                href="#saved-sensitivity"
+              >
+                Sensitivity results
+              </a>
+            ) : null}
+          </nav>
           <section
             className="space-y-4 rounded-lg border bg-white p-5"
             aria-label="Workspace baseline"
@@ -327,8 +489,8 @@ function WorkspaceContent({
               ))}
             </dl>
             <p className="text-xs leading-5 text-slate-500">
-              The reference publication remains S1/P1 history. The computed
-              baseline for each evaluation must use the same
+              The reference publication is pinned to this workspace. The
+              computed baseline for each evaluation must use the same
               config/objectives/engine/sampling as its scenario. A reference
               schedule is not automatically feasible under new assumptions.
             </p>
@@ -401,12 +563,23 @@ function WorkspaceContent({
                 </Link>
               ) : null}
             </aside>
-            <div className="min-w-0 space-y-5">
+            <div
+              id="scenario-editor"
+              className="min-w-0 scroll-mt-32 space-y-5"
+            >
               <BaselineEditor
                 api={api}
                 actor={actor}
                 workspace={data.workspace}
                 fresh={fresh}
+                fallback={
+                  data.draft ? (
+                    <SavedDraftReadOnly
+                      draft={data.draft}
+                      historical={data.workspace.stale}
+                    />
+                  ) : null
+                }
               >
                 {(snapshot, baselineFresh) => (
                   <>
@@ -426,71 +599,32 @@ function WorkspaceContent({
                       }}
                     />
                     <RunReview
-                      api={api} actor={actor} onAccepted={(job) => { navigate({run_id: job.job_id}); read.refresh(); }}
+                      api={api}
+                      actor={actor}
+                      onAccepted={(job) => {
+                        navigate({
+                          run_id: job.job_id,
+                          sensitivity_id: undefined,
+                          candidate_id: undefined,
+                          point: undefined,
+                        });
+                        read.refresh();
+                      }}
+                      fresh={baselineFresh}
+                      refresh={read.refresh}
                       draft={data.draft}
                       snapshot={snapshot}
                       workspace={data.workspace}
                       management={["ADMIN", "ENGINEER"].includes(actor.role)}
                     />
-                    <SensitivityInputs
-                      api={api} actor={actor} onAccepted={(job) => navigate({sensitivity_id: job.job_id})}
-                      key={`${workspaceId}:${selection.run_id ?? ""}:basis`}
-                      workspace={data.workspace}
-                      source={selectedSummary}
-                      snapshot={snapshot}
-                    />
                   </>
                 )}
               </BaselineEditor>
-              {data.workspace.current_head?.snapshot_id !==
-                data.workspace.baseline.snapshot_id && data.draft ? (
-                <section className="rounded-lg border bg-white p-5">
-                  <h2 className="font-semibold">Saved historical draft</h2>
-                  <p className="mt-3 text-sm">
-                    {data.draft.name} · revision {data.draft.revision}
-                  </p>
-                  <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-600">
-                    {data.draft.note || "No note supplied"}
-                  </p>
-                  <ul className="mt-3 space-y-2 text-sm">
-                    {data.draft.overrides.map((override, i) => (
-                      <li key={i} className="break-all">
-                        {override.type} ·{" "}
-                        {override.type === "TECHNICIAN_UNAVAILABLE"
-                          ? override.technician_id
-                          : override.maintenance_request_id}
-                        <span className="mt-1 block text-slate-600">
-                          {override.type === "MAINTENANCE_DURATION"
-                            ? `${override.expected_duration_minutes} minutes`
-                            : override.type === "DEFER_MAINTENANCE"
-                              ? `Earliest start: ${override.earliest_start_at}`
-                              : `${override.start_at} → ${override.end_at}`}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <dl className="mt-4 grid gap-3 text-xs lg:grid-cols-3">
-                    {weightNames.map((name) => (
-                      <div key={name}>
-                        <dt className="text-slate-500">
-                          {name.replaceAll("_", " ")}
-                        </dt>
-                        <dd className="mt-1 font-mono">
-                          {data.draft!.objective_weights[name]}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                  <p className="mt-3 text-xs text-slate-500">
-                    Reading these saved values does not substitute current
-                    entities or enable editing without the immutable basis.
-                  </p>
-                </section>
-              ) : null}
             </div>
           </div>
           <section
-            className="space-y-4 rounded-lg border bg-white p-5"
+            id="scenario-runs"
+            className="scroll-mt-32 space-y-4 rounded-lg border bg-white p-5"
             aria-label="Saved runs"
           >
             <h2 className="text-lg font-semibold">Saved runs and comparison</h2>
@@ -524,30 +658,33 @@ function WorkspaceContent({
                           <input
                             type="checkbox"
                             aria-label={`Compare run ${run.job_id}`}
+                            // Selecting an immutable completed record is read-only.
+                            // Background refresh must not interrupt a pointer click.
                             disabled={
-                              !fresh ||
-                              run.status !== "SUCCEEDED" ||
-                              run.kind !== "RUN"
+                              run.status !== "SUCCEEDED" || run.kind !== "RUN"
                             }
                             checked={selectedIds.includes(run.job_id)}
                             onChange={(event) => {
-                              const next = event.target.checked
+                              const chosen = event.target.checked
                                 ? [...selectedIds, run.job_id]
                                 : selectedIds.filter((id) => id !== run.job_id);
+                              const baselineId = chosen.find(
+                                (id) =>
+                                  comparisonRows.find(
+                                    (job) => job.job_id === id,
+                                  )?.source_scenario_id === null,
+                              );
+                              const next = baselineId
+                                ? [
+                                    baselineId,
+                                    ...chosen.filter((id) => id !== baselineId),
+                                  ]
+                                : chosen;
                               const error = validateCompareSelection(
                                 next,
                                 comparisonRows,
                               );
-                              if (
-                                error &&
-                                (next.length > 4 ||
-                                  next.filter(
-                                    (id) =>
-                                      comparisonRows.find(
-                                        (job) => job.job_id === id,
-                                      )?.source_scenario_id !== null,
-                                  ).length > 3)
-                              ) {
+                              if (error && event.target.checked) {
                                 setSelectionError(error);
                                 return;
                               }
@@ -634,13 +771,25 @@ function WorkspaceContent({
                 {selectionError || compareError}
               </p>
             ) : null}
-            {selectedIds.length >= 2 && !compareError ? <ComputedComparison api={api} actor={actor} workspaceId={workspaceId} ids={selectedIds} /> : <Dependency title="Comparison metrics unavailable">
-              {selectedIds.length < 2
-                ? "Select a baseline and a scenario to prepare comparison. "
-                : "The selected runs stay in the URL across pages. "}
-              The planning service has not provided supported comparison metrics
-              or a tradeoff explanation.
-            </Dependency>}
+            {selectedIds.length >= 2 &&
+            comparisonReads.kind === "ready" &&
+            !compareError ? (
+              <ComputedComparison
+                api={api}
+                actor={actor}
+                workspace={data.workspace}
+                ids={selectedIds}
+                jobs={comparisonRows}
+              />
+            ) : (
+              <Dependency title="Choose completed runs for comparison">
+                {selectedIds.length < 2
+                  ? "Select a baseline and a scenario to prepare comparison. "
+                  : "The selected runs stay in the URL across pages. "}
+                Comparison is read only after a completed baseline and scenario
+                are selected and their saved metadata is verified.
+              </Dependency>
+            )}
           </section>
           {selection.run_id ? (
             <SelectedRun
@@ -649,6 +798,17 @@ function WorkspaceContent({
               actor={actor}
               workspace={data.workspace}
               runId={selection.run_id}
+              fresh={fresh}
+              selection={selection}
+              onSelection={navigate}
+              onSettled={syncRunList}
+              onAcceptedSensitivity={(job) =>
+                navigate({
+                  sensitivity_id: job.job_id,
+                  point: undefined,
+                  candidate_id: undefined,
+                })
+              }
             />
           ) : (
             <Dependency title="Choose a saved run">
@@ -658,7 +818,17 @@ function WorkspaceContent({
             </Dependency>
           )}
           {selection.sensitivity_id ? (
-            <SelectedRun api={api} actor={actor} workspace={data.workspace} runId={selection.sensitivity_id} sensitivity />
+            <SelectedRun
+              key={`${workspaceId}:sensitivity:${selection.sensitivity_id}`}
+              api={api}
+              actor={actor}
+              workspace={data.workspace}
+              runId={selection.sensitivity_id}
+              sensitivity
+              fresh={fresh}
+              selection={selection}
+              onSelection={navigate}
+            />
           ) : null}
           <IdentityDetails
             values={{
@@ -675,8 +845,10 @@ function WorkspaceContent({
               "Current head revision": data.workspace.current_head?.revision,
               "Baseline horizon":
                 data.workspace.planning_config.horizon_minutes,
-              "Sampling specification": "Not exposed by reviewed read DTO",
-              "Model assumptions": "Awaiting reviewed engine result DTO",
+              "Sampling specification":
+                "Returned with each accepted saved result",
+              "Model assumptions":
+                "Displayed beside engine KPI and sensitivity results",
             }}
           />
         </>
@@ -685,12 +857,121 @@ function WorkspaceContent({
   );
 }
 
-function ComputedComparison({api, actor, workspaceId, ids}: {api: ScenarioClient; actor: TokenUser; workspaceId: string; ids: string[]}) {
-  const read = useScenarioRead({api, actor, scope: `computed-comparison:${workspaceId}:${ids.join(",")}`,
-    read: options => api.compare(workspaceId, ids, options)});
-  return <section aria-label="Saved run comparison">
-    {read.error ? <ScenarioFailure error={read.error} retry={read.refresh} /> : null}
-    {read.kind === "loading" ? <p role="status">Reading computed comparison…</p> : null}
-    {read.data?.runs.map(run => <div key={run.identity.run_id}><p>Run {run.identity.run_id} compared with {read.data!.reference_identity.run_id}</p><MetricTable comparison={run.comparison}/></div>)}
-  </section>;
+function ComputedComparison({
+  api,
+  actor,
+  workspace,
+  ids,
+  jobs,
+}: {
+  api: ScenarioClient;
+  actor: TokenUser;
+  workspace: Workspace;
+  ids: string[];
+  jobs: Job[];
+}) {
+  const read = useScenarioRead({
+    api,
+    actor,
+    scope: `computed-comparison:${workspace.workspace_id}:${ids.join(",")}`,
+    read: async (options) => {
+      for (const id of ids) {
+        const job = jobs.find((item) => item.job_id === id);
+        if (!job) throw new ScenarioError(502, "CONTEXT_MISMATCH");
+        assertScenarioContext(job, workspace);
+      }
+      const result = await api.compare(workspace.workspace_id, ids, options);
+      const reference = jobs.find((job) => job.job_id === ids[0]);
+      if (
+        result.reference_identity.factory_id !==
+          workspace.baseline.factory_id ||
+        result.reference_identity.frozen_input_hash !== reference?.input_hash ||
+        result.runs.some(
+          (item) =>
+            item.identity.frozen_input_hash !==
+            jobs.find((job) => job.job_id === item.identity.run_id)?.input_hash,
+        )
+      )
+        throw new ScenarioError(502, "CONTEXT_MISMATCH");
+      return result;
+    },
+  });
+  return (
+    <section aria-label="Saved run comparison" className="space-y-5">
+      {read.error ? (
+        <ScenarioFailure error={read.error} retry={read.refresh} />
+      ) : null}
+      {read.kind === "loading" ? (
+        <p role="status">Reading computed comparison…</p>
+      ) : null}
+      {read.data ? (
+        <div className="rounded border bg-slate-50 p-4 text-sm">
+          <h3 className="font-semibold">Saved no-overrides reference</h3>
+          <p className="mt-2 break-all">
+            {read.data.reference_identity.run_id}
+          </p>
+          <p className="mt-2">
+            {read.data.reference_planning_config.simulation_runs} draws · seed{" "}
+            {read.data.reference_sampling.base_seed} ·{" "}
+            {read.data.reference_sampling.version}
+          </p>
+          <p>
+            Weights:{" "}
+            {Object.entries(
+              read.data.reference_planning_config.objective_weights,
+            )
+              .map(([key, value]) => `${key} ${value}`)
+              .join("; ")}
+          </p>
+          <p className="mt-2 text-xs">
+            Each scenario below exposes its own configuration and overrides.
+            Scores from different normalization references are not compared.
+          </p>
+        </div>
+      ) : null}
+      {read.data?.runs.map((run) => (
+        <div
+          className="min-w-0 space-y-4 rounded border p-4"
+          key={run.identity.run_id}
+        >
+          <h3 className="break-all text-sm font-semibold">
+            Run {run.identity.run_id} compared with{" "}
+            {read.data!.reference_identity.run_id}
+          </h3>
+          <details className="text-sm">
+            <summary className="cursor-pointer">
+              Scenario configuration and frozen assumptions
+            </summary>
+            <p className="mt-2">
+              {run.engine_version}; {run.planning_config.simulation_runs} draws;
+              seed {run.sampling.base_seed}; {run.sampling.coupling}.
+            </p>
+            <p className="mt-2 break-words">
+              Weights:{" "}
+              {Object.entries(run.planning_config.objective_weights)
+                .map(([key, value]) => `${key} ${value}`)
+                .join("; ")}
+            </p>
+            <ul className="mt-2 list-disc space-y-1 break-words pl-5">
+              {run.overrides.length ? (
+                run.overrides.map((item, i) => (
+                  <li key={i}>
+                    {item.type} ·{" "}
+                    {item.type === "TECHNICIAN_UNAVAILABLE"
+                      ? `${item.technician_id}: ${item.start_at} → ${item.end_at}`
+                      : item.type === "MAINTENANCE_DURATION"
+                        ? `${item.maintenance_request_id}: ${item.expected_duration_minutes} minutes`
+                        : `${item.maintenance_request_id}: ${item.earliest_start_at}`}
+                  </li>
+                ))
+              ) : (
+                <li>No overrides</li>
+              )}
+            </ul>
+          </details>
+          <MetricTable comparison={run.comparison} />
+        </div>
+      ))}
+    </section>
+  );
 }

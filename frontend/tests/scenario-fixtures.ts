@@ -1,11 +1,19 @@
 // Contract/component evidence only. Never imported by production components.
 import { createOperationsDemoFixtures } from "@/lib/operations-api/fixtures";
 import { defaultPlanningConfig } from "@/lib/scenario-planning/inputs";
+import engineFixture from "./fixtures/scenario-engine-ui.json";
+import { matchesScenarioSchema } from "@/lib/scenario-planning/client";
+import type {
+  EvaluationResult,
+  SensitivityResult,
+  FactorySnapshot,
+} from "@/types/generated/scenario-planning";
 import type {
   Workspace,
   Draft,
   Job,
   CreateDraft,
+  BaselineEntities,
 } from "@/types/generated/scenario-planning";
 export const scenarioActor = {
   id: "10000000-0000-4000-8000-000000000001",
@@ -17,6 +25,29 @@ export const draftId = "30000000-0000-4000-8000-000000000001";
 export const runId = "40000000-0000-4000-8000-000000000001";
 export const scenarioSnapshot = () =>
   structuredClone(createOperationsDemoFixtures().request.factory_snapshot);
+export function scenarioEntities(): BaselineEntities {
+  const snapshot = scenarioSnapshot();
+  return {
+    workspace_id: workspaceId,
+    baseline: scenarioWorkspace().baseline,
+    planning_window: snapshot.planning_window,
+    technicians: (snapshot.technicians ?? []).map((item) => ({
+      technician_id: item.technician_id,
+      display_name: item.display_name,
+      availability: item.availability ?? [],
+    })),
+    maintenance_requests: (snapshot.maintenance_requests ?? []).map((item) => ({
+      maintenance_request_id: item.maintenance_request_id,
+      machine_id: item.machine_id,
+      expected_duration_minutes: item.expected_duration_minutes,
+      earliest_start_at: item.earliest_start_at ?? null,
+      latest_start_at: item.latest_start_at ?? null,
+      mandatory: item.mandatory ?? false,
+      priority: item.priority,
+      status: item.status,
+    })),
+  };
+}
 export function scenarioWorkspace(): Workspace {
   const snapshot = scenarioSnapshot();
   return {
@@ -34,8 +65,8 @@ export function scenarioWorkspace(): Workspace {
       },
     },
     planning_config: defaultPlanningConfig(),
-    engine_version: "proposal-engine-test",
-    contract_version: "proposal-schema-test",
+    engine_version: "scenario-evaluator:1.0.0",
+    contract_version: "scenario-engine:1.0",
     created_by: scenarioActor.id,
     created_at: snapshot.captured_at,
     current_head: {
@@ -97,3 +128,79 @@ export function scenarioJob(
     points: [],
   };
 }
+
+// Actual computation from the pinned engine on its bounded maintenance golden
+// input. These payloads are component evidence, never product/API replacements.
+function generatedFixture<T>(value: unknown, schema: string): T {
+  if (!matchesScenarioSchema(value, schema))
+    throw new Error(`Engine component fixture violates ${schema}`);
+  return structuredClone(value) as T;
+}
+export const engineEvaluation = (live = false) =>
+  generatedFixture<EvaluationResult>(
+    live ? engineFixture.liveEvaluation : engineFixture.evaluation,
+    "ScenarioEngine_EvaluationResult",
+  );
+export const engineSensitivity = () =>
+  generatedFixture<SensitivityResult>(
+    engineFixture.sensitivity,
+    "ScenarioEngine_SensitivityResult",
+  );
+export const engineSnapshot = () =>
+  generatedFixture<FactorySnapshot>(
+    engineFixture.sourceSnapshot,
+    "ScenarioEngine_FactorySnapshot",
+  );
+export function engineWorkspace(): Workspace {
+  const snapshot = engineSnapshot();
+  return {
+    ...scenarioWorkspace(),
+    baseline: {
+      factory_id: snapshot.factory_id,
+      snapshot_id: snapshot.snapshot_id,
+      snapshot_hash: engineEvaluation().effective.source_hash,
+      plan_version: 1,
+      publication: null,
+    },
+    current_head: {
+      snapshot_id: snapshot.snapshot_id,
+      plan_version: 1,
+      revision: 7,
+    },
+    planning_config: {
+      ...defaultPlanningConfig(),
+      horizon_minutes:
+        (Date.parse(snapshot.planning_window.end_at) -
+          Date.parse(snapshot.planning_window.start_at)) /
+        60000,
+      base_seed: 7,
+    },
+  };
+}
+export function engineEntities(): BaselineEntities {
+  const snapshot = engineSnapshot();
+  return {
+    workspace_id: workspaceId,
+    baseline: engineWorkspace().baseline,
+    planning_window: snapshot.planning_window,
+    technicians: (snapshot.technicians ?? []).map((item) => ({
+      technician_id: item.technician_id,
+      display_name: item.display_name,
+      availability: item.availability ?? [],
+    })),
+    maintenance_requests: (snapshot.maintenance_requests ?? []).map((item) => ({
+      maintenance_request_id: item.maintenance_request_id,
+      machine_id: item.machine_id,
+      expected_duration_minutes: item.expected_duration_minutes,
+      earliest_start_at: item.earliest_start_at ?? null,
+      latest_start_at: item.latest_start_at ?? null,
+      mandatory: item.mandatory ?? false,
+      priority: item.priority,
+      status: item.status,
+    })),
+  };
+}
+export const engineJob = (live = false): Job => ({
+  ...scenarioJob("SUCCEEDED"),
+  result: engineEvaluation(live),
+});

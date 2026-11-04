@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { TokenUser } from "@/lib/auth";
-import type { FactorySnapshot } from "@/types/generated/operations";
+import type { BaselineEntities } from "@/types/generated/scenario-planning";
 import type {
   CreateDraft,
   Draft,
@@ -80,7 +80,7 @@ function OverrideFields({
   disabled,
 }: {
   value: Override;
-  snapshot: FactorySnapshot;
+  snapshot: BaselineEntities;
   onChange: (value: Override) => void;
   onRemove: () => void;
   index: number;
@@ -162,9 +162,11 @@ function OverrideFields({
                   <option
                     key={item.maintenance_request_id}
                     value={item.maintenance_request_id}
+                    disabled={["COMPLETED", "CANCELLED"].includes(item.status)}
                   >
                     {item.machine_id} · {item.maintenance_request_id} ·{" "}
-                    {item.action_type}
+                    {item.priority}
+                    {item.mandatory ? " · mandatory" : ""}
                   </option>
                 ))}
           </select>
@@ -178,7 +180,7 @@ function OverrideFields({
               type="number"
               min={1}
               max={43200}
-              step="any"
+              step={1}
               value={
                 Number.isFinite(value.expected_duration_minutes)
                   ? value.expected_duration_minutes
@@ -256,7 +258,7 @@ export function DraftReview({
   workspace,
 }: {
   draft: CreateDraft;
-  snapshot: FactorySnapshot;
+  snapshot: BaselineEntities;
   workspace: Workspace;
 }) {
   const changes = requestedChanges(draft, snapshot);
@@ -339,7 +341,7 @@ export function ScenarioEditor({
   refresh,
 }: {
   workspace: Workspace;
-  snapshot: FactorySnapshot;
+  snapshot: BaselineEntities;
   draft?: Draft;
   api: ScenarioClient;
   actor: TokenUser;
@@ -347,6 +349,9 @@ export function ScenarioEditor({
   onSaved: (draft: Draft) => void;
   refresh: () => void;
 }) {
+  const eligibleRequests = snapshot.maintenance_requests.filter(
+    (item) => !["COMPLETED", "CANCELLED"].includes(item.status),
+  );
   const [input, setInput] = useState<CreateDraft>(() =>
     draft
       ? {
@@ -478,6 +483,7 @@ export function ScenarioEditor({
           </Field>
           <Field label="Scenario note">
             <textarea
+              aria-label="Scenario note"
               className={`${scenarioInput} py-2`}
               rows={2}
               maxLength={4000}
@@ -492,6 +498,7 @@ export function ScenarioEditor({
           <div className="flex flex-wrap items-end gap-3">
             <Field label="Assumption template">
               <select
+                aria-label="Assumption template"
                 disabled={disabled}
                 className={scenarioInput}
                 value={template}
@@ -516,7 +523,7 @@ export function ScenarioEditor({
                 input.overrides.length >= 5 ||
                 (template === "TECHNICIAN_UNAVAILABLE"
                   ? !snapshot.technicians?.length
-                  : !snapshot.maintenance_requests?.length)
+                  : !eligibleRequests.length)
               }
               onClick={() => {
                 const override: Override =
@@ -531,19 +538,17 @@ export function ScenarioEditor({
                       ? {
                           type: template,
                           maintenance_request_id:
-                            snapshot.maintenance_requests![0]
-                              .maintenance_request_id,
+                            eligibleRequests[0].maintenance_request_id,
                           expected_duration_minutes:
-                            snapshot.maintenance_requests![0]
-                              .expected_duration_minutes,
+                            eligibleRequests[0].expected_duration_minutes,
                         }
                       : {
                           type: template,
                           maintenance_request_id:
-                            snapshot.maintenance_requests![0]
-                              .maintenance_request_id,
+                            eligibleRequests[0].maintenance_request_id,
                           earliest_start_at:
-                            snapshot.maintenance_requests![0].earliest_start_at,
+                            eligibleRequests[0].earliest_start_at ??
+                            snapshot.planning_window.start_at,
                         };
                 setInput((old) => ({
                   ...old,

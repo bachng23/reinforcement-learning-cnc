@@ -2,10 +2,17 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { compile } from "json-schema-to-typescript";
 
-const dependency = "scenario-engine:1.0";
+const dependency = "d49ddfbbe3ffddb51cea03077aa032e4acb2ee1e";
 const root = new URL("../", import.meta.url);
 const source = new URL("../backend/docs/scenario-planning.openapi.json", root);
 const raw = (await readFile(source, "utf8")).replace(/\r\n/g, "\n");
+if (
+  createHash("sha256").update(raw).digest("hex") !==
+  "8a00e38c96b307df531f5963e176d931a19ce63b1dc5604437aa88fc05853ac5"
+)
+  throw new Error(
+    "Scenario producer changed; review the pinned dependency SHA and schema hash before regeneration",
+  );
 const contract = JSON.parse(raw);
 const definitions = { ...contract.components.schemas };
 for (const [path, methods] of Object.entries(contract.paths))
