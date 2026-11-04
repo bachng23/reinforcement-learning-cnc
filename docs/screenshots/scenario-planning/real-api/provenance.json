@@ -1,0 +1,55 @@
+{
+  "capture_sha": "8b67bad414322b8bcf44e21e971a7e07ffb88626",
+  "producer_sha": "d49ddfbbe3ffddb51cea03077aa032e4acb2ee1e",
+  "frontend_tree_sha": "c465ed3364bbc93ce7dc20b85d93f3968e1a1f83",
+  "capture_run": 1,
+  "screenshots": {
+    "computed-candidate-gantt-1440x900.png": "22c47fbe51a9645ba5db309b2305d3ec91b85f6e247fd9b1677b46ce1e8047bd",
+    "computed-candidate-gantt-1920x1080.png": "f2786f1173ee867f346696995ad0b1a1ae2bb1f0bc6d7b59c4b7b882d41f2328",
+    "computed-candidate-gantt-2560x1440.png": "531e478fd873c54f33300b000fe66c21f5c2a11a5396f7296af1175b28727c4c",
+    "draft-review-1440x900.png": "a3d623fc771d34fa10a8c773a17285d8421b99a7bd027169d322bf59fed3ca2c",
+    "draft-review-1920x1080.png": "53e038856a0319370ed970a10224f280ce079227f24312b7a492bc5e4ff7c424",
+    "draft-review-2560x1440.png": "77554a2b8cb5e939a08df82617d273641bf912084375feec6a3b5d7bf657a7c7",
+    "golden-infeasible-gaps-1440x900.png": "6f982d63beb1528536f8627aab1d2cffe2fd8ea6c2d77c08a411ee9b5534d6a6",
+    "golden-infeasible-gaps-1920x1080.png": "07748e3dcf9797f810d0a9673ad694503c97cbaa40967dd299e5ea6366db7078",
+    "golden-infeasible-gaps-2560x1440.png": "d0e3b22015565ea59ee47de31bb1a1b3491362f30fd3081526716e56afc2cd7a",
+    "live-confirmation-1440x900.png": "56287680c056816bde34be1dea0cfe427f53e297d5a7162cf118fe143bae3740",
+    "live-confirmation-1920x1080.png": "af32dec52bca90cbea99064aa74c4164832dc077979e6a227bb1bba941d2177c",
+    "live-confirmation-2560x1440.png": "434db7efc5412495a4f375ecba87300852fd54d4f5ef48f590654de49b3fb9c1",
+    "physical-sensitivity-1440x900.png": "91d01e3fa29d15738cea9ef9df8ac8584faa532eb8e23585069df3d3cb9885ce",
+    "physical-sensitivity-1920x1080.png": "641fc3fb5b9e3556aa00d739af1b9c44ffb7b134f413c8ceb8c9f44930067f2b",
+    "physical-sensitivity-2560x1440.png": "4b4e346084a088461a50732a9971f0e185af56da51f6776d508496126cb3dc12",
+    "saved-run-comparison-1440x900.png": "fd499a4b188063fae6214b3aff64cd1986c3e4a793b72935cd2908eb2d23fd37",
+    "saved-run-comparison-1920x1080.png": "6a8e8206f0ba8ff39e178645e75e496da412ae0b54df3830d421cbad99ffbfa7",
+    "saved-run-comparison-2560x1440.png": "1785b7aee7b104982afc134356dd4e8bddd5f1b1b59543f3aa875da3c2d35b5e",
+    "stale-live-context-1440x900.png": "4eae90b979b6331a43c82b6112f8415eb635c5de1f32b934d21f288eaccbb62f",
+    "stale-live-context-1920x1080.png": "6f54294d4915539d9d86bb58cf1fe389a5bd4561d79d47f57dbe52b406dd5cd8",
+    "stale-live-context-2560x1440.png": "15c11654d6edf7bfaa50bb1e41a0f985d0204817e4022c02347542edccfa7564"
+  },
+  "cleanup": [
+    {
+      "run": 1,
+      "result": "passed",
+      "schema_removed": true,
+      "owned_processes_stopped": true,
+      "owned_ports_closed": true,
+      "recovery_required": false
+    },
+    {
+      "run": 2,
+      "result": "passed",
+      "schema_removed": true,
+      "owned_processes_stopped": true,
+      "owned_ports_closed": true,
+      "recovery_required": false
+    },
+    {
+      "run": 3,
+      "result": "passed",
+      "schema_removed": true,
+      "owned_processes_stopped": true,
+      "owned_ports_closed": true,
+      "recovery_required": false
+    }
+  ]
+}

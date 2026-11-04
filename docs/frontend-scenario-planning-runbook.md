@@ -1,7 +1,9 @@
 # Scenario Planning frontend — setup and verification
 
-Read the [route, wireframe and API map](frontend-scenario-planning.md). Producer
-integration is pinned to #58, `d49ddfbbe3ffddb51cea03077aa032e4acb2ee1e`.
+Read the [route, wireframe and API map](frontend-scenario-planning.md).
+Actual captures and SHA-bound local checks are in the
+[verification record](frontend-scenario-planning-verification.md).
+Producer integration is pinned to #58, `d49ddfbbe3ffddb51cea03077aa032e4acb2ee1e`.
 Main without this producer does not satisfy Scenario dependencies; missing APIs
 produce an explicit unavailable state. No frontend fixture can replace them.
 
