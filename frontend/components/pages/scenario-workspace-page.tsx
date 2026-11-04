@@ -169,7 +169,7 @@ function SelectedRun({
   selection: ScenarioSelection;
   onSelection: (patch: Partial<ScenarioSelection>) => void;
   onAcceptedSensitivity?: (job: Job) => void;
-  onSettled?: () => void;
+  onSettled?: (job: Job) => void;
 }) {
   const run = useScenarioRead({
     api,
@@ -201,7 +201,7 @@ function SelectedRun({
   settled.current = onSettled;
   useEffect(() => {
     if (run.data && ["SUCCEEDED", "FAILED"].includes(run.data.job.status))
-      settled.current?.();
+      settled.current?.(run.data.job);
   }, [run.data]);
   return (
     <div
@@ -363,6 +363,17 @@ function WorkspaceContent({
   });
   const data = read.data;
   const fresh = sessionFresh && read.kind === "ready";
+  const syncRunList = (job: Job) => {
+    const row = data?.runs.items.find((item) => item.job_id === job.job_id);
+    // New commands already refresh the list. Reopening an immutable terminal
+    // result must not repeatedly disable unrelated draft/run controls.
+    if (
+      job.kind === "RUN" &&
+      row &&
+      (row.status !== job.status || row.attempt !== job.attempt)
+    )
+      read.refresh();
+  };
   const navigate = (patch: Partial<ScenarioSelection>) =>
     router.push(
       scenarioHref(selection.factory_id, workspaceId, {
@@ -650,8 +661,7 @@ function WorkspaceContent({
                             // Selecting an immutable completed record is read-only.
                             // Background refresh must not interrupt a pointer click.
                             disabled={
-                              run.status !== "SUCCEEDED" ||
-                              run.kind !== "RUN"
+                              run.status !== "SUCCEEDED" || run.kind !== "RUN"
                             }
                             checked={selectedIds.includes(run.job_id)}
                             onChange={(event) => {
@@ -791,7 +801,7 @@ function WorkspaceContent({
               fresh={fresh}
               selection={selection}
               onSelection={navigate}
-              onSettled={read.refresh}
+              onSettled={syncRunList}
               onAcceptedSensitivity={(job) =>
                 navigate({
                   sensitivity_id: job.job_id,
