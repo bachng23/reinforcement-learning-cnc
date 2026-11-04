@@ -1,0 +1,2 @@
+# Pinned source manifests verify bytes; Windows checkout must preserve LF.
+ai_services/vendor/jcst/** -text

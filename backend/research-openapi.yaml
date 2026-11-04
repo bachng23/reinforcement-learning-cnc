@@ -2,7 +2,9 @@ openapi: 3.1.0
 info:
   title: JCST Research API
   version: 1.0.0
-  description: Immutable evidence, included-trace replay and simulation-only branch review. No scientific campaign launcher.
+  description: >-
+    Immutable evidence, included-trace replay and simulation-only branch review. No scientific campaign
+    launcher.
 servers:
   - url: /api/v1/research
 security:
@@ -11,8 +13,12 @@ paths:
   /demo/sessions:
     post:
       summary: Create a persistent engineering simulation; ADMIN or ENGINEER
-      description: Registered policies, root 0 and 96k budget. H=48 and fixed-risk tail=16. Incident mode shares WAIT until the first simulator failure; policy mode starts both policies at tick 0. Scientific campaign evidence is not modified.
-      parameters: [ { $ref: '#/components/parameters/key' } ]
+      description: >-
+        Registered policies, root 0 and 96k budget. H=48 and fixed-risk tail=16. Incident mode shares WAIT
+        until the first simulator failure; policy mode starts both policies at tick 0. Scientific campaign
+        evidence is not modified.
+      parameters:
+        - $ref: '#/components/parameters/key'
       requestBody:
         required: true
         content:
@@ -21,26 +27,70 @@ paths:
               type: object
               additionalProperties: false
               properties:
-                case: { type: string, enum: [base, generalist], default: base }
-                seed: { type: string, pattern: '^99[0-9]{7}$', default: '990000001' }
-                mode: { type: string, enum: [incident, policy], default: incident }
-                primary: { type: string, enum: [S, A, F], default: S }
-                baseline: { type: string, enum: [S, A, F], default: F }
+                case:
+                  type: string
+                  enum:
+                    - base
+                    - generalist
+                  default: base
+                seed:
+                  type: string
+                  pattern: '^99[0-9]{7}$'
+                  default: '990000001'
+                mode:
+                  type: string
+                  enum:
+                    - incident
+                    - policy
+                  default: incident
+                primary:
+                  type: string
+                  enum:
+                    - S
+                    - A
+                    - F
+                  default: S
+                baseline:
+                  type: string
+                  enum:
+                    - S
+                    - A
+                    - F
+                  default: F
       responses:
-        '201': { description: Session id, revision, pinned source/checkpoints, config, primary/baseline states and traces. Identical creation retries return the same session. }
-        '409': { description: Idempotency key belongs to another scenario }
-        '422': { description: Registered checkpoint or runtime compatibility validation failed }
-  /demo/sessions/{id}:
-    parameters: [ { $ref: '#/components/parameters/id' } ]
+        '201':
+          description: Session id
+          revision: null
+          pinned source/checkpoints: null
+          config: null
+          primary/baseline states and traces. Identical creation retries return the same session.: null
+        '409':
+          description: Idempotency key belongs to another scenario
+        '422':
+          description: Registered checkpoint or runtime compatibility validation failed
+  '/demo/sessions/{id}':
+    parameters:
+      - $ref: '#/components/parameters/id'
     get:
       summary: Read an owned simulation session; ADMIN can inspect all
-      responses: { '200': { description: Persisted session and revision }, '404': { description: Missing or outside owner scope } }
-  /demo/sessions/{id}/commands:
-    parameters: [ { $ref: '#/components/parameters/id' } ]
+      responses:
+        '200':
+          description: Persisted session and revision
+        '404':
+          description: Missing or outside owner scope
+  '/demo/sessions/{id}/commands':
+    parameters:
+      - $ref: '#/components/parameters/id'
     post:
-      summary: Advance, autoplay, approve or override a simulation session; ADMIN or ENGINEER
-      description: Revision is required. Autoplay explicitly confirms policy actions automatically, computes at most eight physical ticks per command and can stop at incident/review/dispatch/repair milestones. REVIEW otherwise freezes both lanes. Only WAIT is automatic when no alternative is legal. All transitions use the same physical seed. Exact retries of the latest command are replayed; stale commands are rejected. COMPLETE sessions cannot advance.
-      parameters: [ { $ref: '#/components/parameters/key' } ]
+      summary: 'Advance, autoplay, approve or override a simulation session; ADMIN or ENGINEER'
+      description: >-
+        Revision is required. Autoplay explicitly confirms policy actions automatically, computes at most
+        eight physical ticks per command and can stop at incident/review/dispatch/repair milestones. REVIEW
+        otherwise freezes both lanes. Only WAIT is automatic when no alternative is legal. All transitions use
+        the same physical seed. Exact retries of the latest command are replayed; stale commands are rejected.
+        COMPLETE sessions cannot advance.
+      parameters:
+        - $ref: '#/components/parameters/key'
       requestBody:
         required: true
         content:
@@ -49,33 +99,76 @@ paths:
               oneOf:
                 - type: object
                   additionalProperties: false
-                  required: [revision, command]
+                  required:
+                    - revision
+                    - command
                   properties:
-                    revision: { type: integer, minimum: 0 }
-                    command: { const: advance }
-                    autoApprove: { type: boolean, default: false }
+                    revision:
+                      type: integer
+                      minimum: 0
+                    command:
+                      const: advance
+                    autoApprove:
+                      type: boolean
+                      default: false
                 - type: object
                   additionalProperties: false
-                  required: [revision, command, stopAt]
+                  required:
+                    - revision
+                    - command
+                    - stopAt
                   properties:
-                    revision: { type: integer, minimum: 0 }
-                    command: { const: autoplay }
-                    stopAt: { type: string, enum: [incident, review, dispatch, repair, complete] }
-                    maxTicks: { type: integer, minimum: 1, maximum: 8, default: 8 }
+                    revision:
+                      type: integer
+                      minimum: 0
+                    command:
+                      const: autoplay
+                    stopAt:
+                      type: string
+                      enum:
+                        - incident
+                        - review
+                        - dispatch
+                        - repair
+                        - complete
+                    maxTicks:
+                      type: integer
+                      minimum: 1
+                      maximum: 8
+                      default: 8
                 - type: object
                   additionalProperties: false
-                  required: [revision, command, reason]
+                  required:
+                    - revision
+                    - command
+                    - reason
                   properties:
-                    revision: { type: integer, minimum: 0 }
-                    command: { const: approve }
-                    reason: { type: string, minLength: 1, maxLength: 1000 }
+                    revision:
+                      type: integer
+                      minimum: 0
+                    command:
+                      const: approve
+                    reason:
+                      type: string
+                      minLength: 1
+                      maxLength: 1000
                 - type: object
                   additionalProperties: false
-                  required: [revision, command, action, reason]
+                  required:
+                    - revision
+                    - command
+                    - action
+                    - reason
                   properties:
-                    revision: { type: integer, minimum: 0 }
-                    command: { const: override }
-                    reason: { type: string, minLength: 1, maxLength: 1000 }
+                    revision:
+                      type: integer
+                      minimum: 0
+                    command:
+                      const: override
+                    reason:
+                      type: string
+                      minLength: 1
+                      maxLength: 1000
                     action:
                       type: array
                       maxItems: 3
@@ -83,119 +176,232 @@ paths:
                         type: array
                         minItems: 3
                         maxItems: 3
-                        items: { type: integer, minimum: 0 }
+                        items:
+                          type: integer
+                          minimum: 0
       responses:
-        '200': { description: Updated session; completed sessions include independent physical replay audits for both lanes }
-        '409': { description: Stale revision, conflicting key, invalid phase or completed session }
-        '422': { description: Invalid matching or runtime validation failure; no state is published }
+        '200':
+          description: Updated session; completed sessions include independent physical replay audits for both lanes
+        '409':
+          description: Stale revision
+          conflicting key: null
+          invalid phase or completed session: null
+        '422':
+          description: Invalid matching or runtime validation failure; no state is published
   /capabilities:
     get:
       summary: Pinned source and installed controller capabilities
-      responses: { '200': { description: Runtime capabilities }, '503': { description: Runtime unavailable } }
+      responses:
+        '200':
+          description: Runtime capabilities
+        '503':
+          description: Runtime unavailable
   /schema:
     get:
       summary: Canonical JCST wire JSON Schema catalog
-      responses: { '200': { description: JSON Schema 2020-12 } }
+      responses:
+        '200':
+          description: JSON Schema 2020-12
   /campaigns:
     get:
       summary: Owner-scoped campaigns; ADMIN can inspect all
       parameters:
-        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
-        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
-      responses: { '200': { description: Data and pagination metadata } }
-  /campaigns/{id}:
-    parameters: [ { $ref: '#/components/parameters/id' } ]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Data and pagination metadata
+  '/campaigns/{id}':
+    parameters:
+      - $ref: '#/components/parameters/id'
     get:
-      summary: Campaign with study runs, original artifact indices and episode indices
-      responses: { '200': { description: Campaign data }, '404': { description: Not found or outside scope } }
+      summary: 'Campaign with study runs, original artifact indices and episode indices'
+      responses:
+        '200':
+          description: Campaign data
+        '404':
+          description: Not found or outside scope
   /imports:
     post:
-      summary: Queue immutable bundle import; ADMIN or ENGINEER, maximum 8 MB
-      parameters: [ { $ref: '#/components/parameters/key' } ]
+      summary: 'Queue immutable bundle import; ADMIN or ENGINEER, maximum 8 MB'
+      parameters:
+        - $ref: '#/components/parameters/key'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [bundle]
+              required:
+                - bundle
               additionalProperties: false
               properties:
-                bundle: { $ref: './schema#/$defs/Bundle' }
-      responses: { '202': { description: Persisted job; Idempotency-Replayed on identical retry }, '409': { description: Idempotency conflict }, '413': { description: Bundle exceeds size limit } }
-  /episodes/{id}:
-    parameters: [ { $ref: '#/components/parameters/id' } ]
+                bundle:
+                  $ref: ./schema#/$defs/Bundle
+      responses:
+        '202':
+          description: Persisted job; Idempotency-Replayed on identical retry
+        '409':
+          description: Idempotency conflict
+        '413':
+          description: Bundle exceeds size limit
+  '/episodes/{id}':
+    parameters:
+      - $ref: '#/components/parameters/id'
     get:
       summary: Episode index including immutable basis content hash
-      responses: { '200': { description: Episode index }, '404': { description: Not found or outside scope } }
-  /episodes/{id}/records:
-    parameters: [ { $ref: '#/components/parameters/id' } ]
+      responses:
+        '200':
+          description: Episode index
+        '404':
+          description: Not found or outside scope
+  '/episodes/{id}/records':
+    parameters:
+      - $ref: '#/components/parameters/id'
     get:
-      summary: Episode payload with bounded record page, limit at most 100
+      summary: 'Episode payload with bounded record page, limit at most 100'
       parameters:
-        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
-        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
-      responses: { '200': { description: Episode data and total record count }, '409': { description: Missing or corrupt artifact } }
-  /artifacts/{id}:
-    parameters: [ { $ref: '#/components/parameters/id' } ]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Episode data and total record count
+        '409':
+          description: Missing or corrupt artifact
+  '/artifacts/{id}':
+    parameters:
+      - $ref: '#/components/parameters/id'
     get:
       summary: Original hash-checked UTF-8 artifact bytes
-      responses: { '200': { description: Original media type; X-Content-SHA256 header }, '404': { description: Not found or outside scope } }
+      responses:
+        '200':
+          description: Original media type; X-Content-SHA256 header
+        '404':
+          description: Not found or outside scope
   /branches:
     post:
-      summary: Queue matching override on a copied state; same physical seed, fixed-risk tail
-      parameters: [ { $ref: '#/components/parameters/key' } ]
+      summary: 'Queue matching override on a copied state; same physical seed, fixed-risk tail'
+      parameters:
+        - $ref: '#/components/parameters/key'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: './schema#/$defs/BranchRequest' }
-      responses: { '202': { description: Branch job }, '409': { description: Stale source hash } }
+            schema:
+              $ref: ./schema#/$defs/BranchRequest
+      responses:
+        '202':
+          description: Branch job
+        '409':
+          description: Stale source hash
   /inference:
     post:
       summary: Queue greedy S/F/A inference from a server-registered checkpoint
-      parameters: [ { $ref: '#/components/parameters/key' } ]
+      parameters:
+        - $ref: '#/components/parameters/key'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [episode_id, tick, release_id]
+              required:
+                - episode_id
+                - tick
+                - release_id
               additionalProperties: false
               properties:
-                episode_id: { type: string, format: uuid }
-                tick: { type: integer, minimum: 0 }
-                release_id: { type: string }
-      responses: { '202': { description: Inference job; unavailable/mismatched releases fail explicitly } }
+                episode_id:
+                  type: string
+                  format: uuid
+                tick:
+                  type: integer
+                  minimum: 0
+                release_id:
+                  type: string
+      responses:
+        '202':
+          description: Inference job; unavailable/mismatched releases fail explicitly
   /jobs:
     get:
       summary: Owner-scoped jobs and immutable simulation reviews; bounded page/limit
-      responses: { '200': { description: Job list } }
-  /jobs/{id}:
-    parameters: [ { $ref: '#/components/parameters/id' } ]
+      responses:
+        '200':
+          description: Job list
+  '/jobs/{id}':
+    parameters:
+      - $ref: '#/components/parameters/id'
     get:
-      summary: Frozen input, attempt history link, output and processing status
-      responses: { '200': { description: Job }, '404': { description: Not found or outside scope } }
-  /jobs/{id}/cancel:
-    parameters: [ { $ref: '#/components/parameters/id' } ]
+      summary: 'Frozen input, attempt history link, output and processing status'
+      responses:
+        '200':
+          description: Job
+        '404':
+          description: Not found or outside scope
+  '/jobs/{id}/cancel':
+    parameters:
+      - $ref: '#/components/parameters/id'
     post:
       summary: Cancel QUEUED/RUNNING job and fence late output
-      responses: { '200': { description: Cancelled job }, '409': { description: Already terminal } }
-  /jobs/{id}/retry:
-    parameters: [ { $ref: '#/components/parameters/id' }, { $ref: '#/components/parameters/key' } ]
+      responses:
+        '200':
+          description: Cancelled job
+        '409':
+          description: Already terminal
+  '/jobs/{id}/retry':
+    parameters:
+      - $ref: '#/components/parameters/id'
+      - $ref: '#/components/parameters/key'
     post:
-      summary: New job from the same frozen input, linked by retryOf; preserves prior attempt
-      responses: { '202': { description: New job }, '409': { description: Only FAILED/CANCELLED can retry } }
-  /jobs/{id}/episode:
-    parameters: [ { $ref: '#/components/parameters/id' } ]
+      summary: 'New job from the same frozen input, linked by retryOf; preserves prior attempt'
+      responses:
+        '202':
+          description: New job
+        '409':
+          description: Only FAILED/CANCELLED can retry
+  '/jobs/{id}/episode':
+    parameters:
+      - $ref: '#/components/parameters/id'
     get:
       summary: Replay output of completed simulation branch
       parameters:
-        - { name: variant, in: query, schema: { enum: [branch, baseline], default: branch } }
-      responses: { '200': { description: Branch episode }, '409': { description: Branch not ready } }
-  /jobs/{id}/review:
-    parameters: [ { $ref: '#/components/parameters/id' } ]
+        - name: variant
+          in: query
+          schema:
+            enum:
+              - branch
+              - baseline
+            default: branch
+      responses:
+        '200':
+          description: Branch episode
+        '409':
+          description: Branch not ready
+  '/jobs/{id}/review':
+    parameters:
+      - $ref: '#/components/parameters/id'
     post:
       summary: Immutable management review of a simulation; never publishes operations state
       requestBody:
@@ -204,16 +410,1789 @@ paths:
           application/json:
             schema:
               type: object
-              required: [decision, reason, expected_output_hash]
+              required:
+                - decision
+                - reason
+                - expected_output_hash
               additionalProperties: false
               properties:
-                decision: { enum: [ACCEPT, REJECT] }
-                reason: { type: string, minLength: 1, maxLength: 1000 }
-                expected_output_hash: { type: string, pattern: '^[a-f0-9]{64}$' }
-      responses: { '201': { description: New review }, '200': { description: Identical review replay }, '409': { description: Stale output or conflicting review } }
+                decision:
+                  enum:
+                    - ACCEPT
+                    - REJECT
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                expected_output_hash:
+                  type: string
+                  pattern: '^[a-f0-9]{64}$'
+      responses:
+        '200':
+          description: Identical review replay
+        '201':
+          description: New review
+        '409':
+          description: Stale output or conflicting review
+  '/demo/sessions/{id}/observation':
+    parameters:
+      - $ref: '#/components/parameters/id'
+    get:
+      summary: Read observation from one authorized persisted session revision
+      description: >-
+        Read-only primary-lane projection; never prepares policy or advances the simulator. ADMIN/owner scope
+        matches session reads. Context is ILLUSTRATIVE_DEMO, quantities/deadlines may be null; legacy context
+        is MISSING_LEGACY. All time fields use simulator ticks; positions use dimensionless schematic grid
+        units. With expectedRevision, concurrent changes return DEMO_STALE; observation bundles all views in
+        one row read. No query parameters beyond those declared; repeated fields rejected. Incidents use
+        session/lane/failure record/event identity, sorted source positions descending; timeline positions
+        ascend. Recurrence is a new identity. CM completion resolves only its incident; PM cannot resolve CM.
+        Lists are complete, max 384 failures (64 records x 3 machines x 2 components), no pagination or silent
+        truncation.
+      parameters:
+        - name: expectedRevision
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 2147483647
+      responses:
+        '200':
+          description: Persisted snapshot projection
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: '#/components/schemas/DemoObservationRead'
+                required:
+                  - success
+                  - data
+        '400':
+          description: 'VALIDATION_ERROR: unknown/repeated query, invalid expectedRevision or filter'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '401':
+          description: 'UNAUTHORIZED: invalid token/inactive user'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '404':
+          description: DEMO_NOT_FOUND / DEMO_MACHINE_NOT_FOUND / DEMO_INCIDENT_NOT_FOUND
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '409':
+          description: 'DEMO_STALE: discard related reads and refetch the same revision'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '500':
+          description: 'DEMO_TRACE_INVALID: inconsistent stored physical evidence'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '503':
+          description: DB_UNAVAILABLE
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+  '/demo/sessions/{id}/factory':
+    parameters:
+      - $ref: '#/components/parameters/id'
+    get:
+      summary: Read factory from one authorized persisted session revision
+      description: >-
+        Read-only primary-lane projection; never prepares policy or advances the simulator. ADMIN/owner scope
+        matches session reads. Context is ILLUSTRATIVE_DEMO, quantities/deadlines may be null; legacy context
+        is MISSING_LEGACY. All time fields use simulator ticks; positions use dimensionless schematic grid
+        units. With expectedRevision, concurrent changes return DEMO_STALE; observation bundles all views in
+        one row read. No query parameters beyond those declared; repeated fields rejected. Incidents use
+        session/lane/failure record/event identity, sorted source positions descending; timeline positions
+        ascend. Recurrence is a new identity. CM completion resolves only its incident; PM cannot resolve CM.
+        Lists are complete, max 384 failures (64 records x 3 machines x 2 components), no pagination or silent
+        truncation.
+      parameters:
+        - name: expectedRevision
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 2147483647
+      responses:
+        '200':
+          description: Persisted snapshot projection
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: '#/components/schemas/DemoFactoryRead'
+                required:
+                  - success
+                  - data
+              examples:
+                available:
+                  summary: >-
+                    Pinned JCST physics, explicit legal test matching at tick 5; not learned-policy inference.
+                    Illustrative UUID.
+                  value:
+                    success: true
+                    data:
+                      sessionId: 11111111-1111-4111-8111-111111111111
+                      revision: 5
+                      tick: 5
+                      lane: primary
+                      contextStatus: AVAILABLE
+                      contextVersion: jcst-factory-demo.v1
+                      contextOrigin: ILLUSTRATIVE_DEMO
+                      context:
+                        contextVersion: jcst-factory-demo.v1
+                        contextOrigin: ILLUSTRATIVE_DEMO
+                        factory:
+                          factoryId: JCST-DEMO
+                          name: JCST demonstration factory
+                        layout:
+                          coordinateUnit: SCHEMATIC_GRID
+                          columns: 3
+                          rows: 2
+                        lines:
+                          - lineId: P1
+                            name: Pump housing
+                            machineIds:
+                              - M1
+                              - M2
+                              - M3
+                        machines:
+                          - machineId: M1
+                            simulatorMachineIndex: 0
+                            name: CNC turning center
+                            type: TURNING
+                            operation: Rough turning
+                            operationOrder: 1
+                            lineId: P1
+                            location:
+                              zone: A
+                              bay: A1
+                              x: 0
+                              'y': 0
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                          - machineId: M2
+                            simulatorMachineIndex: 1
+                            name: CNC milling center
+                            type: MILLING
+                            operation: Precision milling
+                            operationOrder: 2
+                            lineId: P1
+                            location:
+                              zone: A
+                              bay: A2
+                              x: 1
+                              'y': 0
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                          - machineId: M3
+                            simulatorMachineIndex: 2
+                            name: CNC finishing center
+                            type: FINISHING
+                            operation: Finishing & inspection
+                            operationOrder: 3
+                            lineId: P1
+                            location:
+                              zone: B
+                              bay: B1
+                              x: 2
+                              'y': 1
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                missingLegacy:
+                  summary: >-
+                    Pinned JCST physics, explicit legal test matching at tick 5; not learned-policy inference.
+                    Illustrative UUID.
+                  value:
+                    success: true
+                    data:
+                      sessionId: 11111111-1111-4111-8111-111111111111
+                      revision: 5
+                      tick: 5
+                      lane: primary
+                      contextStatus: MISSING_LEGACY
+                      contextVersion: null
+                      contextOrigin: null
+                      context: null
+        '400':
+          description: 'VALIDATION_ERROR: unknown/repeated query, invalid expectedRevision or filter'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '401':
+          description: 'UNAUTHORIZED: invalid token/inactive user'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '404':
+          description: DEMO_NOT_FOUND / DEMO_MACHINE_NOT_FOUND / DEMO_INCIDENT_NOT_FOUND
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '409':
+          description: 'DEMO_STALE: discard related reads and refetch the same revision'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '500':
+          description: 'DEMO_TRACE_INVALID: inconsistent stored physical evidence'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '503':
+          description: DB_UNAVAILABLE
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+  '/demo/sessions/{id}/machines/{machineId}':
+    parameters:
+      - $ref: '#/components/parameters/id'
+    get:
+      summary: 'Read machines/{machineId} from one authorized persisted session revision'
+      description: >-
+        Read-only primary-lane projection; never prepares policy or advances the simulator. ADMIN/owner scope
+        matches session reads. Context is ILLUSTRATIVE_DEMO, quantities/deadlines may be null; legacy context
+        is MISSING_LEGACY. All time fields use simulator ticks; positions use dimensionless schematic grid
+        units. With expectedRevision, concurrent changes return DEMO_STALE; observation bundles all views in
+        one row read. No query parameters beyond those declared; repeated fields rejected. Incidents use
+        session/lane/failure record/event identity, sorted source positions descending; timeline positions
+        ascend. Recurrence is a new identity. CM completion resolves only its incident; PM cannot resolve CM.
+        Lists are complete, max 384 failures (64 records x 3 machines x 2 components), no pagination or silent
+        truncation.
+      parameters:
+        - name: expectedRevision
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 2147483647
+        - name: machineId
+          in: path
+          required: true
+          schema:
+            enum:
+              - M1
+              - M2
+              - M3
+      responses:
+        '200':
+          description: Persisted snapshot projection
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: '#/components/schemas/DemoMachineRead'
+                required:
+                  - success
+                  - data
+        '400':
+          description: 'VALIDATION_ERROR: unknown/repeated query, invalid expectedRevision or filter'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '401':
+          description: 'UNAUTHORIZED: invalid token/inactive user'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '404':
+          description: DEMO_NOT_FOUND / DEMO_MACHINE_NOT_FOUND / DEMO_INCIDENT_NOT_FOUND
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '409':
+          description: 'DEMO_STALE: discard related reads and refetch the same revision'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '500':
+          description: 'DEMO_TRACE_INVALID: inconsistent stored physical evidence'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '503':
+          description: DB_UNAVAILABLE
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+  '/demo/sessions/{id}/incidents':
+    parameters:
+      - $ref: '#/components/parameters/id'
+    get:
+      summary: Read incidents from one authorized persisted session revision
+      description: >-
+        Read-only primary-lane projection; never prepares policy or advances the simulator. ADMIN/owner scope
+        matches session reads. Context is ILLUSTRATIVE_DEMO, quantities/deadlines may be null; legacy context
+        is MISSING_LEGACY. All time fields use simulator ticks; positions use dimensionless schematic grid
+        units. With expectedRevision, concurrent changes return DEMO_STALE; observation bundles all views in
+        one row read. No query parameters beyond those declared; repeated fields rejected. Incidents use
+        session/lane/failure record/event identity, sorted source positions descending; timeline positions
+        ascend. Recurrence is a new identity. CM completion resolves only its incident; PM cannot resolve CM.
+        Lists are complete, max 384 failures (64 records x 3 machines x 2 components), no pagination or silent
+        truncation.
+      parameters:
+        - name: expectedRevision
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 2147483647
+        - name: status
+          in: query
+          schema:
+            enum:
+              - OPEN
+              - IN_SERVICE
+              - RESOLVED
+        - name: machineId
+          in: query
+          schema:
+            enum:
+              - M1
+              - M2
+              - M3
+      responses:
+        '200':
+          description: Persisted snapshot projection
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: '#/components/schemas/DemoIncidentListRead'
+                required:
+                  - success
+                  - data
+              examples:
+                completedAndNewFailure:
+                  summary: >-
+                    Pinned JCST physics, explicit legal test matching at tick 5; not learned-policy inference.
+                    Illustrative UUID.
+                  value:
+                    success: true
+                    data:
+                      sessionId: 11111111-1111-4111-8111-111111111111
+                      revision: 7
+                      tick: 7
+                      lane: primary
+                      contextStatus: AVAILABLE
+                      contextVersion: jcst-factory-demo.v1
+                      contextOrigin: ILLUSTRATIVE_DEMO
+                      context:
+                        contextVersion: jcst-factory-demo.v1
+                        contextOrigin: ILLUSTRATIVE_DEMO
+                        factory:
+                          factoryId: JCST-DEMO
+                          name: JCST demonstration factory
+                        layout:
+                          coordinateUnit: SCHEMATIC_GRID
+                          columns: 3
+                          rows: 2
+                        lines:
+                          - lineId: P1
+                            name: Pump housing
+                            machineIds:
+                              - M1
+                              - M2
+                              - M3
+                        machines:
+                          - machineId: M1
+                            simulatorMachineIndex: 0
+                            name: CNC turning center
+                            type: TURNING
+                            operation: Rough turning
+                            operationOrder: 1
+                            lineId: P1
+                            location:
+                              zone: A
+                              bay: A1
+                              x: 0
+                              'y': 0
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                          - machineId: M2
+                            simulatorMachineIndex: 1
+                            name: CNC milling center
+                            type: MILLING
+                            operation: Precision milling
+                            operationOrder: 2
+                            lineId: P1
+                            location:
+                              zone: A
+                              bay: A2
+                              x: 1
+                              'y': 0
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                          - machineId: M3
+                            simulatorMachineIndex: 2
+                            name: CNC finishing center
+                            type: FINISHING
+                            operation: Finishing & inspection
+                            operationOrder: 3
+                            lineId: P1
+                            location:
+                              zone: B
+                              bay: B1
+                              x: 2
+                              'y': 1
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                      items:
+                        - incidentId: ji1_WyIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJwcmltYXJ5Iiw2LDBd
+                          machineId: M2
+                          simulatorMachineIndex: 1
+                          componentId: C2
+                          simulatorComponentIndex: 1
+                          status: OPEN
+                          openedAtTick: 7
+                          serviceStartedAtTick: null
+                          resolvedAtTick: null
+                          failure:
+                            recordIndex: 6
+                            eventIndex: 0
+                            tick: 7
+                            type: failure
+                            machineId: M2
+                            componentId: C2
+                            technicianId: null
+                            kind: null
+                            durationTicks: null
+                          timeline:
+                            - recordIndex: 6
+                              eventIndex: 0
+                              tick: 7
+                              type: failure
+                              machineId: M2
+                              componentId: C2
+                              technicianId: null
+                              kind: null
+                              durationTicks: null
+                          decisions: []
+                        - incidentId: ji1_WyIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJwcmltYXJ5Iiw0LDBd
+                          machineId: M3
+                          simulatorMachineIndex: 2
+                          componentId: C2
+                          simulatorComponentIndex: 1
+                          status: RESOLVED
+                          openedAtTick: 5
+                          serviceStartedAtTick: 5
+                          resolvedAtTick: 7
+                          failure:
+                            recordIndex: 4
+                            eventIndex: 0
+                            tick: 5
+                            type: failure
+                            machineId: M3
+                            componentId: C2
+                            technicianId: null
+                            kind: null
+                            durationTicks: null
+                          timeline:
+                            - recordIndex: 4
+                              eventIndex: 0
+                              tick: 5
+                              type: failure
+                              machineId: M3
+                              componentId: C2
+                              technicianId: null
+                              kind: null
+                              durationTicks: null
+                            - recordIndex: 5
+                              eventIndex: 1
+                              tick: 5
+                              type: start
+                              machineId: M3
+                              componentId: C2
+                              technicianId: T2
+                              kind: CM
+                              durationTicks: 2
+                            - recordIndex: 6
+                              eventIndex: 4
+                              tick: 7
+                              type: completion
+                              machineId: M3
+                              componentId: C2
+                              technicianId: T2
+                              kind: CM
+                              durationTicks: null
+                          decisions:
+                            - decisionIndex: 0
+                              tick: 5
+                              actor: fixture-reviewer
+                              reason: Explicit legal matching for physical trace test
+                              action:
+                                - - 0
+                                  - 0
+                                  - 0
+                                - - 2
+                                  - 1
+                                  - 1
+                              override: false
+                      limit: 384
+                      truncated: false
+        '400':
+          description: 'VALIDATION_ERROR: unknown/repeated query, invalid expectedRevision or filter'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '401':
+          description: 'UNAUTHORIZED: invalid token/inactive user'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '404':
+          description: DEMO_NOT_FOUND / DEMO_MACHINE_NOT_FOUND / DEMO_INCIDENT_NOT_FOUND
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '409':
+          description: 'DEMO_STALE: discard related reads and refetch the same revision'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '500':
+          description: 'DEMO_TRACE_INVALID: inconsistent stored physical evidence'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '503':
+          description: DB_UNAVAILABLE
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+  '/demo/sessions/{id}/incidents/{incidentId}':
+    parameters:
+      - $ref: '#/components/parameters/id'
+    get:
+      summary: 'Read incidents/{incidentId} from one authorized persisted session revision'
+      description: >-
+        Read-only primary-lane projection; never prepares policy or advances the simulator. ADMIN/owner scope
+        matches session reads. Context is ILLUSTRATIVE_DEMO, quantities/deadlines may be null; legacy context
+        is MISSING_LEGACY. All time fields use simulator ticks; positions use dimensionless schematic grid
+        units. With expectedRevision, concurrent changes return DEMO_STALE; observation bundles all views in
+        one row read. No query parameters beyond those declared; repeated fields rejected. Incidents use
+        session/lane/failure record/event identity, sorted source positions descending; timeline positions
+        ascend. Recurrence is a new identity. CM completion resolves only its incident; PM cannot resolve CM.
+        Lists are complete, max 384 failures (64 records x 3 machines x 2 components), no pagination or silent
+        truncation.
+      parameters:
+        - name: expectedRevision
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 2147483647
+        - name: incidentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Persisted snapshot projection
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: '#/components/schemas/DemoIncidentRead'
+                required:
+                  - success
+                  - data
+              examples:
+                open:
+                  summary: >-
+                    Pinned JCST physics, explicit legal test matching at tick 5; not learned-policy inference.
+                    Illustrative UUID.
+                  value:
+                    success: true
+                    data:
+                      sessionId: 11111111-1111-4111-8111-111111111111
+                      revision: 5
+                      tick: 5
+                      lane: primary
+                      contextStatus: AVAILABLE
+                      contextVersion: jcst-factory-demo.v1
+                      contextOrigin: ILLUSTRATIVE_DEMO
+                      context:
+                        contextVersion: jcst-factory-demo.v1
+                        contextOrigin: ILLUSTRATIVE_DEMO
+                        factory:
+                          factoryId: JCST-DEMO
+                          name: JCST demonstration factory
+                        layout:
+                          coordinateUnit: SCHEMATIC_GRID
+                          columns: 3
+                          rows: 2
+                        lines:
+                          - lineId: P1
+                            name: Pump housing
+                            machineIds:
+                              - M1
+                              - M2
+                              - M3
+                        machines:
+                          - machineId: M1
+                            simulatorMachineIndex: 0
+                            name: CNC turning center
+                            type: TURNING
+                            operation: Rough turning
+                            operationOrder: 1
+                            lineId: P1
+                            location:
+                              zone: A
+                              bay: A1
+                              x: 0
+                              'y': 0
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                          - machineId: M2
+                            simulatorMachineIndex: 1
+                            name: CNC milling center
+                            type: MILLING
+                            operation: Precision milling
+                            operationOrder: 2
+                            lineId: P1
+                            location:
+                              zone: A
+                              bay: A2
+                              x: 1
+                              'y': 0
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                          - machineId: M3
+                            simulatorMachineIndex: 2
+                            name: CNC finishing center
+                            type: FINISHING
+                            operation: Finishing & inspection
+                            operationOrder: 3
+                            lineId: P1
+                            location:
+                              zone: B
+                              bay: B1
+                              x: 2
+                              'y': 1
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                      incident:
+                        incidentId: ji1_WyIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJwcmltYXJ5Iiw0LDBd
+                        machineId: M3
+                        simulatorMachineIndex: 2
+                        componentId: C2
+                        simulatorComponentIndex: 1
+                        status: OPEN
+                        openedAtTick: 5
+                        serviceStartedAtTick: null
+                        resolvedAtTick: null
+                        failure:
+                          recordIndex: 4
+                          eventIndex: 0
+                          tick: 5
+                          type: failure
+                          machineId: M3
+                          componentId: C2
+                          technicianId: null
+                          kind: null
+                          durationTicks: null
+                        timeline:
+                          - recordIndex: 4
+                            eventIndex: 0
+                            tick: 5
+                            type: failure
+                            machineId: M3
+                            componentId: C2
+                            technicianId: null
+                            kind: null
+                            durationTicks: null
+                        decisions: []
+                      machine:
+                        machineId: M3
+                        simulatorMachineIndex: 2
+                        machineState: BREAKDOWN
+                        components:
+                          - componentId: C1
+                            ageTicks: 5
+                            failed: false
+                          - componentId: C2
+                            ageTicks: 5
+                            failed: true
+                        currentJobs: []
+                inService:
+                  summary: >-
+                    Pinned JCST physics, explicit legal test matching at tick 5; not learned-policy inference.
+                    Illustrative UUID.
+                  value:
+                    success: true
+                    data:
+                      sessionId: 11111111-1111-4111-8111-111111111111
+                      revision: 6
+                      tick: 6
+                      lane: primary
+                      contextStatus: AVAILABLE
+                      contextVersion: jcst-factory-demo.v1
+                      contextOrigin: ILLUSTRATIVE_DEMO
+                      context:
+                        contextVersion: jcst-factory-demo.v1
+                        contextOrigin: ILLUSTRATIVE_DEMO
+                        factory:
+                          factoryId: JCST-DEMO
+                          name: JCST demonstration factory
+                        layout:
+                          coordinateUnit: SCHEMATIC_GRID
+                          columns: 3
+                          rows: 2
+                        lines:
+                          - lineId: P1
+                            name: Pump housing
+                            machineIds:
+                              - M1
+                              - M2
+                              - M3
+                        machines:
+                          - machineId: M1
+                            simulatorMachineIndex: 0
+                            name: CNC turning center
+                            type: TURNING
+                            operation: Rough turning
+                            operationOrder: 1
+                            lineId: P1
+                            location:
+                              zone: A
+                              bay: A1
+                              x: 0
+                              'y': 0
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                          - machineId: M2
+                            simulatorMachineIndex: 1
+                            name: CNC milling center
+                            type: MILLING
+                            operation: Precision milling
+                            operationOrder: 2
+                            lineId: P1
+                            location:
+                              zone: A
+                              bay: A2
+                              x: 1
+                              'y': 0
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                          - machineId: M3
+                            simulatorMachineIndex: 2
+                            name: CNC finishing center
+                            type: FINISHING
+                            operation: Finishing & inspection
+                            operationOrder: 3
+                            lineId: P1
+                            location:
+                              zone: B
+                              bay: B1
+                              x: 2
+                              'y': 1
+                            assignedBatch:
+                              batchId: DEMO-PH-001
+                              productName: Pump housing
+                              quantity: null
+                              dueAt: null
+                      incident:
+                        incidentId: ji1_WyIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJwcmltYXJ5Iiw0LDBd
+                        machineId: M3
+                        simulatorMachineIndex: 2
+                        componentId: C2
+                        simulatorComponentIndex: 1
+                        status: IN_SERVICE
+                        openedAtTick: 5
+                        serviceStartedAtTick: 5
+                        resolvedAtTick: null
+                        failure:
+                          recordIndex: 4
+                          eventIndex: 0
+                          tick: 5
+                          type: failure
+                          machineId: M3
+                          componentId: C2
+                          technicianId: null
+                          kind: null
+                          durationTicks: null
+                        timeline:
+                          - recordIndex: 4
+                            eventIndex: 0
+                            tick: 5
+                            type: failure
+                            machineId: M3
+                            componentId: C2
+                            technicianId: null
+                            kind: null
+                            durationTicks: null
+                          - recordIndex: 5
+                            eventIndex: 1
+                            tick: 5
+                            type: start
+                            machineId: M3
+                            componentId: C2
+                            technicianId: T2
+                            kind: CM
+                            durationTicks: 2
+                        decisions:
+                          - decisionIndex: 0
+                            tick: 5
+                            actor: fixture-reviewer
+                            reason: Explicit legal matching for physical trace test
+                            action:
+                              - - 0
+                                - 0
+                                - 0
+                              - - 2
+                                - 1
+                                - 1
+                            override: false
+                      machine:
+                        machineId: M3
+                        simulatorMachineIndex: 2
+                        machineState: IN_SERVICE
+                        components:
+                          - componentId: C1
+                            ageTicks: 5
+                            failed: false
+                          - componentId: C2
+                            ageTicks: 5
+                            failed: true
+                        currentJobs:
+                          - technicianId: T2
+                            componentId: C2
+                            kind: CM
+                            remainingTicks: 1
+        '400':
+          description: 'VALIDATION_ERROR: unknown/repeated query, invalid expectedRevision or filter'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '401':
+          description: 'UNAUTHORIZED: invalid token/inactive user'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '404':
+          description: DEMO_NOT_FOUND / DEMO_MACHINE_NOT_FOUND / DEMO_INCIDENT_NOT_FOUND
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '409':
+          description: 'DEMO_STALE: discard related reads and refetch the same revision'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '500':
+          description: 'DEMO_TRACE_INVALID: inconsistent stored physical evidence'
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
+        '503':
+          description: DB_UNAVAILABLE
+          headers:
+            Cache-Control:
+              schema:
+                const: no-store
 components:
   securitySchemes:
-    session: { type: apiKey, in: cookie, name: pdm_token }
+    session:
+      type: apiKey
+      in: cookie
+      name: pdm_token
   parameters:
-    id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
-    key: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 128 } }
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    key:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+  schemas:
+    DemoBatch:
+      type: object
+      additionalProperties: false
+      properties:
+        batchId:
+          type: string
+        productName:
+          type: string
+        quantity:
+          anyOf:
+            - type: integer
+              minimum: 0
+            - type: 'null'
+        dueAt:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+      required:
+        - batchId
+        - productName
+        - quantity
+        - dueAt
+    DemoMachineProfile:
+      type: object
+      additionalProperties: false
+      properties:
+        machineId:
+          enum:
+            - M1
+            - M2
+            - M3
+        simulatorMachineIndex:
+          type: integer
+          minimum: 0
+          maximum: 2
+        name:
+          type: string
+        type:
+          type: string
+        operation:
+          type: string
+        operationOrder:
+          type: integer
+          minimum: 1
+          maximum: 3
+        lineId:
+          type: string
+        location:
+          type: object
+          additionalProperties: false
+          properties:
+            zone:
+              type: string
+            bay:
+              type: string
+            x:
+              type: integer
+              minimum: 0
+            'y':
+              type: integer
+              minimum: 0
+          required:
+            - zone
+            - bay
+            - x
+            - 'y'
+        assignedBatch:
+          $ref: '#/components/schemas/DemoBatch'
+      required:
+        - machineId
+        - simulatorMachineIndex
+        - name
+        - type
+        - operation
+        - operationOrder
+        - lineId
+        - location
+        - assignedBatch
+    DemoContext:
+      type: object
+      additionalProperties: false
+      properties:
+        contextVersion:
+          type: string
+        contextOrigin:
+          const: ILLUSTRATIVE_DEMO
+        factory:
+          type: object
+          additionalProperties: false
+          properties:
+            factoryId:
+              type: string
+            name:
+              type: string
+          required:
+            - factoryId
+            - name
+        layout:
+          type: object
+          additionalProperties: false
+          properties:
+            coordinateUnit:
+              const: SCHEMATIC_GRID
+            columns:
+              type: integer
+              minimum: 0
+            rows:
+              type: integer
+              minimum: 0
+          required:
+            - coordinateUnit
+            - columns
+            - rows
+        lines:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              lineId:
+                type: string
+              name:
+                type: string
+              machineIds:
+                type: array
+                items:
+                  enum:
+                    - M1
+                    - M2
+                    - M3
+                maxItems: 3
+            required:
+              - lineId
+              - name
+              - machineIds
+        machines:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemoMachineProfile'
+          maxItems: 3
+      required:
+        - contextVersion
+        - contextOrigin
+        - factory
+        - layout
+        - lines
+        - machines
+    DemoMachineState:
+      type: object
+      additionalProperties: false
+      properties:
+        machineId:
+          enum:
+            - M1
+            - M2
+            - M3
+        simulatorMachineIndex:
+          type: integer
+          minimum: 0
+          maximum: 2
+        machineState:
+          enum:
+            - WORKING
+            - BREAKDOWN
+            - IN_SERVICE
+        components:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              componentId:
+                enum:
+                  - C1
+                  - C2
+              ageTicks:
+                type: integer
+                minimum: 0
+              failed:
+                type: boolean
+            required:
+              - componentId
+              - ageTicks
+              - failed
+          maxItems: 2
+        currentJobs:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              technicianId:
+                type: string
+              componentId:
+                enum:
+                  - C1
+                  - C2
+              kind:
+                enum:
+                  - PM
+                  - CM
+              remainingTicks:
+                type: integer
+                minimum: 1
+            required:
+              - technicianId
+              - componentId
+              - kind
+              - remainingTicks
+          maxItems: 3
+      required:
+        - machineId
+        - simulatorMachineIndex
+        - machineState
+        - components
+        - currentJobs
+    DemoPhysicalEvidence:
+      type: object
+      additionalProperties: false
+      properties:
+        recordIndex:
+          type: integer
+          minimum: 0
+          maximum: 63
+        eventIndex:
+          type: integer
+          minimum: 0
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 64
+        type:
+          enum:
+            - failure
+            - start
+            - completion
+        machineId:
+          enum:
+            - M1
+            - M2
+            - M3
+        componentId:
+          enum:
+            - C1
+            - C2
+        technicianId:
+          anyOf:
+            - type: string
+            - type: 'null'
+        kind:
+          anyOf:
+            - enum:
+                - PM
+                - CM
+            - type: 'null'
+        durationTicks:
+          anyOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+      required:
+        - recordIndex
+        - eventIndex
+        - tick
+        - type
+        - machineId
+        - componentId
+        - technicianId
+        - kind
+        - durationTicks
+    DemoDecisionEvidence:
+      type: object
+      additionalProperties: false
+      properties:
+        decisionIndex:
+          type: integer
+          minimum: 0
+          maximum: 63
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 64
+        actor:
+          type: string
+        reason:
+          type: string
+        action:
+          type: array
+          items:
+            type: array
+            items:
+              type: integer
+              minimum: 0
+            maxItems: 3
+          maxItems: 3
+        override:
+          type: boolean
+      required:
+        - decisionIndex
+        - tick
+        - actor
+        - reason
+        - action
+        - override
+    DemoIncident:
+      type: object
+      additionalProperties: false
+      properties:
+        incidentId:
+          type: string
+        machineId:
+          enum:
+            - M1
+            - M2
+            - M3
+        simulatorMachineIndex:
+          type: integer
+          minimum: 0
+          maximum: 2
+        componentId:
+          enum:
+            - C1
+            - C2
+        simulatorComponentIndex:
+          type: integer
+          minimum: 0
+          maximum: 1
+        status:
+          enum:
+            - OPEN
+            - IN_SERVICE
+            - RESOLVED
+        openedAtTick:
+          type: integer
+          minimum: 0
+          maximum: 64
+        serviceStartedAtTick:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 64
+            - type: 'null'
+        resolvedAtTick:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 64
+            - type: 'null'
+        failure:
+          $ref: '#/components/schemas/DemoPhysicalEvidence'
+        timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemoPhysicalEvidence'
+          maxItems: 3
+        decisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemoDecisionEvidence'
+          maxItems: 1
+      required:
+        - incidentId
+        - machineId
+        - simulatorMachineIndex
+        - componentId
+        - simulatorComponentIndex
+        - status
+        - openedAtTick
+        - serviceStartedAtTick
+        - resolvedAtTick
+        - failure
+        - timeline
+        - decisions
+    DemoServiceHistory:
+      type: object
+      additionalProperties: false
+      properties:
+        serviceId:
+          type: string
+        machineId:
+          enum:
+            - M1
+            - M2
+            - M3
+        componentId:
+          enum:
+            - C1
+            - C2
+        technicianId:
+          type: string
+        kind:
+          enum:
+            - PM
+            - CM
+        startedAtTick:
+          type: integer
+          minimum: 0
+          maximum: 64
+        completedAtTick:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 64
+            - type: 'null'
+        durationTicks:
+          type: integer
+          minimum: 1
+        start:
+          $ref: '#/components/schemas/DemoPhysicalEvidence'
+        completion:
+          anyOf:
+            - $ref: '#/components/schemas/DemoPhysicalEvidence'
+            - type: 'null'
+        decision:
+          anyOf:
+            - $ref: '#/components/schemas/DemoDecisionEvidence'
+            - type: 'null'
+      required:
+        - serviceId
+        - machineId
+        - componentId
+        - technicianId
+        - kind
+        - startedAtTick
+        - completedAtTick
+        - durationTicks
+        - start
+        - completion
+        - decision
+    DemoFactoryRead:
+      type: object
+      additionalProperties: false
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+          minimum: 0
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 64
+        lane:
+          const: primary
+        contextStatus:
+          enum:
+            - AVAILABLE
+            - MISSING_LEGACY
+        contextVersion:
+          anyOf:
+            - type: string
+            - type: 'null'
+        contextOrigin:
+          anyOf:
+            - const: ILLUSTRATIVE_DEMO
+            - type: 'null'
+        context:
+          anyOf:
+            - $ref: '#/components/schemas/DemoContext'
+            - type: 'null'
+      required:
+        - sessionId
+        - revision
+        - tick
+        - lane
+        - contextStatus
+        - contextVersion
+        - contextOrigin
+        - context
+    DemoMachineRead:
+      type: object
+      additionalProperties: false
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+          minimum: 0
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 64
+        lane:
+          const: primary
+        contextStatus:
+          enum:
+            - AVAILABLE
+            - MISSING_LEGACY
+        contextVersion:
+          anyOf:
+            - type: string
+            - type: 'null'
+        contextOrigin:
+          anyOf:
+            - const: ILLUSTRATIVE_DEMO
+            - type: 'null'
+        context:
+          anyOf:
+            - $ref: '#/components/schemas/DemoContext'
+            - type: 'null'
+        profile:
+          anyOf:
+            - $ref: '#/components/schemas/DemoMachineProfile'
+            - type: 'null'
+        assignedBatch:
+          anyOf:
+            - $ref: '#/components/schemas/DemoBatch'
+            - type: 'null'
+        machineId:
+          enum:
+            - M1
+            - M2
+            - M3
+        simulatorMachineIndex:
+          type: integer
+          minimum: 0
+          maximum: 2
+        machineState:
+          enum:
+            - WORKING
+            - BREAKDOWN
+            - IN_SERVICE
+        components:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              componentId:
+                enum:
+                  - C1
+                  - C2
+              ageTicks:
+                type: integer
+                minimum: 0
+              failed:
+                type: boolean
+            required:
+              - componentId
+              - ageTicks
+              - failed
+          maxItems: 2
+        currentJobs:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              technicianId:
+                type: string
+              componentId:
+                enum:
+                  - C1
+                  - C2
+              kind:
+                enum:
+                  - PM
+                  - CM
+              remainingTicks:
+                type: integer
+                minimum: 1
+            required:
+              - technicianId
+              - componentId
+              - kind
+              - remainingTicks
+          maxItems: 3
+        maintenanceHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemoServiceHistory'
+          maxItems: 192
+        incidentIds:
+          type: array
+          items:
+            type: string
+          maxItems: 128
+      required:
+        - sessionId
+        - revision
+        - tick
+        - lane
+        - contextStatus
+        - contextVersion
+        - contextOrigin
+        - context
+        - profile
+        - assignedBatch
+        - machineId
+        - simulatorMachineIndex
+        - machineState
+        - components
+        - currentJobs
+        - maintenanceHistory
+        - incidentIds
+    DemoIncidentListRead:
+      type: object
+      additionalProperties: false
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+          minimum: 0
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 64
+        lane:
+          const: primary
+        contextStatus:
+          enum:
+            - AVAILABLE
+            - MISSING_LEGACY
+        contextVersion:
+          anyOf:
+            - type: string
+            - type: 'null'
+        contextOrigin:
+          anyOf:
+            - const: ILLUSTRATIVE_DEMO
+            - type: 'null'
+        context:
+          anyOf:
+            - $ref: '#/components/schemas/DemoContext'
+            - type: 'null'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemoIncident'
+          maxItems: 384
+        limit:
+          const: 384
+        truncated:
+          const: false
+      required:
+        - sessionId
+        - revision
+        - tick
+        - lane
+        - contextStatus
+        - contextVersion
+        - contextOrigin
+        - context
+        - items
+        - limit
+        - truncated
+    DemoIncidentRead:
+      type: object
+      additionalProperties: false
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+          minimum: 0
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 64
+        lane:
+          const: primary
+        contextStatus:
+          enum:
+            - AVAILABLE
+            - MISSING_LEGACY
+        contextVersion:
+          anyOf:
+            - type: string
+            - type: 'null'
+        contextOrigin:
+          anyOf:
+            - const: ILLUSTRATIVE_DEMO
+            - type: 'null'
+        context:
+          anyOf:
+            - $ref: '#/components/schemas/DemoContext'
+            - type: 'null'
+        incident:
+          $ref: '#/components/schemas/DemoIncident'
+        machine:
+          $ref: '#/components/schemas/DemoMachineState'
+      required:
+        - sessionId
+        - revision
+        - tick
+        - lane
+        - contextStatus
+        - contextVersion
+        - contextOrigin
+        - context
+        - incident
+        - machine
+    DemoObservationRead:
+      type: object
+      additionalProperties: false
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+          minimum: 0
+        tick:
+          type: integer
+          minimum: 0
+          maximum: 64
+        lane:
+          const: primary
+        contextStatus:
+          enum:
+            - AVAILABLE
+            - MISSING_LEGACY
+        contextVersion:
+          anyOf:
+            - type: string
+            - type: 'null'
+        contextOrigin:
+          anyOf:
+            - const: ILLUSTRATIVE_DEMO
+            - type: 'null'
+        context:
+          anyOf:
+            - $ref: '#/components/schemas/DemoContext'
+            - type: 'null'
+        status:
+          enum:
+            - RUNNING
+            - REVIEW
+            - COMPLETE
+        machines:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemoMachineState'
+          maxItems: 3
+        incidents:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemoIncident'
+          maxItems: 384
+        maintenanceHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemoServiceHistory'
+          maxItems: 192
+      required:
+        - sessionId
+        - revision
+        - tick
+        - lane
+        - contextStatus
+        - contextVersion
+        - contextOrigin
+        - context
+        - status
+        - machines
+        - incidents
+        - maintenanceHistory

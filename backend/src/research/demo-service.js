@@ -2,6 +2,7 @@ const prisma = require('../config/prisma');
 const { bridge } = require('./bridge');
 const { ApiError } = require('../lib/api-error');
 const { canonical, sha } = require('./artifact-store');
+const { contextSnapshot } = require('./demo-context');
 const scope = user => user.role === 'ADMIN' ? {} : { ownerId: user.id };
 const present = row => ({ id: row.id, revision: row.revision, createdAt: row.createdAt, ...row.payloadJson });
 
@@ -22,7 +23,7 @@ async function create(user, input, key) {
   const payloadJson = await bridge({ operation: 'demo_init', options: input });
   try {
     const row = await prisma.$transaction(async tx => {
-      const created = await tx.demoSession.create({ data: { ownerId: user.id, requestKey: key, requestHash: hash, payloadJson } });
+      const created = await tx.demoSession.create({ data: { ownerId: user.id, requestKey: key, requestHash: hash, payloadJson, contextJson: contextSnapshot() } });
       await tx.auditLog.create({ data: { entityType: 'SYSTEM', entityId: created.id, action: 'DEMO_CREATED', actorUserId: user.id, payloadJson: { ...input, sourceCommit: payloadJson.source_commit, domain: 'ENGINEERING_SIMULATION' } } });
       return created;
     });
