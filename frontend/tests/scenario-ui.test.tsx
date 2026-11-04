@@ -241,6 +241,45 @@ describe("Scenario editor independent contract UI", () => {
 });
 
 describe("workspace/read/result boundaries", () => {
+  it.each([
+    ["SUCCEEDED", 1],
+    ["QUEUED", 2],
+  ] as const)(
+    "revalidates the run list only when its recorded %s status changes",
+    async (status, reads) => {
+      const api = stub();
+      vi.mocked(api.listRuns)
+        .mockResolvedValueOnce({
+          items: [scenarioJob(status)],
+          next_cursor: null,
+        })
+        .mockResolvedValue({
+          items: [scenarioJob("SUCCEEDED")],
+          next_cursor: null,
+        });
+      render(
+        <ScenarioWorkspacePage
+          api={api}
+          workspaceId={workspaceId}
+          selection={{
+            factory_id: "factory-demo-01",
+            scenario_id: draftId,
+            run_id: runId,
+          }}
+        />,
+      );
+      await screen.findByRole("heading", { name: "Scenario run" });
+      await waitFor(() =>
+        expect(
+          within(screen.getByRole("region", { name: "Saved runs" })).getByText(
+            "SUCCEEDED",
+          ),
+        ).toBeInTheDocument(),
+      );
+      expect(api.workspace).toHaveBeenCalledTimes(reads);
+      expect(api.listRuns).toHaveBeenCalledTimes(reads);
+    },
+  );
   it("keeps immutable run selection usable during a background refresh while commands stay disabled", async () => {
     const user = userEvent.setup();
     const api = stub();
