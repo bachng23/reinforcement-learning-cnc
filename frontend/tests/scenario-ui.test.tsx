@@ -570,6 +570,35 @@ describe("workspace/read/result boundaries", () => {
     );
     expect(target).toHaveValue("");
   });
+  it("prepares fixed-input sensitivity during background reads but requires revalidation and explicit confirmation before submission", async () => {
+    const user = userEvent.setup();
+    const api = stub();
+    const enqueue = vi.spyOn(api, "enqueueSensitivity");
+    const props = {
+      workspace: engineWorkspace(),
+      source: engineJob(),
+      snapshot: engineEntities(),
+      api,
+      actor: scenarioActor,
+      onAccepted: vi.fn(),
+    };
+    const view = render(<SensitivityInputs {...props} fresh={false} />);
+    const review = screen.getByRole("button", { name: "Review sweep inputs" });
+    expect(review).toBeEnabled();
+    await user.click(review);
+    expect(
+      screen.getByText("Start sensitivity job", { selector: "button" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText(/Refreshing source context before confirmation/),
+    ).toBeInTheDocument();
+    expect(enqueue).not.toHaveBeenCalled();
+    view.rerender(<SensitivityInputs {...props} fresh />);
+    expect(
+      screen.getByRole("button", { name: "Start sensitivity job" }),
+    ).toBeEnabled();
+    expect(enqueue).not.toHaveBeenCalled();
+  });
   it("LIVE review shows S1/P1 vs S2/P2, requires supported frozen mapping and never commits simulation", async () => {
     const user = userEvent.setup();
     const api = stub();

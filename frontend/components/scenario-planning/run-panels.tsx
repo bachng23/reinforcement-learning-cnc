@@ -538,8 +538,7 @@ function SweepForm({
         className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!source || !result || !fresh || !allowed || intent.unresolved)
-            return;
+          if (!source || !result || !allowed || intent.unresolved) return;
           try {
             const axis: EnqueueSensitivity["axis"] =
               type === "MAINTENANCE_DURATION"
@@ -576,7 +575,7 @@ function SweepForm({
         }}
       >
         <fieldset
-          disabled={!fresh || !allowed || intent.unresolved}
+          disabled={!allowed || intent.unresolved}
           className="space-y-4"
         >
           <div className="grid gap-4 lg:grid-cols-2">
@@ -734,6 +733,9 @@ function SweepForm({
           the saved source. Physical replanning can still report its own
           feasibility.
         </p>
+      ) : null}
+      {review && !fresh ? (
+        <p role="status">Refreshing source context before confirmation…</p>
       ) : null}
       {error ? <ScenarioFailure error={error} /> : null}
       {intent.busy ? (
