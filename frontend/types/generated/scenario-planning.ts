@@ -1,4 +1,4 @@
-/* Generated from Backend + canonical Python d49ddfbbe3ffddb51cea03077aa032e4acb2ee1e. Do not edit. */
+/* Generated from Backend + canonical Python c4d849492f02f082677835832fca7c2957735733. Do not edit. */
 
 /**
  * This interface was referenced by `ScenarioProposalCatalog`'s JSON-Schema

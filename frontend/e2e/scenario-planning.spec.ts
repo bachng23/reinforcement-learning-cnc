@@ -147,6 +147,7 @@ test("real baseline → overrides → run → compare → sensitivity → reload
     await desktopEvidence(page, "draft-review", page.getByRole("dialog"));
     await page.getByRole("button", { name: "Save reviewed draft" }).click();
     await expect(page).toHaveURL(/scenario_id=/);
+    await expect(page.getByRole("heading", { name: "Edit saved scenario", exact: true })).toBeVisible();
     const scenarioId = new URL(page.url()).searchParams.get("scenario_id")!;
     let loseFirstResponse = true;
     // Only inject loss after the real server has accepted a POST. No product
@@ -457,6 +458,7 @@ test("real baseline → overrides → run → compare → sensitivity → reload
     // Saving a new draft changes route identity; the old RunReview can remain
     // mounted until App Router commits that destination.
     await expect(page).toHaveURL(/scenario_id=/);
+    await expect(page.getByRole("heading", { name: "Edit saved scenario", exact: true })).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await enqueue(page, "Run saved scenario");
     await expect
@@ -615,6 +617,7 @@ test("real baseline → overrides → run → compare → sensitivity → reload
     await page.getByRole("button", { name: "Review draft changes" }).click();
     await page.getByRole("button", { name: "Save reviewed draft" }).click();
     await expect(page).toHaveURL(/scenario_id=/);
+    await expect(page.getByRole("heading", { name: "Edit saved scenario", exact: true })).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await enqueue(page, "Run saved scenario");
     await expect(page).toHaveURL(/run_id=/);
