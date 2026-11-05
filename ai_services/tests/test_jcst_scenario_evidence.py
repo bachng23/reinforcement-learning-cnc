@@ -47,8 +47,19 @@ def test_near_failure_uses_event_times_and_distinct_machines():
     record = value['primary']['records'][0]
     record['events'] = [{'type': 'failure', 'tick': 3, 'machine': 0, 'component': 0},
                         {'type': 'failure', 'tick': 5, 'machine': 1, 'component': 0}]
+    record['before']['components'][1][0]['failed'] = True
+    record['before']['jobs'][1]['machine'] = 2
+    record['catalogue'].append([[1, 0, 0]])
     match = module.classify(value)['matches']['DEMO-02'][0]
     assert match['deltaTicks'] == 2 and not match['simultaneous']
+    assert match['sharedAvailableTechnicians'] == [0]
+    record['before']['components'][0][0]['failed'] = False
+    assert not module.classify(value)['matches']['DEMO-02']
+    record['before']['components'][0][0]['failed'] = True
+    record['before']['jobs'][1] = None
+    record['catalogue'].append([[0, 0, 0], [1, 0, 1]])
+    assert not module.classify(value)['matches']['DEMO-02']
+    record['catalogue'].pop()
     record['events'][0]['tick'] = 2
     assert not module.classify(value)['matches']['DEMO-02']
     record['events'][0].update(tick=5, machine=1)

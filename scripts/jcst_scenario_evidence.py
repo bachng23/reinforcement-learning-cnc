@@ -21,16 +21,41 @@ def classify(session, near_ticks=2):
                 matches['DEMO-01'].append({'failure': failure, 'start': start, 'completion': end,
                     'boundary': boundary['tick'], 'jobs': boundary['before']['jobs'],
                     'catalogue': boundary['catalogue'], 'action': boundary['action']})
+    by_tick = {record['tick']: record for record in records}
     for i, first in enumerate(failures):
         for second in failures[i + 1:]:
             delta = second['tick'] - first['tick']
-            if first['machine'] != second['machine'] and 0 <= delta <= near_ticks:
-                boundary = next((record for record in records if record['tick'] == second['tick']), None)
-                if boundary:
-                    matches['DEMO-02'].append({'failures': [first, second], 'deltaTicks': delta,
-                        'simultaneous': delta == 0, 'boundary': boundary['tick'],
-                        'state': boundary['before'], 'catalogue': boundary['catalogue'], 'action': boundary['action']})
+            if first['machine'] == second['machine'] or not 0 <= delta <= near_ticks:
+                continue
+            boundary = by_tick.get(second['tick'])
+            if boundary is None or boundary['tick'] >= session.get('horizon', float('inf')):
+                continue
+            state = boundary['before']
+            targets = {(event['machine'], event['component']) for event in (first, second)}
+            if not all(state['components'][m][c]['failed'] for m, c in targets):
+                continue
+            # Each repair can start separately, but no legal matching starts both.
+            # The shared technician identifies the actual bottleneck.
+            options = {target: set() for target in targets}
+            can_start_both = False
+            for action in boundary['catalogue']:
+                assigned = set()
+                for m, c, technician in action:
+                    if (m, c) in options:
+                        options[m, c].add(technician)
+                        assigned.add((m, c))
+                if assigned == targets:
+                    can_start_both = True
+                    break
+            shared = set.intersection(*options.values())
+            if not can_start_both and shared:
+                matches['DEMO-02'].append({'failures': [first, second], 'deltaTicks': delta,
+                    'simultaneous': delta == 0, 'boundary': boundary['tick'],
+                    'sharedAvailableTechnicians': sorted(shared), 'state': state,
+                    'catalogue': boundary['catalogue'], 'action': boundary['action']})
     for record in records:
+        if record['tick'] >= session.get('horizon', float('inf')):
+            break
         state = record['before']
         for m, components in enumerate(state['components']):
             for c, component in enumerate(components):
