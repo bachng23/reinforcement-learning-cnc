@@ -20,13 +20,18 @@ import { DecisionView } from './decision-view';
 export type DemoView = 'overview' | 'decision' | 'agents' | 'compare';
 const labels = {overview: 'Live simulation', decision: 'Decision Center', agents: 'AI coordination workflow', compare: 'Compare controllers'};
 const routes = {overview: '/overview', decision: '/decisions', agents: '/agents', compare: '/what-if'};
+// An in-memory handoff applies once to the exact post-dispatch revision.
+type PlaybackHandoff = { actorId: string; sessionId: string; revision: number; automatic: boolean; pauseOnFailure: boolean };
+let playbackHandoff: PlaybackHandoff | undefined;
+
 function querySelection() {
   const query = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
   return {session: query.get('session'), machine: query.get('machine'), incident: query.get('incident')};
 }
 export function DemoWorkspace({view = 'overview', initialId}: {view?: DemoView; initialId?: string}) {
   const router = useRouter(); const sim = useLiveSimulation(initialId); const session = sim.session;
-  const {setRunning} = sim;
+  const {setRunning, setAutomatic, setPauseOnFailure} = sim;
+  const [autoApproveAfterDispatch, setAutoApproveAfterDispatch] = useState(false);
   const [selection, setSelection] = useState(querySelection);
   const [scenario, setScenario] = useState<'base' | 'generalist'>('base'); const [seed, setSeed] = useState('990000001');
   const [mode, setMode] = useState<'incident' | 'policy'>('incident'); const [setup, setSetup] = useState(false);
@@ -53,16 +58,41 @@ export function DemoWorkspace({view = 'overview', initialId}: {view?: DemoView; 
   if (selected?.machine) query.set('machine', selected.machine); if (selected?.incident) query.set('incident', selected.incident);
   const suffix = session ? `?${query}` : '';
   const commandDisabled = sim.busy || !!sim.uncertain || !sim.canWrite || sim.loading || !observation.data;
+  const readyRevision = observation.data?.revision;
+  const actorId = sim.actor?.id;
+  useEffect(() => {
+    const handoff = playbackHandoff;
+    if (view !== 'overview' || !session || !handoff || sim.loading) return;
+    if (handoff.sessionId !== session.id || handoff.actorId !== actorId || handoff.revision !== session.revision ||
+        session.status !== 'RUNNING' || !sim.canWrite || observation.error) {
+      playbackHandoff = undefined;
+      return;
+    }
+    if (readyRevision !== handoff.revision) return;
+    playbackHandoff = undefined;
+    setAutomatic(handoff.automatic);
+    setPauseOnFailure(handoff.pauseOnFailure);
+    setRunning(true);
+  }, [view, session, actorId, readyRevision, observation.error, sim.loading, sim.canWrite, setAutomatic, setPauseOnFailure, setRunning]);
+
+  function returnToFactory(next: Simulation) {
+    const newFailure = next.primary.records.at(-1)?.events.some(event => event.type === 'failure');
+    playbackHandoff = actorId && next.status === 'RUNNING' && !(sim.pauseOnFailure && newFailure)
+      ? {actorId, sessionId: next.id, revision: next.revision, automatic: autoApproveAfterDispatch, pauseOnFailure: sim.pauseOnFailure}
+      : undefined;
+    router.push(`/overview?${new URLSearchParams({session: next.id})}`);
+  }
+
   async function decide(action: Matching | null, reason: string) {
     sim.setRunning(false);
     const matching = action?.map(([machine, component, technician]) => [machine, component, technician] satisfies [number, number, number]);
     const next = await sim.command(matching === undefined ? {command: 'approve', reason} : {command: 'override', action: matching, reason});
-    if (next) router.push(`/overview?${new URLSearchParams({session: next.id})}`);
+    if (next) returnToFactory(next);
   }
   async function retryCommand() {
     const kind = sim.uncertain?.body.command;
     const next = await sim.retryCommand();
-    if (next && (kind === 'approve' || kind === 'override')) router.push(`/overview?${new URLSearchParams({session: next.id})}`);
+    if (next && (kind === 'approve' || kind === 'override')) returnToFactory(next);
   }
   const focused = observation.data?.incidents.find(incident => incident.incidentId === selected?.incident);
   return <AppShell title={labels[view]} simulationId={session?.id}><main className="simulation-workspace">
@@ -92,6 +122,10 @@ export function DemoWorkspace({view = 'overview', initialId}: {view?: DemoView; 
       {session.status === 'REVIEW' && view !== 'decision' && <div className="sim-alert"><div><strong>Policy matching ready for review at tick {session.pending?.tick}</strong><p>Both lanes are paused until an explicit confirmation.</p></div><Link className="research-primary" href={'/decisions' + suffix}>Review & dispatch</Link></div>}
       {observation.error !== undefined && <div role="alert" className="sim-error">{observation.message}<button onClick={observation.retry}>Retry observation</button><button onClick={sim.refresh}>Reload synchronized state</button></div>}
       {view === 'compare' ? <ComparisonView session={session}/> : view === 'agents' ? <Workflow session={session}/> : <>
+        {view === 'decision' && session.status === 'REVIEW' && <label className="sim-auto">
+          <input type="checkbox" checked={autoApproveAfterDispatch} disabled={commandDisabled} onChange={event => setAutoApproveAfterDispatch(event.target.checked)}/>
+          Auto-approve later decisions after dispatch
+        </label>}
         {view === 'decision' && <DecisionView session={session} busy={commandDisabled} onDecide={decide} focusMachine={focused?.machineId ?? selected?.machine ?? undefined} focusComponent={focused?.componentId}/>}
         {observation.loading && <section className="sim-panel" role="status">Loading factory and incidents at revision {session.revision}…</section>}
         {observation.data && <div className="live-monitor-grid"><section className="sim-panel sim-factory-panel"><div className="sim-panel-heading"><div><h2>{observation.data.context?.factory.name ?? 'Factory state'}</h2><p>API boundary {observation.data.tick} · machine status and actual commitments</p></div><span className="evidence-badge">{observation.data.status}</span></div><div className="live-map-scroll"><FactoryMap observation={observation.data} onInspect={id => select(id)}/></div><details className="live-component-details"><summary>Components, technician assignments and proposed matching</summary><FleetView lane={session.primary} config={session.config} proposal={session.pending?.action} onInspect={id => select(id)}/></details></section><IncidentCenter key={`${sim.actor?.id}:${session.id}`} scope={`${sim.actor?.id}:${session.id}`} incidents={observation.data.incidents} onInspect={inspectIncident}/></div>}

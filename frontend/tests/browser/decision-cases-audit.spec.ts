@@ -95,6 +95,7 @@ test("discover, filter, paginate, reopen, read complete audit, and reload/refres
   await page.getByRole("combobox", { name: "Case mode", exact: true }).selectOption("LIVE");
   await page.getByRole("button", { name: "Apply filters" }).click();
   await expect(page.getByText("1 case loaded", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(url => url.searchParams.get("status") === "COMMITTED" && url.searchParams.get("mode") === "LIVE");
   await capture(page, info, "list-success", '[aria-label="Decision case results"]');
   await page.reload();
   await expect(page.getByRole("combobox", { name: "Status", exact: true })).toHaveValue("COMMITTED");
