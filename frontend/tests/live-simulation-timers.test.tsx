@@ -83,3 +83,25 @@ describe('live playback scheduler regression', () => {
     await act(async() => finish(old)); expect(hook.result.current.session?.id).toBe(next.id); expect(window.location.search).toContain(next.id);
   });
 });
+
+it('turning pause on while playing applies to the very next failure', async () => {
+  const hook = await boot();
+  const next = structuredClone(state);
+  next.revision++;
+  next.primary.records = [{...bundle.episodes[0].records[0], events: [{type:'failure', machine:1, component:0, tick:8}]}] as Simulation['primary']['records'];
+  vi.mocked(researchRequest).mockResolvedValue(next as never);
+  act(() => {hook.result.current.setPauseOnFailure(false); hook.result.current.setRunning(true);});
+  await act(async () => vi.advanceTimersByTimeAsync(100));
+  act(() => hook.result.current.setPauseOnFailure(true));
+  await act(async () => vi.advanceTimersByTimeAsync(900));
+  expect(commandCalls()).toHaveLength(1);
+  expect(hook.result.current.running).toBe(false);
+});
+
+it('refocusing as the same engineer preserves live playback', async () => {
+  const hook = await boot();
+  act(() => hook.result.current.setRunning(true));
+  await act(async () => window.dispatchEvent(new Event('focus')));
+  expect(hook.result.current.actor?.id).toBe('engineer');
+  expect(hook.result.current.running).toBe(true);
+});

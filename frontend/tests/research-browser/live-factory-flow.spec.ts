@@ -35,13 +35,10 @@ test('real learned-policy factory flow: failure, inspection, review, CM, reload 
   await expect(page.getByText('Registered policy S recommends')).toBeVisible(); await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.screenshot({path: info.outputPath('real-policy-review.png')});
   await page.getByRole('button', {name: 'Approve & dispatch'}).click(); await expect(page).toHaveURL(/\/overview\?session=/);
-  await expect(page.getByRole('button', {name: 'Run simulator'})).toBeEnabled({timeout: 30000});
-  let state = await read();
-  for (let step = 0; step < 12 && !(await observe()).incidents.find(incident => incident.incidentId === failure!.incidentId && incident.status === 'RESOLVED'); step++) {
-    expect(state.status).toBe('RUNNING'); const previous = state.revision;
-    await page.getByRole('button', {name: 'Step', exact: true}).click();
-    await expect.poll(async() => (await read()).revision, {timeout: 30000}).toBeGreaterThan(previous); state = await read();
-  }
+  await expect(page.getByRole('button', {name: 'Pause', exact: true})).toBeEnabled({timeout: 30000});
+  await expect.poll(async () => (await observe()).incidents.find(incident => incident.incidentId === failure!.incidentId)?.status,
+    {timeout: 30000}).toBe('RESOLVED');
+  await expect(page.getByRole('button', {name: 'Run simulator', exact: true})).toBeEnabled({timeout: 30000});
   const repaired = await observe(); expect(repaired.incidents.find(incident => incident.incidentId === failure!.incidentId)?.status).toBe('RESOLVED');
   for (const incident of repaired.incidents.filter(item => item.status !== 'RESOLVED')) {
     await expect(page.getByRole('button', {name: `Inspect incident ${incident.machineId}/${incident.componentId} at tick ${incident.openedAtTick}`})).toBeVisible();

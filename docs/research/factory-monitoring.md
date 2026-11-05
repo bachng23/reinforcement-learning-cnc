@@ -11,7 +11,7 @@
 
 ## Flow / light wireframe
 
-Overview → Create session → Run ×1/×2/×5 → new failure pauses → click machine/incident → inspect context + evidence → review full matching → approve/override → Factory → explicitly resume → CM completion.
+Overview → Create session → Run ×1/×2/×5 → new failure pauses → click machine/incident → inspect context + evidence → review full matching → approve/override → Factory resumes playback → CM completion.
 
 ```
 Heading / new session

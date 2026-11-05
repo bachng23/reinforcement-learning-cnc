@@ -45,7 +45,7 @@ API mapping, verification commands and current dependency gaps.
   validation and pending review. These are actual completed operations; no LLM
   explanation or independent multi-agent RL reasoning is fabricated.
 - Open Decision Center. The simulator is frozen at the pending boundary, even
-  after a reload. Inspect compatibility and service durations. Approve & dispatch.
+  after a reload. Inspect compatibility and service durations. Approve & dispatch resumes playback in Factory. Enable auto-approval for later decisions only if desired. A new failure still pauses playback when enabled.
 - At boundary 6 both technicians are occupied with one tick remaining. Step once:
   boundary 7 completes both jobs and restores M3/C2. New failures can occur
   elsewhere according to the unchanged simulator; service completion does not
