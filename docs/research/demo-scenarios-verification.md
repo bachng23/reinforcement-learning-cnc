@@ -46,15 +46,15 @@ real physical transitions/replay, but do not prove the S/F learned demo timeline
 Preflight without registered checkpoint registry: **BLOCKED / 0 seeds executed /
 browser NOT_RUN**. No database was reset for these checks.
 
-## Remaining acceptance
+## Registered checkpoint verification
 
-Supply original trusted S/F checkpoint registry, set JCST_RELEASE_REGISTRY and
-JCST_PYTHON, verify known-seed DEMO-01/04, then search DEMO-02/03 within the stated
-budget. Record actual milestones, actions, hashes and times before updating the
-catalogue. Any unfound scenario requires an explicit scope decision.
+On 2026-11-06, the corrected classifier on the integrated source recorded in
+`demo-scenarios.json` verified all four cases across three seed/mode runs with the
+original registered S/F releases. Both replay audits passed for each 64-tick run.
+The catalogue records the observed milestones, bottleneck, release hashes and
+trace hashes. A bounded policy-mode search of seeds 990000001–990000032 found
+DEMO-02 at seed 990000019. The old tick-7 false positive from incident seed
+990000001 is excluded because the first component is already healthy.
 
-The matrix in `demo-scenarios-acceptance.json` remains NOT_RUN. Three clean-schema
-web runs, full episode audit with real registered policy, screenshots/video,
-production API/DB error/race testing, and final CI still require execution.
-The strengthened browser test was prepared but not executed with real checkpoints.
-This report does not assert those requirements have passed.
+The catalogue is engineering trace evidence. Browser execution and the broader
+failure/recovery acceptance matrix are reported separately.

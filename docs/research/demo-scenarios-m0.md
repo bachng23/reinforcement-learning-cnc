@@ -17,13 +17,15 @@ Route integration defects to the relevant owner with reproduction evidence.
   jobs and remaining ticks. CLI approvals are always `automatic`; UI acceptance
   must separately demonstrate a real signed-in user's approval.
 - DEMO-02: failures of distinct machines separated by **at most 2 ticks**,
-  including zero. Report exact failure ticks separately from machines already
-  broken at a later boundary. Record catalogue and commitments at that boundary.
+  including zero. At the second failure boundary inside the learned policy
+  horizon, both components must still need repair. Each can be dispatched
+  separately to a shared technician, but no legal matching can dispatch both.
+  Record the catalogue and commitments at that boundary.
 - DEMO-03: a failed component with at least one compatible busy technician.
   Compatibility means `config.duration[machine][component][technician] > 0`.
   Distinguish `WAIT_REQUIRED`, `FREE_ALTERNATIVE`, and `MACHINE_IN_SERVICE`;
   a longer positive duration never means missing skills. Only WAIT_REQUIRED
-  satisfies the strict resource-shortage demonstration.
+  inside the learned policy horizon satisfies the strict resource-shortage demonstration.
 - DEMO-04: corrective completion on A followed by failure on a different B
   at the same boundary or later. Preserve both event ticks. UI notice/pause
   behavior requires separate browser evidence, never inference from a trace.

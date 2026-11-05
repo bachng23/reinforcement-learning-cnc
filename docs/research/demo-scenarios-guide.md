@@ -1,9 +1,9 @@
 # Reproducible engineering demo scenarios
 
-Status: preparation only. The catalogue is **not verified**. The live-observation
-baseline is `0dc38d54a4bb2c8ed4d7fe9d55e986757b9ae326`; installed registered
-checkpoint runtime remains a prerequisite.
-See `demo-scenarios-m0.md` for the proposed schema, fixed criteria and budget.
+The catalogue contains four engine-verified scenarios. Verification used the
+registered S/F checkpoints and both independent physical replay audits. Browser
+acceptance is tracked separately from the automatic policy verification.
+See `demo-scenarios-m0.md` for the criteria and budget.
 
 ## Commands
 
@@ -41,10 +41,18 @@ join the owned seed process.
 
 ## Presentation preparation
 
-DEMO-01 and DEMO-04 initially use base/incident seed 990000001. The brief's t5/t7
-timeline is an observation to reverify, not an asserted result of this checkout.
-After verification, copy exact observed milestones/provenance into the catalogue.
-Changing an approved action requires re-verifying the timeline.
+All entries use the base configuration with S as the primary controller.
+
+| Scenario | Mode / seed | Observed milestone |
+| --- | --- | --- |
+| DEMO-01 | incident / 990000001 | M3/C2 fails at t5. T2 starts CM at t5 and completes at t7. |
+| DEMO-02 | policy / 990000019 | M2/C2 and M3/C1 fail at t4. Each can be repaired separately by T2, but the catalogue contains no matching that starts both repairs. |
+| DEMO-03 | policy / 990000001 | M2/C2 fails at t8 while both compatible technicians are committed. WAIT is required for that component. |
+| DEMO-04 | incident / 990000001 | M3/C2 completes CM at t7 and M2/C2 fails at the same boundary. |
+
+For policy-mode examples, replay the registered policy choices up to the
+milestone. An override before that point can change the trace. Use the
+catalogue's zero-based indices when checking the raw artifacts.
 
 For each accepted scenario, create a fresh authenticated UI session from the
 catalogue input. Inspect the real notification, machine state, pending catalogue,
