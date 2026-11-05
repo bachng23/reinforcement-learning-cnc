@@ -21,6 +21,7 @@ const key = req => parse(identifier, req.get('Idempotency-Key'));
 const ok = (res, data, status = 200) => res.status(status).json({ success: true, data });
 const queued = (res, result) => { if (result.replayed) res.set('Idempotency-Replayed', 'true'); return ok(res, result.job, 202); };
 
+router.use((req, res, next) => { if (req.path.startsWith('/demo/sessions')) res.set('Cache-Control', 'no-store'); next(); });
 router.use((req, _res, next) => { if (process.env.RESEARCH_API_ENABLED === 'false') return next(new ApiError(404, 'RESEARCH_DISABLED', 'Research API is disabled')); next(); });
 router.use(requireAuth);
 // Engineering simulation is isolated from immutable scientific campaign evidence.
@@ -29,6 +30,13 @@ router.post('/demo/sessions', write, async (req, res) => {
   ok(res, await demo.create(req.user, input, key(req)), 201);
 });
 router.get('/demo/sessions/:id', async (req,res) => ok(res, demo.present(await demo.read(req.user, parse(id,req.params.id)))));
+for (const [suffix, kind, param] of [['observation', 'observation'], ['factory', 'factory'],
+  ['machines/:machineId', 'machine', 'machineId'], ['incidents', 'incidents'], ['incidents/:incidentId', 'incident', 'incidentId']]) {
+  router.get(`/demo/sessions/:id/${suffix}`, async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    ok(res, await require('./demo-observation').read(req.user, parse(id, req.params.id), kind, param ? req.params[param] : undefined, req.query));
+  });
+}
 router.post('/demo/sessions/:id/commands', write, async (req,res) => {
   const shared = { revision: integer };
   const input = parse(z.discriminatedUnion('command', [

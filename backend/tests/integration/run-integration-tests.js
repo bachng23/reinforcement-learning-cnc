@@ -107,7 +107,8 @@ const main = () => {
         'run', '--config', 'vitest.operations.config.ts'], { env: testEnv, cwd: frontendRoot });
     } else testStatus = run(
       process.execPath,
-      [jestCli, '--config', 'jest.integration.config.js', '--runInBand'],
+      [jestCli, '--config', 'jest.integration.config.js', '--runInBand',
+        ...(process.argv.includes('--jcst-context') ? ['--runTestsByPath', 'tests/integration/jcst-context.postgres.test.js', 'tests/integration/jcst-context-upgrade.postgres.test.js'] : [])],
       { env: testEnv },
     );
   } finally {

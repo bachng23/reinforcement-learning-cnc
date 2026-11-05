@@ -1,0 +1,689 @@
+{
+  "provenance": {
+    "seed": "990000001",
+    "sourceCommit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+    "method": "Pinned JCST physics, explicit legal test matching at tick 5; not learned-policy inference.",
+    "identity": "Session UUID is illustrative, not a retained session. fixture-reviewer is an explicit test actor, not an authenticated user."
+  },
+  "factory": {
+    "success": true,
+    "data": {
+      "sessionId": "11111111-1111-4111-8111-111111111111",
+      "revision": 5,
+      "tick": 5,
+      "lane": "primary",
+      "contextStatus": "AVAILABLE",
+      "contextVersion": "jcst-factory-demo.v1",
+      "contextOrigin": "ILLUSTRATIVE_DEMO",
+      "context": {
+        "contextVersion": "jcst-factory-demo.v1",
+        "contextOrigin": "ILLUSTRATIVE_DEMO",
+        "factory": {
+          "factoryId": "JCST-DEMO",
+          "name": "JCST demonstration factory"
+        },
+        "layout": {
+          "coordinateUnit": "SCHEMATIC_GRID",
+          "columns": 3,
+          "rows": 2
+        },
+        "lines": [
+          {
+            "lineId": "P1",
+            "name": "Pump housing",
+            "machineIds": [
+              "M1",
+              "M2",
+              "M3"
+            ]
+          }
+        ],
+        "machines": [
+          {
+            "machineId": "M1",
+            "simulatorMachineIndex": 0,
+            "name": "CNC turning center",
+            "type": "TURNING",
+            "operation": "Rough turning",
+            "operationOrder": 1,
+            "lineId": "P1",
+            "location": {
+              "zone": "A",
+              "bay": "A1",
+              "x": 0,
+              "y": 0
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          },
+          {
+            "machineId": "M2",
+            "simulatorMachineIndex": 1,
+            "name": "CNC milling center",
+            "type": "MILLING",
+            "operation": "Precision milling",
+            "operationOrder": 2,
+            "lineId": "P1",
+            "location": {
+              "zone": "A",
+              "bay": "A2",
+              "x": 1,
+              "y": 0
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          },
+          {
+            "machineId": "M3",
+            "simulatorMachineIndex": 2,
+            "name": "CNC finishing center",
+            "type": "FINISHING",
+            "operation": "Finishing & inspection",
+            "operationOrder": 3,
+            "lineId": "P1",
+            "location": {
+              "zone": "B",
+              "bay": "B1",
+              "x": 2,
+              "y": 1
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          }
+        ]
+      }
+    }
+  },
+  "failure": {
+    "success": true,
+    "data": {
+      "sessionId": "11111111-1111-4111-8111-111111111111",
+      "revision": 5,
+      "tick": 5,
+      "lane": "primary",
+      "contextStatus": "AVAILABLE",
+      "contextVersion": "jcst-factory-demo.v1",
+      "contextOrigin": "ILLUSTRATIVE_DEMO",
+      "context": {
+        "contextVersion": "jcst-factory-demo.v1",
+        "contextOrigin": "ILLUSTRATIVE_DEMO",
+        "factory": {
+          "factoryId": "JCST-DEMO",
+          "name": "JCST demonstration factory"
+        },
+        "layout": {
+          "coordinateUnit": "SCHEMATIC_GRID",
+          "columns": 3,
+          "rows": 2
+        },
+        "lines": [
+          {
+            "lineId": "P1",
+            "name": "Pump housing",
+            "machineIds": [
+              "M1",
+              "M2",
+              "M3"
+            ]
+          }
+        ],
+        "machines": [
+          {
+            "machineId": "M1",
+            "simulatorMachineIndex": 0,
+            "name": "CNC turning center",
+            "type": "TURNING",
+            "operation": "Rough turning",
+            "operationOrder": 1,
+            "lineId": "P1",
+            "location": {
+              "zone": "A",
+              "bay": "A1",
+              "x": 0,
+              "y": 0
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          },
+          {
+            "machineId": "M2",
+            "simulatorMachineIndex": 1,
+            "name": "CNC milling center",
+            "type": "MILLING",
+            "operation": "Precision milling",
+            "operationOrder": 2,
+            "lineId": "P1",
+            "location": {
+              "zone": "A",
+              "bay": "A2",
+              "x": 1,
+              "y": 0
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          },
+          {
+            "machineId": "M3",
+            "simulatorMachineIndex": 2,
+            "name": "CNC finishing center",
+            "type": "FINISHING",
+            "operation": "Finishing & inspection",
+            "operationOrder": 3,
+            "lineId": "P1",
+            "location": {
+              "zone": "B",
+              "bay": "B1",
+              "x": 2,
+              "y": 1
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          }
+        ]
+      },
+      "incident": {
+        "incidentId": "ji1_WyIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJwcmltYXJ5Iiw0LDBd",
+        "machineId": "M3",
+        "simulatorMachineIndex": 2,
+        "componentId": "C2",
+        "simulatorComponentIndex": 1,
+        "status": "OPEN",
+        "openedAtTick": 5,
+        "serviceStartedAtTick": null,
+        "resolvedAtTick": null,
+        "failure": {
+          "recordIndex": 4,
+          "eventIndex": 0,
+          "tick": 5,
+          "type": "failure",
+          "machineId": "M3",
+          "componentId": "C2",
+          "technicianId": null,
+          "kind": null,
+          "durationTicks": null
+        },
+        "timeline": [
+          {
+            "recordIndex": 4,
+            "eventIndex": 0,
+            "tick": 5,
+            "type": "failure",
+            "machineId": "M3",
+            "componentId": "C2",
+            "technicianId": null,
+            "kind": null,
+            "durationTicks": null
+          }
+        ],
+        "decisions": []
+      },
+      "machine": {
+        "machineId": "M3",
+        "simulatorMachineIndex": 2,
+        "machineState": "BREAKDOWN",
+        "components": [
+          {
+            "componentId": "C1",
+            "ageTicks": 5,
+            "failed": false
+          },
+          {
+            "componentId": "C2",
+            "ageTicks": 5,
+            "failed": true
+          }
+        ],
+        "currentJobs": []
+      }
+    }
+  },
+  "inService": {
+    "success": true,
+    "data": {
+      "sessionId": "11111111-1111-4111-8111-111111111111",
+      "revision": 6,
+      "tick": 6,
+      "lane": "primary",
+      "contextStatus": "AVAILABLE",
+      "contextVersion": "jcst-factory-demo.v1",
+      "contextOrigin": "ILLUSTRATIVE_DEMO",
+      "context": {
+        "contextVersion": "jcst-factory-demo.v1",
+        "contextOrigin": "ILLUSTRATIVE_DEMO",
+        "factory": {
+          "factoryId": "JCST-DEMO",
+          "name": "JCST demonstration factory"
+        },
+        "layout": {
+          "coordinateUnit": "SCHEMATIC_GRID",
+          "columns": 3,
+          "rows": 2
+        },
+        "lines": [
+          {
+            "lineId": "P1",
+            "name": "Pump housing",
+            "machineIds": [
+              "M1",
+              "M2",
+              "M3"
+            ]
+          }
+        ],
+        "machines": [
+          {
+            "machineId": "M1",
+            "simulatorMachineIndex": 0,
+            "name": "CNC turning center",
+            "type": "TURNING",
+            "operation": "Rough turning",
+            "operationOrder": 1,
+            "lineId": "P1",
+            "location": {
+              "zone": "A",
+              "bay": "A1",
+              "x": 0,
+              "y": 0
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          },
+          {
+            "machineId": "M2",
+            "simulatorMachineIndex": 1,
+            "name": "CNC milling center",
+            "type": "MILLING",
+            "operation": "Precision milling",
+            "operationOrder": 2,
+            "lineId": "P1",
+            "location": {
+              "zone": "A",
+              "bay": "A2",
+              "x": 1,
+              "y": 0
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          },
+          {
+            "machineId": "M3",
+            "simulatorMachineIndex": 2,
+            "name": "CNC finishing center",
+            "type": "FINISHING",
+            "operation": "Finishing & inspection",
+            "operationOrder": 3,
+            "lineId": "P1",
+            "location": {
+              "zone": "B",
+              "bay": "B1",
+              "x": 2,
+              "y": 1
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          }
+        ]
+      },
+      "incident": {
+        "incidentId": "ji1_WyIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJwcmltYXJ5Iiw0LDBd",
+        "machineId": "M3",
+        "simulatorMachineIndex": 2,
+        "componentId": "C2",
+        "simulatorComponentIndex": 1,
+        "status": "IN_SERVICE",
+        "openedAtTick": 5,
+        "serviceStartedAtTick": 5,
+        "resolvedAtTick": null,
+        "failure": {
+          "recordIndex": 4,
+          "eventIndex": 0,
+          "tick": 5,
+          "type": "failure",
+          "machineId": "M3",
+          "componentId": "C2",
+          "technicianId": null,
+          "kind": null,
+          "durationTicks": null
+        },
+        "timeline": [
+          {
+            "recordIndex": 4,
+            "eventIndex": 0,
+            "tick": 5,
+            "type": "failure",
+            "machineId": "M3",
+            "componentId": "C2",
+            "technicianId": null,
+            "kind": null,
+            "durationTicks": null
+          },
+          {
+            "recordIndex": 5,
+            "eventIndex": 1,
+            "tick": 5,
+            "type": "start",
+            "machineId": "M3",
+            "componentId": "C2",
+            "technicianId": "T2",
+            "kind": "CM",
+            "durationTicks": 2
+          }
+        ],
+        "decisions": [
+          {
+            "decisionIndex": 0,
+            "tick": 5,
+            "actor": "fixture-reviewer",
+            "reason": "Explicit legal matching for physical trace test",
+            "action": [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            "override": false
+          }
+        ]
+      },
+      "machine": {
+        "machineId": "M3",
+        "simulatorMachineIndex": 2,
+        "machineState": "IN_SERVICE",
+        "components": [
+          {
+            "componentId": "C1",
+            "ageTicks": 5,
+            "failed": false
+          },
+          {
+            "componentId": "C2",
+            "ageTicks": 5,
+            "failed": true
+          }
+        ],
+        "currentJobs": [
+          {
+            "technicianId": "T2",
+            "componentId": "C2",
+            "kind": "CM",
+            "remainingTicks": 1
+          }
+        ]
+      }
+    }
+  },
+  "completedAndNewFailure": {
+    "success": true,
+    "data": {
+      "sessionId": "11111111-1111-4111-8111-111111111111",
+      "revision": 7,
+      "tick": 7,
+      "lane": "primary",
+      "contextStatus": "AVAILABLE",
+      "contextVersion": "jcst-factory-demo.v1",
+      "contextOrigin": "ILLUSTRATIVE_DEMO",
+      "context": {
+        "contextVersion": "jcst-factory-demo.v1",
+        "contextOrigin": "ILLUSTRATIVE_DEMO",
+        "factory": {
+          "factoryId": "JCST-DEMO",
+          "name": "JCST demonstration factory"
+        },
+        "layout": {
+          "coordinateUnit": "SCHEMATIC_GRID",
+          "columns": 3,
+          "rows": 2
+        },
+        "lines": [
+          {
+            "lineId": "P1",
+            "name": "Pump housing",
+            "machineIds": [
+              "M1",
+              "M2",
+              "M3"
+            ]
+          }
+        ],
+        "machines": [
+          {
+            "machineId": "M1",
+            "simulatorMachineIndex": 0,
+            "name": "CNC turning center",
+            "type": "TURNING",
+            "operation": "Rough turning",
+            "operationOrder": 1,
+            "lineId": "P1",
+            "location": {
+              "zone": "A",
+              "bay": "A1",
+              "x": 0,
+              "y": 0
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          },
+          {
+            "machineId": "M2",
+            "simulatorMachineIndex": 1,
+            "name": "CNC milling center",
+            "type": "MILLING",
+            "operation": "Precision milling",
+            "operationOrder": 2,
+            "lineId": "P1",
+            "location": {
+              "zone": "A",
+              "bay": "A2",
+              "x": 1,
+              "y": 0
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          },
+          {
+            "machineId": "M3",
+            "simulatorMachineIndex": 2,
+            "name": "CNC finishing center",
+            "type": "FINISHING",
+            "operation": "Finishing & inspection",
+            "operationOrder": 3,
+            "lineId": "P1",
+            "location": {
+              "zone": "B",
+              "bay": "B1",
+              "x": 2,
+              "y": 1
+            },
+            "assignedBatch": {
+              "batchId": "DEMO-PH-001",
+              "productName": "Pump housing",
+              "quantity": null,
+              "dueAt": null
+            }
+          }
+        ]
+      },
+      "items": [
+        {
+          "incidentId": "ji1_WyIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJwcmltYXJ5Iiw2LDBd",
+          "machineId": "M2",
+          "simulatorMachineIndex": 1,
+          "componentId": "C2",
+          "simulatorComponentIndex": 1,
+          "status": "OPEN",
+          "openedAtTick": 7,
+          "serviceStartedAtTick": null,
+          "resolvedAtTick": null,
+          "failure": {
+            "recordIndex": 6,
+            "eventIndex": 0,
+            "tick": 7,
+            "type": "failure",
+            "machineId": "M2",
+            "componentId": "C2",
+            "technicianId": null,
+            "kind": null,
+            "durationTicks": null
+          },
+          "timeline": [
+            {
+              "recordIndex": 6,
+              "eventIndex": 0,
+              "tick": 7,
+              "type": "failure",
+              "machineId": "M2",
+              "componentId": "C2",
+              "technicianId": null,
+              "kind": null,
+              "durationTicks": null
+            }
+          ],
+          "decisions": []
+        },
+        {
+          "incidentId": "ji1_WyIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJwcmltYXJ5Iiw0LDBd",
+          "machineId": "M3",
+          "simulatorMachineIndex": 2,
+          "componentId": "C2",
+          "simulatorComponentIndex": 1,
+          "status": "RESOLVED",
+          "openedAtTick": 5,
+          "serviceStartedAtTick": 5,
+          "resolvedAtTick": 7,
+          "failure": {
+            "recordIndex": 4,
+            "eventIndex": 0,
+            "tick": 5,
+            "type": "failure",
+            "machineId": "M3",
+            "componentId": "C2",
+            "technicianId": null,
+            "kind": null,
+            "durationTicks": null
+          },
+          "timeline": [
+            {
+              "recordIndex": 4,
+              "eventIndex": 0,
+              "tick": 5,
+              "type": "failure",
+              "machineId": "M3",
+              "componentId": "C2",
+              "technicianId": null,
+              "kind": null,
+              "durationTicks": null
+            },
+            {
+              "recordIndex": 5,
+              "eventIndex": 1,
+              "tick": 5,
+              "type": "start",
+              "machineId": "M3",
+              "componentId": "C2",
+              "technicianId": "T2",
+              "kind": "CM",
+              "durationTicks": 2
+            },
+            {
+              "recordIndex": 6,
+              "eventIndex": 4,
+              "tick": 7,
+              "type": "completion",
+              "machineId": "M3",
+              "componentId": "C2",
+              "technicianId": "T2",
+              "kind": "CM",
+              "durationTicks": null
+            }
+          ],
+          "decisions": [
+            {
+              "decisionIndex": 0,
+              "tick": 5,
+              "actor": "fixture-reviewer",
+              "reason": "Explicit legal matching for physical trace test",
+              "action": [
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ],
+              "override": false
+            }
+          ]
+        }
+      ],
+      "limit": 384,
+      "truncated": false
+    }
+  },
+  "missingContext": {
+    "success": true,
+    "data": {
+      "sessionId": "11111111-1111-4111-8111-111111111111",
+      "revision": 5,
+      "tick": 5,
+      "lane": "primary",
+      "contextStatus": "MISSING_LEGACY",
+      "contextVersion": null,
+      "contextOrigin": null,
+      "context": null
+    }
+  }
+}

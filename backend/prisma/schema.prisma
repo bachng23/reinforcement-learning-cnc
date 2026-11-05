@@ -514,6 +514,7 @@ model MaintenanceDecisionAction {
 
 
 model DemoSession {
+  contextJson Json? @map("context_json") @db.JsonB
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ownerId String @map("owner_id") @db.Uuid
   requestKey String @map("request_key")
