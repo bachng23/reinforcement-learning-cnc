@@ -53,6 +53,7 @@ test('real learned-policy factory flow: failure, inspection, review, CM, reload 
   await page.getByRole('button', {name: 'Run simulator'}).click();
   await expect(page.locator('.sim-clock')).toContainText('Episode complete', {timeout: 240000});
   const completed = await read(); expect(completed.status).toBe('COMPLETE'); expect(completed.audits?.primary.status).toBe('PASS');
+  expect(completed.audits?.baseline.status).toBe('PASS');
   expect((await observe()).incidents.some(incident => incident.machineId !== failure!.machineId)).toBe(true);
   await page.screenshot({path: info.outputPath('real-completed-factory.png')});
   const finalWrites = commands.length; await page.reload(); await page.waitForTimeout(1200); expect(commands).toHaveLength(finalWrites);

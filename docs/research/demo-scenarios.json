@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "preparationBaseSha": "3359d97a0b2bbef35b9d7ae02fe4200acaa7fb64",
+  "integratedSha": "0dc38d54a4bb2c8ed4d7fe9d55e986757b9ae326",
+  "criteria": {"nearFailureMaxTicks": 2, "indices": "zero-based", "demo03RequiredClassification": "WAIT_REQUIRED"},
+  "searchBudget": {"maxSeeds": 16, "maxSeconds": 300, "perSeedSeconds": 120, "maxOutputMiB": 64},
+  "scenarios": [
+    {"id":"DEMO-01","title":"First breakdown and corrective dispatch","case":"base","mode":"incident","seed":"990000001","controller":"S","verificationStatus":"BLOCKED","browserStatus":"NOT_RUN","approvalAssumption":"CLI accepts policy automatically; browser requires human UI approval","milestones":[],"provenance":null,"evidence":null},
+    {"id":"DEMO-02","title":"Multiple nearby breakdowns","case":"base","mode":"incident","seed":null,"controller":"S","verificationStatus":"NOT_SEARCHED","browserStatus":"NOT_RUN","approvalAssumption":"Automatic registered policy during search","milestones":[],"provenance":null,"evidence":null},
+    {"id":"DEMO-03","title":"Compatible technicians occupied","case":"base","mode":"incident","seed":null,"controller":"S","verificationStatus":"NOT_SEARCHED","browserStatus":"NOT_RUN","approvalAssumption":"Automatic registered policy during search","milestones":[],"provenance":null,"evidence":null},
+    {"id":"DEMO-04","title":"Repair completion followed by another breakdown","case":"base","mode":"incident","seed":"990000001","controller":"S","verificationStatus":"BLOCKED","browserStatus":"NOT_RUN","approvalAssumption":"CLI accepts policy automatically; browser requires human UI approval","milestones":[],"provenance":null,"evidence":null}
+  ]
+}
