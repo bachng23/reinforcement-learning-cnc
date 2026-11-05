@@ -19,31 +19,21 @@ source/configuration/catalogue/checkpoint hashes and Torch compatibility. Missin
 or incompatible releases fail explicitly rather than replacing learned decisions
 with a heuristic. These files are local artifacts, not committed weights.
 
-## One-click presentation
+## Live observation and explicit playback
 
-Press **Auto demo** in the page header. It creates a new incident-mode session
-using the selected scenario and engineering seed, then automatically presents:
-factory → first failure → actual AI workflow → matching proposal → automatic
-policy confirmation → technicians in service → corrective completion → S/F
-comparison. The proposal remains visible for four seconds; incident, workflow
-and service views have short reading pauses. The view automatically scrolls to
-the active panel, while Pause/Resume stays visible. The simulation is never modified
-to manufacture the presentation events.
+Open Overview and create a real session, then use Run/Pause/Step and ×1/×2/×5.
+New failures pause playback by default. REVIEW waits for an explicit decision;
+one in-flight interval may complete after Pause. A reload restores the selected
+session/machine/incident, without resuming, approving or posting automatically.
+The old timed Auto demo/beat scheduler has been removed from the frontend.
+Comparison and AI workflow open only by user navigation.
 
-**Pause auto demo** stops scheduling the next command; **Resume auto demo**
-continues. A bounded in-flight command can finish before the pause takes effect
-on simulation state. **Manual control** stops the guided scheduler and restores
-manual review. A reload restores the session but does not resume automatic
-confirmation without another explicit action.
-
-Autoplay computes up to eight physical ticks in one runtime process, avoiding
-Torch startup for each display frame. Every intermediate transition, event,
-matching and cost remains in the stored trace. It stops early at the requested
-real event, and both final traces still require independent physical replay.
-Automatic confirmations are recorded with actor `automatic` and the reason
-“Guided auto demo; policy matching confirmed automatically”. No human approval
-is fabricated. Exact retries and optimistic revision checks cover the whole
-bounded command.
+Factory positions/profile metadata and incident identity/status/timelines are
+read through revision-scoped Backend APIs. They never fall back to the previous
+hardcoded machine context. Missing legacy layout shows a machine list. Read
+markers are local to the browser; the server owns incident lifecycle state.
+See [factory monitoring](factory-monitoring.md) for exact base/producer SHAs,
+API mapping, verification commands and current dependency gaps.
 
 ## Manual presentation walkthrough
 
@@ -55,7 +45,7 @@ bounded command.
   validation and pending review. These are actual completed operations; no LLM
   explanation or independent multi-agent RL reasoning is fabricated.
 - Open Decision Center. The simulator is frozen at the pending boundary, even
-  after a reload. Inspect compatibility and service durations. Approve & dispatch.
+  after a reload. Inspect compatibility and service durations. Approve & dispatch resumes playback in Factory. Enable auto-approval for later decisions only if desired. A new failure still pauses playback when enabled.
 - At boundary 6 both technicians are occupied with one tick remaining. Step once:
   boundary 7 completes both jobs and restores M3/C2. New failures can occur
   elsewhere according to the unchanged simulator; service completion does not
@@ -112,17 +102,19 @@ npm --prefix backend test -- --runInBand
 npm --prefix backend run test:integration
 ```
 
-Direct Computer Use verified session creation, automatic incident detection,
+Historical baseline verification (before the factory-monitoring changes): Computer Use verified session creation, automatic incident detection,
 manual dispatch, service completion, reload persistence and the live comparison.
 Screenshots are in `docs/design/screenshots/simulator-*.png`.
 
 
-## Inspect a machine
+## Inspect a machine or incident
 
-Click the M1/M2/M3 machine name in the factory cards (also available in the
-comparison fleets). The dialog shows illustrative machine type, production
-line/sequence, assigned demo batch, product and factory position. These labels
-are scenario context and do not enter the learned policy or change physics.
-Component condition/age, technician commitments, compatible service durations
-and recent physical events are read from the current simulator lane. Escape or
-Close dismisses the dialog and restores focus to its trigger.
+Click a map machine or a persistent incident notification. The dialog reads the
+machine profile and incident evidence from the authorized session at an exact
+revision. It shows context origin/version, nullable batch metadata, current
+components/commitments and API service history. Historical incident ticks remain
+unchanged while machine state describes the current boundary. A resolved incident
+does not imply that every machine/component is healthy. Escape closes, restores
+focus and releases background scroll. Revision conflict, permission failure,
+unavailable service and missing context have explicit states; no fixture profile
+is substituted. Requesting a policy/step is a separate explicit command.

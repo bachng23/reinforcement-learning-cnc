@@ -16,7 +16,7 @@ const output = await compile(tupleCompatibility(JSON.parse(await readFile(source
   unreachableDefinitions: true, maxItems: -1,
 });
 if (process.argv.includes('--check')) {
-  if (await readFile(target, 'utf8').catch(() => '') !== output) {
+  if ((await readFile(target, 'utf8').catch(() => '')).replaceAll('\r\n', '\n') !== output.replaceAll('\r\n', '\n')) {
     console.error('JCST TypeScript drift. Run npm run contracts:jcst:generate'); process.exitCode = 1;
   }
 } else await writeFile(target, output);

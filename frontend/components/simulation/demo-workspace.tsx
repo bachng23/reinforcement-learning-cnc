@@ -1,135 +1,141 @@
 "use client";
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Play, Pause, SkipForward, RotateCcw, ArrowRight, Activity, GitCompareArrows, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Activity, Play, Pause, SkipForward, RotateCcw } from 'lucide-react';
 import { AppShell } from '@/components/app-shell';
 import { researchRequest } from '@/lib/research-api/client';
-import type { Simulation, Matching } from '@/lib/simulation/types';
-import { afterBatch, beatCopy, beatView, presentationAction, type DemoBeat } from '@/lib/simulation/presentation';
+import { liveApi } from '@/lib/simulation/live-api';
+import { useLiveRead } from '@/lib/simulation/use-live-read';
+import { useLiveSimulation } from '@/lib/simulation/use-live-simulation';
+import type { Matching, Simulation } from '@/lib/simulation/types';
+import type { DemoIncident } from '@/types/generated/demo-read';
 import { FleetView } from './fleet-view';
+import { FactoryMap } from './factory-map';
+import { MachineDetail } from './machine-detail';
+import { IncidentCenter } from './incident-center';
 import { ComparisonView } from './comparison-view';
 import { DecisionView } from './decision-view';
 
 export type DemoView = 'overview' | 'decision' | 'agents' | 'compare';
-const labels: Record<DemoView,string> = {overview:'Live simulation',decision:'Decision Center',agents:'AI coordination workflow',compare:'Compare controllers'};
-const routes: Record<DemoView,string> = {overview:'/overview',decision:'/decisions',agents:'/agents',compare:'/what-if'};
+const labels = {overview: 'Live simulation', decision: 'Decision Center', agents: 'AI coordination workflow', compare: 'Compare controllers'};
+const routes = {overview: '/overview', decision: '/decisions', agents: '/agents', compare: '/what-if'};
+// An in-memory handoff applies once to the exact post-dispatch revision.
+type PlaybackHandoff = { actorId: string; sessionId: string; revision: number; automatic: boolean; pauseOnFailure: boolean };
+let playbackHandoff: PlaybackHandoff | undefined;
 
-export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initialId?:string}) {
-  const [session,setSession]=useState<Simulation>(); const current=useRef<Simulation | undefined>(undefined);
-  const [busy,setBusy]=useState(false); const locked=useRef(false); const [loading,setLoading]=useState(true); const [error,setError]=useState('');
-  const [running,setRunning]=useState(false); const [automatic,setAutomatic]=useState(view === 'compare'); const [speed,setSpeed]=useState(700);
-  const mainRef=useRef<HTMLElement | null>(null);
-  const [startingAuto,setStartingAuto]=useState(false);
-  const [presentation,setPresentationState]=useState<'off'|'playing'|'paused'>('off');
-  const presentationRef=useRef<'off'|'playing'|'paused'>('off');
-  const setPresentation=useCallback((value:'off'|'playing'|'paused')=>{presentationRef.current=value;setPresentationState(value);},[]);
-  // Read again after awaits: Pause/Manual control can change the ref mid-request.
-  const presentationIsActive=()=>presentationRef.current!=='off';
-  const [beat,setBeat]=useState<DemoBeat>('factory');
-  const mounted=useRef(true);
-  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
-  const activeView=presentation==='off'?view:beatView[beat];
-  const [scenario,setScenario]=useState('base'); const [mode,setMode]=useState<'incident'|'policy'>(view === 'compare' ? 'policy' : 'incident'); const [seed,setSeed]=useState('990000001');
-  const [setup,setSetup]=useState(false); const [capabilityError,setCapabilityError]=useState('');
-  const [available,setAvailable]=useState<boolean>();
-  const createIdentity=useRef<{input:string;key:string} | undefined>(undefined);
-  const commandIdentity=useRef<{input:string;key:string} | undefined>(undefined);
-  const accept = useCallback((data:Simulation)=>{
-    current.current=data;setSession(data);setError('');
-    try{sessionStorage.setItem('mcc-demo-session',data.id);}catch{}
-    const url=new URL(window.location.href);url.searchParams.set('session',data.id);window.history.replaceState(null,'',url);
-  },[]);
-  useEffect(()=>{
-    const abort=new AbortController();
-    let stored: string | null=null;try{stored=sessionStorage.getItem('mcc-demo-session');}catch{}
-    const addressId=new URLSearchParams(window.location.search).get('session');
-    const id=addressId || initialId || stored;
-    setLoading(true);
-    if(id)researchRequest<Simulation>(`/demo/sessions/${encodeURIComponent(id)}`,{signal:abort.signal}).then(data=>{if(!abort.signal.aborted)accept(data);}).catch(e=>{if(!abort.signal.aborted)setError(e.message);}).finally(()=>{if(!abort.signal.aborted)setLoading(false);});
-    else setLoading(false);
-    return()=>abort.abort();
-  },[initialId,accept]);
-  useEffect(()=>{
-    const abort=new AbortController();
-    setAvailable(undefined);
-    researchRequest<{learned_releases:{arm:string;case_id:string;available:boolean}[]}>('/capabilities',{signal:abort.signal}).then(c=>{if(!abort.signal.aborted)setAvailable(['S','F'].every(arm=>c.learned_releases.some(r=>r.arm===arm&&r.case_id===scenario&&r.available)));}).catch(e=>{if(!abort.signal.aborted){setAvailable(false);setCapabilityError(e.message);}});
-    return()=>abort.abort();
-  },[scenario]);
-  async function create(guided=false) {
-    if(locked.current)return;locked.current=true;setBusy(true);setRunning(false);setPresentation('off');setStartingAuto(guided);setError('');
-    const body={case:scenario,seed,mode:guided?'incident':mode,primary:'S',baseline:'F'};const input=JSON.stringify(body);
-    if(createIdentity.current?.input!==input)createIdentity.current={input,key:crypto.randomUUID()};
-    try{const data=await researchRequest<Simulation>('/demo/sessions',{body,key:createIdentity.current.key});if(!mounted.current)return;accept(data);createIdentity.current=undefined;setSetup(false);if(guided){setAutomatic(true);setBeat('factory');setPresentation('playing');}}
-    catch(e){setError((e as Error).message);}finally{locked.current=false;setBusy(false);setStartingAuto(false);}
+function querySelection() {
+  const query = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
+  return {session: query.get('session'), machine: query.get('machine'), incident: query.get('incident')};
+}
+export function DemoWorkspace({view = 'overview', initialId}: {view?: DemoView; initialId?: string}) {
+  const router = useRouter(); const sim = useLiveSimulation(initialId); const session = sim.session;
+  const {setRunning, setAutomatic, setPauseOnFailure} = sim;
+  const [autoApproveAfterDispatch, setAutoApproveAfterDispatch] = useState(false);
+  const [selection, setSelection] = useState(querySelection);
+  const [scenario, setScenario] = useState<'base' | 'generalist'>('base'); const [seed, setSeed] = useState('990000001');
+  const [mode, setMode] = useState<'incident' | 'policy'>('incident'); const [setup, setSetup] = useState(false);
+  const capability = useLiveRead(sim.actor ? `${sim.actor.id}:${scenario}` : undefined, signal => researchRequest<{learned_releases: {arm: string; case_id: string; available: boolean}[]}>('/capabilities', {signal}));
+  const available = ['S', 'F'].every(arm => capability.data?.learned_releases.some(release => release.arm === arm && release.case_id === scenario && release.available));
+  const observation = useLiveRead(session ? `${sim.actor?.id}:${session.id}:${session.revision}` : undefined, signal => liveApi.observation(session!.id, session!.revision, signal));
+  useEffect(() => {
+    const read = () => setSelection(querySelection()); read();
+    window.addEventListener('popstate', read); window.addEventListener('sim-selection-change', read);
+    return () => { window.removeEventListener('popstate', read); window.removeEventListener('sim-selection-change', read); };
+  }, []);
+  useEffect(() => { if (observation.error !== undefined) setRunning(false); }, [observation.error, setRunning]);
+  function select(machine?: string, incident?: string) {
+    sim.setRunning(false);
+    const url = new URL(window.location.href);
+    for (const [key, value] of [['machine', machine], ['incident', incident]]) {
+      if (value) url.searchParams.set(key!, value); else url.searchParams.delete(key!);
+    }
+    window.history.replaceState(null, '', url); setSelection(querySelection());
   }
-  async function command(body:Record<string,unknown>) {
-    const before=current.current;if(!before||locked.current)return;
-    locked.current=true;setBusy(true);setError('');
-    const inputBody={revision:before.revision,...body};const input=JSON.stringify(inputBody);
-    if(commandIdentity.current?.input!==input)commandIdentity.current={input,key:crypto.randomUUID()};
-    try{
-      const next=await researchRequest<Simulation>(`/demo/sessions/${before.id}/commands`,{body:inputBody,key:commandIdentity.current.key});if(!mounted.current)return;accept(next);commandIdentity.current=undefined;
-      if(next.status==='REVIEW'||next.status==='COMPLETE')setRunning(false);
-      return next;
-    }catch(e){setRunning(false);if(presentationRef.current!=='off')setPresentation('paused');setError((e as Error).message);}finally{locked.current=false;setBusy(false);}
+  const inspectIncident = (incident: DemoIncident) => select(incident.machineId, incident.incidentId);
+  const selected = session && selection.session === session.id ? selection : undefined;
+  const query = new URLSearchParams(); if (session) query.set('session', session.id);
+  if (selected?.machine) query.set('machine', selected.machine); if (selected?.incident) query.set('incident', selected.incident);
+  const suffix = session ? `?${query}` : '';
+  const commandDisabled = sim.busy || !!sim.uncertain || !sim.canWrite || sim.loading || !observation.data;
+  const readyRevision = observation.data?.revision;
+  const actorId = sim.actor?.id;
+  useEffect(() => {
+    const handoff = playbackHandoff;
+    if (view !== 'overview' || !session || !handoff || sim.loading) return;
+    if (handoff.sessionId !== session.id || handoff.actorId !== actorId || handoff.revision !== session.revision ||
+        session.status !== 'RUNNING' || !sim.canWrite || observation.error) {
+      playbackHandoff = undefined;
+      return;
+    }
+    if (readyRevision !== handoff.revision) return;
+    playbackHandoff = undefined;
+    setAutomatic(handoff.automatic);
+    setPauseOnFailure(handoff.pauseOnFailure);
+    setRunning(true);
+  }, [view, session, actorId, readyRevision, observation.error, sim.loading, sim.canWrite, setAutomatic, setPauseOnFailure, setRunning]);
+
+  function returnToFactory(next: Simulation) {
+    const newFailure = next.primary.records.at(-1)?.events.some(event => event.type === 'failure');
+    playbackHandoff = actorId && next.status === 'RUNNING' && !(sim.pauseOnFailure && newFailure)
+      ? {actorId, sessionId: next.id, revision: next.revision, automatic: autoApproveAfterDispatch, pauseOnFailure: sim.pauseOnFailure}
+      : undefined;
+    router.push(`/overview?${new URLSearchParams({session: next.id})}`);
   }
-  const decide=async(action:Matching|null,reason:string)=>{await command(action===null ? {command:'approve',reason} : {command:'override',action,reason});};
-  useEffect(()=>{
-    if(!running||busy||!session||session.status!=='RUNNING')return;
-    const timer=setTimeout(()=>void command({command:'advance',autoApprove:automatic}),speed);
-    return()=>clearTimeout(timer);
-    // A single command at a time, scheduled only after the previous response.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[running,busy,session?.revision,automatic,speed]);
-  useEffect(()=>{
-    if(presentation!=='playing'||busy||!session||beat==='done')return;
-    const action=presentationAction(beat);
-    const timer=setTimeout(async()=>{
-      if(presentationRef.current!=='playing'||!mounted.current)return;
-      if(action.next){setBeat(action.next);return;}
-      if(action.stopAt){
-        const next=await command({command:'autoplay',stopAt:action.stopAt,maxTicks:8});
-        if(next&&mounted.current&&presentationIsActive())setBeat(afterBatch(beat,next));
-      }
-    },action.delay);
-    return()=>clearTimeout(timer);
-    // Presentation schedules one bounded server command after each response.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[presentation,beat,busy,session?.revision]);
-  useEffect(()=>{
-    if(presentation!=='playing')return;
-    const target=beat==='workflow'?'.sim-agent-workflow':beat==='decision'?'.sim-decision':beat==='comparison'||beat==='done'?'.sim-comparison':'.sim-factory-panel';
-    const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-    mainRef.current?.querySelector<HTMLElement>(target)?.scrollIntoView?.({block:'start',behavior:reduced?'instant':'smooth'});
-  },[beat,presentation,session?.id]);
-  const tick=session?.primary.state.tick ?? 0;
-  const latest=session?.primary.records.at(-1);
-  const suffix=session ? `?session=${session.id}` : '';
-  return <AppShell title={presentation==='off'?labels[activeView]:'Auto demo'} simulationId={session?.id}><main ref={mainRef} className="simulation-workspace">
-    <header className="sim-page-heading"><div><p className="research-eyebrow"><Activity size={14} aria-hidden="true" /> JCST/1.1 · Engineering simulation</p><h1>{labels[activeView]}</h1><p>Observe a failure, inspect the policy matching and dispatch technicians in the real simulator.</p></div><div className="sim-header-actions"><button className="research-primary" disabled={busy||available!==true||!/^99\d{7}$/.test(seed)} onClick={()=>void create(true)} title="Start a new incident session with automatic policy confirmation"><Play size={14} aria-hidden="true" />{startingAuto?'Starting auto demo…':presentation!=='off'&&beat==='done'?'Replay auto demo':'Auto demo'}</button><button className="sim-button" onClick={()=>{setRunning(false);setPresentation('off');setSetup(v=>!v);}}><RotateCcw size={14} aria-hidden="true" />New session</button></div></header>
-    {error && <div role="alert" className="sim-error">{error}<button onClick={()=>{if(current.current){setLoading(true);researchRequest<Simulation>(`/demo/sessions/${current.current.id}`).then(accept).catch(e=>setError(e.message)).finally(()=>setLoading(false));}}}>Reload session</button></div>}
-    {(setup||!session&&!loading)&&<section className="sim-panel sim-setup"><div className="sim-panel-heading"><div><h2>Start a simulator session</h2><p>Registered S vs F checkpoints · same root 0 / 96k budget · persisted at each boundary.</p></div></div><div className="sim-setup-fields"><label className="sim-field">Scenario<select value={scenario} onChange={e=>setScenario(e.target.value)}><option value="base">Base · two specialist technicians</option><option value="generalist">Generalist · three technicians</option></select></label><label className="sim-field">Control starts<select value={mode} onChange={e=>setMode(e.target.value as typeof mode)}><option value="incident">After first failure · shared WAIT prelude</option><option value="policy">At tick 0 · automatic policy from start</option></select></label><label className="sim-field">Engineering seed<input value={seed} onChange={e=>setSeed(e.target.value)} pattern="99[0-9]{7}" /></label></div>
-      <p className="sim-footnote">Incident mode makes the trigger visible. Both lanes wait until the same first failure; subsequent transitions use their respective policies. Simulation ticks are abstract time units.</p>
-      {available===false&&<p role="status" className="sim-error">Learned runtime is unavailable: {capabilityError || 'Compatible S/F checkpoints are not registered.'}</p>}
-      <button className="research-primary" disabled={busy||available!==true||!/^99\d{7}$/.test(seed)} onClick={()=>void create()}>{busy?'Loading verified checkpoints…':'Create simulation'}</button></section>}
-    {loading && <p role="status">Loading simulator session…</p>}
-    {presentation!=='off'&&session&&<section className="sim-guided-banner" aria-label="Auto demo progress"><div className="sim-guided-copy" role="status" aria-live="polite"><span>Guided auto demo · {presentation==='paused'?'Paused':beat==='done'?'Complete':'Playing'} · Tick {tick} / 64</span><h2>{beatCopy[beat].title}</h2><p>{beatCopy[beat].description}</p><small>Policy confirmation is automatic in this simulation demo.</small></div><div className="sim-guided-actions">{beat==='done'&&<button className="research-primary" disabled={busy||available!==true} onClick={()=>void create(true)}><Play size={14} aria-hidden="true" />Replay auto demo</button>}<button className="sim-button" disabled={beat==='done'} onClick={()=>setPresentation(presentation==='playing'?'paused':'playing')}>{presentation==='playing'?<Pause size={14} aria-hidden="true" />:<Play size={14} aria-hidden="true" />}{presentation==='playing'?'Pause auto demo':'Resume auto demo'}</button><button className="sim-button" onClick={()=>{setPresentation('off');setRunning(false);setAutomatic(false);}}>Manual control</button></div></section>}
+
+  async function decide(action: Matching | null, reason: string) {
+    sim.setRunning(false);
+    const matching = action?.map(([machine, component, technician]) => [machine, component, technician] satisfies [number, number, number]);
+    const next = await sim.command(matching === undefined ? {command: 'approve', reason} : {command: 'override', action: matching, reason});
+    if (next) returnToFactory(next);
+  }
+  async function retryCommand() {
+    const kind = sim.uncertain?.body.command;
+    const next = await sim.retryCommand();
+    if (next && (kind === 'approve' || kind === 'override')) returnToFactory(next);
+  }
+  const focused = observation.data?.incidents.find(incident => incident.incidentId === selected?.incident);
+  return <AppShell title={labels[view]} simulationId={session?.id}><main className="simulation-workspace">
+    <header className="sim-page-heading"><div><p className="research-eyebrow"><Activity size={14} aria-hidden="true"/> JCST/1.1 · Engineering simulation</p><h1>{labels[view]}</h1><p>Observe the factory, inspect an incident, review a policy and watch actual service progress.</p></div><button className="sim-button" disabled={sim.busy || !!sim.uncertain} onClick={() => {sim.setRunning(false); setSetup(value => !value);}}><RotateCcw size={14} aria-hidden="true"/>New session</button></header>
+    {sim.error && <div role="alert" className="sim-error">{sim.error}<button disabled={sim.busy} onClick={sim.refresh}>Reload session</button></div>}
+    {sim.uncertain && <div role="status" className="sim-inline-note">The command outcome is uncertain. Other commands are blocked; recovery keeps the original revision, key and body.<button className="sim-button" disabled={sim.busy} onClick={() => void retryCommand()}>Retry same command</button></div>}
+    {sim.actor === null && <p role="alert" className="sim-error">Sign in to view and control simulator sessions.</p>}
+    {sim.loading && <p role="status">Loading session…</p>}
+    {(setup || !session && !sim.loading) && sim.actor && <section className="sim-panel sim-setup"><div className="sim-panel-heading"><div><h2>Start a simulator session</h2><p>Registered S/F policies · explicit creation · no training or invented milestones.</p></div></div>
+      <div className="sim-setup-fields"><label className="sim-field">Scenario<select disabled={sim.busy} value={scenario} onChange={event => setScenario(event.target.value as typeof scenario)}><option value="base">Base · two specialist technicians</option><option value="generalist">Generalist · three technicians</option></select></label><label className="sim-field">Control starts<select disabled={sim.busy} value={mode} onChange={event => setMode(event.target.value as typeof mode)}><option value="incident">After first failure · shared WAIT prelude</option><option value="policy">At tick 0 · policy from start</option></select></label><label className="sim-field">Engineering seed<input disabled={sim.busy} value={seed} pattern="99[0-9]{7}" onChange={event => setSeed(event.target.value)}/></label></div>
+      <p className="sim-footnote">Simulation time is measured in abstract ticks. Only installed, compatible learned policies may run. No catalogue-verified scenario is claimed without a Flex catalogue.</p>
+      {!capability.loading && !available && <p role="status" className="sim-error">Learned runtime is unavailable: {capability.message || 'Compatible S/F checkpoints are not registered.'}<button onClick={capability.retry}>Retry capabilities</button></p>}
+      {!sim.canWrite && <p className="sim-footnote">Read-only role: an ENGINEER or ADMIN is required to create or control a simulation.</p>}
+      <button className="research-primary" disabled={sim.busy || !!sim.uncertain || !sim.canWrite || !available || !/^99\d{7}$/.test(seed)} onClick={async() => {if (await sim.create({case: scenario, seed, mode, primary: 'S', baseline: 'F'})) setSetup(false);}}>{sim.busy ? 'Creating…' : 'Create simulation'}</button>
+    </section>}
     {session && <>
-      {presentation==='off'&&<section className="sim-control-bar" aria-label="Simulation controls"><div className="sim-clock"><span className={`sim-live-dot ${session.status==='REVIEW'?'needs-review':''}`} /><strong>Tick {tick}<span> / 64</span></strong><span>{session.status==='REVIEW'?'Awaiting decision':session.status==='COMPLETE'?'Episode complete':tick>=48?'Fixed-risk tail':session.activated?'Policy coordination':'Waiting for first incident'}</span></div><div className="sim-control-actions"><label className="sim-auto"><input type="checkbox" checked={automatic} disabled={running||busy||presentation!=='off'} onChange={e=>setAutomatic(e.target.checked)} />Auto-approve policy</label><select aria-label="Simulation speed" disabled={presentation!=='off'} value={speed} onChange={e=>setSpeed(Number(e.target.value))}><option value={1400}>Slow</option><option value={700}>Normal</option><option value={50}>Fast</option></select><button className="sim-button" disabled={session.status!=='RUNNING'||busy||presentation!=='off'} onClick={()=>{setRunning(false);void command({command:'advance',autoApprove:automatic});}}><SkipForward size={14} aria-hidden="true" />Step</button><button className="research-primary" disabled={session.status!=='RUNNING'||presentation!=='off'} onClick={()=>setRunning(v=>!v)}>{running?<Pause size={14} aria-hidden="true" />:<Play size={14} aria-hidden="true" />}{running?'Pause':'Run simulator'}</button></div></section>}
-      <nav className="sim-view-tabs" aria-label="Simulation views">{(Object.keys(routes) as DemoView[]).map(v=><Link aria-current={activeView===v?'page':undefined} key={v} onClick={()=>{setPresentation('off');setRunning(false);}} href={routes[v]+suffix}>{v==='overview'?'Factory':v==='decision'?'Decision Center':v==='agents'?'AI workflow':`${session.primary.controller} vs ${session.baseline.controller} comparison`}{v==='decision'&&session.status==='REVIEW'&&<span className="sim-tab-dot" />}</Link>)}</nav>
-      <div className="sim-context"><span>{session.case_id} · seed {session.physical_seed} · {session.mode==='incident'?'common WAIT prelude':'policy from tick 0'}</span><span>{session.primary.controller} / {session.baseline.controller} · root 0 · 96k checkpoint · revision {session.revision}</span></div>
-      {presentation==='off'&&session.status==='REVIEW'&&activeView!=='decision'&&<div className="sim-alert"><AlertTriangle size={18} aria-hidden="true" /><div><strong>Policy matching ready for review at tick {tick}</strong><p>Simulator paused. Inspect the proposal before dispatching technicians.</p></div><Link className="research-primary" href={'/decisions'+suffix}>Review & dispatch<ArrowRight size={14} aria-hidden="true" /></Link></div>}
-      {activeView==='compare'?<ComparisonView session={session}/>:activeView==='agents'?<Workflow session={session}/>:<>
-        <div className="sim-summary"><div><span>Simulation cost</span><strong>{session.primary.total_cost}</strong></div><div><span>Failed components now</span><strong>{session.primary.state.components.flat().filter(c=>c.failed).length}</strong></div><div><span>Technicians busy</span><strong>{session.primary.state.jobs.filter(Boolean).length}<small> / {session.primary.state.jobs.length}</small></strong></div><div><span>Service completions</span><strong>{session.primary.records.flatMap(r=>r.events).filter(e=>e.type==='completion').length}</strong></div></div>
-        {activeView==='decision'&&<DecisionView session={session} automatic={presentation!=='off'} busy={busy||presentation!=='off'} onDecide={decide}/>}
-        <section className="sim-panel sim-factory-panel"><div className="sim-panel-heading"><div><h2>Factory state · {session.primary.controller}{session.primary.overrides?' + human override':''}</h2><p>Component condition, active commitments and proposed dispatch destinations.</p></div><span className="evidence-badge">{busy?'Computing…':`Boundary ${tick}`}</span></div><FleetView lane={session.primary} config={session.config} proposal={session.pending?.action}/></section>
-        <div className="sim-bottom-grid"><section className="sim-panel"><div className="sim-panel-heading"><h2>Physical events</h2><span className="text-xs text-ash-gray">Latest interval</span></div>{latest?.events.filter(e=>e.type!=='occupancy').length?<ul className="sim-event-list">{latest.events.filter(e=>e.type!=='occupancy').map((e,i)=><li key={i}><span className={`sim-event-type event-${e.type}`}>{e.type}</span><span>t{e.tick} · M{e.machine+1}/C{e.component+1}{e.technician==null?'':` · T${e.technician+1}`}{e.kind?` · ${e.kind}`:''}</span></li>)}</ul>:<p className="sim-footnote">{tick?'No start, failure or completion event in the latest interval.':'Start the simulator to generate physical events.'}</p>}</section><section className="sim-panel"><div className="sim-panel-heading"><h2>Coordination workflow</h2><Link href={'/agents'+suffix}>Inspect →</Link></div>{session.workflow.length?<ol className="sim-mini-workflow">{session.workflow.slice(-4).map((e,i)=><li key={i}><CheckCircle2 size={13} aria-hidden="true"/><span>t{e.tick} · {e.stage.replaceAll('_',' ')}</span></li>)}</ol>:<p className="sim-footnote">Component monitoring is active. Policy workflow starts {session.mode==='incident'?'after the first simulator failure.':'at the first decision boundary.'}</p>}</section></div>
+      <section className="sim-control-bar live-sticky-controls" aria-label="Simulation controls"><div className="sim-clock"><span className={`sim-live-dot ${session.status === 'REVIEW' ? 'needs-review' : ''}`}/><strong>Tick {session.primary.state.tick}<span> / {session.horizon + session.tail}</span></strong><span>{session.status === 'REVIEW' ? 'Awaiting decision' : session.status === 'COMPLETE' ? 'Episode complete' : sim.running ? 'Playing' : 'Paused'}</span></div><div className="sim-control-actions">
+        <label className="sim-auto"><input type="checkbox" checked={sim.pauseOnFailure} onChange={event => sim.setPauseOnFailure(event.target.checked)}/>Pause on new failure</label>
+        <label className="sim-auto"><input type="checkbox" checked={sim.automatic} disabled={sim.running || sim.busy || !sim.canWrite} onChange={event => sim.setAutomatic(event.target.checked)}/>Auto-approve future policy decisions</label>
+        <select aria-label="Simulation speed" value={sim.speed} onChange={event => sim.setSpeed(Number(event.target.value))}><option value={1000}>×1</option><option value={500}>×2</option><option value={200}>×5</option></select>
+        <button className="sim-button" disabled={commandDisabled || session.status !== 'RUNNING'} onClick={() => {sim.setRunning(false); void sim.command({command: 'advance', autoApprove: sim.automatic});}}><SkipForward size={14} aria-hidden="true"/>Step</button>
+        <button className="research-primary" disabled={!sim.running && (commandDisabled || session.status !== 'RUNNING')} onClick={() => sim.setRunning(value => !value)}>{sim.running ? <Pause size={14} aria-hidden="true"/> : <Play size={14} aria-hidden="true"/>}{sim.running ? 'Pause' : 'Run simulator'}</button>
+      </div></section>
+      {sim.automatic && <p className="sim-inline-note" role="status">Auto-approval is enabled for future policy decisions in this page session. Confirmations are labelled automatic. Reload turns it off.</p>}
+      <nav className="sim-view-tabs" aria-label="Simulation views">{(Object.keys(routes) as DemoView[]).map(key => <Link key={key} aria-current={view === key ? 'page' : undefined} onClick={() => sim.setRunning(false)} href={routes[key] + suffix}>{key === 'overview' ? 'Factory' : key === 'decision' ? 'Decision Center' : key === 'agents' ? 'AI workflow' : 'S/F comparison'}</Link>)}</nav>
+      <div className="sim-context"><span>{session.case_id} · seed {session.physical_seed} · {session.mode === 'incident' ? 'Shared WAIT prelude' : 'Policy from tick 0'}</span><span>Revision {session.revision} · {session.primary.controller}{session.primary.overrides ? ' + human override' : ''} / {session.baseline.controller}</span></div>
+      {session.status === 'REVIEW' && view !== 'decision' && <div className="sim-alert"><div><strong>Policy matching ready for review at tick {session.pending?.tick}</strong><p>Both lanes are paused until an explicit confirmation.</p></div><Link className="research-primary" href={'/decisions' + suffix}>Review & dispatch</Link></div>}
+      {observation.error !== undefined && <div role="alert" className="sim-error">{observation.message}<button onClick={observation.retry}>Retry observation</button><button onClick={sim.refresh}>Reload synchronized state</button></div>}
+      {view === 'compare' ? <ComparisonView session={session}/> : view === 'agents' ? <Workflow session={session}/> : <>
+        {view === 'decision' && session.status === 'REVIEW' && <label className="sim-auto">
+          <input type="checkbox" checked={autoApproveAfterDispatch} disabled={commandDisabled} onChange={event => setAutoApproveAfterDispatch(event.target.checked)}/>
+          Auto-approve later decisions after dispatch
+        </label>}
+        {view === 'decision' && <DecisionView session={session} busy={commandDisabled} onDecide={decide} focusMachine={focused?.machineId ?? selected?.machine ?? undefined} focusComponent={focused?.componentId}/>}
+        {observation.loading && <section className="sim-panel" role="status">Loading factory and incidents at revision {session.revision}…</section>}
+        {observation.data && <div className="live-monitor-grid"><section className="sim-panel sim-factory-panel"><div className="sim-panel-heading"><div><h2>{observation.data.context?.factory.name ?? 'Factory state'}</h2><p>API boundary {observation.data.tick} · machine status and actual commitments</p></div><span className="evidence-badge">{observation.data.status}</span></div><div className="live-map-scroll"><FactoryMap observation={observation.data} onInspect={id => select(id)}/></div><details className="live-component-details"><summary>Components, technician assignments and proposed matching</summary><FleetView lane={session.primary} config={session.config} proposal={session.pending?.action} onInspect={id => select(id)}/></details></section><IncidentCenter key={`${sim.actor?.id}:${session.id}`} scope={`${sim.actor?.id}:${session.id}`} incidents={observation.data.incidents} onInspect={inspectIncident}/></div>}
       </>}
-      <section className="sim-provenance"><GitCompareArrows size={16} aria-hidden="true" /><p>Engineering demonstration using pinned JCST <code>{session.source_commit.slice(0,8)}</code>. No training or scientific test set is opened. <Link href="/research">View research evidence →</Link></p><details><summary>Checkpoint provenance</summary>{Object.entries(session.releases).map(([arm,r])=><p key={arm}>{arm} · {r.release_id}<br/><code>{r.sha256}</code></p>)}</details></section>
+      {view === 'overview' && selected && (selected.machine || selected.incident) && <MachineDetail session={session} machine={selected.machine ?? undefined} incident={selected.incident ?? undefined} incidents={observation.data?.incidents ?? []} onInspectIncident={inspectIncident} onClose={() => select()} canPrepare={!commandDisabled && session.status === 'RUNNING'} onPrepare={() => {sim.setRunning(false); void sim.command({command: 'advance', autoApprove: false});}}/>}
+      <section className="sim-provenance"><p>Simulator source <code>{session.source_commit}</code>. Assignments are not travel animation. <Link href="/research">Research evidence →</Link></p><details><summary>Checkpoint provenance</summary>{Object.entries(session.releases).map(([arm, release]) => <p key={arm}>{arm} · {release.release_id}<br/><code>{release.sha256}</code></p>)}</details></section>
     </>}
-    <footer className="sim-footer">Simulation decisions affect this session only. <Link href="/legacy/overview">Open legacy sample workspace</Link></footer>
+    <footer className="sim-footer">Engineering simulation only. Scientific campaign records are unchanged. <Link href="/legacy/overview">Legacy sample workspace</Link></footer>
   </main></AppShell>;
 }
-function Workflow({session}:{session:Simulation}) {
-  return <section className="sim-panel sim-agent-workflow"><div className="sim-panel-heading"><div><h2>AI coordination workflow</h2><p>Actual simulator observations, policy calls, validation and confirmations. One centralized S policy; no independent RL agents.</p></div><span className="evidence-badge">{session.status}</span></div>{!session.workflow.length?<p className="sim-footnote">Run the simulator to create workflow events.</p>:<ol className="sim-workflow">{session.workflow.slice().reverse().map((e,i)=><li key={i}><span className="sim-workflow-tick">t{e.tick}</span><div><strong>{e.stage.replaceAll('_',' ')}</strong><p>{e.message}</p></div><CheckCircle2 size={16} aria-hidden="true"/></li>)}</ol>}</section>;
+function Workflow({session}: {session: Simulation}) {
+  return <section className="sim-panel sim-agent-workflow"><div className="sim-panel-heading"><div><h2>AI coordination workflow</h2><p>Actual observations, policy calls, validation and confirmations. No generated LLM explanation.</p></div><span className="evidence-badge">{session.status}</span></div>{!session.workflow.length ? <p className="sim-footnote">No workflow events yet.</p> : <ol className="sim-workflow">{session.workflow.slice().reverse().map((entry, index) => <li key={index}><span className="sim-workflow-tick">t{entry.tick}</span><div><strong>{entry.stage}</strong><p>{entry.message}</p></div></li>)}</ol>}</section>;
 }

@@ -1,0 +1,62 @@
+{
+  "status": "COMPONENT_EVIDENCE_ONLY",
+  "real_flow_status": "INTEGRATION_PENDING",
+  "code_capture_sha": "5e32a2f1bf4cd41ffd0be8554ff0c3f95dc43b35",
+  "frontend_tree_sha": "48e986c6d329ed1535d9d9de8d6f0009dfa9a7e0",
+  "base_sha": "761a4520a53b8f0a3e35295d316bc68342bf6d41",
+  "backend_read_producer_sha": "5279cc88d45c838a8212324ca42be16a67a508c7",
+  "checks": {
+    "frontend_unit_component": {
+      "passed": 242,
+      "files": 35
+    },
+    "contracts_check": "passed",
+    "jcst_types_check": "passed",
+    "typecheck": "passed",
+    "lint": "passed_no_warnings",
+    "production_build": "passed",
+    "intercepted_http_browser": {
+      "passed": 4,
+      "desktop_sizes": [
+        [
+          1440,
+          900
+        ],
+        [
+          1920,
+          1080
+        ]
+      ],
+      "narrow_overflow_check": [
+        390,
+        844
+      ]
+    }
+  },
+  "real_acceptance": {
+    "executed": false,
+    "reason": "Registered learned S/F artifacts and DEMO-01 catalogue not supplied; confirmed by user.",
+    "real_start_to_completion_video": "NOT_RECORDED"
+  },
+  "transport": "Producer OpenAPI examples via intercepted HTTP; no real simulator execution claimed.",
+  "cleanup": {
+    "browser_and_dev_server_stopped": true,
+    "port_3112_closed": true,
+    "next_generated_type_paths_restored": true
+  },
+  "sha256": {
+    "component-only-error-1440x900.png": "51bc8b3afba82cbf4ce8839b4db8f149231d0e07f5ed0c9c562e446a59ab4971",
+    "component-only-missing-context-1440x900.png": "a93200b5910cc49b95c1b8e271377faef89c064ae0fa8b1ad6d2a3ca4386ac09",
+    "component-only-error-1920x1080.png": "6feaad9a46dfd98b912e708efa10f71e225674cf2ff97c6fb72f4835669271f7",
+    "component-only-missing-context-1920x1080.png": "3ce9a9c4602793a0eb9b377ddba3c4b151e1fb2188d55edde20dadcc31bbccca",
+    "component-only-decision-1440x900.png": "cc916497b5d56beae3eb41e39441f4194734070ac45a6958653f61faa775033f",
+    "component-only-factory-1440x900.png": "ec29294f74e190845ceae85f9a81a0b10d3810db0205553724b4f64cf1b247a2",
+    "component-only-machine-profile-1440x900.png": "1f7843912292db992e38092e74e30f6ba5abc3c9304bde37ff20c7d94811a397",
+    "component-only-machine-timeline-1440x900.png": "9532a84c63310e720881b92c695a5f745e067270b36db19ff5ec217806e31cdf",
+    "component-only-decision-1920x1080.png": "b61bc6b2d55c19be9d13ddfc988e5f107c5fc375aa7b97307646c0409d64bb19",
+    "component-only-factory-1920x1080.png": "79cfa7181e42945803fd1afb8a74d165efa4e6e43004413e0283f51539ada7c9",
+    "component-only-machine-profile-1920x1080.png": "c2e51a67294a03ce63a7181de016211e55df8462f8b2a5312ead2bdbea399215",
+    "component-only-machine-timeline-1920x1080.png": "242ab623c77193637023312feb725f4bb95fd0edcc0c62fc623701230d8b3c6a",
+    "component-only-navigation.webm": "9de45dbcbad4287e0953b64b50ca4a7a238210b479f8e99b4276083c87b7ea89"
+  }
+}

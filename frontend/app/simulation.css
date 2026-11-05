@@ -178,3 +178,44 @@
 .sim-factory-map > div { border: 1px solid #e4e7ec; padding: 8px; border-radius: 6px; font-size: 12px; }
 .sim-machine-detail { max-height: 80dvh; overflow-y: auto; }
 .sim-machine-detail table { min-width: 0; font-size: 11px; }
+
+/* Live observation: keep factory and persistent incident summary visible together. */
+.live-sticky-controls { position: sticky; top: 8px; z-index: 25; box-shadow: 0 3px 12px rgb(28 40 64 / 5%); }
+.live-monitor-grid { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(270px, 1fr); gap: 18px; align-items: start; }
+.live-map-scroll { overflow-x: auto; }
+.live-factory-map { display: grid; gap: 12px; padding: 14px; background: #f7f8fa; border: 1px dashed #cad0d9; border-radius: 10px; }
+.live-machine-list { display: grid; gap: 10px; }
+.live-map-machine { display: flex; flex-direction: column; gap: 5px; text-align: left; padding: 10px; border: 1px solid #cad9d5; border-radius: 8px; background: white; font-size: 11px; min-width: 0; overflow-wrap: anywhere; }
+.live-map-machine > small { color: #626873; font-size: 10px; }
+.live-map-machine:hover { outline: 2px solid #266df0; outline-offset: 2px; }
+.live-map-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 10px; color: #137c75; }
+.live-map-title strong { font-size: 16px; margin-right: auto; color: #1c2840; }
+.live-map-machine.state-BREAKDOWN { background: #fff5f6; border-color: #dbabb2; }
+.state-BREAKDOWN .live-map-title { color: #a03248; }
+.live-map-machine.state-IN_SERVICE { background: #f1f5ff; border-color: #bad0fa; }
+.state-IN_SERVICE .live-map-title { color: #2058c2; }
+.live-production-lines { display: grid; gap: 5px; margin-bottom: 12px; font-size: 11px; }
+.live-production-lines span { margin-left: 10px; color: #626873; }
+.live-component-details { margin-top: 18px; }
+.live-component-details > summary { cursor: pointer; font-size: 12px; margin-bottom: 15px; }
+.live-incident-center .sim-panel-heading { flex-wrap: wrap; gap: 8px; }
+.live-incident-list { display: grid; gap: 8px; max-height: 440px; overflow-y: auto; margin-block: 12px; }
+.live-incident-list button { display: flex; flex-direction: column; gap: 7px; width: 100%; border: 1px solid #e4e7ec; border-radius: 8px; padding: 10px; text-align: left; font-size: 11px; }
+.live-incident-list button:hover { background: #f7f8fa; }
+.live-incident-list strong { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.live-incident-list small { font-size: 9px; color: #626873; overflow-wrap: anywhere; }
+.live-status { font-size: 10px; padding: 3px 6px; border-radius: 5px; background: #f3f4f6; }
+.live-status.state-OPEN { color: #a03248; background: #fff0f2; }
+.live-status.state-IN_SERVICE { color: #2058c2; background: #eaf0ff; }
+.live-status.state-RESOLVED { color: #137c75; background: #eef8f5; }
+.live-timeline { display: grid; gap: 16px; padding: 12px 0 12px 18px; border-left: 2px solid #bad0fa; font-size: 12px; }
+.live-timeline p { color: #626873; margin-top: 5px; font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
+.live-timeline .is-pending { color: #626873; }
+.live-machine-incidents, .live-detail-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 14px; }
+.sim-machine-detail .sim-table-scroll { overflow-x: auto; }
+.sim-machine-detail .sim-metrics-table { min-width: 520px; }
+.sim-machine-detail dd { overflow-wrap: anywhere; }
+.sim-machine-detail > header { position: sticky; top: 0; background: white; z-index: 1; padding-block: 5px; }
+.live-focused-matching { background: #eaf0ff; outline: 1px solid #bad0fa; }
+@media (max-width: 1100px) { .live-monitor-grid { grid-template-columns: 1fr; } .live-incident-list { max-height: 280px; } }
+@media (max-width: 600px) { .live-sticky-controls { position: static; } .sim-machine-facts { grid-template-columns: 1fr; } }
