@@ -19,7 +19,11 @@ def catalogue():
 
 
 def test_unassigned_scenarios_are_reported_and_shared_seed_is_executed_once():
-    specs, missing = cli.catalogue_specs(catalogue())
+    data = catalogue()
+    for entry in data['scenarios']:
+        if entry['id'] in ('DEMO-02', 'DEMO-03'):
+            entry['seed'] = None
+    specs, missing = cli.catalogue_specs(data)
     assert missing == ['DEMO-02', 'DEMO-03']
     assert len(specs) == 1
     assert [entry['id'] for entries in specs.values() for entry in entries] == ['DEMO-01', 'DEMO-04']
