@@ -176,10 +176,10 @@ test.each(['timeout', 'slow-body'])('%s is bounded by one deadline and is not re
   expect((await calls()).length - count).toBe(1);
 });
 
-test('cancellation aborts a real in-flight request without retry; pre-abort makes no HTTP request', async () => {
+test.each(['timeout', 'slow-body'])('%s cancellation aborts a real in-flight request without retry; pre-abort makes no HTTP request', async mode => {
   const count = (await calls()).length;
   const controller = new AbortController();
-  const pending = client('timeout').plan(request, { signal: controller.signal });
+  const pending = client(mode).plan(request, { signal: controller.signal });
   const assertion = expect(pending).rejects.toMatchObject({ code: 'PLANNING_CANCELLED' });
   try {
     for (let i = 0; i < 100 && (await calls()).length === count; i++) await delay(25);

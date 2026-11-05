@@ -18,6 +18,7 @@
     "operations:reset": "node scripts/reset-operations.js",
     "operations:plan-demo": "node scripts/plan-operations-demo.js",
     "operations:decision-worker": "node src/decision-worker/index.js",
+    "operations:scenario-worker": "node src/scenario-worker/index.js",
     "test:operations-planning": "node tests/planning/run-planning-tests.js",
     "test:operations-flow": "node tests/integration/run-integration-tests.js --operations-flow",
     "operations:ingest": "node scripts/ingest-operations-snapshot.js",

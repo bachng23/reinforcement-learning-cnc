@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "contracts:generate": "node scripts/generate-operations-types.mjs && node scripts/generate-work-order-types.mjs",
-    "contracts:check": "node scripts/generate-operations-types.mjs --check && node scripts/generate-work-order-types.mjs --check",
+    "contracts:generate": "node scripts/generate-operations-types.mjs && node scripts/generate-work-order-types.mjs && node scripts/generate-scenario-types.mjs",
+    "contracts:check": "node scripts/generate-operations-types.mjs --check && node scripts/generate-work-order-types.mjs --check && node scripts/generate-scenario-types.mjs --check",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:browser": "playwright test",
+    "test:browser": "playwright test && playwright test --config playwright.scenarios.config.ts",
+    "test:scenarios:desktop": "playwright test --config playwright.scenarios.config.ts",
     "test:e2e": "playwright test --config playwright.e2e.config.ts",
     "test:cases:live": "playwright test --config playwright.cases-live.config.ts"
   },

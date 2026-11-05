@@ -134,6 +134,7 @@ generator client {
 }
 
 model FactorySnapshot {
+  scenario_workspaces ScenarioWorkspace[]
   incidents FactoryIncident[]
   incidentOccurrences IncidentOccurrence[]
   factory Factory @relation(fields: [factoryId], references: [factoryId], onDelete: Restrict, onUpdate: Restrict)
@@ -155,6 +156,7 @@ model FactorySnapshot {
 }
 
 model OperationSchedule {
+  scenario_workspaces ScenarioWorkspace[]
   factoryId String @map("factory_id")
   scheduleId String @map("schedule_id")
   revision Int
@@ -192,6 +194,7 @@ datasource db {
 }
 
 model DecisionCase {
+  scenarioLiveEvaluations ScenarioLiveEvaluation[]
   incidentLinks IncidentCaseLink[]
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   factoryId String @map("factory_id")
@@ -450,6 +453,13 @@ model StepResult {
 }
 
 model User {
+  scenarioLiveEvaluations ScenarioLiveEvaluation[]
+  scenario_command_receipts     ScenarioCommandReceipt[]
+  scenario_draft_revisions      ScenarioDraftRevision[]
+  scenario_drafts               ScenarioDraft[]
+  scenario_events               ScenarioEvent[]
+  scenario_jobs                 ScenarioJob[]
+  scenario_workspaces           ScenarioWorkspace[]
   ownedIncidents FactoryIncident[] @relation("IncidentOwner")
   acknowledgedIncidents FactoryIncident[] @relation("IncidentAcknowledger")
   resolvedIncidents FactoryIncident[] @relation("IncidentResolver")
@@ -574,6 +584,7 @@ model MaintenanceDecisionAction {
 }
 
 model Factory {
+  scenario_command_receipts ScenarioCommandReceipt[]
  incidents FactoryIncident[]
  incidentReceipts IncidentCommandReceipt[]
  workOrders WorkOrder[]
@@ -693,4 +704,201 @@ model WorkOrderCommandReceipt {
  actor User @relation(fields:[actorId],references:[id],onDelete:Restrict,onUpdate:Restrict)
  @@unique([factoryId,actorId,key])
  @@map("work_order_command_receipts")
+}
+
+
+model ScenarioWorkspace {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  factoryId String @map("factory_id")
+  name String
+  snapshotId String @map("snapshot_id")
+  snapshotHash String @db.Char(64) @map("snapshot_hash")
+  planVersion Int @map("plan_version")
+  scheduleId String? @map("schedule_id")
+  scheduleRevision Int? @map("schedule_revision")
+  scheduleHash String? @db.Char(64) @map("schedule_hash")
+  baselineJson Json @map("baseline_json")
+  configJson Json @map("config_json")
+  samplingJson Json @map("sampling_json")
+  engineVersion String @map("engine_version")
+  contractVersion String @map("contract_version")
+  actorId String @db.Uuid @map("actor_id")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  commandReceipts ScenarioCommandReceipt[]
+  drafts ScenarioDraft[]
+  events ScenarioEvent[]
+  jobs ScenarioJob[]
+  actor User @relation(fields: [actorId], references: [id], onUpdate: Restrict)
+  referenceSchedule OperationSchedule? @relation(fields: [factoryId, scheduleId, scheduleRevision], references: [factoryId, scheduleId, revision], onUpdate: Restrict)
+  snapshot FactorySnapshot @relation(fields: [factoryId, snapshotId], references: [factoryId, snapshotId], onUpdate: Restrict)
+
+  @@unique([factoryId, id])
+  @@index([factoryId, createdAt(sort: Desc), id(sort: Desc)], map: "scenario_workspaces_page_idx")
+  @@map("scenario_workspaces")
+}
+
+model ScenarioDraft {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  revision Int @default(1)
+  actorId String @db.Uuid @map("actor_id")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("updated_at")
+  revisions ScenarioDraftRevision[] @relation("scenario_draft_revisions_factory_id_workspace_id_scenario_idToscenario_drafts")
+  actor User @relation(fields: [actorId], references: [id], onUpdate: Restrict)
+  currentRevision ScenarioDraftRevision @relation("scenario_drafts_factory_id_workspace_id_id_revisionToscenario_draft_revisions", fields: [factoryId, workspaceId, id, revision], references: [factoryId, workspaceId, scenarioId, revision], onDelete: NoAction, onUpdate: NoAction, map: "scenario_drafts_current_revision_fkey")
+  workspaces ScenarioWorkspace @relation(fields: [factoryId, workspaceId], references: [factoryId, id], onUpdate: Restrict)
+
+  @@unique([factoryId, workspaceId, id])
+  @@index([factoryId, workspaceId, createdAt(sort: Desc), id(sort: Desc)], map: "scenario_drafts_page_idx")
+  @@map("scenario_drafts")
+}
+
+model ScenarioDraftRevision {
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  scenarioId String @db.Uuid @map("scenario_id")
+  revision Int
+  payloadJson Json @map("payload_json")
+  contentHash String @db.Char(64) @map("content_hash")
+  actorId String @db.Uuid @map("actor_id")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  actor User @relation(fields: [actorId], references: [id], onUpdate: Restrict)
+  draft ScenarioDraft @relation("scenario_draft_revisions_factory_id_workspace_id_scenario_idToscenario_drafts", fields: [factoryId, workspaceId, scenarioId], references: [factoryId, workspaceId, id], onUpdate: Restrict)
+  currentForDrafts ScenarioDraft[] @relation("scenario_drafts_factory_id_workspace_id_id_revisionToscenario_draft_revisions")
+  jobs ScenarioJob[]
+
+  @@id([factoryId, workspaceId, scenarioId, revision])
+  @@map("scenario_draft_revisions")
+}
+
+model ScenarioJob {
+  liveEvaluations ScenarioLiveEvaluation[]
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  kind String
+  sourceScenarioId String? @db.Uuid @map("source_scenario_id")
+  sourceRevision Int? @map("source_revision")
+  sourceRunId String? @db.Uuid @map("source_run_id")
+  inputJson Json @map("input_json")
+  inputHash String @db.Char(64) @map("input_hash")
+  engineVersion String @map("engine_version")
+  contractVersion String @map("contract_version")
+  status String @default("QUEUED")
+  attempt Int @default(0)
+  leaseToken String? @db.Uuid @map("lease_token")
+  leaseExpiresAt DateTime? @db.Timestamptz(6) @map("lease_expires_at")
+  workerId String? @map("worker_id")
+  deadlineAt DateTime @db.Timestamptz(6) @map("deadline_at")
+  startedAt DateTime? @db.Timestamptz(6) @map("started_at")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  errorCode String? @map("error_code")
+  resultJson Json? @map("result_json")
+  resultHash String? @db.Char(64) @map("result_hash")
+  actorId String @db.Uuid @map("actor_id")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("updated_at")
+  attempts ScenarioAttempt[]
+  events ScenarioEvent[]
+  actor User @relation(fields: [actorId], references: [id], onUpdate: Restrict)
+  workspaces ScenarioWorkspace @relation(fields: [factoryId, workspaceId], references: [factoryId, id], onUpdate: Restrict)
+  jobs ScenarioJob? @relation("scenario_jobsToscenario_jobs", fields: [factoryId, workspaceId, sourceRunId], references: [factoryId, workspaceId, id], onUpdate: Restrict)
+  derivedJobs ScenarioJob[] @relation("scenario_jobsToscenario_jobs")
+  draftRevisions ScenarioDraftRevision? @relation(fields: [factoryId, workspaceId, sourceScenarioId, sourceRevision], references: [factoryId, workspaceId, scenarioId, revision], onUpdate: Restrict)
+  points ScenarioPoint[]
+
+  @@unique([factoryId, workspaceId, id])
+  @@index([factoryId, workspaceId, kind, createdAt(sort: Desc), id(sort: Desc)], map: "scenario_jobs_page_idx")
+  @@map("scenario_jobs")
+}
+
+model ScenarioAttempt {
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  jobId String @db.Uuid @map("job_id")
+  attempt Int
+  leaseToken String @unique @db.Uuid @map("lease_token")
+  workerId String @map("worker_id")
+  status String
+  startedAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("started_at")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  errorCode String? @map("error_code")
+  jobs ScenarioJob @relation(fields: [factoryId, workspaceId, jobId], references: [factoryId, workspaceId, id], onUpdate: Restrict)
+
+  @@id([factoryId, workspaceId, jobId, attempt])
+  @@map("scenario_attempts")
+}
+
+model ScenarioPoint {
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  jobId String @db.Uuid @map("job_id")
+  pointIndex Int @map("point_index")
+  value Float?
+  role String
+  inputJson Json @map("input_json")
+  inputHash String @db.Char(64) @map("input_hash")
+  status String @default("QUEUED")
+  resultJson Json? @map("result_json")
+  resultHash String? @db.Char(64) @map("result_hash")
+  errorCode String? @map("error_code")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  jobs ScenarioJob @relation(fields: [factoryId, workspaceId, jobId], references: [factoryId, workspaceId, id], onUpdate: Restrict)
+
+  @@id([factoryId, workspaceId, jobId, pointIndex])
+  @@map("scenario_points")
+}
+
+model ScenarioCommandReceipt {
+  factoryId String @map("factory_id")
+  actorId String @db.Uuid @map("actor_id")
+  key String
+  workspaceId String @db.Uuid @map("workspace_id")
+  requestHash String @db.Char(64) @map("request_hash")
+  responseJson Json @map("response_json")
+  responseStatus Int @map("response_status")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  actor User @relation(fields: [actorId], references: [id], onUpdate: Restrict)
+  factory Factory @relation(fields: [factoryId], references: [factoryId], onUpdate: Restrict)
+  workspaces ScenarioWorkspace @relation(fields: [factoryId, workspaceId], references: [factoryId, id], onUpdate: Restrict)
+
+  @@id([factoryId, actorId, key])
+  @@map("scenario_command_receipts")
+}
+
+model ScenarioEvent {
+  sequence BigInt @id @default(autoincrement())
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  jobId String? @db.Uuid @map("job_id")
+  type String
+  actorId String? @db.Uuid @map("actor_id")
+  source String
+  payloadJson Json @map("payload_json")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  actor User? @relation(fields: [actorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  workspaces ScenarioWorkspace @relation(fields: [factoryId, workspaceId], references: [factoryId, id], onUpdate: Restrict)
+  jobs ScenarioJob? @relation(fields: [factoryId, workspaceId, jobId], references: [factoryId, workspaceId, id], onUpdate: Restrict)
+
+  @@index([factoryId, workspaceId, sequence], map: "scenario_events_workspace_sequence_idx")
+  @@map("scenario_events")
+}
+
+model ScenarioLiveEvaluation {
+  caseId String @id @map("case_id") @db.Uuid
+  factoryId String @map("factory_id")
+  workspaceId String @map("workspace_id") @db.Uuid
+  runId String @map("run_id") @db.Uuid
+  actorId String @map("actor_id") @db.Uuid
+  inputHash String @map("input_hash") @db.Char(64)
+  resultHash String @map("result_hash") @db.Char(64)
+  headRevision Int @map("head_revision")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @map("created_at") @db.Timestamptz(6)
+  decisionCase DecisionCase @relation(fields: [caseId, factoryId], references: [id, factoryId], onDelete: Restrict, onUpdate: Restrict)
+  run ScenarioJob @relation(fields: [factoryId, workspaceId, runId], references: [factoryId, workspaceId, id], onDelete: Restrict, onUpdate: Restrict)
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@index([factoryId, workspaceId, runId, createdAt, caseId], map: "scenario_live_evaluations_run_idx")
+  @@map("scenario_live_evaluations")
 }

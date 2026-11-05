@@ -56,6 +56,7 @@ export function WhatIfWorkspacePage({ fixtures = getWhatIfScenarios() }: { fixtu
   return (
     <OperationsShell
       title="What-if Workspace"
+      demo
       description="Compare simulator-returned outcomes without changing the committed schedule."
       actions={<span className="inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900"><Beaker className="h-4 w-4" />SIMULATION ONLY</span>}
     >

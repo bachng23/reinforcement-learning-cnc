@@ -1,0 +1,575 @@
+{
+  "$defs": {
+    "ComparedRun": {
+      "additionalProperties": false,
+      "properties": {
+        "comparison": {
+          "$ref": "#/$defs/Comparison"
+        },
+        "engine_version": {
+          "const": "scenario-evaluator:1.0.0",
+          "default": "scenario-evaluator:1.0.0",
+          "title": "Engine Version",
+          "type": "string"
+        },
+        "identity": {
+          "$ref": "#/$defs/Identity"
+        },
+        "overrides": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "DEFER_MAINTENANCE": "#/$defs/DeferMaintenance",
+                "MAINTENANCE_DURATION": "#/$defs/MaintenanceDuration",
+                "TECHNICIAN_UNAVAILABLE": "#/$defs/TechnicianUnavailable"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TechnicianUnavailable"
+              },
+              {
+                "$ref": "#/$defs/MaintenanceDuration"
+              },
+              {
+                "$ref": "#/$defs/DeferMaintenance"
+              }
+            ]
+          },
+          "title": "Overrides",
+          "type": "array"
+        },
+        "planning_config": {
+          "$ref": "#/$defs/ScenarioPlanningConfig"
+        },
+        "sampling": {
+          "$ref": "#/$defs/SamplingEvidence"
+        },
+        "semantic_input_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Semantic Input Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "identity",
+        "semantic_input_hash",
+        "planning_config",
+        "overrides",
+        "sampling",
+        "comparison"
+      ],
+      "title": "ComparedRun",
+      "type": "object"
+    },
+    "Comparison": {
+      "additionalProperties": false,
+      "properties": {
+        "metric_registry_version": {
+          "const": "scenario-metrics:1",
+          "default": "scenario-metrics:1",
+          "title": "Metric Registry Version",
+          "type": "string"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/MetricComparison"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "model_assumptions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Model Assumptions",
+          "type": "array"
+        },
+        "score_comparison": {
+          "const": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "default": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "title": "Score Comparison",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metrics",
+        "model_assumptions"
+      ],
+      "title": "Comparison",
+      "type": "object"
+    },
+    "DeferMaintenance": {
+      "additionalProperties": false,
+      "properties": {
+        "earliest_start_at": {
+          "format": "date-time",
+          "title": "Earliest Start At",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "DEFER_MAINTENANCE",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "maintenance_request_id",
+        "earliest_start_at"
+      ],
+      "title": "DeferMaintenance",
+      "type": "object"
+    },
+    "Identity": {
+      "additionalProperties": false,
+      "properties": {
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Factory Id",
+          "type": "string"
+        },
+        "frozen_input_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Frozen Input Hash",
+          "type": "string"
+        },
+        "run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "factory_id",
+        "workspace_id",
+        "run_id",
+        "frozen_input_hash"
+      ],
+      "title": "Identity",
+      "type": "object"
+    },
+    "MaintenanceDuration": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_duration_minutes": {
+          "maximum": 43200,
+          "minimum": 1,
+          "title": "Expected Duration Minutes",
+          "type": "integer"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "MAINTENANCE_DURATION",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "maintenance_request_id",
+        "expected_duration_minutes"
+      ],
+      "title": "MaintenanceDuration",
+      "type": "object"
+    },
+    "MetricComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "absolute_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Absolute Delta"
+        },
+        "baseline": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Baseline"
+        },
+        "change": {
+          "enum": [
+            "IMPROVED_UNDER_MODEL",
+            "WORSENED_UNDER_MODEL",
+            "UNCHANGED",
+            "UNAVAILABLE"
+          ],
+          "title": "Change",
+          "type": "string"
+        },
+        "metric": {
+          "title": "Metric",
+          "type": "string"
+        },
+        "percent_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Percent Delta"
+        },
+        "preferred_direction": {
+          "enum": [
+            "LOWER",
+            "HIGHER"
+          ],
+          "title": "Preferred Direction",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reason"
+        },
+        "scenario": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Scenario"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "unit",
+        "preferred_direction",
+        "baseline",
+        "scenario",
+        "absolute_delta",
+        "percent_delta",
+        "reason",
+        "change"
+      ],
+      "title": "MetricComparison",
+      "type": "object"
+    },
+    "ObjectiveWeights": {
+      "additionalProperties": false,
+      "properties": {
+        "maintenance": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Maintenance",
+          "type": "number"
+        },
+        "production": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Production",
+          "type": "number"
+        },
+        "reliability": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Reliability",
+          "type": "number"
+        },
+        "schedule_stability": {
+          "default": 0.25,
+          "minimum": 0.0,
+          "title": "Schedule Stability",
+          "type": "number"
+        },
+        "workforce": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Workforce",
+          "type": "number"
+        }
+      },
+      "title": "ObjectiveWeights",
+      "type": "object"
+    },
+    "SamplingEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha256-first53-uniform:1",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "base_seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "coupling": {
+          "const": "COMMON_RANDOM_NUMBERS",
+          "default": "COMMON_RANDOM_NUMBERS",
+          "title": "Coupling",
+          "type": "string"
+        },
+        "coupling_key": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Coupling Key",
+          "type": "string"
+        },
+        "observation_set_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Observation Set Hash",
+          "type": "string"
+        },
+        "sample_count": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "version": {
+          "const": "scenario-crn:1",
+          "default": "scenario-crn:1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "base_seed",
+        "sample_count",
+        "algorithm",
+        "observation_set_hash",
+        "coupling_key"
+      ],
+      "title": "SamplingEvidence",
+      "type": "object"
+    },
+    "ScenarioPlanningConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_strategy_ids": {
+          "items": {
+            "enum": [
+              "production-priority",
+              "balanced",
+              "reliability-priority"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Allowed Strategy Ids",
+          "type": "array"
+        },
+        "base_seed": {
+          "default": 0,
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_limit": {
+          "default": 3,
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Candidate Limit",
+          "type": "integer"
+        },
+        "horizon_minutes": {
+          "maximum": 43200,
+          "minimum": 1,
+          "title": "Horizon Minutes",
+          "type": "integer"
+        },
+        "objective_weights": {
+          "$ref": "#/$defs/ObjectiveWeights"
+        },
+        "simulation_runs": {
+          "default": 100,
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Simulation Runs",
+          "type": "integer"
+        },
+        "solver_timeout_seconds": {
+          "default": 30,
+          "maximum": 30,
+          "minimum": 1,
+          "title": "Solver Timeout Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "horizon_minutes",
+        "objective_weights",
+        "allowed_strategy_ids"
+      ],
+      "title": "ScenarioPlanningConfig",
+      "type": "object"
+    },
+    "TechnicianUnavailable": {
+      "additionalProperties": false,
+      "properties": {
+        "end_at": {
+          "format": "date-time",
+          "title": "End At",
+          "type": "string"
+        },
+        "start_at": {
+          "format": "date-time",
+          "title": "Start At",
+          "type": "string"
+        },
+        "technician_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Technician Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "TECHNICIAN_UNAVAILABLE",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "technician_id",
+        "start_at",
+        "end_at"
+      ],
+      "title": "TechnicianUnavailable",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "const": "scenario-engine:1.0",
+      "default": "scenario-engine:1.0",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "engine_version": {
+      "const": "scenario-evaluator:1.0.0",
+      "default": "scenario-evaluator:1.0.0",
+      "title": "Engine Version",
+      "type": "string"
+    },
+    "reference_identity": {
+      "$ref": "#/$defs/Identity"
+    },
+    "reference_overrides": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "DEFER_MAINTENANCE": "#/$defs/DeferMaintenance",
+            "MAINTENANCE_DURATION": "#/$defs/MaintenanceDuration",
+            "TECHNICIAN_UNAVAILABLE": "#/$defs/TechnicianUnavailable"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/TechnicianUnavailable"
+          },
+          {
+            "$ref": "#/$defs/MaintenanceDuration"
+          },
+          {
+            "$ref": "#/$defs/DeferMaintenance"
+          }
+        ]
+      },
+      "title": "Reference Overrides",
+      "type": "array"
+    },
+    "reference_planning_config": {
+      "$ref": "#/$defs/ScenarioPlanningConfig"
+    },
+    "reference_sampling": {
+      "$ref": "#/$defs/SamplingEvidence"
+    },
+    "reference_semantic_input_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Reference Semantic Input Hash",
+      "type": "string"
+    },
+    "runs": {
+      "items": {
+        "$ref": "#/$defs/ComparedRun"
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "title": "Runs",
+      "type": "array"
+    },
+    "score_comparison": {
+      "const": "NOT_COMPARABLE_ACROSS_REFERENCES",
+      "default": "NOT_COMPARABLE_ACROSS_REFERENCES",
+      "title": "Score Comparison",
+      "type": "string"
+    }
+  },
+  "required": [
+    "reference_identity",
+    "reference_semantic_input_hash",
+    "reference_planning_config",
+    "reference_overrides",
+    "reference_sampling",
+    "runs"
+  ],
+  "title": "CompareResult",
+  "type": "object"
+}

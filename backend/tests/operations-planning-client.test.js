@@ -44,6 +44,27 @@ test('cancellation during contract validation reaches the validator and prevents
   expect(fetcher).not.toHaveBeenCalled();
 });
 
+test.each([200, 503])('deadline cancels a stalled %i response body without relying on fetch abort', async status => {
+  jest.useFakeTimers();
+  const cancel = jest.fn();
+  const stream = new ReadableStream({
+    start(controller) { controller.enqueue(new TextEncoder().encode('{')); },
+    cancel,
+  });
+  // Deliberately ignores fetch's signal: the client must own the body reader.
+  const fetcher = jest.fn(async () => new Response(stream, {
+    status, headers: { 'content-type': 'application/json' },
+  }));
+  const client = new OperationsPlanningClient({ baseUrl: 'https://example.test', timeoutMs: 1000, fetcher });
+  const pending = expect(client.plan(request)).rejects.toMatchObject({ code: 'PLANNING_TIMEOUT' });
+  await jest.advanceTimersByTimeAsync(1000);
+  await pending;
+  expect(cancel).toHaveBeenCalledTimes(1);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(stream.locked).toBe(false);
+  expect(jest.getTimerCount()).toBe(0);
+});
+
 test('validator unavailability is not treated as a valid response or retried', async () => {
   validatePayload.mockResolvedValueOnce(request).mockRejectedValueOnce(new ApiError(503, 'OPERATIONS_VALIDATOR_UNAVAILABLE', 'unavailable'));
   const fetcher = jest.fn(async () => Response.json(recommendation));

@@ -30,11 +30,18 @@ def validate(value):
             raise ValueError("Explicit v3 versions required")
         recommendation = RecommendationPackage.model_validate_json(json.dumps(raw), strict=True)
         snapshot = FactorySnapshot.model_validate(data["snapshot"])
+        bounds = data.get("case_request", {}).get("trigger", {}).get("maintenance_start_constraints", [])
+        if bounds:
+            from domain.operations.contracts import MaintenanceStartConstraint
+            from domain.operations.maintenance_constraints import with_start_constraints
+            snapshot = with_start_constraints(snapshot, [MaintenanceStartConstraint.model_validate(value) for value in bounds])
         if recommendation.decision_case_id != data["case_id"] or recommendation.snapshot_id != snapshot.snapshot_id:
             raise ValueError("Recommendation basis mismatch")
         for candidate in recommendation.candidate_plans:
             # Do not trust AI's self-reported VALID verdict, including unselected plans.
-            if validate_candidate_plan(snapshot, candidate).verdict.value != "VALID":
+            from domain.operations.validator import OperationsValidatorV1
+            validator = OperationsValidatorV1(constraint_profile="scenario-strict:1" if bounds else "legacy-v1")
+            if validator.validate(snapshot, candidate).verdict.value != "VALID":
                 raise ValueError("Candidate failed semantic validation")
         return recommendation.model_dump(mode="json")
     if mode == "human-decision":

@@ -1,0 +1,42 @@
+{
+  "schema_version": "3.0",
+  "decision_case_id": "golden-maintenance-case",
+  "mode": "SIMULATION_ONLY",
+  "factory_snapshot": {
+    "schema_version": "3.0",
+    "snapshot_id": "golden-slot-snapshot",
+    "factory_id": "golden-factory",
+    "captured_at": "2026-10-27T00:00:00Z",
+    "planning_window": {"start_at": "2026-10-27T00:00:00Z", "end_at": "2026-10-27T02:00:00Z"},
+    "machines": [{
+      "machine_id": "M1", "display_name": "Golden lathe", "machine_family": "lathe", "status": "IDLE",
+      "capabilities": [{"operation_type": "turning", "nominal_processing_minutes": 30, "load_factor": 1, "damage_factor": 1}]
+    }],
+    "jobs": [],
+    "technicians": [{
+      "technician_id": "T1", "display_name": "Golden technician", "status": "AVAILABLE",
+      "availability": [{"start_at": "2026-10-27T00:00:00Z", "end_at": "2026-10-27T01:30:00Z"}],
+      "skills": [{"skill_id": "mechanical", "level": 4, "certified_machine_families": ["lathe"], "certified_action_types": ["inspection"]}]
+    }],
+    "health_snapshots": [],
+    "maintenance_requests": [{
+      "maintenance_request_id": "MR1", "machine_id": "M1", "maintenance_type": "PREVENTIVE",
+      "action_type": "inspection", "priority": "HIGH", "status": "OPEN", "mandatory": true,
+      "requested_at": "2026-10-27T00:00:00Z", "earliest_start_at": "2026-10-27T00:00:00Z",
+      "latest_start_at": null, "expected_duration_minutes": 60,
+      "required_skill_ids": ["mechanical"], "minimum_skill_level": 4
+    }],
+    "current_schedule": null
+  },
+  "trigger": {
+    "type": "WHAT_IF", "event_id": "golden-maintenance-event", "occurred_at": "2026-10-27T00:00:00Z",
+    "requested_by_user_id": "golden-user", "scenario_id": "golden-scenario", "assumptions": {}
+  },
+  "planning_config": {
+    "horizon_minutes": 120, "candidate_limit": 3, "solver_timeout_seconds": 30,
+    "simulation_runs": 100, "base_seed": 7,
+    "objective_weights": {"production": 1, "reliability": 1, "maintenance": 1, "workforce": 1, "schedule_stability": 0.25},
+    "allowed_strategy_ids": ["production-priority", "balanced", "reliability-priority"]
+  },
+  "requested_by_user_id": "golden-user"
+}

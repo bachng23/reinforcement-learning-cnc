@@ -54,6 +54,31 @@ function caseResponse(row, head, user) {
       candidate_hash: human.candidate_hash, schedule_hash: human.schedule_hash } : null,
     human_decision: human, available_commands: commands, commit: commitMetadata(row.commit) } };
 }
+// Internal boundary: caller holds the factory lock, freshly authorizes the actor, and validates body.request before entering the transaction.
+async function insertValidatedDecisionCase(tx, user, body, sourceScenario) {
+  const hash = contentHash(body);
+  const head = await tx.operationsHead.findUnique({ where: { factoryId: body.factory_id }, include: { snapshot: true } });
+  if (!head) throw new ApiError(404, 'FACTORY_NOT_FOUND', 'Factory was not found');
+  if (head.snapshotId !== body.expected_snapshot_id) throw new ApiError(409, 'SNAPSHOT_CONFLICT', 'Expected snapshot is no longer current');
+  if (head.planVersion !== body.expected_plan_version) throw new ApiError(409, 'PLAN_VERSION_CONFLICT', 'Expected plan version is no longer current');
+  const snapshot = head.snapshot.payloadJson;
+  if (contentHash(snapshot) !== head.snapshot.contentHash) throw new ApiError(500, 'OPERATIONS_INTEGRITY_ERROR', 'Snapshot integrity check failed');
+  const trigger = body.request.trigger;
+  const references = { machine_id: ['machines', 'machine_id'], technician_id: ['technicians', 'technician_id'],
+    maintenance_request_id: ['maintenance_requests', 'maintenance_request_id'] };
+  for (const [field, [collection, id]] of Object.entries(references)) {
+    if (trigger[field] && !(snapshot[collection] || []).some(row => row[id] === trigger[field])) {
+      throw new ApiError(400, 'INVALID_TRIGGER_REFERENCE', 'Trigger references a resource outside the pinned snapshot');
+    }
+  }
+  const row = await tx.decisionCase.create({ data: { id: randomUUID(), factoryId: body.factory_id,
+    snapshotId: head.snapshotId, basePlanVersion: head.planVersion, mode: body.request.mode,
+    requestJson: body, requestHash: hash, actorId: user.id } });
+  await tx.decisionCaseEvent.create({ data: { caseId: row.id, sequence: 1, type: 'CASE_CREATED', actorId: user.id,
+    payloadJson: { status: 'CREATED', revision: 1, ...(sourceScenario ? { source_scenario: sourceScenario } : {}) } } });
+  const response = caseResponse(row, head, user);
+  return { row, head, response };
+}
 async function createDecisionCase(db, user, rawBody, rawKey) {
   if (!['OPERATOR', 'ENGINEER', 'ADMIN'].includes(user.role)) throw new ApiError(403, 'FORBIDDEN', 'This role cannot create decision cases');
   const body = parse(createSchema, rawBody);
@@ -72,26 +97,7 @@ async function createDecisionCase(db, user, rawBody, rawKey) {
       if (receipt.requestHash !== hash) throw new ApiError(409, 'IDEMPOTENCY_KEY_REUSED', 'Idempotency key was used with another request');
       return { body: receipt.responseJson, location: `/api/v1/decision-cases/${receipt.caseId}`, replayed: true };
     }
-    const head = await tx.operationsHead.findUnique({ where: { factoryId: body.factory_id }, include: { snapshot: true } });
-    if (!head) throw new ApiError(404, 'FACTORY_NOT_FOUND', 'Factory was not found');
-    if (head.snapshotId !== body.expected_snapshot_id) throw new ApiError(409, 'SNAPSHOT_CONFLICT', 'Expected snapshot is no longer current');
-    if (head.planVersion !== body.expected_plan_version) throw new ApiError(409, 'PLAN_VERSION_CONFLICT', 'Expected plan version is no longer current');
-    const snapshot = head.snapshot.payloadJson;
-    if (contentHash(snapshot) !== head.snapshot.contentHash) throw new ApiError(500, 'OPERATIONS_INTEGRITY_ERROR', 'Snapshot integrity check failed');
-    const trigger = body.request.trigger;
-    const references = { machine_id: ['machines', 'machine_id'], technician_id: ['technicians', 'technician_id'],
-      maintenance_request_id: ['maintenance_requests', 'maintenance_request_id'] };
-    for (const [field, [collection, id]] of Object.entries(references)) {
-      if (trigger[field] && !(snapshot[collection] || []).some(row => row[id] === trigger[field])) {
-        throw new ApiError(400, 'INVALID_TRIGGER_REFERENCE', 'Trigger references a resource outside the pinned snapshot');
-      }
-    }
-    const row = await tx.decisionCase.create({ data: { id: randomUUID(), factoryId: body.factory_id,
-      snapshotId: head.snapshotId, basePlanVersion: head.planVersion, mode: body.request.mode,
-      requestJson: body, requestHash: hash, actorId: user.id } });
-    await tx.decisionCaseEvent.create({ data: { caseId: row.id, sequence: 1, type: 'CASE_CREATED', actorId: user.id,
-      payloadJson: { status: 'CREATED', revision: 1 } } });
-    const response = caseResponse(row, head, user);
+    const { row, response } = await insertValidatedDecisionCase(tx, user, body);
     await tx.decisionCaseIdempotencyReceipt.create({ data: { factoryId: row.factoryId, actorId: user.id, key,
       requestHash: hash, caseId: row.id, responseJson: response } });
     return { body: response, location: `/api/v1/decision-cases/${row.id}`, replayed: false };
@@ -118,7 +124,7 @@ async function getDecisionCaseEvents(db, user, id, rawQuery) {
     return { success: true, data: page.map(row => ({ id: row.id, case_id: row.caseId, sequence: row.sequence,
       type: row.type, actor: { kind: row.actorKind, id: row.actorId }, occurred_at: row.occurredAt.toISOString(),
       // Allowlisted projection; never expose request JSON, arbitrary stored payloads or future worker traces.
-      payload: row.type === 'CASE_CREATED' ? { status: 'CREATED', revision: 1 }
+      payload: row.type === 'CASE_CREATED' ? { status: 'CREATED', revision: 1, ...safeScenarioProvenance(row.payloadJson) }
         : row.type === 'CASE_STATUS_CHANGED' ? safeTransition(row.payloadJson) : {},
     })), meta: { has_more: rows.length > query.limit, next_after_sequence: page.at(-1)?.sequence ?? query.after_sequence } };
   }, { isolationLevel: 'RepeatableRead' });
@@ -133,4 +139,10 @@ function safeTransition(payload) {
     plan_version: z.number().int().nonnegative().optional() }).safeParse(payload);
   return parsed.success ? parsed.data : {};
 }
-module.exports = { createDecisionCase, getDecisionCase, getDecisionCaseEvents, accessible, parse, caseResponse };
+function safeScenarioProvenance(payload) {
+  const hash = z.string().regex(/^[a-f0-9]{64}$/);
+  const parsed = z.object({ workspace_id: z.string().uuid(), run_id: z.string().uuid(), input_hash: hash, result_hash: hash })
+    .strict().safeParse(payload?.source_scenario);
+  return parsed.success ? { source_scenario: parsed.data } : {};
+}
+module.exports = { insertValidatedDecisionCase, createDecisionCase, getDecisionCase, getDecisionCaseEvents, accessible, parse, caseResponse };

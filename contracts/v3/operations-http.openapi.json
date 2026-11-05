@@ -1282,6 +1282,29 @@
                   {
                     "additionalProperties": false,
                     "properties": {
+                      "maintenance_start_constraints": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "earliest_start_at": {
+                              "format": "date-time",
+                              "type": "string"
+                            },
+                            "maintenance_request_id": {
+                              "maxLength": 128,
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "maintenance_request_id",
+                            "earliest_start_at"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 5,
+                        "type": "array"
+                      },
                       "reason": {
                         "maxLength": 4000,
                         "minLength": 1,
@@ -1472,6 +1495,9 @@
                   "string",
                   "null"
                 ]
+              },
+              "source_scenario": {
+                "$ref": "#/components/schemas/ScenarioCaseProvenance"
               },
               "status": {
                 "const": "CREATED"
@@ -6205,6 +6231,35 @@
           "end_at"
         ],
         "title": "TimeWindow",
+        "type": "object"
+      },
+      "ScenarioCaseProvenance": {
+        "additionalProperties": false,
+        "description": "Immutable provenance for a newly evaluated LIVE case; no simulation candidate is copied.",
+        "properties": {
+          "input_hash": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "result_hash": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "run_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "workspace_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "run_id",
+          "input_hash",
+          "result_hash"
+        ],
         "type": "object"
       },
       "WorkOrderACCEPTCommand": {

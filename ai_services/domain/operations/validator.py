@@ -46,6 +46,13 @@ class OperationsValidatorV1:
 
     validator_version = VALIDATOR_VERSION
 
+    def __init__(self, *, constraint_profile: str = "legacy-v1") -> None:
+        if constraint_profile not in {"legacy-v1", "scenario-strict:1"}:
+            raise ValueError("unsupported constraint profile")
+        self.constraint_profile = constraint_profile
+        if constraint_profile == "scenario-strict:1":
+            self.validator_version = "operations-validator-scenario-strict:1"
+
     def validate(
         self,
         factory_snapshot: FactorySnapshot,
@@ -103,6 +110,8 @@ class OperationsValidatorV1:
         self._check_machine_overlap(assignments, drafts)
         self._check_precedence(assignments, operations, drafts)
         self._check_technicians(assignments, machines, technicians, requests, drafts)
+        if self.constraint_profile == "scenario-strict:1":
+            self._check_strict_constraints(factory_snapshot, assignments, operations, requests, drafts)
 
         validation_id = self._validation_id(factory_snapshot, candidate_plan, seed)
         violations = [
@@ -128,6 +137,62 @@ class OperationsValidatorV1:
             simulation_runs=0,
             warnings=[],
         )
+
+    def _check_strict_constraints(self, snapshot, assignments, operations, requests, drafts):
+        """Complete-plan constraints, opt-in so legacy LIVE behavior stays explicit."""
+        by_operation = {}
+        by_request = {}
+        by_id = {a.assignment_id: a for a in assignments}
+        for assignment in assignments:
+            if assignment.assignment_type is AssignmentType.PRODUCTION:
+                by_operation.setdefault(assignment.operation_id, []).append(assignment)
+                entry = operations.get(assignment.operation_id)
+                if entry is None:
+                    continue  # Existing reference validation supplies the diagnostic.
+                job, operation = entry
+                if operation.status is OperationStatus.BLOCKED:
+                    self._add(drafts, "BLOCKED_OPERATION", "Blocked operation cannot be scheduled",
+                              operation.operation_id, assignment.assignment_id)
+                if assignment.start_at < job.release_at:
+                    self._add(drafts, "JOB_RELEASE_WINDOW", "Assignment starts before job release",
+                              job.job_id, assignment.assignment_id)
+                option = next((o for o in operation.machine_options if o.machine_id == assignment.machine_id), None)
+                if option and assignment.status is not AssignmentStatus.COMPLETED:
+                    if (assignment.end_at - assignment.start_at).total_seconds() != option.processing_minutes * 60:
+                        self._add(drafts, "OPERATION_DURATION", "Assignment duration differs from the machine option",
+                                  operation.operation_id, assignment.assignment_id)
+            elif assignment.assignment_type is AssignmentType.MAINTENANCE:
+                by_request.setdefault(assignment.maintenance_request_id, []).append(assignment)
+                request = requests.get(assignment.maintenance_request_id)
+                if request is None:
+                    continue
+                if assignment.status is not AssignmentStatus.COMPLETED:
+                    if (assignment.end_at - assignment.start_at).total_seconds() != request.expected_duration_minutes * 60:
+                        self._add(drafts, "MAINTENANCE_DURATION", "Assignment duration differs from the maintenance request",
+                                  request.maintenance_request_id, assignment.assignment_id)
+                    if assignment.start_at < request.earliest_start_at or (
+                        request.latest_start_at is not None and assignment.start_at > request.latest_start_at
+                    ):
+                        self._add(drafts, "MAINTENANCE_START_WINDOW", "Assignment violates maintenance start bounds",
+                                  request.maintenance_request_id, assignment.assignment_id)
+                    if request.status.value in {"COMPLETED", "CANCELLED"}:
+                        self._add(drafts, "MAINTENANCE_STATUS", "Terminal maintenance request cannot be replanned",
+                                  request.maintenance_request_id, assignment.assignment_id)
+        for operation_id, (_, operation) in operations.items():
+            count = len(by_operation.get(operation_id, []))
+            if count > 1 or (count == 0 and operation.status is not OperationStatus.COMPLETED):
+                self._add(drafts, "OPERATION_COVERAGE", f"Operation has {count} assignments; unfinished work requires exactly one",
+                          operation_id)
+        for request_id, request in requests.items():
+            count = len(by_request.get(request_id, []))
+            if count > 1 or (count == 0 and request.mandatory and request.status.value not in {"COMPLETED", "CANCELLED"}):
+                self._add(drafts, "MAINTENANCE_COVERAGE", f"Maintenance has {count} assignments; mandatory work requires exactly one",
+                          request_id)
+        for original in snapshot.current_schedule.assignments if snapshot.current_schedule else []:
+            if original.locked or original.status in {AssignmentStatus.RUNNING, AssignmentStatus.COMPLETED}:
+                if by_id.get(original.assignment_id) != original:
+                    self._add(drafts, "IMMUTABLE_RESERVATION", "Locked/running/completed assignment must be retained exactly",
+                              original.assignment_id)
 
     @staticmethod
     def _add(

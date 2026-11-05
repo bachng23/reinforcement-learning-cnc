@@ -290,6 +290,7 @@ async function runOnce({ baseUrl, sha, sourceDirty, run, artifactRoot, journal, 
   let fastapi;
   let api;
   let worker;
+  let scenarioWorker;
   let frontend;
   let apiPort;
   let frontendPort;
@@ -335,6 +336,9 @@ async function runOnce({ baseUrl, sha, sourceDirty, run, artifactRoot, journal, 
       DECISION_CASE_POLL_MS: '50',
       DECISION_CASE_LEASE_MS: '10000',
       DECISION_CASE_HEARTBEAT_MS: '2000',
+      SCENARIO_ENGINE_VERSION: 'scenario-evaluator:1.0.0',
+      SCENARIO_CONTRACT_VERSION: 'scenario-engine:1.0',
+      SCENARIO_SAMPLING_VERSION: 'scenario-crn:1',
     };
     api = startProcess('backend-api', process.execPath, ['src/server.js'], {
       cwd: backendRoot,
@@ -346,6 +350,9 @@ async function runOnce({ baseUrl, sha, sourceDirty, run, artifactRoot, journal, 
       cwd: backendRoot,
       env: serviceEnv,
       logFile: path.join(runDir, 'decision-worker.log'),
+    });
+    scenarioWorker = startProcess('scenario-worker', process.execPath, ['src/scenario-worker/index.js'], {
+      cwd: backendRoot, env: serviceEnv, logFile: path.join(runDir, 'scenario-worker.log'),
     });
     frontend = startProcess('frontend', process.execPath, [next, 'dev', '--hostname', '127.0.0.1', '--port', String(frontendPort)], {
       cwd: frontendRoot,
@@ -362,7 +369,7 @@ async function runOnce({ baseUrl, sha, sourceDirty, run, artifactRoot, journal, 
     await waitForHttp(`${webUrl}/api/health`, frontend, 'Frontend');
 
     await command(process.execPath, [playwright, 'test', '--config', 'playwright.e2e.config.ts',
-      ...(process.argv.includes('--incidents') ? ['incidents.spec.ts'] : [])], {
+      ...(process.argv.includes('--scenarios') ? ['scenario-planning.spec.ts'] : process.argv.includes('--incidents') ? ['incidents.spec.ts'] : [])], {
       cwd: frontendRoot,
       env: {
         ...process.env,
@@ -386,6 +393,11 @@ async function runOnce({ baseUrl, sha, sourceDirty, run, artifactRoot, journal, 
       logFile: path.join(runDir, 'playwright.log'),
       treeOnAbort: true,
     });
+    if (process.argv.includes('--scenarios')) {
+      const evidence = JSON.parse(fs.readFileSync(path.join(runDir, 'scenario-evidence.json'), 'utf8'));
+      if (evidence.git_sha !== sha || evidence.assertions_passed.length < 6) throw new Error('Scenario evidence is incomplete');
+      return evidence;
+    }
     const incidentEvidence = JSON.parse(fs.readFileSync(path.join(runDir, 'incident-evidence.json'), 'utf8'));
     // Verify durable state through a new authenticated API process, not merely a
     // browser reload against the same process. Do not save session cookies.
@@ -432,7 +444,7 @@ async function runOnce({ baseUrl, sha, sourceDirty, run, artifactRoot, journal, 
     let ownedProcessesStopped = true;
     let ownedPortsClosed = true;
     let schemaRemoved = true;
-    for (const child of [frontend, worker, api, fastapi?.child]) {
+    for (const child of [frontend, scenarioWorker, worker, api, fastapi?.child]) {
       try { await stopProcess(child); } catch (error) { ownedProcessesStopped = false; cleanupErrors.push(error); }
     }
     fastapi?.lines?.close();
@@ -470,7 +482,7 @@ async function main() {
     if (status.status !== 0 || status.stdout.trim()) throw new Error('Acceptance requires a clean committed integration SHA');
   }
   const artifactRoot = path.resolve(process.env.OPERATIONS_E2E_ARTIFACT_DIR
-    || path.join(root, 'artifacts', 'operations-e2e', sha));
+    || path.join(root, 'artifacts', process.argv.includes('--scenarios') ? 'scenario-e2e' : 'operations-e2e', sha));
   const journal = path.resolve(process.env.OPERATIONS_SCHEMA_JOURNAL
     || path.join(os.tmpdir(), `operations-browser-e2e-${process.pid}.jsonl`));
   const operationsPython = pythonExecutable();
@@ -486,6 +498,13 @@ async function main() {
   for (let run = 1; run <= repeat; run += 1) {
     controller.signal.throwIfAborted();
     evidence.push(await runOnce({ baseUrl, sha, sourceDirty, run, artifactRoot, journal, operationsPython }));
+  }
+  if (process.argv.includes('--scenarios')) {
+    const hashes = new Set(evidence.map(item => item.semantic_input_hash));
+    if (hashes.size !== 1 || !/^[a-f0-9]{64}$/.test(evidence[0].semantic_input_hash)) throw new Error('Scenario replay differs between clean schemas');
+    fs.writeFileSync(path.join(artifactRoot, 'summary.json'), JSON.stringify({git_sha: sha, source_tree_dirty: sourceDirty,
+      run_count: repeat, acceptance: repeat === 3 && !sourceDirty ? 'THREE_BROWSER_RUNS_PASSED' : 'IN_PROGRESS', runs: evidence}, null, 2) + '\n');
+    return;
   }
   const incidentFingerprints = evidence.map(item => (process.argv.includes('--incidents') ? item : item.incidents).recommendation_fingerprint);
   if (incidentFingerprints.some(value => typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value))) throw new Error('Incident linked planner fingerprint was not asserted');

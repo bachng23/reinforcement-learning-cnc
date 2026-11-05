@@ -12,6 +12,24 @@ services:
       start_period: 15s
 
   # One-shot read-only demo against an explicitly seeded database.
+  scenario_worker:
+    profiles: [scenario]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgre_db:5432/${POSTGRES_DB}?schema=public
+      AI_SERVICE_URL: http://ai_service:8000
+      SCENARIO_ENGINE_VERSION: scenario-evaluator:1.0.0
+      SCENARIO_CONTRACT_VERSION: scenario-engine:1.0
+      SCENARIO_SAMPLING_VERSION: scenario-crn:1
+    command: ["npm", "run", "operations:scenario-worker"]
+    depends_on:
+      postgre_db:
+        condition: service_healthy
+      ai_service:
+        condition: service_healthy
+
   operations_plan_demo:
     profiles: [operations-demo]
     build:

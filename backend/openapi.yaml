@@ -8736,6 +8736,21 @@ components:
                   type: object
                 - additionalProperties: false
                   properties:
+                    maintenance_start_constraints:
+                      type: array
+                      maxItems: 5
+                      items:
+                        type: object
+                        additionalProperties: false
+                        required: [maintenance_request_id, earliest_start_at]
+                        properties:
+                          maintenance_request_id:
+                            type: string
+                            minLength: 1
+                            maxLength: 128
+                          earliest_start_at:
+                            type: string
+                            format: date-time
                     reason:
                       maxLength: 4000
                       minLength: 1
@@ -9412,6 +9427,8 @@ components:
           type: object
           additionalProperties: false
           properties:
+            source_scenario:
+              $ref: '#/components/schemas/ScenarioCaseProvenance'
             status:
               const: CREATED
             command:
@@ -9450,6 +9467,24 @@ components:
               type: string
             to_status:
               type: string
+    ScenarioCaseProvenance:
+      type: object
+      additionalProperties: false
+      description: Immutable provenance for a newly evaluated LIVE case; no simulation candidate is copied.
+      required: [workspace_id, run_id, input_hash, result_hash]
+      properties:
+        workspace_id:
+          type: string
+          format: uuid
+        run_id:
+          type: string
+          format: uuid
+        input_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        result_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
     DecisionCaseEventsResponse:
       type: object
       required:

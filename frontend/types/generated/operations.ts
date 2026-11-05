@@ -473,6 +473,12 @@ export type MaintenanceRequestId3 = string;
 export type OccurredAt4 = string;
 export type Type3 = "MAINTENANCE_REQUESTED";
 export type EventId5 = string;
+export type EarliestStartAt1 = string;
+export type MaintenanceRequestId4 = string;
+/**
+ * @maxItems 5
+ */
+export type MaintenanceStartConstraints = MaintenanceStartConstraint[];
 export type OccurredAt5 = string;
 export type Reason1 = string;
 export type RequestedByUserId1 = string;
@@ -1165,10 +1171,19 @@ export interface MaintenanceRequestedTrigger {
  */
 export interface ManualReplanTrigger {
   event_id: EventId5;
+  maintenance_start_constraints?: MaintenanceStartConstraints;
   occurred_at: OccurredAt5;
   reason: Reason1;
   requested_by_user_id: RequestedByUserId1;
   type?: Type4;
+}
+/**
+ * This interface was referenced by `MultiAgentPdMOperationsContractCatalogV3`'s JSON-Schema
+ * via the `definition` "MaintenanceStartConstraint".
+ */
+export interface MaintenanceStartConstraint {
+  earliest_start_at: EarliestStartAt1;
+  maintenance_request_id: MaintenanceRequestId4;
 }
 /**
  * This interface was referenced by `MultiAgentPdMOperationsContractCatalogV3`'s JSON-Schema

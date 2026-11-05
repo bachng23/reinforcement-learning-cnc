@@ -16,11 +16,11 @@ const productionScreens = [
   { href: "/operations/schedule", label: "Integrated Schedule", icon: CalendarRange },
   { href: "/operations/cases", label: "Decision Cases", icon: ListChecks },
   { href: "/operations/incidents", label: "Incident Center", icon: ListChecks },
+  { href: "/operations/scenarios", label: "Scenario Planning", icon: Beaker },
 ] as const;
 const researchScreens = [
   { href: "/operations/recommendations", label: "Recommendations preview", icon: GitCompareArrows },
   { href: "/operations/agents", label: "Agent Control Room", icon: Bot },
-  { href: "/operations/what-if", label: "What-if", icon: Beaker },
 ] as const;
 
 export function OperationsShell({

@@ -1,0 +1,4602 @@
+{
+  "producer_sha": "d49ddfbbe3ffddb51cea03077aa032e4acb2ee1e",
+  "evaluation": {
+    "contract_version": "scenario-engine:1.0",
+    "engine_version": "scenario-evaluator:1.0.0",
+    "identity": {
+      "factory_id": "golden-factory",
+      "workspace_id": "20000000-0000-4000-8000-000000000001",
+      "run_id": "40000000-0000-4000-8000-000000000001",
+      "frozen_input_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "semantic_input_hash": "9ae84b453e57503a31acbc4a67c051382256500ae9dc432b7fc99144b620aa99",
+    "sampling": {
+      "version": "scenario-crn:1",
+      "base_seed": 7,
+      "sample_count": 100,
+      "coupling": "COMMON_RANDOM_NUMBERS",
+      "algorithm": "sha256-first53-uniform:1",
+      "observation_set_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "coupling_key": "34368248fdc09fa53244a24039a95e42e70aa11ad36f443d92f75083f2983a42"
+    },
+    "effective": {
+      "transform_version": "scenario-transform:1",
+      "hash_version": "scenario-jcs-sha256:1",
+      "source_hash": "305b11275b52b5329eec4bd224f6575ca3917d94156f2fc66a5529b2d8022804",
+      "overrides": [
+        {
+          "type": "MAINTENANCE_DURATION",
+          "maintenance_request_id": "MR1",
+          "expected_duration_minutes": 60
+        }
+      ],
+      "snapshot": {
+        "schema_version": "3.0",
+        "snapshot_id": "golden-slot-snapshot",
+        "factory_id": "golden-factory",
+        "captured_at": "2026-10-27T00:00:00Z",
+        "planning_window": {
+          "start_at": "2026-10-27T00:00:00Z",
+          "end_at": "2026-10-27T02:00:00Z"
+        },
+        "machines": [
+          {
+            "machine_id": "M1",
+            "display_name": "Golden lathe",
+            "machine_family": "lathe",
+            "status": "IDLE",
+            "capabilities": [
+              {
+                "operation_type": "turning",
+                "nominal_processing_minutes": 30,
+                "load_factor": 1.0,
+                "damage_factor": 1.0
+              }
+            ]
+          }
+        ],
+        "jobs": [],
+        "technicians": [
+          {
+            "technician_id": "T1",
+            "display_name": "Golden technician",
+            "status": "AVAILABLE",
+            "availability": [
+              {
+                "start_at": "2026-10-27T00:00:00Z",
+                "end_at": "2026-10-27T01:30:00Z"
+              }
+            ],
+            "skills": [
+              {
+                "skill_id": "mechanical",
+                "level": 4,
+                "certified_machine_families": [
+                  "lathe"
+                ],
+                "certified_action_types": [
+                  "inspection"
+                ]
+              }
+            ]
+          }
+        ],
+        "health_snapshots": [],
+        "maintenance_requests": [
+          {
+            "maintenance_request_id": "MR1",
+            "machine_id": "M1",
+            "maintenance_type": "PREVENTIVE",
+            "action_type": "inspection",
+            "priority": "HIGH",
+            "status": "OPEN",
+            "requested_at": "2026-10-27T00:00:00Z",
+            "earliest_start_at": "2026-10-27T00:00:00Z",
+            "latest_start_at": null,
+            "expected_duration_minutes": 60,
+            "required_skill_ids": [
+              "mechanical"
+            ],
+            "minimum_skill_level": 4,
+            "mandatory": true
+          }
+        ],
+        "current_schedule": null
+      },
+      "effective_hash": "01211ea048d3092b84bb3922cdfaa1956003f1cec0cdc15d45a0ef1bff76df68",
+      "diff": [
+        {
+          "target_type": "MAINTENANCE_REQUEST",
+          "target_id": "MR1",
+          "field": "expected_duration_minutes",
+          "before": 60,
+          "after": 60
+        }
+      ],
+      "diagnostics": []
+    },
+    "baseline": {
+      "outcome": "FEASIBLE",
+      "candidates": [
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "PRODUCTION_PRIORITY",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-95fcd5ce1d3b13d1",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-da6a82095ea51321",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:00:00Z",
+                "end_at": "2026-10-27T01:00:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 60.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-674559eb6931acf106a357f2",
+            "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        },
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "RELIABILITY_PRIORITY",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-59ed9549cd30067c",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-303cbc120499dff0",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:00:00Z",
+                "end_at": "2026-10-27T01:00:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 60.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-a2b797eb23134103f29d677c",
+            "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        },
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-balanced-598a187c080998ea",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "BALANCED",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-598a187c080998ea",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-3d578ddad5ad6ef8",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:30:00Z",
+                "end_at": "2026-10-27T01:30:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 90.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-2e54309311085a41d819615e",
+            "candidate_plan_id": "plan-balanced-598a187c080998ea",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        }
+      ],
+      "selected_candidate_id": "plan-production_priority-95fcd5ce1d3b13d1",
+      "ranking": {
+        "version": "objective-minmax:1",
+        "normalization_reference_id": "abf63c86e2c85195c7f072bdb9cff438d3cb3c0dd54f889948839d3df54d12a6",
+        "reference_bounds": {
+          "makespan_minutes": [
+            60.0,
+            90.0
+          ],
+          "total_tardiness_minutes": [
+            0.0,
+            0.0
+          ],
+          "on_time_completion_rate": [
+            1.0,
+            1.0
+          ],
+          "expected_failure_count": [
+            0.0,
+            0.0
+          ],
+          "expected_emergency_downtime_minutes": [
+            0.0,
+            0.0
+          ],
+          "maintenance_cost": [
+            300.0,
+            300.0
+          ],
+          "technician_utilization": [
+            0.666667,
+            0.666667
+          ],
+          "schedule_changes": [
+            1.0,
+            1.0
+          ]
+        },
+        "constant_range_benefit": 1,
+        "tie_break": [
+          "rounded-score-desc:12",
+          "PRODUCTION_PRIORITY",
+          "BALANCED",
+          "RELIABILITY_PRIORITY",
+          "candidate-id-asc"
+        ],
+        "raw_weights": {
+          "production": 1.0,
+          "reliability": 1.0,
+          "maintenance": 1.0,
+          "workforce": 1.0,
+          "schedule_stability": 0.25
+        },
+        "normalized_weights": {
+          "production": 0.23529411764705882,
+          "reliability": 0.23529411764705882,
+          "maintenance": 0.23529411764705882,
+          "workforce": 0.23529411764705882,
+          "schedule_stability": 0.058823529411764705
+        },
+        "rows": [
+          {
+            "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+            "strategy": "PRODUCTION_PRIORITY",
+            "score": 1.0,
+            "raw_kpis": {
+              "makespan_minutes": 60.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 1.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": [
+              "plan-reliability_priority-59ed9549cd30067c"
+            ]
+          },
+          {
+            "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+            "strategy": "RELIABILITY_PRIORITY",
+            "score": 1.0,
+            "raw_kpis": {
+              "makespan_minutes": 60.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 1.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": [
+              "plan-production_priority-95fcd5ce1d3b13d1"
+            ]
+          },
+          {
+            "candidate_plan_id": "plan-balanced-598a187c080998ea",
+            "strategy": "BALANCED",
+            "score": 0.921568627451,
+            "raw_kpis": {
+              "makespan_minutes": 90.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 0.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 0.6666666666666666,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.1568627450980392,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": []
+          }
+        ]
+      },
+      "candidate_availability": [
+        {
+          "strategy": "PRODUCTION_PRIORITY",
+          "outcome": "FEASIBLE",
+          "reason": null
+        },
+        {
+          "strategy": "BALANCED",
+          "outcome": "FEASIBLE",
+          "reason": null
+        },
+        {
+          "strategy": "RELIABILITY_PRIORITY",
+          "outcome": "FEASIBLE",
+          "reason": null
+        }
+      ],
+      "diagnostics": [],
+      "partial": false
+    },
+    "scenario": {
+      "outcome": "FEASIBLE",
+      "candidates": [
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "PRODUCTION_PRIORITY",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-95fcd5ce1d3b13d1",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-da6a82095ea51321",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:00:00Z",
+                "end_at": "2026-10-27T01:00:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 60.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-674559eb6931acf106a357f2",
+            "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        },
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "RELIABILITY_PRIORITY",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-59ed9549cd30067c",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-303cbc120499dff0",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:00:00Z",
+                "end_at": "2026-10-27T01:00:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 60.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-a2b797eb23134103f29d677c",
+            "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        },
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-balanced-598a187c080998ea",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "BALANCED",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-598a187c080998ea",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-3d578ddad5ad6ef8",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:30:00Z",
+                "end_at": "2026-10-27T01:30:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 90.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-2e54309311085a41d819615e",
+            "candidate_plan_id": "plan-balanced-598a187c080998ea",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        }
+      ],
+      "selected_candidate_id": "plan-production_priority-95fcd5ce1d3b13d1",
+      "ranking": {
+        "version": "objective-minmax:1",
+        "normalization_reference_id": "abf63c86e2c85195c7f072bdb9cff438d3cb3c0dd54f889948839d3df54d12a6",
+        "reference_bounds": {
+          "makespan_minutes": [
+            60.0,
+            90.0
+          ],
+          "total_tardiness_minutes": [
+            0.0,
+            0.0
+          ],
+          "on_time_completion_rate": [
+            1.0,
+            1.0
+          ],
+          "expected_failure_count": [
+            0.0,
+            0.0
+          ],
+          "expected_emergency_downtime_minutes": [
+            0.0,
+            0.0
+          ],
+          "maintenance_cost": [
+            300.0,
+            300.0
+          ],
+          "technician_utilization": [
+            0.666667,
+            0.666667
+          ],
+          "schedule_changes": [
+            1.0,
+            1.0
+          ]
+        },
+        "constant_range_benefit": 1,
+        "tie_break": [
+          "rounded-score-desc:12",
+          "PRODUCTION_PRIORITY",
+          "BALANCED",
+          "RELIABILITY_PRIORITY",
+          "candidate-id-asc"
+        ],
+        "raw_weights": {
+          "production": 1.0,
+          "reliability": 1.0,
+          "maintenance": 1.0,
+          "workforce": 1.0,
+          "schedule_stability": 0.25
+        },
+        "normalized_weights": {
+          "production": 0.23529411764705882,
+          "reliability": 0.23529411764705882,
+          "maintenance": 0.23529411764705882,
+          "workforce": 0.23529411764705882,
+          "schedule_stability": 0.058823529411764705
+        },
+        "rows": [
+          {
+            "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+            "strategy": "PRODUCTION_PRIORITY",
+            "score": 1.0,
+            "raw_kpis": {
+              "makespan_minutes": 60.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 1.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": [
+              "plan-reliability_priority-59ed9549cd30067c"
+            ]
+          },
+          {
+            "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+            "strategy": "RELIABILITY_PRIORITY",
+            "score": 1.0,
+            "raw_kpis": {
+              "makespan_minutes": 60.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 1.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": [
+              "plan-production_priority-95fcd5ce1d3b13d1"
+            ]
+          },
+          {
+            "candidate_plan_id": "plan-balanced-598a187c080998ea",
+            "strategy": "BALANCED",
+            "score": 0.921568627451,
+            "raw_kpis": {
+              "makespan_minutes": 90.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 0.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 0.6666666666666666,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.1568627450980392,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": []
+          }
+        ]
+      },
+      "candidate_availability": [
+        {
+          "strategy": "PRODUCTION_PRIORITY",
+          "outcome": "FEASIBLE",
+          "reason": null
+        },
+        {
+          "strategy": "BALANCED",
+          "outcome": "FEASIBLE",
+          "reason": null
+        },
+        {
+          "strategy": "RELIABILITY_PRIORITY",
+          "outcome": "FEASIBLE",
+          "reason": null
+        }
+      ],
+      "diagnostics": [],
+      "partial": false
+    },
+    "comparison": {
+      "metric_registry_version": "scenario-metrics:1",
+      "metrics": [
+        {
+          "metric": "makespan_minutes",
+          "unit": "minute",
+          "preferred_direction": "LOWER",
+          "baseline": 60.0,
+          "scenario": 60.0,
+          "absolute_delta": 0.0,
+          "percent_delta": 0.0,
+          "reason": null,
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "total_tardiness_minutes",
+          "unit": "minute",
+          "preferred_direction": "LOWER",
+          "baseline": 0.0,
+          "scenario": 0.0,
+          "absolute_delta": 0.0,
+          "percent_delta": null,
+          "reason": "ZERO_BASELINE",
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "maximum_tardiness_minutes",
+          "unit": "minute",
+          "preferred_direction": "LOWER",
+          "baseline": 0.0,
+          "scenario": 0.0,
+          "absolute_delta": 0.0,
+          "percent_delta": null,
+          "reason": "ZERO_BASELINE",
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "on_time_completion_rate",
+          "unit": "ratio",
+          "preferred_direction": "HIGHER",
+          "baseline": 1.0,
+          "scenario": 1.0,
+          "absolute_delta": 0.0,
+          "percent_delta": 0.0,
+          "reason": null,
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "expected_failure_count",
+          "unit": "expected_count",
+          "preferred_direction": "LOWER",
+          "baseline": 0.0,
+          "scenario": 0.0,
+          "absolute_delta": 0.0,
+          "percent_delta": null,
+          "reason": "ZERO_BASELINE",
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "failure_probability",
+          "unit": "probability",
+          "preferred_direction": "LOWER",
+          "baseline": 0.0,
+          "scenario": 0.0,
+          "absolute_delta": 0.0,
+          "percent_delta": null,
+          "reason": "ZERO_BASELINE",
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "expected_emergency_downtime_minutes",
+          "unit": "minute",
+          "preferred_direction": "LOWER",
+          "baseline": 0.0,
+          "scenario": 0.0,
+          "absolute_delta": 0.0,
+          "percent_delta": null,
+          "reason": "ZERO_BASELINE",
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "maintenance_cost",
+          "unit": "model_cost_unit",
+          "preferred_direction": "LOWER",
+          "baseline": 300.0,
+          "scenario": 300.0,
+          "absolute_delta": 0.0,
+          "percent_delta": 0.0,
+          "reason": null,
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "technician_utilization",
+          "unit": "ratio",
+          "preferred_direction": "LOWER",
+          "baseline": 0.666667,
+          "scenario": 0.666667,
+          "absolute_delta": 0.0,
+          "percent_delta": 0.0,
+          "reason": null,
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "schedule_changes",
+          "unit": "count",
+          "preferred_direction": "LOWER",
+          "baseline": 1,
+          "scenario": 1,
+          "absolute_delta": 0.0,
+          "percent_delta": 0.0,
+          "reason": null,
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "decision_latency_ms",
+          "unit": "millisecond",
+          "preferred_direction": "LOWER",
+          "baseline": null,
+          "scenario": null,
+          "absolute_delta": null,
+          "percent_delta": null,
+          "reason": "OPERATIONAL_TELEMETRY_NOT_MODEL_KPI",
+          "change": "UNAVAILABLE"
+        }
+      ],
+      "score_comparison": "NOT_COMPARABLE_ACROSS_REFERENCES",
+      "model_assumptions": [
+        "Uncalibrated simplified failure model; estimates are not sensor facts.",
+        "Maintenance reduces model failure probability by 70%.",
+        "Emergency downtime is capped by the candidate makespan and observation horizon.",
+        "Technician utilization is minimized by the current workforce objective; it is not a general productivity verdict.",
+        "Common random draws couple baseline, strategies and physical points; no rank-confidence probability is estimated."
+      ]
+    },
+    "live_mapping": {
+      "supported": false,
+      "mapped_weights": null,
+      "mapped_defer_bounds": [],
+      "reasons": [
+        "AUTHORIZED_INGESTION_REQUIRED:MAINTENANCE_DURATION"
+      ]
+    }
+  },
+  "sensitivity": {
+    "contract_version": "scenario-engine:1.0",
+    "engine_version": "scenario-evaluator:1.0.0",
+    "identity": {
+      "factory_id": "golden-factory",
+      "workspace_id": "20000000-0000-4000-8000-000000000001",
+      "run_id": "40000000-0000-4000-8000-000000000001",
+      "frozen_input_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "outcome": "COMPLETE",
+    "axis": {
+      "type": "MAINTENANCE_DURATION",
+      "maintenance_request_id": "MR1",
+      "values": [
+        30,
+        60,
+        90,
+        91,
+        120
+      ]
+    },
+    "requested_order": [
+      30.0,
+      60.0,
+      90.0,
+      91.0,
+      120.0
+    ],
+    "baseline_value": 60.0,
+    "baseline_point": {
+      "outcome": "FEASIBLE",
+      "candidates": [
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "PRODUCTION_PRIORITY",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-95fcd5ce1d3b13d1",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-da6a82095ea51321",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:00:00Z",
+                "end_at": "2026-10-27T01:00:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 60.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-674559eb6931acf106a357f2",
+            "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        },
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "RELIABILITY_PRIORITY",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-59ed9549cd30067c",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-303cbc120499dff0",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:00:00Z",
+                "end_at": "2026-10-27T01:00:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 60.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-a2b797eb23134103f29d677c",
+            "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        },
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-balanced-598a187c080998ea",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "BALANCED",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-598a187c080998ea",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-3d578ddad5ad6ef8",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:30:00Z",
+                "end_at": "2026-10-27T01:30:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 90.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-2e54309311085a41d819615e",
+            "candidate_plan_id": "plan-balanced-598a187c080998ea",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        }
+      ],
+      "selected_candidate_id": "plan-production_priority-95fcd5ce1d3b13d1",
+      "ranking": {
+        "version": "objective-minmax:1",
+        "normalization_reference_id": "abf63c86e2c85195c7f072bdb9cff438d3cb3c0dd54f889948839d3df54d12a6",
+        "reference_bounds": {
+          "makespan_minutes": [
+            60.0,
+            90.0
+          ],
+          "total_tardiness_minutes": [
+            0.0,
+            0.0
+          ],
+          "on_time_completion_rate": [
+            1.0,
+            1.0
+          ],
+          "expected_failure_count": [
+            0.0,
+            0.0
+          ],
+          "expected_emergency_downtime_minutes": [
+            0.0,
+            0.0
+          ],
+          "maintenance_cost": [
+            300.0,
+            300.0
+          ],
+          "technician_utilization": [
+            0.666667,
+            0.666667
+          ],
+          "schedule_changes": [
+            1.0,
+            1.0
+          ]
+        },
+        "constant_range_benefit": 1,
+        "tie_break": [
+          "rounded-score-desc:12",
+          "PRODUCTION_PRIORITY",
+          "BALANCED",
+          "RELIABILITY_PRIORITY",
+          "candidate-id-asc"
+        ],
+        "raw_weights": {
+          "production": 1.0,
+          "reliability": 1.0,
+          "maintenance": 1.0,
+          "workforce": 1.0,
+          "schedule_stability": 0.25
+        },
+        "normalized_weights": {
+          "production": 0.23529411764705882,
+          "reliability": 0.23529411764705882,
+          "maintenance": 0.23529411764705882,
+          "workforce": 0.23529411764705882,
+          "schedule_stability": 0.058823529411764705
+        },
+        "rows": [
+          {
+            "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+            "strategy": "PRODUCTION_PRIORITY",
+            "score": 1.0,
+            "raw_kpis": {
+              "makespan_minutes": 60.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 1.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": [
+              "plan-reliability_priority-59ed9549cd30067c"
+            ]
+          },
+          {
+            "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+            "strategy": "RELIABILITY_PRIORITY",
+            "score": 1.0,
+            "raw_kpis": {
+              "makespan_minutes": 60.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 1.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": [
+              "plan-production_priority-95fcd5ce1d3b13d1"
+            ]
+          },
+          {
+            "candidate_plan_id": "plan-balanced-598a187c080998ea",
+            "strategy": "BALANCED",
+            "score": 0.921568627451,
+            "raw_kpis": {
+              "makespan_minutes": 90.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 0.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 0.6666666666666666,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.1568627450980392,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": []
+          }
+        ]
+      },
+      "candidate_availability": [
+        {
+          "strategy": "PRODUCTION_PRIORITY",
+          "outcome": "FEASIBLE",
+          "reason": null
+        },
+        {
+          "strategy": "BALANCED",
+          "outcome": "FEASIBLE",
+          "reason": null
+        },
+        {
+          "strategy": "RELIABILITY_PRIORITY",
+          "outcome": "FEASIBLE",
+          "reason": null
+        }
+      ],
+      "diagnostics": [],
+      "partial": false
+    },
+    "points": [
+      {
+        "value": 30.0,
+        "input_hash": "2a5dd9763293321cd42cb4c76465239778239403c19d873c1a9cf98dc2285e10",
+        "status": "FEASIBLE",
+        "evaluation": {
+          "outcome": "FEASIBLE",
+          "candidates": [
+            {
+              "schema_version": "3.0",
+              "candidate_plan_id": "plan-production_priority-cc0d6d59df7e021f",
+              "decision_case_id": "scenario-96479f4da0bf280f5d07959817281912",
+              "snapshot_id": "golden-slot-snapshot",
+              "plan_version": 1,
+              "strategy": "PRODUCTION_PRIORITY",
+              "source_engine_id": "deterministic-decision-planner",
+              "source_engine_version": "1.0.0",
+              "generated_at": "2026-10-27T00:00:00Z",
+              "schedule": {
+                "schedule_id": "schedule-cc0d6d59df7e021f",
+                "factory_id": "golden-factory",
+                "revision": 1,
+                "planning_window": {
+                  "start_at": "2026-10-27T00:00:00Z",
+                  "end_at": "2026-10-27T02:00:00Z"
+                },
+                "created_at": "2026-10-27T00:00:00Z",
+                "assignments": [
+                  {
+                    "assignment_id": "assignment-da6a82095ea51321",
+                    "assignment_type": "MAINTENANCE",
+                    "status": "PROPOSED",
+                    "machine_id": "M1",
+                    "start_at": "2026-10-27T00:00:00Z",
+                    "end_at": "2026-10-27T00:30:00Z",
+                    "locked": false,
+                    "job_id": null,
+                    "operation_id": null,
+                    "maintenance_request_id": "MR1",
+                    "technician_ids": [
+                      "T1"
+                    ]
+                  }
+                ]
+              },
+              "kpis": {
+                "makespan_minutes": 30.0,
+                "total_tardiness_minutes": 0.0,
+                "maximum_tardiness_minutes": 0.0,
+                "on_time_completion_rate": 1.0,
+                "expected_failure_count": 0.0,
+                "failure_probability": 0.0,
+                "expected_emergency_downtime_minutes": 0.0,
+                "maintenance_cost": 150.0,
+                "technician_utilization": 0.333333,
+                "schedule_changes": 1,
+                "decision_latency_ms": null
+              },
+              "source_agent_run_ids": [],
+              "assumptions": [
+                "Greedy deterministic scheduling uses half-open assignment intervals.",
+                "Locked, running, and completed current assignments remain reservations.",
+                "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+              ],
+              "warnings": [],
+              "validation": {
+                "schema_version": "3.0",
+                "validation_id": "validation-d66349d5e8622facaef1e9b6",
+                "candidate_plan_id": "plan-production_priority-cc0d6d59df7e021f",
+                "validator_version": "operations-validator-scenario-strict:1",
+                "verdict": "VALID",
+                "validated_at": "2026-10-27T00:00:00Z",
+                "violations": [],
+                "simulation_runs": 100,
+                "warnings": []
+              }
+            },
+            {
+              "schema_version": "3.0",
+              "candidate_plan_id": "plan-reliability_priority-bc430076785b9d96",
+              "decision_case_id": "scenario-96479f4da0bf280f5d07959817281912",
+              "snapshot_id": "golden-slot-snapshot",
+              "plan_version": 1,
+              "strategy": "RELIABILITY_PRIORITY",
+              "source_engine_id": "deterministic-decision-planner",
+              "source_engine_version": "1.0.0",
+              "generated_at": "2026-10-27T00:00:00Z",
+              "schedule": {
+                "schedule_id": "schedule-bc430076785b9d96",
+                "factory_id": "golden-factory",
+                "revision": 1,
+                "planning_window": {
+                  "start_at": "2026-10-27T00:00:00Z",
+                  "end_at": "2026-10-27T02:00:00Z"
+                },
+                "created_at": "2026-10-27T00:00:00Z",
+                "assignments": [
+                  {
+                    "assignment_id": "assignment-303cbc120499dff0",
+                    "assignment_type": "MAINTENANCE",
+                    "status": "PROPOSED",
+                    "machine_id": "M1",
+                    "start_at": "2026-10-27T00:00:00Z",
+                    "end_at": "2026-10-27T00:30:00Z",
+                    "locked": false,
+                    "job_id": null,
+                    "operation_id": null,
+                    "maintenance_request_id": "MR1",
+                    "technician_ids": [
+                      "T1"
+                    ]
+                  }
+                ]
+              },
+              "kpis": {
+                "makespan_minutes": 30.0,
+                "total_tardiness_minutes": 0.0,
+                "maximum_tardiness_minutes": 0.0,
+                "on_time_completion_rate": 1.0,
+                "expected_failure_count": 0.0,
+                "failure_probability": 0.0,
+                "expected_emergency_downtime_minutes": 0.0,
+                "maintenance_cost": 150.0,
+                "technician_utilization": 0.333333,
+                "schedule_changes": 1,
+                "decision_latency_ms": null
+              },
+              "source_agent_run_ids": [],
+              "assumptions": [
+                "Greedy deterministic scheduling uses half-open assignment intervals.",
+                "Locked, running, and completed current assignments remain reservations.",
+                "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+              ],
+              "warnings": [],
+              "validation": {
+                "schema_version": "3.0",
+                "validation_id": "validation-d20bfc86b1433733bf46ac82",
+                "candidate_plan_id": "plan-reliability_priority-bc430076785b9d96",
+                "validator_version": "operations-validator-scenario-strict:1",
+                "verdict": "VALID",
+                "validated_at": "2026-10-27T00:00:00Z",
+                "violations": [],
+                "simulation_runs": 100,
+                "warnings": []
+              }
+            },
+            {
+              "schema_version": "3.0",
+              "candidate_plan_id": "plan-balanced-216dc5c257f024dc",
+              "decision_case_id": "scenario-96479f4da0bf280f5d07959817281912",
+              "snapshot_id": "golden-slot-snapshot",
+              "plan_version": 1,
+              "strategy": "BALANCED",
+              "source_engine_id": "deterministic-decision-planner",
+              "source_engine_version": "1.0.0",
+              "generated_at": "2026-10-27T00:00:00Z",
+              "schedule": {
+                "schedule_id": "schedule-216dc5c257f024dc",
+                "factory_id": "golden-factory",
+                "revision": 1,
+                "planning_window": {
+                  "start_at": "2026-10-27T00:00:00Z",
+                  "end_at": "2026-10-27T02:00:00Z"
+                },
+                "created_at": "2026-10-27T00:00:00Z",
+                "assignments": [
+                  {
+                    "assignment_id": "assignment-3d578ddad5ad6ef8",
+                    "assignment_type": "MAINTENANCE",
+                    "status": "PROPOSED",
+                    "machine_id": "M1",
+                    "start_at": "2026-10-27T00:45:00Z",
+                    "end_at": "2026-10-27T01:15:00Z",
+                    "locked": false,
+                    "job_id": null,
+                    "operation_id": null,
+                    "maintenance_request_id": "MR1",
+                    "technician_ids": [
+                      "T1"
+                    ]
+                  }
+                ]
+              },
+              "kpis": {
+                "makespan_minutes": 75.0,
+                "total_tardiness_minutes": 0.0,
+                "maximum_tardiness_minutes": 0.0,
+                "on_time_completion_rate": 1.0,
+                "expected_failure_count": 0.0,
+                "failure_probability": 0.0,
+                "expected_emergency_downtime_minutes": 0.0,
+                "maintenance_cost": 150.0,
+                "technician_utilization": 0.333333,
+                "schedule_changes": 1,
+                "decision_latency_ms": null
+              },
+              "source_agent_run_ids": [],
+              "assumptions": [
+                "Greedy deterministic scheduling uses half-open assignment intervals.",
+                "Locked, running, and completed current assignments remain reservations.",
+                "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+              ],
+              "warnings": [],
+              "validation": {
+                "schema_version": "3.0",
+                "validation_id": "validation-c1e8e96feda3f568c847dc36",
+                "candidate_plan_id": "plan-balanced-216dc5c257f024dc",
+                "validator_version": "operations-validator-scenario-strict:1",
+                "verdict": "VALID",
+                "validated_at": "2026-10-27T00:00:00Z",
+                "violations": [],
+                "simulation_runs": 100,
+                "warnings": []
+              }
+            }
+          ],
+          "selected_candidate_id": "plan-production_priority-cc0d6d59df7e021f",
+          "ranking": {
+            "version": "objective-minmax:1",
+            "normalization_reference_id": "2aafd036b8ce40c1b9eb5a695edc151e11307fe208a1801242c4a3146b9d523c",
+            "reference_bounds": {
+              "makespan_minutes": [
+                30.0,
+                75.0
+              ],
+              "total_tardiness_minutes": [
+                0.0,
+                0.0
+              ],
+              "on_time_completion_rate": [
+                1.0,
+                1.0
+              ],
+              "expected_failure_count": [
+                0.0,
+                0.0
+              ],
+              "expected_emergency_downtime_minutes": [
+                0.0,
+                0.0
+              ],
+              "maintenance_cost": [
+                150.0,
+                150.0
+              ],
+              "technician_utilization": [
+                0.333333,
+                0.333333
+              ],
+              "schedule_changes": [
+                1.0,
+                1.0
+              ]
+            },
+            "constant_range_benefit": 1,
+            "tie_break": [
+              "rounded-score-desc:12",
+              "PRODUCTION_PRIORITY",
+              "BALANCED",
+              "RELIABILITY_PRIORITY",
+              "candidate-id-asc"
+            ],
+            "raw_weights": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 0.25
+            },
+            "normalized_weights": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "rows": [
+              {
+                "candidate_plan_id": "plan-production_priority-cc0d6d59df7e021f",
+                "strategy": "PRODUCTION_PRIORITY",
+                "score": 1.0,
+                "raw_kpis": {
+                  "makespan_minutes": 30.0,
+                  "total_tardiness_minutes": 0.0,
+                  "maximum_tardiness_minutes": 0.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 0.0,
+                  "failure_probability": 0.0,
+                  "expected_emergency_downtime_minutes": 0.0,
+                  "maintenance_cost": 150.0,
+                  "technician_utilization": 0.333333,
+                  "schedule_changes": 1,
+                  "decision_latency_ms": null
+                },
+                "metric_benefits": {
+                  "makespan_minutes": 1.0,
+                  "total_tardiness_minutes": 1.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 1.0,
+                  "expected_emergency_downtime_minutes": 1.0,
+                  "maintenance_cost": 1.0,
+                  "technician_utilization": 1.0,
+                  "schedule_changes": 1.0
+                },
+                "objective_benefits": {
+                  "production": 1.0,
+                  "reliability": 1.0,
+                  "maintenance": 1.0,
+                  "workforce": 1.0,
+                  "schedule_stability": 1.0
+                },
+                "weighted_contributions": {
+                  "production": 0.23529411764705882,
+                  "reliability": 0.23529411764705882,
+                  "maintenance": 0.23529411764705882,
+                  "workforce": 0.23529411764705882,
+                  "schedule_stability": 0.058823529411764705
+                },
+                "tied_with": [
+                  "plan-reliability_priority-bc430076785b9d96"
+                ]
+              },
+              {
+                "candidate_plan_id": "plan-reliability_priority-bc430076785b9d96",
+                "strategy": "RELIABILITY_PRIORITY",
+                "score": 1.0,
+                "raw_kpis": {
+                  "makespan_minutes": 30.0,
+                  "total_tardiness_minutes": 0.0,
+                  "maximum_tardiness_minutes": 0.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 0.0,
+                  "failure_probability": 0.0,
+                  "expected_emergency_downtime_minutes": 0.0,
+                  "maintenance_cost": 150.0,
+                  "technician_utilization": 0.333333,
+                  "schedule_changes": 1,
+                  "decision_latency_ms": null
+                },
+                "metric_benefits": {
+                  "makespan_minutes": 1.0,
+                  "total_tardiness_minutes": 1.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 1.0,
+                  "expected_emergency_downtime_minutes": 1.0,
+                  "maintenance_cost": 1.0,
+                  "technician_utilization": 1.0,
+                  "schedule_changes": 1.0
+                },
+                "objective_benefits": {
+                  "production": 1.0,
+                  "reliability": 1.0,
+                  "maintenance": 1.0,
+                  "workforce": 1.0,
+                  "schedule_stability": 1.0
+                },
+                "weighted_contributions": {
+                  "production": 0.23529411764705882,
+                  "reliability": 0.23529411764705882,
+                  "maintenance": 0.23529411764705882,
+                  "workforce": 0.23529411764705882,
+                  "schedule_stability": 0.058823529411764705
+                },
+                "tied_with": [
+                  "plan-production_priority-cc0d6d59df7e021f"
+                ]
+              },
+              {
+                "candidate_plan_id": "plan-balanced-216dc5c257f024dc",
+                "strategy": "BALANCED",
+                "score": 0.921568627451,
+                "raw_kpis": {
+                  "makespan_minutes": 75.0,
+                  "total_tardiness_minutes": 0.0,
+                  "maximum_tardiness_minutes": 0.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 0.0,
+                  "failure_probability": 0.0,
+                  "expected_emergency_downtime_minutes": 0.0,
+                  "maintenance_cost": 150.0,
+                  "technician_utilization": 0.333333,
+                  "schedule_changes": 1,
+                  "decision_latency_ms": null
+                },
+                "metric_benefits": {
+                  "makespan_minutes": 0.0,
+                  "total_tardiness_minutes": 1.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 1.0,
+                  "expected_emergency_downtime_minutes": 1.0,
+                  "maintenance_cost": 1.0,
+                  "technician_utilization": 1.0,
+                  "schedule_changes": 1.0
+                },
+                "objective_benefits": {
+                  "production": 0.6666666666666666,
+                  "reliability": 1.0,
+                  "maintenance": 1.0,
+                  "workforce": 1.0,
+                  "schedule_stability": 1.0
+                },
+                "weighted_contributions": {
+                  "production": 0.1568627450980392,
+                  "reliability": 0.23529411764705882,
+                  "maintenance": 0.23529411764705882,
+                  "workforce": 0.23529411764705882,
+                  "schedule_stability": 0.058823529411764705
+                },
+                "tied_with": []
+              }
+            ]
+          },
+          "candidate_availability": [
+            {
+              "strategy": "PRODUCTION_PRIORITY",
+              "outcome": "FEASIBLE",
+              "reason": null
+            },
+            {
+              "strategy": "BALANCED",
+              "outcome": "FEASIBLE",
+              "reason": null
+            },
+            {
+              "strategy": "RELIABILITY_PRIORITY",
+              "outcome": "FEASIBLE",
+              "reason": null
+            }
+          ],
+          "diagnostics": [],
+          "partial": false
+        },
+        "comparison": {
+          "metric_registry_version": "scenario-metrics:1",
+          "metrics": [
+            {
+              "metric": "makespan_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 60.0,
+              "scenario": 30.0,
+              "absolute_delta": -30.0,
+              "percent_delta": -50.0,
+              "reason": null,
+              "change": "IMPROVED_UNDER_MODEL"
+            },
+            {
+              "metric": "total_tardiness_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "maximum_tardiness_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "on_time_completion_rate",
+              "unit": "ratio",
+              "preferred_direction": "HIGHER",
+              "baseline": 1.0,
+              "scenario": 1.0,
+              "absolute_delta": 0.0,
+              "percent_delta": 0.0,
+              "reason": null,
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "expected_failure_count",
+              "unit": "expected_count",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "failure_probability",
+              "unit": "probability",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "expected_emergency_downtime_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "maintenance_cost",
+              "unit": "model_cost_unit",
+              "preferred_direction": "LOWER",
+              "baseline": 300.0,
+              "scenario": 150.0,
+              "absolute_delta": -150.0,
+              "percent_delta": -50.0,
+              "reason": null,
+              "change": "IMPROVED_UNDER_MODEL"
+            },
+            {
+              "metric": "technician_utilization",
+              "unit": "ratio",
+              "preferred_direction": "LOWER",
+              "baseline": 0.666667,
+              "scenario": 0.333333,
+              "absolute_delta": -0.333334,
+              "percent_delta": -50.00007499996251,
+              "reason": null,
+              "change": "IMPROVED_UNDER_MODEL"
+            },
+            {
+              "metric": "schedule_changes",
+              "unit": "count",
+              "preferred_direction": "LOWER",
+              "baseline": 1,
+              "scenario": 1,
+              "absolute_delta": 0.0,
+              "percent_delta": 0.0,
+              "reason": null,
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "decision_latency_ms",
+              "unit": "millisecond",
+              "preferred_direction": "LOWER",
+              "baseline": null,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "OPERATIONAL_TELEMETRY_NOT_MODEL_KPI",
+              "change": "UNAVAILABLE"
+            }
+          ],
+          "score_comparison": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "model_assumptions": [
+            "Uncalibrated simplified failure model; estimates are not sensor facts.",
+            "Maintenance reduces model failure probability by 70%.",
+            "Emergency downtime is capped by the candidate makespan and observation horizon.",
+            "Technician utilization is minimized by the current workforce objective; it is not a general productivity verdict.",
+            "Common random draws couple baseline, strategies and physical points; no rank-confidence probability is estimated."
+          ]
+        }
+      },
+      {
+        "value": 60.0,
+        "input_hash": "fa24de848159e76347e86ffd6833a01851ebf1b3ebd962027a364a2f90baef9d",
+        "status": "FEASIBLE",
+        "evaluation": {
+          "outcome": "FEASIBLE",
+          "candidates": [
+            {
+              "schema_version": "3.0",
+              "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+              "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+              "snapshot_id": "golden-slot-snapshot",
+              "plan_version": 1,
+              "strategy": "PRODUCTION_PRIORITY",
+              "source_engine_id": "deterministic-decision-planner",
+              "source_engine_version": "1.0.0",
+              "generated_at": "2026-10-27T00:00:00Z",
+              "schedule": {
+                "schedule_id": "schedule-95fcd5ce1d3b13d1",
+                "factory_id": "golden-factory",
+                "revision": 1,
+                "planning_window": {
+                  "start_at": "2026-10-27T00:00:00Z",
+                  "end_at": "2026-10-27T02:00:00Z"
+                },
+                "created_at": "2026-10-27T00:00:00Z",
+                "assignments": [
+                  {
+                    "assignment_id": "assignment-da6a82095ea51321",
+                    "assignment_type": "MAINTENANCE",
+                    "status": "PROPOSED",
+                    "machine_id": "M1",
+                    "start_at": "2026-10-27T00:00:00Z",
+                    "end_at": "2026-10-27T01:00:00Z",
+                    "locked": false,
+                    "job_id": null,
+                    "operation_id": null,
+                    "maintenance_request_id": "MR1",
+                    "technician_ids": [
+                      "T1"
+                    ]
+                  }
+                ]
+              },
+              "kpis": {
+                "makespan_minutes": 60.0,
+                "total_tardiness_minutes": 0.0,
+                "maximum_tardiness_minutes": 0.0,
+                "on_time_completion_rate": 1.0,
+                "expected_failure_count": 0.0,
+                "failure_probability": 0.0,
+                "expected_emergency_downtime_minutes": 0.0,
+                "maintenance_cost": 300.0,
+                "technician_utilization": 0.666667,
+                "schedule_changes": 1,
+                "decision_latency_ms": null
+              },
+              "source_agent_run_ids": [],
+              "assumptions": [
+                "Greedy deterministic scheduling uses half-open assignment intervals.",
+                "Locked, running, and completed current assignments remain reservations.",
+                "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+              ],
+              "warnings": [],
+              "validation": {
+                "schema_version": "3.0",
+                "validation_id": "validation-674559eb6931acf106a357f2",
+                "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+                "validator_version": "operations-validator-scenario-strict:1",
+                "verdict": "VALID",
+                "validated_at": "2026-10-27T00:00:00Z",
+                "violations": [],
+                "simulation_runs": 100,
+                "warnings": []
+              }
+            },
+            {
+              "schema_version": "3.0",
+              "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+              "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+              "snapshot_id": "golden-slot-snapshot",
+              "plan_version": 1,
+              "strategy": "RELIABILITY_PRIORITY",
+              "source_engine_id": "deterministic-decision-planner",
+              "source_engine_version": "1.0.0",
+              "generated_at": "2026-10-27T00:00:00Z",
+              "schedule": {
+                "schedule_id": "schedule-59ed9549cd30067c",
+                "factory_id": "golden-factory",
+                "revision": 1,
+                "planning_window": {
+                  "start_at": "2026-10-27T00:00:00Z",
+                  "end_at": "2026-10-27T02:00:00Z"
+                },
+                "created_at": "2026-10-27T00:00:00Z",
+                "assignments": [
+                  {
+                    "assignment_id": "assignment-303cbc120499dff0",
+                    "assignment_type": "MAINTENANCE",
+                    "status": "PROPOSED",
+                    "machine_id": "M1",
+                    "start_at": "2026-10-27T00:00:00Z",
+                    "end_at": "2026-10-27T01:00:00Z",
+                    "locked": false,
+                    "job_id": null,
+                    "operation_id": null,
+                    "maintenance_request_id": "MR1",
+                    "technician_ids": [
+                      "T1"
+                    ]
+                  }
+                ]
+              },
+              "kpis": {
+                "makespan_minutes": 60.0,
+                "total_tardiness_minutes": 0.0,
+                "maximum_tardiness_minutes": 0.0,
+                "on_time_completion_rate": 1.0,
+                "expected_failure_count": 0.0,
+                "failure_probability": 0.0,
+                "expected_emergency_downtime_minutes": 0.0,
+                "maintenance_cost": 300.0,
+                "technician_utilization": 0.666667,
+                "schedule_changes": 1,
+                "decision_latency_ms": null
+              },
+              "source_agent_run_ids": [],
+              "assumptions": [
+                "Greedy deterministic scheduling uses half-open assignment intervals.",
+                "Locked, running, and completed current assignments remain reservations.",
+                "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+              ],
+              "warnings": [],
+              "validation": {
+                "schema_version": "3.0",
+                "validation_id": "validation-a2b797eb23134103f29d677c",
+                "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+                "validator_version": "operations-validator-scenario-strict:1",
+                "verdict": "VALID",
+                "validated_at": "2026-10-27T00:00:00Z",
+                "violations": [],
+                "simulation_runs": 100,
+                "warnings": []
+              }
+            },
+            {
+              "schema_version": "3.0",
+              "candidate_plan_id": "plan-balanced-598a187c080998ea",
+              "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+              "snapshot_id": "golden-slot-snapshot",
+              "plan_version": 1,
+              "strategy": "BALANCED",
+              "source_engine_id": "deterministic-decision-planner",
+              "source_engine_version": "1.0.0",
+              "generated_at": "2026-10-27T00:00:00Z",
+              "schedule": {
+                "schedule_id": "schedule-598a187c080998ea",
+                "factory_id": "golden-factory",
+                "revision": 1,
+                "planning_window": {
+                  "start_at": "2026-10-27T00:00:00Z",
+                  "end_at": "2026-10-27T02:00:00Z"
+                },
+                "created_at": "2026-10-27T00:00:00Z",
+                "assignments": [
+                  {
+                    "assignment_id": "assignment-3d578ddad5ad6ef8",
+                    "assignment_type": "MAINTENANCE",
+                    "status": "PROPOSED",
+                    "machine_id": "M1",
+                    "start_at": "2026-10-27T00:30:00Z",
+                    "end_at": "2026-10-27T01:30:00Z",
+                    "locked": false,
+                    "job_id": null,
+                    "operation_id": null,
+                    "maintenance_request_id": "MR1",
+                    "technician_ids": [
+                      "T1"
+                    ]
+                  }
+                ]
+              },
+              "kpis": {
+                "makespan_minutes": 90.0,
+                "total_tardiness_minutes": 0.0,
+                "maximum_tardiness_minutes": 0.0,
+                "on_time_completion_rate": 1.0,
+                "expected_failure_count": 0.0,
+                "failure_probability": 0.0,
+                "expected_emergency_downtime_minutes": 0.0,
+                "maintenance_cost": 300.0,
+                "technician_utilization": 0.666667,
+                "schedule_changes": 1,
+                "decision_latency_ms": null
+              },
+              "source_agent_run_ids": [],
+              "assumptions": [
+                "Greedy deterministic scheduling uses half-open assignment intervals.",
+                "Locked, running, and completed current assignments remain reservations.",
+                "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+              ],
+              "warnings": [],
+              "validation": {
+                "schema_version": "3.0",
+                "validation_id": "validation-2e54309311085a41d819615e",
+                "candidate_plan_id": "plan-balanced-598a187c080998ea",
+                "validator_version": "operations-validator-scenario-strict:1",
+                "verdict": "VALID",
+                "validated_at": "2026-10-27T00:00:00Z",
+                "violations": [],
+                "simulation_runs": 100,
+                "warnings": []
+              }
+            }
+          ],
+          "selected_candidate_id": "plan-production_priority-95fcd5ce1d3b13d1",
+          "ranking": {
+            "version": "objective-minmax:1",
+            "normalization_reference_id": "abf63c86e2c85195c7f072bdb9cff438d3cb3c0dd54f889948839d3df54d12a6",
+            "reference_bounds": {
+              "makespan_minutes": [
+                60.0,
+                90.0
+              ],
+              "total_tardiness_minutes": [
+                0.0,
+                0.0
+              ],
+              "on_time_completion_rate": [
+                1.0,
+                1.0
+              ],
+              "expected_failure_count": [
+                0.0,
+                0.0
+              ],
+              "expected_emergency_downtime_minutes": [
+                0.0,
+                0.0
+              ],
+              "maintenance_cost": [
+                300.0,
+                300.0
+              ],
+              "technician_utilization": [
+                0.666667,
+                0.666667
+              ],
+              "schedule_changes": [
+                1.0,
+                1.0
+              ]
+            },
+            "constant_range_benefit": 1,
+            "tie_break": [
+              "rounded-score-desc:12",
+              "PRODUCTION_PRIORITY",
+              "BALANCED",
+              "RELIABILITY_PRIORITY",
+              "candidate-id-asc"
+            ],
+            "raw_weights": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 0.25
+            },
+            "normalized_weights": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "rows": [
+              {
+                "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+                "strategy": "PRODUCTION_PRIORITY",
+                "score": 1.0,
+                "raw_kpis": {
+                  "makespan_minutes": 60.0,
+                  "total_tardiness_minutes": 0.0,
+                  "maximum_tardiness_minutes": 0.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 0.0,
+                  "failure_probability": 0.0,
+                  "expected_emergency_downtime_minutes": 0.0,
+                  "maintenance_cost": 300.0,
+                  "technician_utilization": 0.666667,
+                  "schedule_changes": 1,
+                  "decision_latency_ms": null
+                },
+                "metric_benefits": {
+                  "makespan_minutes": 1.0,
+                  "total_tardiness_minutes": 1.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 1.0,
+                  "expected_emergency_downtime_minutes": 1.0,
+                  "maintenance_cost": 1.0,
+                  "technician_utilization": 1.0,
+                  "schedule_changes": 1.0
+                },
+                "objective_benefits": {
+                  "production": 1.0,
+                  "reliability": 1.0,
+                  "maintenance": 1.0,
+                  "workforce": 1.0,
+                  "schedule_stability": 1.0
+                },
+                "weighted_contributions": {
+                  "production": 0.23529411764705882,
+                  "reliability": 0.23529411764705882,
+                  "maintenance": 0.23529411764705882,
+                  "workforce": 0.23529411764705882,
+                  "schedule_stability": 0.058823529411764705
+                },
+                "tied_with": [
+                  "plan-reliability_priority-59ed9549cd30067c"
+                ]
+              },
+              {
+                "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+                "strategy": "RELIABILITY_PRIORITY",
+                "score": 1.0,
+                "raw_kpis": {
+                  "makespan_minutes": 60.0,
+                  "total_tardiness_minutes": 0.0,
+                  "maximum_tardiness_minutes": 0.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 0.0,
+                  "failure_probability": 0.0,
+                  "expected_emergency_downtime_minutes": 0.0,
+                  "maintenance_cost": 300.0,
+                  "technician_utilization": 0.666667,
+                  "schedule_changes": 1,
+                  "decision_latency_ms": null
+                },
+                "metric_benefits": {
+                  "makespan_minutes": 1.0,
+                  "total_tardiness_minutes": 1.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 1.0,
+                  "expected_emergency_downtime_minutes": 1.0,
+                  "maintenance_cost": 1.0,
+                  "technician_utilization": 1.0,
+                  "schedule_changes": 1.0
+                },
+                "objective_benefits": {
+                  "production": 1.0,
+                  "reliability": 1.0,
+                  "maintenance": 1.0,
+                  "workforce": 1.0,
+                  "schedule_stability": 1.0
+                },
+                "weighted_contributions": {
+                  "production": 0.23529411764705882,
+                  "reliability": 0.23529411764705882,
+                  "maintenance": 0.23529411764705882,
+                  "workforce": 0.23529411764705882,
+                  "schedule_stability": 0.058823529411764705
+                },
+                "tied_with": [
+                  "plan-production_priority-95fcd5ce1d3b13d1"
+                ]
+              },
+              {
+                "candidate_plan_id": "plan-balanced-598a187c080998ea",
+                "strategy": "BALANCED",
+                "score": 0.921568627451,
+                "raw_kpis": {
+                  "makespan_minutes": 90.0,
+                  "total_tardiness_minutes": 0.0,
+                  "maximum_tardiness_minutes": 0.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 0.0,
+                  "failure_probability": 0.0,
+                  "expected_emergency_downtime_minutes": 0.0,
+                  "maintenance_cost": 300.0,
+                  "technician_utilization": 0.666667,
+                  "schedule_changes": 1,
+                  "decision_latency_ms": null
+                },
+                "metric_benefits": {
+                  "makespan_minutes": 0.0,
+                  "total_tardiness_minutes": 1.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 1.0,
+                  "expected_emergency_downtime_minutes": 1.0,
+                  "maintenance_cost": 1.0,
+                  "technician_utilization": 1.0,
+                  "schedule_changes": 1.0
+                },
+                "objective_benefits": {
+                  "production": 0.6666666666666666,
+                  "reliability": 1.0,
+                  "maintenance": 1.0,
+                  "workforce": 1.0,
+                  "schedule_stability": 1.0
+                },
+                "weighted_contributions": {
+                  "production": 0.1568627450980392,
+                  "reliability": 0.23529411764705882,
+                  "maintenance": 0.23529411764705882,
+                  "workforce": 0.23529411764705882,
+                  "schedule_stability": 0.058823529411764705
+                },
+                "tied_with": []
+              }
+            ]
+          },
+          "candidate_availability": [
+            {
+              "strategy": "PRODUCTION_PRIORITY",
+              "outcome": "FEASIBLE",
+              "reason": null
+            },
+            {
+              "strategy": "BALANCED",
+              "outcome": "FEASIBLE",
+              "reason": null
+            },
+            {
+              "strategy": "RELIABILITY_PRIORITY",
+              "outcome": "FEASIBLE",
+              "reason": null
+            }
+          ],
+          "diagnostics": [],
+          "partial": false
+        },
+        "comparison": {
+          "metric_registry_version": "scenario-metrics:1",
+          "metrics": [
+            {
+              "metric": "makespan_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 60.0,
+              "scenario": 60.0,
+              "absolute_delta": 0.0,
+              "percent_delta": 0.0,
+              "reason": null,
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "total_tardiness_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "maximum_tardiness_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "on_time_completion_rate",
+              "unit": "ratio",
+              "preferred_direction": "HIGHER",
+              "baseline": 1.0,
+              "scenario": 1.0,
+              "absolute_delta": 0.0,
+              "percent_delta": 0.0,
+              "reason": null,
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "expected_failure_count",
+              "unit": "expected_count",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "failure_probability",
+              "unit": "probability",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "expected_emergency_downtime_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "maintenance_cost",
+              "unit": "model_cost_unit",
+              "preferred_direction": "LOWER",
+              "baseline": 300.0,
+              "scenario": 300.0,
+              "absolute_delta": 0.0,
+              "percent_delta": 0.0,
+              "reason": null,
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "technician_utilization",
+              "unit": "ratio",
+              "preferred_direction": "LOWER",
+              "baseline": 0.666667,
+              "scenario": 0.666667,
+              "absolute_delta": 0.0,
+              "percent_delta": 0.0,
+              "reason": null,
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "schedule_changes",
+              "unit": "count",
+              "preferred_direction": "LOWER",
+              "baseline": 1,
+              "scenario": 1,
+              "absolute_delta": 0.0,
+              "percent_delta": 0.0,
+              "reason": null,
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "decision_latency_ms",
+              "unit": "millisecond",
+              "preferred_direction": "LOWER",
+              "baseline": null,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "OPERATIONAL_TELEMETRY_NOT_MODEL_KPI",
+              "change": "UNAVAILABLE"
+            }
+          ],
+          "score_comparison": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "model_assumptions": [
+            "Uncalibrated simplified failure model; estimates are not sensor facts.",
+            "Maintenance reduces model failure probability by 70%.",
+            "Emergency downtime is capped by the candidate makespan and observation horizon.",
+            "Technician utilization is minimized by the current workforce objective; it is not a general productivity verdict.",
+            "Common random draws couple baseline, strategies and physical points; no rank-confidence probability is estimated."
+          ]
+        }
+      },
+      {
+        "value": 90.0,
+        "input_hash": "d310290b498e14176ccfed13229d2ff3d8ebfdb5fb12ca0e1c9bdbbb7d3229d6",
+        "status": "FEASIBLE",
+        "evaluation": {
+          "outcome": "FEASIBLE",
+          "candidates": [
+            {
+              "schema_version": "3.0",
+              "candidate_plan_id": "plan-production_priority-b1f20b14f28d586f",
+              "decision_case_id": "scenario-116db604cd06b8142d107c777af4cc0a",
+              "snapshot_id": "golden-slot-snapshot",
+              "plan_version": 1,
+              "strategy": "PRODUCTION_PRIORITY",
+              "source_engine_id": "deterministic-decision-planner",
+              "source_engine_version": "1.0.0",
+              "generated_at": "2026-10-27T00:00:00Z",
+              "schedule": {
+                "schedule_id": "schedule-b1f20b14f28d586f",
+                "factory_id": "golden-factory",
+                "revision": 1,
+                "planning_window": {
+                  "start_at": "2026-10-27T00:00:00Z",
+                  "end_at": "2026-10-27T02:00:00Z"
+                },
+                "created_at": "2026-10-27T00:00:00Z",
+                "assignments": [
+                  {
+                    "assignment_id": "assignment-da6a82095ea51321",
+                    "assignment_type": "MAINTENANCE",
+                    "status": "PROPOSED",
+                    "machine_id": "M1",
+                    "start_at": "2026-10-27T00:00:00Z",
+                    "end_at": "2026-10-27T01:30:00Z",
+                    "locked": false,
+                    "job_id": null,
+                    "operation_id": null,
+                    "maintenance_request_id": "MR1",
+                    "technician_ids": [
+                      "T1"
+                    ]
+                  }
+                ]
+              },
+              "kpis": {
+                "makespan_minutes": 90.0,
+                "total_tardiness_minutes": 0.0,
+                "maximum_tardiness_minutes": 0.0,
+                "on_time_completion_rate": 1.0,
+                "expected_failure_count": 0.0,
+                "failure_probability": 0.0,
+                "expected_emergency_downtime_minutes": 0.0,
+                "maintenance_cost": 450.0,
+                "technician_utilization": 1.0,
+                "schedule_changes": 1,
+                "decision_latency_ms": null
+              },
+              "source_agent_run_ids": [],
+              "assumptions": [
+                "Greedy deterministic scheduling uses half-open assignment intervals.",
+                "Locked, running, and completed current assignments remain reservations.",
+                "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+              ],
+              "warnings": [],
+              "validation": {
+                "schema_version": "3.0",
+                "validation_id": "validation-991b736924d1b85043361345",
+                "candidate_plan_id": "plan-production_priority-b1f20b14f28d586f",
+                "validator_version": "operations-validator-scenario-strict:1",
+                "verdict": "VALID",
+                "validated_at": "2026-10-27T00:00:00Z",
+                "violations": [],
+                "simulation_runs": 100,
+                "warnings": []
+              }
+            },
+            {
+              "schema_version": "3.0",
+              "candidate_plan_id": "plan-reliability_priority-41fe1ae192620434",
+              "decision_case_id": "scenario-116db604cd06b8142d107c777af4cc0a",
+              "snapshot_id": "golden-slot-snapshot",
+              "plan_version": 1,
+              "strategy": "RELIABILITY_PRIORITY",
+              "source_engine_id": "deterministic-decision-planner",
+              "source_engine_version": "1.0.0",
+              "generated_at": "2026-10-27T00:00:00Z",
+              "schedule": {
+                "schedule_id": "schedule-41fe1ae192620434",
+                "factory_id": "golden-factory",
+                "revision": 1,
+                "planning_window": {
+                  "start_at": "2026-10-27T00:00:00Z",
+                  "end_at": "2026-10-27T02:00:00Z"
+                },
+                "created_at": "2026-10-27T00:00:00Z",
+                "assignments": [
+                  {
+                    "assignment_id": "assignment-303cbc120499dff0",
+                    "assignment_type": "MAINTENANCE",
+                    "status": "PROPOSED",
+                    "machine_id": "M1",
+                    "start_at": "2026-10-27T00:00:00Z",
+                    "end_at": "2026-10-27T01:30:00Z",
+                    "locked": false,
+                    "job_id": null,
+                    "operation_id": null,
+                    "maintenance_request_id": "MR1",
+                    "technician_ids": [
+                      "T1"
+                    ]
+                  }
+                ]
+              },
+              "kpis": {
+                "makespan_minutes": 90.0,
+                "total_tardiness_minutes": 0.0,
+                "maximum_tardiness_minutes": 0.0,
+                "on_time_completion_rate": 1.0,
+                "expected_failure_count": 0.0,
+                "failure_probability": 0.0,
+                "expected_emergency_downtime_minutes": 0.0,
+                "maintenance_cost": 450.0,
+                "technician_utilization": 1.0,
+                "schedule_changes": 1,
+                "decision_latency_ms": null
+              },
+              "source_agent_run_ids": [],
+              "assumptions": [
+                "Greedy deterministic scheduling uses half-open assignment intervals.",
+                "Locked, running, and completed current assignments remain reservations.",
+                "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+              ],
+              "warnings": [],
+              "validation": {
+                "schema_version": "3.0",
+                "validation_id": "validation-0644ed966209c0c0ce9c9df3",
+                "candidate_plan_id": "plan-reliability_priority-41fe1ae192620434",
+                "validator_version": "operations-validator-scenario-strict:1",
+                "verdict": "VALID",
+                "validated_at": "2026-10-27T00:00:00Z",
+                "violations": [],
+                "simulation_runs": 100,
+                "warnings": []
+              }
+            }
+          ],
+          "selected_candidate_id": "plan-production_priority-b1f20b14f28d586f",
+          "ranking": {
+            "version": "objective-minmax:1",
+            "normalization_reference_id": "ca06e91b8253da02e93d9dbbd084cac7b71777d79ff186add6cfce4bd57fe73b",
+            "reference_bounds": {
+              "makespan_minutes": [
+                90.0,
+                90.0
+              ],
+              "total_tardiness_minutes": [
+                0.0,
+                0.0
+              ],
+              "on_time_completion_rate": [
+                1.0,
+                1.0
+              ],
+              "expected_failure_count": [
+                0.0,
+                0.0
+              ],
+              "expected_emergency_downtime_minutes": [
+                0.0,
+                0.0
+              ],
+              "maintenance_cost": [
+                450.0,
+                450.0
+              ],
+              "technician_utilization": [
+                1.0,
+                1.0
+              ],
+              "schedule_changes": [
+                1.0,
+                1.0
+              ]
+            },
+            "constant_range_benefit": 1,
+            "tie_break": [
+              "rounded-score-desc:12",
+              "PRODUCTION_PRIORITY",
+              "BALANCED",
+              "RELIABILITY_PRIORITY",
+              "candidate-id-asc"
+            ],
+            "raw_weights": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 0.25
+            },
+            "normalized_weights": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "rows": [
+              {
+                "candidate_plan_id": "plan-production_priority-b1f20b14f28d586f",
+                "strategy": "PRODUCTION_PRIORITY",
+                "score": 1.0,
+                "raw_kpis": {
+                  "makespan_minutes": 90.0,
+                  "total_tardiness_minutes": 0.0,
+                  "maximum_tardiness_minutes": 0.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 0.0,
+                  "failure_probability": 0.0,
+                  "expected_emergency_downtime_minutes": 0.0,
+                  "maintenance_cost": 450.0,
+                  "technician_utilization": 1.0,
+                  "schedule_changes": 1,
+                  "decision_latency_ms": null
+                },
+                "metric_benefits": {
+                  "makespan_minutes": 1.0,
+                  "total_tardiness_minutes": 1.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 1.0,
+                  "expected_emergency_downtime_minutes": 1.0,
+                  "maintenance_cost": 1.0,
+                  "technician_utilization": 1.0,
+                  "schedule_changes": 1.0
+                },
+                "objective_benefits": {
+                  "production": 1.0,
+                  "reliability": 1.0,
+                  "maintenance": 1.0,
+                  "workforce": 1.0,
+                  "schedule_stability": 1.0
+                },
+                "weighted_contributions": {
+                  "production": 0.23529411764705882,
+                  "reliability": 0.23529411764705882,
+                  "maintenance": 0.23529411764705882,
+                  "workforce": 0.23529411764705882,
+                  "schedule_stability": 0.058823529411764705
+                },
+                "tied_with": [
+                  "plan-reliability_priority-41fe1ae192620434"
+                ]
+              },
+              {
+                "candidate_plan_id": "plan-reliability_priority-41fe1ae192620434",
+                "strategy": "RELIABILITY_PRIORITY",
+                "score": 1.0,
+                "raw_kpis": {
+                  "makespan_minutes": 90.0,
+                  "total_tardiness_minutes": 0.0,
+                  "maximum_tardiness_minutes": 0.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 0.0,
+                  "failure_probability": 0.0,
+                  "expected_emergency_downtime_minutes": 0.0,
+                  "maintenance_cost": 450.0,
+                  "technician_utilization": 1.0,
+                  "schedule_changes": 1,
+                  "decision_latency_ms": null
+                },
+                "metric_benefits": {
+                  "makespan_minutes": 1.0,
+                  "total_tardiness_minutes": 1.0,
+                  "on_time_completion_rate": 1.0,
+                  "expected_failure_count": 1.0,
+                  "expected_emergency_downtime_minutes": 1.0,
+                  "maintenance_cost": 1.0,
+                  "technician_utilization": 1.0,
+                  "schedule_changes": 1.0
+                },
+                "objective_benefits": {
+                  "production": 1.0,
+                  "reliability": 1.0,
+                  "maintenance": 1.0,
+                  "workforce": 1.0,
+                  "schedule_stability": 1.0
+                },
+                "weighted_contributions": {
+                  "production": 0.23529411764705882,
+                  "reliability": 0.23529411764705882,
+                  "maintenance": 0.23529411764705882,
+                  "workforce": 0.23529411764705882,
+                  "schedule_stability": 0.058823529411764705
+                },
+                "tied_with": [
+                  "plan-production_priority-b1f20b14f28d586f"
+                ]
+              }
+            ]
+          },
+          "candidate_availability": [
+            {
+              "strategy": "PRODUCTION_PRIORITY",
+              "outcome": "FEASIBLE",
+              "reason": null
+            },
+            {
+              "strategy": "BALANCED",
+              "outcome": "NO_FEASIBLE_PLAN",
+              "reason": "no qualified technician or machine slot for maintenance MR1"
+            },
+            {
+              "strategy": "RELIABILITY_PRIORITY",
+              "outcome": "FEASIBLE",
+              "reason": null
+            }
+          ],
+          "diagnostics": [],
+          "partial": false
+        },
+        "comparison": {
+          "metric_registry_version": "scenario-metrics:1",
+          "metrics": [
+            {
+              "metric": "makespan_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 60.0,
+              "scenario": 90.0,
+              "absolute_delta": 30.0,
+              "percent_delta": 50.0,
+              "reason": null,
+              "change": "WORSENED_UNDER_MODEL"
+            },
+            {
+              "metric": "total_tardiness_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "maximum_tardiness_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "on_time_completion_rate",
+              "unit": "ratio",
+              "preferred_direction": "HIGHER",
+              "baseline": 1.0,
+              "scenario": 1.0,
+              "absolute_delta": 0.0,
+              "percent_delta": 0.0,
+              "reason": null,
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "expected_failure_count",
+              "unit": "expected_count",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "failure_probability",
+              "unit": "probability",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "expected_emergency_downtime_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": 0.0,
+              "absolute_delta": 0.0,
+              "percent_delta": null,
+              "reason": "ZERO_BASELINE",
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "maintenance_cost",
+              "unit": "model_cost_unit",
+              "preferred_direction": "LOWER",
+              "baseline": 300.0,
+              "scenario": 450.0,
+              "absolute_delta": 150.0,
+              "percent_delta": 50.0,
+              "reason": null,
+              "change": "WORSENED_UNDER_MODEL"
+            },
+            {
+              "metric": "technician_utilization",
+              "unit": "ratio",
+              "preferred_direction": "LOWER",
+              "baseline": 0.666667,
+              "scenario": 1.0,
+              "absolute_delta": 0.333333,
+              "percent_delta": 49.9999250000375,
+              "reason": null,
+              "change": "WORSENED_UNDER_MODEL"
+            },
+            {
+              "metric": "schedule_changes",
+              "unit": "count",
+              "preferred_direction": "LOWER",
+              "baseline": 1,
+              "scenario": 1,
+              "absolute_delta": 0.0,
+              "percent_delta": 0.0,
+              "reason": null,
+              "change": "UNCHANGED"
+            },
+            {
+              "metric": "decision_latency_ms",
+              "unit": "millisecond",
+              "preferred_direction": "LOWER",
+              "baseline": null,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "OPERATIONAL_TELEMETRY_NOT_MODEL_KPI",
+              "change": "UNAVAILABLE"
+            }
+          ],
+          "score_comparison": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "model_assumptions": [
+            "Uncalibrated simplified failure model; estimates are not sensor facts.",
+            "Maintenance reduces model failure probability by 70%.",
+            "Emergency downtime is capped by the candidate makespan and observation horizon.",
+            "Technician utilization is minimized by the current workforce objective; it is not a general productivity verdict.",
+            "Common random draws couple baseline, strategies and physical points; no rank-confidence probability is estimated."
+          ]
+        }
+      },
+      {
+        "value": 91.0,
+        "input_hash": "1914501f9b03c5e3cec6f98372cfa5bb28cdf37be151d184ad1afa3e4e34bc2d",
+        "status": "NO_FEASIBLE_PLAN",
+        "evaluation": {
+          "outcome": "NO_FEASIBLE_PLAN",
+          "candidates": [],
+          "selected_candidate_id": null,
+          "ranking": null,
+          "candidate_availability": [
+            {
+              "strategy": "PRODUCTION_PRIORITY",
+              "outcome": "NO_FEASIBLE_PLAN",
+              "reason": "no qualified technician or machine slot for maintenance MR1"
+            },
+            {
+              "strategy": "BALANCED",
+              "outcome": "NO_FEASIBLE_PLAN",
+              "reason": "no qualified technician or machine slot for maintenance MR1"
+            },
+            {
+              "strategy": "RELIABILITY_PRIORITY",
+              "outcome": "NO_FEASIBLE_PLAN",
+              "reason": "no qualified technician or machine slot for maintenance MR1"
+            }
+          ],
+          "diagnostics": [
+            {
+              "code": "NO_FEASIBLE_PLAN",
+              "message": "no qualified technician or machine slot for maintenance MR1",
+              "target_ids": [],
+              "field": null
+            }
+          ],
+          "partial": false
+        },
+        "comparison": {
+          "metric_registry_version": "scenario-metrics:1",
+          "metrics": [
+            {
+              "metric": "makespan_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 60.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "total_tardiness_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "maximum_tardiness_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "on_time_completion_rate",
+              "unit": "ratio",
+              "preferred_direction": "HIGHER",
+              "baseline": 1.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "expected_failure_count",
+              "unit": "expected_count",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "failure_probability",
+              "unit": "probability",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "expected_emergency_downtime_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "maintenance_cost",
+              "unit": "model_cost_unit",
+              "preferred_direction": "LOWER",
+              "baseline": 300.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "technician_utilization",
+              "unit": "ratio",
+              "preferred_direction": "LOWER",
+              "baseline": 0.666667,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "schedule_changes",
+              "unit": "count",
+              "preferred_direction": "LOWER",
+              "baseline": 1,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "decision_latency_ms",
+              "unit": "millisecond",
+              "preferred_direction": "LOWER",
+              "baseline": null,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "OPERATIONAL_TELEMETRY_NOT_MODEL_KPI",
+              "change": "UNAVAILABLE"
+            }
+          ],
+          "score_comparison": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "model_assumptions": [
+            "Uncalibrated simplified failure model; estimates are not sensor facts.",
+            "Maintenance reduces model failure probability by 70%.",
+            "Emergency downtime is capped by the candidate makespan and observation horizon.",
+            "Technician utilization is minimized by the current workforce objective; it is not a general productivity verdict.",
+            "Common random draws couple baseline, strategies and physical points; no rank-confidence probability is estimated."
+          ]
+        }
+      },
+      {
+        "value": 120.0,
+        "input_hash": "4a7edc92a6038189f0d116426feefd75ebbdc3bbbb6a4f25d1004518f89974e9",
+        "status": "NO_FEASIBLE_PLAN",
+        "evaluation": {
+          "outcome": "NO_FEASIBLE_PLAN",
+          "candidates": [],
+          "selected_candidate_id": null,
+          "ranking": null,
+          "candidate_availability": [
+            {
+              "strategy": "PRODUCTION_PRIORITY",
+              "outcome": "NO_FEASIBLE_PLAN",
+              "reason": "no qualified technician or machine slot for maintenance MR1"
+            },
+            {
+              "strategy": "BALANCED",
+              "outcome": "NO_FEASIBLE_PLAN",
+              "reason": "no qualified technician or machine slot for maintenance MR1"
+            },
+            {
+              "strategy": "RELIABILITY_PRIORITY",
+              "outcome": "NO_FEASIBLE_PLAN",
+              "reason": "no qualified technician or machine slot for maintenance MR1"
+            }
+          ],
+          "diagnostics": [
+            {
+              "code": "NO_FEASIBLE_PLAN",
+              "message": "no qualified technician or machine slot for maintenance MR1",
+              "target_ids": [],
+              "field": null
+            }
+          ],
+          "partial": false
+        },
+        "comparison": {
+          "metric_registry_version": "scenario-metrics:1",
+          "metrics": [
+            {
+              "metric": "makespan_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 60.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "total_tardiness_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "maximum_tardiness_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "on_time_completion_rate",
+              "unit": "ratio",
+              "preferred_direction": "HIGHER",
+              "baseline": 1.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "expected_failure_count",
+              "unit": "expected_count",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "failure_probability",
+              "unit": "probability",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "expected_emergency_downtime_minutes",
+              "unit": "minute",
+              "preferred_direction": "LOWER",
+              "baseline": 0.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "maintenance_cost",
+              "unit": "model_cost_unit",
+              "preferred_direction": "LOWER",
+              "baseline": 300.0,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "technician_utilization",
+              "unit": "ratio",
+              "preferred_direction": "LOWER",
+              "baseline": 0.666667,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "schedule_changes",
+              "unit": "count",
+              "preferred_direction": "LOWER",
+              "baseline": 1,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "SCENARIO_METRIC_MISSING",
+              "change": "UNAVAILABLE"
+            },
+            {
+              "metric": "decision_latency_ms",
+              "unit": "millisecond",
+              "preferred_direction": "LOWER",
+              "baseline": null,
+              "scenario": null,
+              "absolute_delta": null,
+              "percent_delta": null,
+              "reason": "OPERATIONAL_TELEMETRY_NOT_MODEL_KPI",
+              "change": "UNAVAILABLE"
+            }
+          ],
+          "score_comparison": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "model_assumptions": [
+            "Uncalibrated simplified failure model; estimates are not sensor facts.",
+            "Maintenance reduces model failure probability by 70%.",
+            "Emergency downtime is capped by the candidate makespan and observation horizon.",
+            "Technician utilization is minimized by the current workforce objective; it is not a general productivity verdict.",
+            "Common random draws couple baseline, strategies and physical points; no rank-confidence probability is estimated."
+          ]
+        }
+      }
+    ],
+    "rank_change_intervals": [],
+    "fixed_inputs": [
+      "pinned_baseline",
+      "sampling",
+      "engine_versions",
+      "non_swept_overrides",
+      "non_swept_weights"
+    ],
+    "sampling": {
+      "version": "scenario-crn:1",
+      "base_seed": 7,
+      "sample_count": 100,
+      "coupling": "COMMON_RANDOM_NUMBERS",
+      "algorithm": "sha256-first53-uniform:1",
+      "observation_set_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "coupling_key": "34368248fdc09fa53244a24039a95e42e70aa11ad36f443d92f75083f2983a42"
+    }
+  },
+  "liveEvaluation": {
+    "contract_version": "scenario-engine:1.0",
+    "engine_version": "scenario-evaluator:1.0.0",
+    "identity": {
+      "factory_id": "golden-factory",
+      "workspace_id": "20000000-0000-4000-8000-000000000001",
+      "run_id": "40000000-0000-4000-8000-000000000001",
+      "frozen_input_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "semantic_input_hash": "bfa49447978c19f825932785fa0b0ce81230083da07be4fd225f26339aff7896",
+    "sampling": {
+      "version": "scenario-crn:1",
+      "base_seed": 7,
+      "sample_count": 100,
+      "coupling": "COMMON_RANDOM_NUMBERS",
+      "algorithm": "sha256-first53-uniform:1",
+      "observation_set_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "coupling_key": "34368248fdc09fa53244a24039a95e42e70aa11ad36f443d92f75083f2983a42"
+    },
+    "effective": {
+      "transform_version": "scenario-transform:1",
+      "hash_version": "scenario-jcs-sha256:1",
+      "source_hash": "305b11275b52b5329eec4bd224f6575ca3917d94156f2fc66a5529b2d8022804",
+      "overrides": [
+        {
+          "type": "DEFER_MAINTENANCE",
+          "maintenance_request_id": "MR1",
+          "earliest_start_at": "2026-10-27T00:10:00Z"
+        }
+      ],
+      "snapshot": {
+        "schema_version": "3.0",
+        "snapshot_id": "golden-slot-snapshot",
+        "factory_id": "golden-factory",
+        "captured_at": "2026-10-27T00:00:00Z",
+        "planning_window": {
+          "start_at": "2026-10-27T00:00:00Z",
+          "end_at": "2026-10-27T02:00:00Z"
+        },
+        "machines": [
+          {
+            "machine_id": "M1",
+            "display_name": "Golden lathe",
+            "machine_family": "lathe",
+            "status": "IDLE",
+            "capabilities": [
+              {
+                "operation_type": "turning",
+                "nominal_processing_minutes": 30,
+                "load_factor": 1.0,
+                "damage_factor": 1.0
+              }
+            ]
+          }
+        ],
+        "jobs": [],
+        "technicians": [
+          {
+            "technician_id": "T1",
+            "display_name": "Golden technician",
+            "status": "AVAILABLE",
+            "availability": [
+              {
+                "start_at": "2026-10-27T00:00:00Z",
+                "end_at": "2026-10-27T01:30:00Z"
+              }
+            ],
+            "skills": [
+              {
+                "skill_id": "mechanical",
+                "level": 4,
+                "certified_machine_families": [
+                  "lathe"
+                ],
+                "certified_action_types": [
+                  "inspection"
+                ]
+              }
+            ]
+          }
+        ],
+        "health_snapshots": [],
+        "maintenance_requests": [
+          {
+            "maintenance_request_id": "MR1",
+            "machine_id": "M1",
+            "maintenance_type": "PREVENTIVE",
+            "action_type": "inspection",
+            "priority": "HIGH",
+            "status": "OPEN",
+            "requested_at": "2026-10-27T00:00:00Z",
+            "earliest_start_at": "2026-10-27T00:10:00Z",
+            "latest_start_at": null,
+            "expected_duration_minutes": 60,
+            "required_skill_ids": [
+              "mechanical"
+            ],
+            "minimum_skill_level": 4,
+            "mandatory": true
+          }
+        ],
+        "current_schedule": null
+      },
+      "effective_hash": "d18ca83c12a1dbf90bf61b7e562901744750d9955e316754ec2773d8801c88e1",
+      "diff": [
+        {
+          "target_type": "MAINTENANCE_REQUEST",
+          "target_id": "MR1",
+          "field": "earliest_start_at",
+          "before": "2026-10-27T00:00:00.000Z",
+          "after": "2026-10-27T00:10:00.000Z"
+        }
+      ],
+      "diagnostics": []
+    },
+    "baseline": {
+      "outcome": "FEASIBLE",
+      "candidates": [
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "PRODUCTION_PRIORITY",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-95fcd5ce1d3b13d1",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-da6a82095ea51321",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:00:00Z",
+                "end_at": "2026-10-27T01:00:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 60.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-674559eb6931acf106a357f2",
+            "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        },
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "RELIABILITY_PRIORITY",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-59ed9549cd30067c",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-303cbc120499dff0",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:00:00Z",
+                "end_at": "2026-10-27T01:00:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 60.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-a2b797eb23134103f29d677c",
+            "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        },
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-balanced-598a187c080998ea",
+          "decision_case_id": "scenario-143d58aa094f9742a095f15f185a6f84",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "BALANCED",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-598a187c080998ea",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-3d578ddad5ad6ef8",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:30:00Z",
+                "end_at": "2026-10-27T01:30:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 90.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-2e54309311085a41d819615e",
+            "candidate_plan_id": "plan-balanced-598a187c080998ea",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        }
+      ],
+      "selected_candidate_id": "plan-production_priority-95fcd5ce1d3b13d1",
+      "ranking": {
+        "version": "objective-minmax:1",
+        "normalization_reference_id": "abf63c86e2c85195c7f072bdb9cff438d3cb3c0dd54f889948839d3df54d12a6",
+        "reference_bounds": {
+          "makespan_minutes": [
+            60.0,
+            90.0
+          ],
+          "total_tardiness_minutes": [
+            0.0,
+            0.0
+          ],
+          "on_time_completion_rate": [
+            1.0,
+            1.0
+          ],
+          "expected_failure_count": [
+            0.0,
+            0.0
+          ],
+          "expected_emergency_downtime_minutes": [
+            0.0,
+            0.0
+          ],
+          "maintenance_cost": [
+            300.0,
+            300.0
+          ],
+          "technician_utilization": [
+            0.666667,
+            0.666667
+          ],
+          "schedule_changes": [
+            1.0,
+            1.0
+          ]
+        },
+        "constant_range_benefit": 1,
+        "tie_break": [
+          "rounded-score-desc:12",
+          "PRODUCTION_PRIORITY",
+          "BALANCED",
+          "RELIABILITY_PRIORITY",
+          "candidate-id-asc"
+        ],
+        "raw_weights": {
+          "production": 1.0,
+          "reliability": 1.0,
+          "maintenance": 1.0,
+          "workforce": 1.0,
+          "schedule_stability": 0.25
+        },
+        "normalized_weights": {
+          "production": 0.23529411764705882,
+          "reliability": 0.23529411764705882,
+          "maintenance": 0.23529411764705882,
+          "workforce": 0.23529411764705882,
+          "schedule_stability": 0.058823529411764705
+        },
+        "rows": [
+          {
+            "candidate_plan_id": "plan-production_priority-95fcd5ce1d3b13d1",
+            "strategy": "PRODUCTION_PRIORITY",
+            "score": 1.0,
+            "raw_kpis": {
+              "makespan_minutes": 60.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 1.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": [
+              "plan-reliability_priority-59ed9549cd30067c"
+            ]
+          },
+          {
+            "candidate_plan_id": "plan-reliability_priority-59ed9549cd30067c",
+            "strategy": "RELIABILITY_PRIORITY",
+            "score": 1.0,
+            "raw_kpis": {
+              "makespan_minutes": 60.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 1.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": [
+              "plan-production_priority-95fcd5ce1d3b13d1"
+            ]
+          },
+          {
+            "candidate_plan_id": "plan-balanced-598a187c080998ea",
+            "strategy": "BALANCED",
+            "score": 0.921568627451,
+            "raw_kpis": {
+              "makespan_minutes": 90.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 0.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 0.6666666666666666,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.1568627450980392,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": []
+          }
+        ]
+      },
+      "candidate_availability": [
+        {
+          "strategy": "PRODUCTION_PRIORITY",
+          "outcome": "FEASIBLE",
+          "reason": null
+        },
+        {
+          "strategy": "BALANCED",
+          "outcome": "FEASIBLE",
+          "reason": null
+        },
+        {
+          "strategy": "RELIABILITY_PRIORITY",
+          "outcome": "FEASIBLE",
+          "reason": null
+        }
+      ],
+      "diagnostics": [],
+      "partial": false
+    },
+    "scenario": {
+      "outcome": "FEASIBLE",
+      "candidates": [
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-production_priority-ae1dec8408174e17",
+          "decision_case_id": "scenario-98194c14d4a992564c422048516c4c19",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "PRODUCTION_PRIORITY",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-ae1dec8408174e17",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-da6a82095ea51321",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:10:00Z",
+                "end_at": "2026-10-27T01:10:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 70.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-6067da04b3abc463dc37470d",
+            "candidate_plan_id": "plan-production_priority-ae1dec8408174e17",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        },
+        {
+          "schema_version": "3.0",
+          "candidate_plan_id": "plan-reliability_priority-ba38d9841a32a49b",
+          "decision_case_id": "scenario-98194c14d4a992564c422048516c4c19",
+          "snapshot_id": "golden-slot-snapshot",
+          "plan_version": 1,
+          "strategy": "RELIABILITY_PRIORITY",
+          "source_engine_id": "deterministic-decision-planner",
+          "source_engine_version": "1.0.0",
+          "generated_at": "2026-10-27T00:00:00Z",
+          "schedule": {
+            "schedule_id": "schedule-ba38d9841a32a49b",
+            "factory_id": "golden-factory",
+            "revision": 1,
+            "planning_window": {
+              "start_at": "2026-10-27T00:00:00Z",
+              "end_at": "2026-10-27T02:00:00Z"
+            },
+            "created_at": "2026-10-27T00:00:00Z",
+            "assignments": [
+              {
+                "assignment_id": "assignment-303cbc120499dff0",
+                "assignment_type": "MAINTENANCE",
+                "status": "PROPOSED",
+                "machine_id": "M1",
+                "start_at": "2026-10-27T00:10:00Z",
+                "end_at": "2026-10-27T01:10:00Z",
+                "locked": false,
+                "job_id": null,
+                "operation_id": null,
+                "maintenance_request_id": "MR1",
+                "technician_ids": [
+                  "T1"
+                ]
+              }
+            ]
+          },
+          "kpis": {
+            "makespan_minutes": 70.0,
+            "total_tardiness_minutes": 0.0,
+            "maximum_tardiness_minutes": 0.0,
+            "on_time_completion_rate": 1.0,
+            "expected_failure_count": 0.0,
+            "failure_probability": 0.0,
+            "expected_emergency_downtime_minutes": 0.0,
+            "maintenance_cost": 300.0,
+            "technician_utilization": 0.666667,
+            "schedule_changes": 1,
+            "decision_latency_ms": null
+          },
+          "source_agent_run_ids": [],
+          "assumptions": [
+            "Greedy deterministic scheduling uses half-open assignment intervals.",
+            "Locked, running, and completed current assignments remain reservations.",
+            "Failure simulation uses snapshot health probability and a 70% maintenance risk reduction."
+          ],
+          "warnings": [],
+          "validation": {
+            "schema_version": "3.0",
+            "validation_id": "validation-9e01055aab62b14248ee81b7",
+            "candidate_plan_id": "plan-reliability_priority-ba38d9841a32a49b",
+            "validator_version": "operations-validator-scenario-strict:1",
+            "verdict": "VALID",
+            "validated_at": "2026-10-27T00:00:00Z",
+            "violations": [],
+            "simulation_runs": 100,
+            "warnings": []
+          }
+        }
+      ],
+      "selected_candidate_id": "plan-production_priority-ae1dec8408174e17",
+      "ranking": {
+        "version": "objective-minmax:1",
+        "normalization_reference_id": "58770df557cc6fb0d9649d812c11f8a02d9e3c1ba3c31b9ce12c79c3d20d8168",
+        "reference_bounds": {
+          "makespan_minutes": [
+            70.0,
+            70.0
+          ],
+          "total_tardiness_minutes": [
+            0.0,
+            0.0
+          ],
+          "on_time_completion_rate": [
+            1.0,
+            1.0
+          ],
+          "expected_failure_count": [
+            0.0,
+            0.0
+          ],
+          "expected_emergency_downtime_minutes": [
+            0.0,
+            0.0
+          ],
+          "maintenance_cost": [
+            300.0,
+            300.0
+          ],
+          "technician_utilization": [
+            0.666667,
+            0.666667
+          ],
+          "schedule_changes": [
+            1.0,
+            1.0
+          ]
+        },
+        "constant_range_benefit": 1,
+        "tie_break": [
+          "rounded-score-desc:12",
+          "PRODUCTION_PRIORITY",
+          "BALANCED",
+          "RELIABILITY_PRIORITY",
+          "candidate-id-asc"
+        ],
+        "raw_weights": {
+          "production": 1.0,
+          "reliability": 1.0,
+          "maintenance": 1.0,
+          "workforce": 1.0,
+          "schedule_stability": 0.25
+        },
+        "normalized_weights": {
+          "production": 0.23529411764705882,
+          "reliability": 0.23529411764705882,
+          "maintenance": 0.23529411764705882,
+          "workforce": 0.23529411764705882,
+          "schedule_stability": 0.058823529411764705
+        },
+        "rows": [
+          {
+            "candidate_plan_id": "plan-production_priority-ae1dec8408174e17",
+            "strategy": "PRODUCTION_PRIORITY",
+            "score": 1.0,
+            "raw_kpis": {
+              "makespan_minutes": 70.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 1.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": [
+              "plan-reliability_priority-ba38d9841a32a49b"
+            ]
+          },
+          {
+            "candidate_plan_id": "plan-reliability_priority-ba38d9841a32a49b",
+            "strategy": "RELIABILITY_PRIORITY",
+            "score": 1.0,
+            "raw_kpis": {
+              "makespan_minutes": 70.0,
+              "total_tardiness_minutes": 0.0,
+              "maximum_tardiness_minutes": 0.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 0.0,
+              "failure_probability": 0.0,
+              "expected_emergency_downtime_minutes": 0.0,
+              "maintenance_cost": 300.0,
+              "technician_utilization": 0.666667,
+              "schedule_changes": 1,
+              "decision_latency_ms": null
+            },
+            "metric_benefits": {
+              "makespan_minutes": 1.0,
+              "total_tardiness_minutes": 1.0,
+              "on_time_completion_rate": 1.0,
+              "expected_failure_count": 1.0,
+              "expected_emergency_downtime_minutes": 1.0,
+              "maintenance_cost": 1.0,
+              "technician_utilization": 1.0,
+              "schedule_changes": 1.0
+            },
+            "objective_benefits": {
+              "production": 1.0,
+              "reliability": 1.0,
+              "maintenance": 1.0,
+              "workforce": 1.0,
+              "schedule_stability": 1.0
+            },
+            "weighted_contributions": {
+              "production": 0.23529411764705882,
+              "reliability": 0.23529411764705882,
+              "maintenance": 0.23529411764705882,
+              "workforce": 0.23529411764705882,
+              "schedule_stability": 0.058823529411764705
+            },
+            "tied_with": [
+              "plan-production_priority-ae1dec8408174e17"
+            ]
+          }
+        ]
+      },
+      "candidate_availability": [
+        {
+          "strategy": "PRODUCTION_PRIORITY",
+          "outcome": "FEASIBLE",
+          "reason": null
+        },
+        {
+          "strategy": "BALANCED",
+          "outcome": "NO_FEASIBLE_PLAN",
+          "reason": "no qualified technician or machine slot for maintenance MR1"
+        },
+        {
+          "strategy": "RELIABILITY_PRIORITY",
+          "outcome": "FEASIBLE",
+          "reason": null
+        }
+      ],
+      "diagnostics": [],
+      "partial": false
+    },
+    "comparison": {
+      "metric_registry_version": "scenario-metrics:1",
+      "metrics": [
+        {
+          "metric": "makespan_minutes",
+          "unit": "minute",
+          "preferred_direction": "LOWER",
+          "baseline": 60.0,
+          "scenario": 70.0,
+          "absolute_delta": 10.0,
+          "percent_delta": 16.666666666666668,
+          "reason": null,
+          "change": "WORSENED_UNDER_MODEL"
+        },
+        {
+          "metric": "total_tardiness_minutes",
+          "unit": "minute",
+          "preferred_direction": "LOWER",
+          "baseline": 0.0,
+          "scenario": 0.0,
+          "absolute_delta": 0.0,
+          "percent_delta": null,
+          "reason": "ZERO_BASELINE",
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "maximum_tardiness_minutes",
+          "unit": "minute",
+          "preferred_direction": "LOWER",
+          "baseline": 0.0,
+          "scenario": 0.0,
+          "absolute_delta": 0.0,
+          "percent_delta": null,
+          "reason": "ZERO_BASELINE",
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "on_time_completion_rate",
+          "unit": "ratio",
+          "preferred_direction": "HIGHER",
+          "baseline": 1.0,
+          "scenario": 1.0,
+          "absolute_delta": 0.0,
+          "percent_delta": 0.0,
+          "reason": null,
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "expected_failure_count",
+          "unit": "expected_count",
+          "preferred_direction": "LOWER",
+          "baseline": 0.0,
+          "scenario": 0.0,
+          "absolute_delta": 0.0,
+          "percent_delta": null,
+          "reason": "ZERO_BASELINE",
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "failure_probability",
+          "unit": "probability",
+          "preferred_direction": "LOWER",
+          "baseline": 0.0,
+          "scenario": 0.0,
+          "absolute_delta": 0.0,
+          "percent_delta": null,
+          "reason": "ZERO_BASELINE",
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "expected_emergency_downtime_minutes",
+          "unit": "minute",
+          "preferred_direction": "LOWER",
+          "baseline": 0.0,
+          "scenario": 0.0,
+          "absolute_delta": 0.0,
+          "percent_delta": null,
+          "reason": "ZERO_BASELINE",
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "maintenance_cost",
+          "unit": "model_cost_unit",
+          "preferred_direction": "LOWER",
+          "baseline": 300.0,
+          "scenario": 300.0,
+          "absolute_delta": 0.0,
+          "percent_delta": 0.0,
+          "reason": null,
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "technician_utilization",
+          "unit": "ratio",
+          "preferred_direction": "LOWER",
+          "baseline": 0.666667,
+          "scenario": 0.666667,
+          "absolute_delta": 0.0,
+          "percent_delta": 0.0,
+          "reason": null,
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "schedule_changes",
+          "unit": "count",
+          "preferred_direction": "LOWER",
+          "baseline": 1,
+          "scenario": 1,
+          "absolute_delta": 0.0,
+          "percent_delta": 0.0,
+          "reason": null,
+          "change": "UNCHANGED"
+        },
+        {
+          "metric": "decision_latency_ms",
+          "unit": "millisecond",
+          "preferred_direction": "LOWER",
+          "baseline": null,
+          "scenario": null,
+          "absolute_delta": null,
+          "percent_delta": null,
+          "reason": "OPERATIONAL_TELEMETRY_NOT_MODEL_KPI",
+          "change": "UNAVAILABLE"
+        }
+      ],
+      "score_comparison": "NOT_COMPARABLE_ACROSS_REFERENCES",
+      "model_assumptions": [
+        "Uncalibrated simplified failure model; estimates are not sensor facts.",
+        "Maintenance reduces model failure probability by 70%.",
+        "Emergency downtime is capped by the candidate makespan and observation horizon.",
+        "Technician utilization is minimized by the current workforce objective; it is not a general productivity verdict.",
+        "Common random draws couple baseline, strategies and physical points; no rank-confidence probability is estimated."
+      ]
+    },
+    "live_mapping": {
+      "supported": true,
+      "mapped_weights": {
+        "production": 1.0,
+        "reliability": 1.0,
+        "maintenance": 1.0,
+        "workforce": 1.0,
+        "schedule_stability": 0.25
+      },
+      "mapped_defer_bounds": [
+        {
+          "type": "DEFER_MAINTENANCE",
+          "maintenance_request_id": "MR1",
+          "earliest_start_at": "2026-10-27T00:10:00Z"
+        }
+      ],
+      "reasons": []
+    }
+  },
+  "sourceSnapshot": {
+    "schema_version": "3.0",
+    "snapshot_id": "golden-slot-snapshot",
+    "factory_id": "golden-factory",
+    "captured_at": "2026-10-27T00:00:00Z",
+    "planning_window": {
+      "start_at": "2026-10-27T00:00:00Z",
+      "end_at": "2026-10-27T02:00:00Z"
+    },
+    "machines": [
+      {
+        "machine_id": "M1",
+        "display_name": "Golden lathe",
+        "machine_family": "lathe",
+        "status": "IDLE",
+        "capabilities": [
+          {
+            "operation_type": "turning",
+            "nominal_processing_minutes": 30,
+            "load_factor": 1,
+            "damage_factor": 1
+          }
+        ]
+      }
+    ],
+    "jobs": [],
+    "technicians": [
+      {
+        "technician_id": "T1",
+        "display_name": "Golden technician",
+        "status": "AVAILABLE",
+        "availability": [
+          {
+            "start_at": "2026-10-27T00:00:00Z",
+            "end_at": "2026-10-27T01:30:00Z"
+          }
+        ],
+        "skills": [
+          {
+            "skill_id": "mechanical",
+            "level": 4,
+            "certified_machine_families": [
+              "lathe"
+            ],
+            "certified_action_types": [
+              "inspection"
+            ]
+          }
+        ]
+      }
+    ],
+    "health_snapshots": [],
+    "maintenance_requests": [
+      {
+        "maintenance_request_id": "MR1",
+        "machine_id": "M1",
+        "maintenance_type": "PREVENTIVE",
+        "action_type": "inspection",
+        "priority": "HIGH",
+        "status": "OPEN",
+        "mandatory": true,
+        "requested_at": "2026-10-27T00:00:00Z",
+        "earliest_start_at": "2026-10-27T00:00:00Z",
+        "latest_start_at": null,
+        "expected_duration_minutes": 60,
+        "required_skill_ids": [
+          "mechanical"
+        ],
+        "minimum_skill_level": 4
+      }
+    ],
+    "current_schedule": null
+  }
+}

@@ -67,6 +67,7 @@ OPERATIONS_PYTHON="$(uv run --no-sync --project ai_services python -c 'import sy
 
 stage 'Generate Prisma client' npm --prefix backend run prisma:generate
 stage 'Canonical contracts and generated client types' uv run --frozen --project ai_services python scripts/check-contracts.py
+stage 'Scenario engine and real Node/FastAPI transport' uv run --frozen --project ai_services python -m pytest ai_services/tests -q
 stage 'Backend unit tests' env NODE_ENV=test npm --prefix backend test -- --runInBand
 # Each runner migrates its own fresh schema, and cleans it in finally even on failure.
 stage 'PostgreSQL integration' npm --prefix backend run test:integration
@@ -80,5 +81,6 @@ stage 'Full snapshot flow' npm --prefix backend run test:operations-flow
 # ports and browser state never overlap.
 stage 'Frontend browser decision workflow' npm --prefix frontend run test:browser
 stage 'Browser E2E through PostgreSQL, backend, worker and FastAPI (three clean schemas)' node scripts/run-operations-browser-e2e.js --repeat=3
+stage 'Scenario browser flow (three fresh schemas, real engine)' env OPERATIONS_E2E_ARTIFACT_DIR="artifacts/scenario-e2e/$(git rev-parse HEAD)" node scripts/run-operations-browser-e2e.js --scenarios --repeat=3
 stage 'Frontend production build' env NODE_ENV=production npm --prefix frontend run build
 stage 'Backend production image and validator smoke check' docker build -f backend/Dockerfile -t cnc-backend:test .

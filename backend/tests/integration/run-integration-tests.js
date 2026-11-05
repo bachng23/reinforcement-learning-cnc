@@ -110,6 +110,7 @@ const main = () => {
     } else testStatus = run(
       process.execPath,
       [jestCli, '--config', 'jest.integration.config.js', '--runInBand',
+        ...(process.argv.includes('--scenario') ? ['--runTestsByPath', 'tests/integration/scenario-storage.postgres.test.js', 'tests/integration/scenario-workspaces.postgres.test.js', 'tests/integration/scenario-upgrade.postgres.test.js'] : []),
         ...(process.argv.includes('--incidents') ? ['--runTestsByPath', 'tests/integration/incidents.postgres.test.js', 'tests/integration/incident-upgrade.postgres.test.js', 'tests/integration/incident-links.postgres.test.js'] : []),
         ...(process.argv.includes('--maintenance-analytics') ? ['--runTestsByPath',
           'tests/integration/maintenance-analytics.postgres.test.js',

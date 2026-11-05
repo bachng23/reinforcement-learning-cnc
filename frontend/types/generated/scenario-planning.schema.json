@@ -1,0 +1,4415 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "definitions": {
+    "CreateWorkspace": {
+      "type": "object",
+      "properties": {
+        "factory_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "expected_head": {
+          "type": "object",
+          "properties": {
+            "snapshot_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+            },
+            "plan_version": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            "revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "snapshot_id",
+            "plan_version",
+            "revision"
+          ],
+          "additionalProperties": false
+        },
+        "planning_config": {
+          "type": "object",
+          "properties": {
+            "horizon_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 43200
+            },
+            "candidate_limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3
+            },
+            "solver_timeout_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30
+            },
+            "simulation_runs": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000
+            },
+            "base_seed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            "objective_weights": {
+              "type": "object",
+              "properties": {
+                "production": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                "reliability": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                "maintenance": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                "workforce": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                "schedule_stability": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000
+                }
+              },
+              "required": [
+                "production",
+                "reliability",
+                "maintenance",
+                "workforce",
+                "schedule_stability"
+              ],
+              "additionalProperties": false
+            },
+            "allowed_strategy_ids": {
+              "minItems": 1,
+              "maxItems": 3,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "PRODUCTION_PRIORITY",
+                  "BALANCED",
+                  "RELIABILITY_PRIORITY"
+                ]
+              }
+            }
+          },
+          "required": [
+            "horizon_minutes",
+            "candidate_limit",
+            "solver_timeout_seconds",
+            "simulation_runs",
+            "base_seed",
+            "objective_weights",
+            "allowed_strategy_ids"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "factory_id",
+        "name",
+        "expected_head",
+        "planning_config"
+      ],
+      "additionalProperties": false
+    },
+    "CreateDraft": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "overrides": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "TECHNICIAN_UNAVAILABLE"
+                  },
+                  "technician_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "start_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "end_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "technician_id",
+                  "start_at",
+                  "end_at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "MAINTENANCE_DURATION"
+                  },
+                  "maintenance_request_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "expected_duration_minutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 43200
+                  }
+                },
+                "required": [
+                  "type",
+                  "maintenance_request_id",
+                  "expected_duration_minutes"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "DEFER_MAINTENANCE"
+                  },
+                  "maintenance_request_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "earliest_start_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "maintenance_request_id",
+                  "earliest_start_at"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "objective_weights": {
+          "type": "object",
+          "properties": {
+            "production": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "reliability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "maintenance": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "workforce": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "schedule_stability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            }
+          },
+          "required": [
+            "production",
+            "reliability",
+            "maintenance",
+            "workforce",
+            "schedule_stability"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "name",
+        "note",
+        "overrides",
+        "objective_weights"
+      ],
+      "additionalProperties": false
+    },
+    "UpdateDraft": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "overrides": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "TECHNICIAN_UNAVAILABLE"
+                  },
+                  "technician_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "start_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "end_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "technician_id",
+                  "start_at",
+                  "end_at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "MAINTENANCE_DURATION"
+                  },
+                  "maintenance_request_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "expected_duration_minutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 43200
+                  }
+                },
+                "required": [
+                  "type",
+                  "maintenance_request_id",
+                  "expected_duration_minutes"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "DEFER_MAINTENANCE"
+                  },
+                  "maintenance_request_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "earliest_start_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "maintenance_request_id",
+                  "earliest_start_at"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "objective_weights": {
+          "type": "object",
+          "properties": {
+            "production": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "reliability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "maintenance": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "workforce": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "schedule_stability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            }
+          },
+          "required": [
+            "production",
+            "reliability",
+            "maintenance",
+            "workforce",
+            "schedule_stability"
+          ],
+          "additionalProperties": false
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "name",
+        "note",
+        "overrides",
+        "objective_weights",
+        "expected_revision"
+      ],
+      "additionalProperties": false
+    },
+    "EnqueueRun": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "BASELINE"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "SCENARIO"
+            },
+            "scenario_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "expected_revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "kind",
+            "scenario_id",
+            "expected_revision"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "EnqueueSensitivity": {
+      "type": "object",
+      "properties": {
+        "source_run_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        "axis": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "MAINTENANCE_DURATION"
+                },
+                "maintenance_request_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                },
+                "values": {
+                  "minItems": 1,
+                  "maxItems": 7,
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 43200
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "maintenance_request_id",
+                "values"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "OBJECTIVE_WEIGHT"
+                },
+                "weight": {
+                  "type": "string",
+                  "enum": [
+                    "production",
+                    "reliability",
+                    "maintenance",
+                    "workforce",
+                    "schedule_stability"
+                  ]
+                },
+                "values": {
+                  "minItems": 1,
+                  "maxItems": 7,
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "weight",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "source_run_id",
+        "axis"
+      ],
+      "additionalProperties": false
+    },
+    "LiveEvaluation": {
+      "type": "object",
+      "properties": {
+        "source_run_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        "confirmation": {
+          "type": "boolean",
+          "const": true
+        },
+        "expected_head": {
+          "type": "object",
+          "properties": {
+            "snapshot_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+            },
+            "plan_version": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            "revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "snapshot_id",
+            "plan_version",
+            "revision"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "source_run_id",
+        "confirmation",
+        "expected_head"
+      ],
+      "additionalProperties": false
+    },
+    "PlanningConfig": {
+      "type": "object",
+      "properties": {
+        "horizon_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 43200
+        },
+        "candidate_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "solver_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "simulation_runs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "base_seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "objective_weights": {
+          "type": "object",
+          "properties": {
+            "production": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "reliability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "maintenance": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "workforce": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "schedule_stability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            }
+          },
+          "required": [
+            "production",
+            "reliability",
+            "maintenance",
+            "workforce",
+            "schedule_stability"
+          ],
+          "additionalProperties": false
+        },
+        "allowed_strategy_ids": {
+          "minItems": 1,
+          "maxItems": 3,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "PRODUCTION_PRIORITY",
+              "BALANCED",
+              "RELIABILITY_PRIORITY"
+            ]
+          }
+        }
+      },
+      "required": [
+        "horizon_minutes",
+        "candidate_limit",
+        "solver_timeout_seconds",
+        "simulation_runs",
+        "base_seed",
+        "objective_weights",
+        "allowed_strategy_ids"
+      ],
+      "additionalProperties": false
+    },
+    "Head": {
+      "type": "object",
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+        },
+        "plan_version": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "plan_version",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "Error": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": false
+        },
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ]
+        },
+        "requestId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "success",
+        "error",
+        "requestId"
+      ]
+    },
+    "Baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "factory_id": {
+          "type": "string"
+        },
+        "snapshot_id": {
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "plan_version": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "publication": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "schedule_id": {
+                  "type": "string"
+                },
+                "schedule_revision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "schedule_hash": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "schedule_id",
+                "schedule_revision",
+                "schedule_hash"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "factory_id",
+        "snapshot_id",
+        "snapshot_hash",
+        "plan_version",
+        "publication"
+      ]
+    },
+    "Workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "workspace_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "baseline": {
+          "$ref": "#/definitions/Baseline"
+        },
+        "planning_config": {
+          "$ref": "#/definitions/PlanningConfig"
+        },
+        "engine_version": {
+          "type": "string"
+        },
+        "contract_version": {
+          "type": "string"
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "current_head": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Head"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stale": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "workspace_id",
+        "name",
+        "baseline",
+        "planning_config",
+        "engine_version",
+        "contract_version",
+        "created_by",
+        "created_at",
+        "current_head",
+        "stale"
+      ]
+    },
+    "BaselineEntities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "workspace_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "baseline": {
+          "$ref": "#/definitions/Baseline"
+        },
+        "planning_window": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "start_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "end_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "start_at",
+            "end_at"
+          ]
+        },
+        "technicians": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "technician_id": {
+                "type": "string"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "availability": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "start_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "end_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "start_at",
+                    "end_at"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "technician_id",
+              "display_name",
+              "availability"
+            ]
+          }
+        },
+        "maintenance_requests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "maintenance_request_id": {
+                "type": "string"
+              },
+              "machine_id": {
+                "type": "string"
+              },
+              "expected_duration_minutes": {
+                "type": "number"
+              },
+              "earliest_start_at": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "latest_start_at": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "mandatory": {
+                "type": "boolean"
+              },
+              "priority": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "maintenance_request_id",
+              "machine_id",
+              "expected_duration_minutes",
+              "earliest_start_at",
+              "latest_start_at",
+              "mandatory",
+              "priority",
+              "status"
+            ]
+          }
+        }
+      },
+      "required": [
+        "workspace_id",
+        "baseline",
+        "planning_window",
+        "technicians",
+        "maintenance_requests"
+      ]
+    },
+    "Draft": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "overrides": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "TECHNICIAN_UNAVAILABLE"
+                  },
+                  "technician_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "start_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "end_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "technician_id",
+                  "start_at",
+                  "end_at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "MAINTENANCE_DURATION"
+                  },
+                  "maintenance_request_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "expected_duration_minutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 43200
+                  }
+                },
+                "required": [
+                  "type",
+                  "maintenance_request_id",
+                  "expected_duration_minutes"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "DEFER_MAINTENANCE"
+                  },
+                  "maintenance_request_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "earliest_start_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "maintenance_request_id",
+                  "earliest_start_at"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "objective_weights": {
+          "type": "object",
+          "properties": {
+            "production": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "reliability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "maintenance": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "workforce": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "schedule_stability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            }
+          },
+          "required": [
+            "production",
+            "reliability",
+            "maintenance",
+            "workforce",
+            "schedule_stability"
+          ],
+          "additionalProperties": false
+        },
+        "workspace_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "scenario_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "name",
+        "note",
+        "overrides",
+        "objective_weights",
+        "workspace_id",
+        "scenario_id",
+        "revision",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "Job": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "workspace_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "job_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "kind": {
+          "enum": [
+            "RUN",
+            "SENSITIVITY"
+          ]
+        },
+        "status": {
+          "enum": [
+            "QUEUED",
+            "RUNNING",
+            "SUCCEEDED",
+            "FAILED"
+          ]
+        },
+        "input_hash": {
+          "type": "string"
+        },
+        "source_scenario_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_run_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "engine_version": {
+          "type": "string"
+        },
+        "contract_version": {
+          "type": "string"
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deadline_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EngineResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Point"
+          }
+        }
+      },
+      "required": [
+        "workspace_id",
+        "job_id",
+        "kind",
+        "status",
+        "input_hash",
+        "source_scenario_id",
+        "source_revision",
+        "source_run_id",
+        "engine_version",
+        "contract_version",
+        "attempt",
+        "created_at",
+        "started_at",
+        "completed_at",
+        "deadline_at",
+        "error_code",
+        "result",
+        "points"
+      ]
+    },
+    "Point": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "point_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "QUEUED",
+            "RUNNING",
+            "FEASIBLE",
+            "NO_FEASIBLE_PLAN",
+            "FAILED",
+            "TIMEOUT"
+          ]
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ScenarioEngine_Evaluation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "point_index",
+        "value",
+        "status",
+        "error_code",
+        "result"
+      ]
+    },
+    "ScenarioEngine_AssignmentStatus": {
+      "enum": [
+        "PROPOSED",
+        "COMMITTED",
+        "RUNNING",
+        "COMPLETED",
+        "CANCELLED"
+      ],
+      "title": "AssignmentStatus",
+      "type": "string"
+    },
+    "ScenarioEngine_AssignmentType": {
+      "enum": [
+        "PRODUCTION",
+        "MAINTENANCE",
+        "BLOCKED_TIME"
+      ],
+      "title": "AssignmentType",
+      "type": "string"
+    },
+    "ScenarioEngine_CandidateAvailability": {
+      "additionalProperties": false,
+      "properties": {
+        "outcome": {
+          "enum": [
+            "FEASIBLE",
+            "NO_FEASIBLE_PLAN",
+            "TIMEOUT",
+            "NOT_EVALUATED"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "strategy": {
+          "title": "Strategy",
+          "type": "string"
+        }
+      },
+      "required": [
+        "strategy",
+        "outcome"
+      ],
+      "title": "CandidateAvailability",
+      "type": "object"
+    },
+    "ScenarioEngine_CandidatePlan": {
+      "additionalProperties": false,
+      "properties": {
+        "assumptions": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Assumptions",
+          "type": "array"
+        },
+        "candidate_plan_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Candidate Plan Id",
+          "type": "string"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "kpis": {
+          "$ref": "#/definitions/ScenarioEngine_PlanKPIs"
+        },
+        "plan_version": {
+          "minimum": 1,
+          "title": "Plan Version",
+          "type": "integer"
+        },
+        "schedule": {
+          "$ref": "#/definitions/ScenarioEngine_Schedule"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_agent_run_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Source Agent Run Ids",
+          "type": "array"
+        },
+        "source_engine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Engine Id",
+          "type": "string"
+        },
+        "source_engine_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Engine Version",
+          "type": "string"
+        },
+        "strategy": {
+          "$ref": "#/definitions/ScenarioEngine_PlanStrategy"
+        },
+        "validation": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ScenarioEngine_PlanValidation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "warnings": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "candidate_plan_id",
+        "decision_case_id",
+        "snapshot_id",
+        "plan_version",
+        "strategy",
+        "source_engine_id",
+        "source_engine_version",
+        "generated_at",
+        "schedule",
+        "kpis"
+      ],
+      "title": "CandidatePlan",
+      "type": "object"
+    },
+    "ScenarioEngine_Comparison": {
+      "additionalProperties": false,
+      "properties": {
+        "metric_registry_version": {
+          "const": "scenario-metrics:1",
+          "default": "scenario-metrics:1",
+          "title": "Metric Registry Version",
+          "type": "string"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_MetricComparison"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "model_assumptions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Model Assumptions",
+          "type": "array"
+        },
+        "score_comparison": {
+          "const": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "default": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "title": "Score Comparison",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metrics",
+        "model_assumptions"
+      ],
+      "title": "Comparison",
+      "type": "object"
+    },
+    "ScenarioEngine_ConstraintSeverity": {
+      "enum": [
+        "ERROR",
+        "WARNING"
+      ],
+      "title": "ConstraintSeverity",
+      "type": "string"
+    },
+    "ScenarioEngine_ConstraintViolation": {
+      "additionalProperties": false,
+      "properties": {
+        "constraint_code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Constraint Code",
+          "type": "string"
+        },
+        "entity_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Entity Refs",
+          "type": "array"
+        },
+        "message": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/ScenarioEngine_ConstraintSeverity"
+        },
+        "time_window": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ScenarioEngine_TimeWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "violation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Violation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "violation_id",
+        "constraint_code",
+        "severity",
+        "message"
+      ],
+      "title": "ConstraintViolation",
+      "type": "object"
+    },
+    "ScenarioEngine_DeferMaintenance": {
+      "additionalProperties": false,
+      "properties": {
+        "earliest_start_at": {
+          "format": "date-time",
+          "title": "Earliest Start At",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "DEFER_MAINTENANCE",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "maintenance_request_id",
+        "earliest_start_at"
+      ],
+      "title": "DeferMaintenance",
+      "type": "object"
+    },
+    "ScenarioEngine_Diagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field"
+        },
+        "message": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "target_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Target Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "Diagnostic",
+      "type": "object"
+    },
+    "ScenarioEngine_DiscreteRULDistribution": {
+      "additionalProperties": false,
+      "properties": {
+        "model_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Model Version",
+          "type": "string"
+        },
+        "probability_mass": {
+          "items": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "minItems": 2,
+          "title": "Probability Mass",
+          "type": "array"
+        },
+        "support_minutes": {
+          "items": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minItems": 2,
+          "title": "Support Minutes",
+          "type": "array"
+        },
+        "survival_beyond_horizon": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Survival Beyond Horizon",
+          "type": "number"
+        }
+      },
+      "required": [
+        "support_minutes",
+        "probability_mass",
+        "survival_beyond_horizon",
+        "model_version"
+      ],
+      "title": "DiscreteRULDistribution",
+      "type": "object"
+    },
+    "ScenarioEngine_EffectiveDiff": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "$ref": "#/definitions/ScenarioEngine_JsonValue"
+        },
+        "before": {
+          "$ref": "#/definitions/ScenarioEngine_JsonValue"
+        },
+        "field": {
+          "enum": [
+            "availability",
+            "expected_duration_minutes",
+            "earliest_start_at"
+          ],
+          "title": "Field",
+          "type": "string"
+        },
+        "target_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Target Id",
+          "type": "string"
+        },
+        "target_type": {
+          "enum": [
+            "TECHNICIAN",
+            "MAINTENANCE_REQUEST"
+          ],
+          "title": "Target Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_type",
+        "target_id",
+        "field",
+        "before",
+        "after"
+      ],
+      "title": "EffectiveDiff",
+      "type": "object"
+    },
+    "ScenarioEngine_EffectiveInput": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostics": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_Diagnostic"
+          },
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "diff": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_EffectiveDiff"
+          },
+          "title": "Diff",
+          "type": "array"
+        },
+        "effective_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Effective Hash"
+        },
+        "hash_version": {
+          "const": "scenario-jcs-sha256:1",
+          "default": "scenario-jcs-sha256:1",
+          "title": "Hash Version",
+          "type": "string"
+        },
+        "overrides": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "DEFER_MAINTENANCE": "#/definitions/ScenarioEngine_DeferMaintenance",
+                "MAINTENANCE_DURATION": "#/definitions/ScenarioEngine_MaintenanceDuration",
+                "TECHNICIAN_UNAVAILABLE": "#/definitions/ScenarioEngine_TechnicianUnavailable"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/definitions/ScenarioEngine_TechnicianUnavailable"
+              },
+              {
+                "$ref": "#/definitions/ScenarioEngine_MaintenanceDuration"
+              },
+              {
+                "$ref": "#/definitions/ScenarioEngine_DeferMaintenance"
+              }
+            ]
+          },
+          "title": "Overrides",
+          "type": "array"
+        },
+        "snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ScenarioEngine_FactorySnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Source Hash",
+          "type": "string"
+        },
+        "transform_version": {
+          "const": "scenario-transform:1",
+          "default": "scenario-transform:1",
+          "title": "Transform Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_hash",
+        "overrides",
+        "snapshot",
+        "effective_hash",
+        "diff"
+      ],
+      "title": "EffectiveInput",
+      "type": "object"
+    },
+    "ScenarioEngine_Evaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_availability": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_CandidateAvailability"
+          },
+          "title": "Candidate Availability",
+          "type": "array"
+        },
+        "candidates": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_CandidatePlan"
+          },
+          "maxItems": 3,
+          "title": "Candidates",
+          "type": "array"
+        },
+        "diagnostics": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_Diagnostic"
+          },
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "outcome": {
+          "enum": [
+            "FEASIBLE",
+            "NO_FEASIBLE_PLAN",
+            "TIMEOUT",
+            "FAILED"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "partial": {
+          "default": false,
+          "title": "Partial",
+          "type": "boolean"
+        },
+        "ranking": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ScenarioEngine_Ranking"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "selected_candidate_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected Candidate Id"
+        }
+      },
+      "required": [
+        "outcome"
+      ],
+      "title": "Evaluation",
+      "type": "object"
+    },
+    "ScenarioEngine_FactorySnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "current_schedule": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ScenarioEngine_Schedule"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Factory Id",
+          "type": "string"
+        },
+        "health_snapshots": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_HealthSnapshot"
+          },
+          "title": "Health Snapshots",
+          "type": "array"
+        },
+        "jobs": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_ProductionJob"
+          },
+          "title": "Jobs",
+          "type": "array"
+        },
+        "machines": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_Machine"
+          },
+          "minItems": 1,
+          "title": "Machines",
+          "type": "array"
+        },
+        "maintenance_requests": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_MaintenanceRequest"
+          },
+          "title": "Maintenance Requests",
+          "type": "array"
+        },
+        "planning_window": {
+          "$ref": "#/definitions/ScenarioEngine_TimeWindow"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "technicians": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_Technician"
+          },
+          "title": "Technicians",
+          "type": "array"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "factory_id",
+        "captured_at",
+        "planning_window",
+        "machines"
+      ],
+      "title": "FactorySnapshot",
+      "type": "object"
+    },
+    "ScenarioEngine_HealthSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "failure_probability": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Failure Probability",
+          "type": "number"
+        },
+        "failure_probability_horizon_minutes": {
+          "minimum": 1,
+          "title": "Failure Probability Horizon Minutes",
+          "type": "integer"
+        },
+        "health_index": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Health Index",
+          "type": "number"
+        },
+        "health_snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Health Snapshot Id",
+          "type": "string"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "observed_wear_um": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed Wear Um"
+        },
+        "rul_distribution": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ScenarioEngine_DiscreteRULDistribution"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source_model_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Model Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "health_snapshot_id",
+        "machine_id",
+        "observed_at",
+        "health_index",
+        "failure_probability_horizon_minutes",
+        "failure_probability",
+        "confidence",
+        "source_model_version"
+      ],
+      "title": "HealthSnapshot",
+      "type": "object"
+    },
+    "ScenarioEngine_Identity": {
+      "additionalProperties": false,
+      "properties": {
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Factory Id",
+          "type": "string"
+        },
+        "frozen_input_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Frozen Input Hash",
+          "type": "string"
+        },
+        "run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "factory_id",
+        "workspace_id",
+        "run_id",
+        "frozen_input_hash"
+      ],
+      "title": "Identity",
+      "type": "object"
+    },
+    "ScenarioEngine_JsonValue": {},
+    "ScenarioEngine_LiveMapping": {
+      "additionalProperties": false,
+      "properties": {
+        "mapped_defer_bounds": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_DeferMaintenance"
+          },
+          "title": "Mapped Defer Bounds",
+          "type": "array"
+        },
+        "mapped_weights": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ScenarioEngine_ObjectiveWeights"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "supported": {
+          "title": "Supported",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "supported",
+        "mapped_weights",
+        "mapped_defer_bounds",
+        "reasons"
+      ],
+      "title": "LiveMapping",
+      "type": "object"
+    },
+    "ScenarioEngine_Machine": {
+      "additionalProperties": false,
+      "properties": {
+        "capabilities": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_MachineCapability"
+          },
+          "minItems": 1,
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "display_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "machine_family": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Family",
+          "type": "string"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/ScenarioEngine_MachineStatus"
+        }
+      },
+      "required": [
+        "machine_id",
+        "display_name",
+        "machine_family",
+        "status",
+        "capabilities"
+      ],
+      "title": "Machine",
+      "type": "object"
+    },
+    "ScenarioEngine_MachineCapability": {
+      "additionalProperties": false,
+      "properties": {
+        "damage_factor": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Damage Factor",
+          "type": "number"
+        },
+        "load_factor": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Load Factor",
+          "type": "number"
+        },
+        "nominal_processing_minutes": {
+          "minimum": 1,
+          "title": "Nominal Processing Minutes",
+          "type": "integer"
+        },
+        "operation_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Operation Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_type",
+        "nominal_processing_minutes"
+      ],
+      "title": "MachineCapability",
+      "type": "object"
+    },
+    "ScenarioEngine_MachineOption": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_damage": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Damage"
+        },
+        "load_factor": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Load Factor",
+          "type": "number"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "processing_minutes": {
+          "minimum": 1,
+          "title": "Processing Minutes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "machine_id",
+        "processing_minutes"
+      ],
+      "title": "MachineOption",
+      "type": "object"
+    },
+    "ScenarioEngine_MachineStatus": {
+      "enum": [
+        "IDLE",
+        "RUNNING",
+        "WARNING",
+        "MAINTENANCE",
+        "FAILED",
+        "UNAVAILABLE"
+      ],
+      "title": "MachineStatus",
+      "type": "string"
+    },
+    "ScenarioEngine_MaintenanceDuration": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_duration_minutes": {
+          "maximum": 43200,
+          "minimum": 1,
+          "title": "Expected Duration Minutes",
+          "type": "integer"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "MAINTENANCE_DURATION",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "maintenance_request_id",
+        "expected_duration_minutes"
+      ],
+      "title": "MaintenanceDuration",
+      "type": "object"
+    },
+    "ScenarioEngine_MaintenancePriority": {
+      "enum": [
+        "LOW",
+        "NORMAL",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "MaintenancePriority",
+      "type": "string"
+    },
+    "ScenarioEngine_MaintenanceRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "action_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Action Type",
+          "type": "string"
+        },
+        "earliest_start_at": {
+          "format": "date-time",
+          "title": "Earliest Start At",
+          "type": "string"
+        },
+        "expected_duration_minutes": {
+          "minimum": 1,
+          "title": "Expected Duration Minutes",
+          "type": "integer"
+        },
+        "latest_start_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Start At"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "maintenance_type": {
+          "$ref": "#/definitions/ScenarioEngine_MaintenanceType"
+        },
+        "mandatory": {
+          "default": false,
+          "title": "Mandatory",
+          "type": "boolean"
+        },
+        "minimum_skill_level": {
+          "default": 1,
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Minimum Skill Level",
+          "type": "integer"
+        },
+        "priority": {
+          "$ref": "#/definitions/ScenarioEngine_MaintenancePriority"
+        },
+        "requested_at": {
+          "format": "date-time",
+          "title": "Requested At",
+          "type": "string"
+        },
+        "required_skill_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Required Skill Ids",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/definitions/ScenarioEngine_MaintenanceRequestStatus"
+        }
+      },
+      "required": [
+        "maintenance_request_id",
+        "machine_id",
+        "maintenance_type",
+        "action_type",
+        "priority",
+        "status",
+        "requested_at",
+        "earliest_start_at",
+        "expected_duration_minutes",
+        "required_skill_ids"
+      ],
+      "title": "MaintenanceRequest",
+      "type": "object"
+    },
+    "ScenarioEngine_MaintenanceRequestStatus": {
+      "enum": [
+        "OPEN",
+        "SCHEDULED",
+        "IN_PROGRESS",
+        "COMPLETED",
+        "CANCELLED"
+      ],
+      "title": "MaintenanceRequestStatus",
+      "type": "string"
+    },
+    "ScenarioEngine_MaintenanceType": {
+      "enum": [
+        "PREVENTIVE",
+        "CORRECTIVE"
+      ],
+      "title": "MaintenanceType",
+      "type": "string"
+    },
+    "ScenarioEngine_MetricComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "absolute_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Absolute Delta"
+        },
+        "baseline": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Baseline"
+        },
+        "change": {
+          "enum": [
+            "IMPROVED_UNDER_MODEL",
+            "WORSENED_UNDER_MODEL",
+            "UNCHANGED",
+            "UNAVAILABLE"
+          ],
+          "title": "Change",
+          "type": "string"
+        },
+        "metric": {
+          "title": "Metric",
+          "type": "string"
+        },
+        "percent_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Percent Delta"
+        },
+        "preferred_direction": {
+          "enum": [
+            "LOWER",
+            "HIGHER"
+          ],
+          "title": "Preferred Direction",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reason"
+        },
+        "scenario": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Scenario"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "unit",
+        "preferred_direction",
+        "baseline",
+        "scenario",
+        "absolute_delta",
+        "percent_delta",
+        "reason",
+        "change"
+      ],
+      "title": "MetricComparison",
+      "type": "object"
+    },
+    "ScenarioEngine_ObjectiveWeights": {
+      "additionalProperties": false,
+      "properties": {
+        "maintenance": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Maintenance",
+          "type": "number"
+        },
+        "production": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Production",
+          "type": "number"
+        },
+        "reliability": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Reliability",
+          "type": "number"
+        },
+        "schedule_stability": {
+          "default": 0.25,
+          "minimum": 0,
+          "title": "Schedule Stability",
+          "type": "number"
+        },
+        "workforce": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Workforce",
+          "type": "number"
+        }
+      },
+      "title": "ObjectiveWeights",
+      "type": "object"
+    },
+    "ScenarioEngine_Operation": {
+      "additionalProperties": false,
+      "properties": {
+        "machine_options": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_MachineOption"
+          },
+          "minItems": 1,
+          "title": "Machine Options",
+          "type": "array"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "operation_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Operation Type",
+          "type": "string"
+        },
+        "predecessor_operation_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Predecessor Operation Ids",
+          "type": "array"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/definitions/ScenarioEngine_OperationStatus",
+          "default": "PENDING"
+        }
+      },
+      "required": [
+        "operation_id",
+        "sequence",
+        "operation_type",
+        "machine_options"
+      ],
+      "title": "Operation",
+      "type": "object"
+    },
+    "ScenarioEngine_OperationStatus": {
+      "enum": [
+        "PENDING",
+        "READY",
+        "SCHEDULED",
+        "RUNNING",
+        "COMPLETED",
+        "BLOCKED"
+      ],
+      "title": "OperationStatus",
+      "type": "string"
+    },
+    "ScenarioEngine_PlanKPIs": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_latency_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Latency Ms"
+        },
+        "expected_emergency_downtime_minutes": {
+          "minimum": 0,
+          "title": "Expected Emergency Downtime Minutes",
+          "type": "number"
+        },
+        "expected_failure_count": {
+          "minimum": 0,
+          "title": "Expected Failure Count",
+          "type": "number"
+        },
+        "failure_probability": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Failure Probability",
+          "type": "number"
+        },
+        "maintenance_cost": {
+          "minimum": 0,
+          "title": "Maintenance Cost",
+          "type": "number"
+        },
+        "makespan_minutes": {
+          "minimum": 0,
+          "title": "Makespan Minutes",
+          "type": "number"
+        },
+        "maximum_tardiness_minutes": {
+          "minimum": 0,
+          "title": "Maximum Tardiness Minutes",
+          "type": "number"
+        },
+        "on_time_completion_rate": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "On Time Completion Rate",
+          "type": "number"
+        },
+        "schedule_changes": {
+          "minimum": 0,
+          "title": "Schedule Changes",
+          "type": "integer"
+        },
+        "technician_utilization": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Technician Utilization",
+          "type": "number"
+        },
+        "total_tardiness_minutes": {
+          "minimum": 0,
+          "title": "Total Tardiness Minutes",
+          "type": "number"
+        }
+      },
+      "required": [
+        "makespan_minutes",
+        "total_tardiness_minutes",
+        "maximum_tardiness_minutes",
+        "on_time_completion_rate",
+        "expected_failure_count",
+        "failure_probability",
+        "expected_emergency_downtime_minutes",
+        "maintenance_cost",
+        "technician_utilization",
+        "schedule_changes"
+      ],
+      "title": "PlanKPIs",
+      "type": "object"
+    },
+    "ScenarioEngine_PlanStrategy": {
+      "enum": [
+        "CURRENT",
+        "PRODUCTION_PRIORITY",
+        "BALANCED",
+        "RELIABILITY_PRIORITY",
+        "MANUAL",
+        "EXPERIMENTAL"
+      ],
+      "title": "PlanStrategy",
+      "type": "string"
+    },
+    "ScenarioEngine_PlanValidation": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_plan_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Candidate Plan Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "simulation_runs": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Simulation Runs",
+          "type": "integer"
+        },
+        "validated_at": {
+          "format": "date-time",
+          "title": "Validated At",
+          "type": "string"
+        },
+        "validation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Validation Id",
+          "type": "string"
+        },
+        "validator_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Validator Version",
+          "type": "string"
+        },
+        "verdict": {
+          "$ref": "#/definitions/ScenarioEngine_ValidationVerdict"
+        },
+        "violations": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_ConstraintViolation"
+          },
+          "title": "Violations",
+          "type": "array"
+        },
+        "warnings": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "validation_id",
+        "candidate_plan_id",
+        "validator_version",
+        "verdict",
+        "validated_at"
+      ],
+      "title": "PlanValidation",
+      "type": "object"
+    },
+    "ScenarioEngine_ProductionJob": {
+      "additionalProperties": false,
+      "properties": {
+        "display_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "due_at": {
+          "format": "date-time",
+          "title": "Due At",
+          "type": "string"
+        },
+        "job_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "operations": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_Operation"
+          },
+          "minItems": 1,
+          "title": "Operations",
+          "type": "array"
+        },
+        "priority": {
+          "default": 50,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Priority",
+          "type": "integer"
+        },
+        "release_at": {
+          "format": "date-time",
+          "title": "Release At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id",
+        "display_name",
+        "release_at",
+        "due_at",
+        "operations"
+      ],
+      "title": "ProductionJob",
+      "type": "object"
+    },
+    "ScenarioEngine_Ranking": {
+      "additionalProperties": false,
+      "properties": {
+        "constant_range_benefit": {
+          "const": 1,
+          "default": 1,
+          "title": "Constant Range Benefit",
+          "type": "integer"
+        },
+        "normalization_reference_id": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Normalization Reference Id",
+          "type": "string"
+        },
+        "normalized_weights": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Normalized Weights",
+          "type": "object"
+        },
+        "raw_weights": {
+          "$ref": "#/definitions/ScenarioEngine_ObjectiveWeights"
+        },
+        "reference_bounds": {
+          "additionalProperties": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "title": "Reference Bounds",
+          "type": "object"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_RankingRow"
+          },
+          "title": "Rows",
+          "type": "array"
+        },
+        "tie_break": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tie Break",
+          "type": "array"
+        },
+        "version": {
+          "const": "objective-minmax:1",
+          "default": "objective-minmax:1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "normalization_reference_id",
+        "reference_bounds",
+        "tie_break",
+        "raw_weights",
+        "normalized_weights",
+        "rows"
+      ],
+      "title": "Ranking",
+      "type": "object"
+    },
+    "ScenarioEngine_RankingRow": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_plan_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Candidate Plan Id",
+          "type": "string"
+        },
+        "metric_benefits": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Metric Benefits",
+          "type": "object"
+        },
+        "objective_benefits": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Objective Benefits",
+          "type": "object"
+        },
+        "raw_kpis": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Raw Kpis",
+          "type": "object"
+        },
+        "score": {
+          "title": "Score",
+          "type": "number"
+        },
+        "strategy": {
+          "title": "Strategy",
+          "type": "string"
+        },
+        "tied_with": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Tied With",
+          "type": "array"
+        },
+        "weighted_contributions": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Weighted Contributions",
+          "type": "object"
+        }
+      },
+      "required": [
+        "candidate_plan_id",
+        "strategy",
+        "score",
+        "raw_kpis",
+        "metric_benefits",
+        "objective_benefits",
+        "weighted_contributions",
+        "tied_with"
+      ],
+      "title": "RankingRow",
+      "type": "object"
+    },
+    "ScenarioEngine_SamplingEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha256-first53-uniform:1",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "base_seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "coupling": {
+          "const": "COMMON_RANDOM_NUMBERS",
+          "default": "COMMON_RANDOM_NUMBERS",
+          "title": "Coupling",
+          "type": "string"
+        },
+        "coupling_key": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Coupling Key",
+          "type": "string"
+        },
+        "observation_set_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Observation Set Hash",
+          "type": "string"
+        },
+        "sample_count": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "version": {
+          "const": "scenario-crn:1",
+          "default": "scenario-crn:1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "base_seed",
+        "sample_count",
+        "algorithm",
+        "observation_set_hash",
+        "coupling_key"
+      ],
+      "title": "SamplingEvidence",
+      "type": "object"
+    },
+    "ScenarioEngine_Schedule": {
+      "additionalProperties": false,
+      "properties": {
+        "assignments": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_ScheduleAssignment"
+          },
+          "title": "Assignments",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Factory Id",
+          "type": "string"
+        },
+        "planning_window": {
+          "$ref": "#/definitions/ScenarioEngine_TimeWindow"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schedule_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Schedule Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schedule_id",
+        "factory_id",
+        "revision",
+        "planning_window",
+        "created_at"
+      ],
+      "title": "Schedule",
+      "type": "object"
+    },
+    "ScenarioEngine_ScheduleAssignment": {
+      "additionalProperties": false,
+      "properties": {
+        "assignment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Assignment Id",
+          "type": "string"
+        },
+        "assignment_type": {
+          "$ref": "#/definitions/ScenarioEngine_AssignmentType"
+        },
+        "end_at": {
+          "format": "date-time",
+          "title": "End At",
+          "type": "string"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Job Id"
+        },
+        "locked": {
+          "default": false,
+          "title": "Locked",
+          "type": "boolean"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maintenance Request Id"
+        },
+        "operation_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operation Id"
+        },
+        "start_at": {
+          "format": "date-time",
+          "title": "Start At",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/ScenarioEngine_AssignmentStatus"
+        },
+        "technician_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Technician Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "assignment_id",
+        "assignment_type",
+        "status",
+        "machine_id",
+        "start_at",
+        "end_at"
+      ],
+      "title": "ScheduleAssignment",
+      "type": "object"
+    },
+    "ScenarioEngine_Technician": {
+      "additionalProperties": false,
+      "properties": {
+        "availability": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_TimeWindow"
+          },
+          "title": "Availability",
+          "type": "array"
+        },
+        "display_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "skills": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_TechnicianSkill"
+          },
+          "minItems": 1,
+          "title": "Skills",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/definitions/ScenarioEngine_TechnicianStatus"
+        },
+        "technician_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Technician Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "technician_id",
+        "display_name",
+        "status",
+        "skills"
+      ],
+      "title": "Technician",
+      "type": "object"
+    },
+    "ScenarioEngine_TechnicianSkill": {
+      "additionalProperties": false,
+      "properties": {
+        "certified_action_types": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Certified Action Types",
+          "type": "array"
+        },
+        "certified_machine_families": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Certified Machine Families",
+          "type": "array"
+        },
+        "level": {
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Level",
+          "type": "integer"
+        },
+        "skill_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Skill Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skill_id",
+        "level"
+      ],
+      "title": "TechnicianSkill",
+      "type": "object"
+    },
+    "ScenarioEngine_TechnicianStatus": {
+      "enum": [
+        "AVAILABLE",
+        "ASSIGNED",
+        "OFF_SHIFT",
+        "UNAVAILABLE"
+      ],
+      "title": "TechnicianStatus",
+      "type": "string"
+    },
+    "ScenarioEngine_TechnicianUnavailable": {
+      "additionalProperties": false,
+      "properties": {
+        "end_at": {
+          "format": "date-time",
+          "title": "End At",
+          "type": "string"
+        },
+        "start_at": {
+          "format": "date-time",
+          "title": "Start At",
+          "type": "string"
+        },
+        "technician_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Technician Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "TECHNICIAN_UNAVAILABLE",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "technician_id",
+        "start_at",
+        "end_at"
+      ],
+      "title": "TechnicianUnavailable",
+      "type": "object"
+    },
+    "ScenarioEngine_TimeWindow": {
+      "additionalProperties": false,
+      "properties": {
+        "end_at": {
+          "format": "date-time",
+          "title": "End At",
+          "type": "string"
+        },
+        "start_at": {
+          "format": "date-time",
+          "title": "Start At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start_at",
+        "end_at"
+      ],
+      "title": "TimeWindow",
+      "type": "object"
+    },
+    "ScenarioEngine_ValidationVerdict": {
+      "enum": [
+        "VALID",
+        "INVALID",
+        "ERROR"
+      ],
+      "title": "ValidationVerdict",
+      "type": "string"
+    },
+    "ScenarioEngine_EvaluationResult": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline": {
+          "$ref": "#/definitions/ScenarioEngine_Evaluation"
+        },
+        "comparison": {
+          "$ref": "#/definitions/ScenarioEngine_Comparison"
+        },
+        "contract_version": {
+          "const": "scenario-engine:1.0",
+          "default": "scenario-engine:1.0",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "effective": {
+          "$ref": "#/definitions/ScenarioEngine_EffectiveInput"
+        },
+        "engine_version": {
+          "const": "scenario-evaluator:1.0.0",
+          "default": "scenario-evaluator:1.0.0",
+          "title": "Engine Version",
+          "type": "string"
+        },
+        "identity": {
+          "$ref": "#/definitions/ScenarioEngine_Identity"
+        },
+        "live_mapping": {
+          "$ref": "#/definitions/ScenarioEngine_LiveMapping"
+        },
+        "sampling": {
+          "$ref": "#/definitions/ScenarioEngine_SamplingEvidence"
+        },
+        "scenario": {
+          "$ref": "#/definitions/ScenarioEngine_Evaluation"
+        },
+        "semantic_input_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Semantic Input Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "identity",
+        "semantic_input_hash",
+        "sampling",
+        "effective",
+        "baseline",
+        "scenario",
+        "comparison",
+        "live_mapping"
+      ],
+      "title": "EvaluationResult",
+      "type": "object"
+    },
+    "ScenarioEngine_DurationAxis": {
+      "additionalProperties": false,
+      "properties": {
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "MAINTENANCE_DURATION",
+          "title": "Type",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "maximum": 43200,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 7,
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "type",
+        "maintenance_request_id",
+        "values"
+      ],
+      "title": "DurationAxis",
+      "type": "object"
+    },
+    "ScenarioEngine_RankChangeInterval": {
+      "additionalProperties": false,
+      "properties": {
+        "from_strategy": {
+          "title": "From Strategy",
+          "type": "string"
+        },
+        "interpretation": {
+          "const": "SAMPLED_INTERVAL_NOT_EXACT_THRESHOLD",
+          "default": "SAMPLED_INTERVAL_NOT_EXACT_THRESHOLD",
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "lower_sample": {
+          "title": "Lower Sample",
+          "type": "number"
+        },
+        "to_strategy": {
+          "title": "To Strategy",
+          "type": "string"
+        },
+        "upper_sample": {
+          "title": "Upper Sample",
+          "type": "number"
+        }
+      },
+      "required": [
+        "lower_sample",
+        "upper_sample",
+        "from_strategy",
+        "to_strategy"
+      ],
+      "title": "RankChangeInterval",
+      "type": "object"
+    },
+    "ScenarioEngine_SensitivityPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "comparison": {
+          "$ref": "#/definitions/ScenarioEngine_Comparison"
+        },
+        "evaluation": {
+          "$ref": "#/definitions/ScenarioEngine_Evaluation"
+        },
+        "input_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Input Hash",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "FEASIBLE",
+            "NO_FEASIBLE_PLAN",
+            "FAILED",
+            "TIMEOUT"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value",
+        "input_hash",
+        "status",
+        "evaluation",
+        "comparison"
+      ],
+      "title": "SensitivityPoint",
+      "type": "object"
+    },
+    "ScenarioEngine_WeightAxis": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "OBJECTIVE_WEIGHT",
+          "title": "Type",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": "number"
+          },
+          "maxItems": 7,
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        },
+        "weight": {
+          "enum": [
+            "production",
+            "reliability",
+            "maintenance",
+            "workforce",
+            "schedule_stability"
+          ],
+          "title": "Weight",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "weight",
+        "values"
+      ],
+      "title": "WeightAxis",
+      "type": "object"
+    },
+    "ScenarioEngine_SensitivityResult": {
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ScenarioEngine_DurationAxis"
+            },
+            {
+              "$ref": "#/definitions/ScenarioEngine_WeightAxis"
+            }
+          ],
+          "title": "Axis"
+        },
+        "baseline_point": {
+          "$ref": "#/definitions/ScenarioEngine_Evaluation"
+        },
+        "baseline_value": {
+          "title": "Baseline Value",
+          "type": "number"
+        },
+        "contract_version": {
+          "const": "scenario-engine:1.0",
+          "default": "scenario-engine:1.0",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "engine_version": {
+          "const": "scenario-evaluator:1.0.0",
+          "default": "scenario-evaluator:1.0.0",
+          "title": "Engine Version",
+          "type": "string"
+        },
+        "fixed_inputs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Fixed Inputs",
+          "type": "array"
+        },
+        "identity": {
+          "$ref": "#/definitions/ScenarioEngine_Identity"
+        },
+        "outcome": {
+          "enum": [
+            "COMPLETE",
+            "PARTIAL_FAILED",
+            "FAILED"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "points": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_SensitivityPoint"
+          },
+          "maxItems": 7,
+          "minItems": 1,
+          "title": "Points",
+          "type": "array"
+        },
+        "rank_change_intervals": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_RankChangeInterval"
+          },
+          "title": "Rank Change Intervals",
+          "type": "array"
+        },
+        "requested_order": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Requested Order",
+          "type": "array"
+        },
+        "sampling": {
+          "$ref": "#/definitions/ScenarioEngine_SamplingEvidence"
+        }
+      },
+      "required": [
+        "identity",
+        "outcome",
+        "axis",
+        "requested_order",
+        "baseline_value",
+        "baseline_point",
+        "points",
+        "rank_change_intervals",
+        "fixed_inputs",
+        "sampling"
+      ],
+      "title": "SensitivityResult",
+      "type": "object"
+    },
+    "ScenarioEngine_ComparedRun": {
+      "additionalProperties": false,
+      "properties": {
+        "comparison": {
+          "$ref": "#/definitions/ScenarioEngine_Comparison"
+        },
+        "engine_version": {
+          "const": "scenario-evaluator:1.0.0",
+          "default": "scenario-evaluator:1.0.0",
+          "title": "Engine Version",
+          "type": "string"
+        },
+        "identity": {
+          "$ref": "#/definitions/ScenarioEngine_Identity"
+        },
+        "overrides": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "DEFER_MAINTENANCE": "#/definitions/ScenarioEngine_DeferMaintenance",
+                "MAINTENANCE_DURATION": "#/definitions/ScenarioEngine_MaintenanceDuration",
+                "TECHNICIAN_UNAVAILABLE": "#/definitions/ScenarioEngine_TechnicianUnavailable"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/definitions/ScenarioEngine_TechnicianUnavailable"
+              },
+              {
+                "$ref": "#/definitions/ScenarioEngine_MaintenanceDuration"
+              },
+              {
+                "$ref": "#/definitions/ScenarioEngine_DeferMaintenance"
+              }
+            ]
+          },
+          "title": "Overrides",
+          "type": "array"
+        },
+        "planning_config": {
+          "$ref": "#/definitions/ScenarioEngine_ScenarioPlanningConfig"
+        },
+        "sampling": {
+          "$ref": "#/definitions/ScenarioEngine_SamplingEvidence"
+        },
+        "semantic_input_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Semantic Input Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "identity",
+        "semantic_input_hash",
+        "planning_config",
+        "overrides",
+        "sampling",
+        "comparison"
+      ],
+      "title": "ComparedRun",
+      "type": "object"
+    },
+    "ScenarioEngine_ScenarioPlanningConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_strategy_ids": {
+          "items": {
+            "enum": [
+              "production-priority",
+              "balanced",
+              "reliability-priority"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Allowed Strategy Ids",
+          "type": "array"
+        },
+        "base_seed": {
+          "default": 0,
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_limit": {
+          "default": 3,
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Candidate Limit",
+          "type": "integer"
+        },
+        "horizon_minutes": {
+          "maximum": 43200,
+          "minimum": 1,
+          "title": "Horizon Minutes",
+          "type": "integer"
+        },
+        "objective_weights": {
+          "$ref": "#/definitions/ScenarioEngine_ObjectiveWeights"
+        },
+        "simulation_runs": {
+          "default": 100,
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Simulation Runs",
+          "type": "integer"
+        },
+        "solver_timeout_seconds": {
+          "default": 30,
+          "maximum": 30,
+          "minimum": 1,
+          "title": "Solver Timeout Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "horizon_minutes",
+        "objective_weights",
+        "allowed_strategy_ids"
+      ],
+      "title": "ScenarioPlanningConfig",
+      "type": "object"
+    },
+    "ScenarioEngine_CompareResult": {
+      "additionalProperties": false,
+      "properties": {
+        "contract_version": {
+          "const": "scenario-engine:1.0",
+          "default": "scenario-engine:1.0",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "engine_version": {
+          "const": "scenario-evaluator:1.0.0",
+          "default": "scenario-evaluator:1.0.0",
+          "title": "Engine Version",
+          "type": "string"
+        },
+        "reference_identity": {
+          "$ref": "#/definitions/ScenarioEngine_Identity"
+        },
+        "reference_overrides": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "DEFER_MAINTENANCE": "#/definitions/ScenarioEngine_DeferMaintenance",
+                "MAINTENANCE_DURATION": "#/definitions/ScenarioEngine_MaintenanceDuration",
+                "TECHNICIAN_UNAVAILABLE": "#/definitions/ScenarioEngine_TechnicianUnavailable"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/definitions/ScenarioEngine_TechnicianUnavailable"
+              },
+              {
+                "$ref": "#/definitions/ScenarioEngine_MaintenanceDuration"
+              },
+              {
+                "$ref": "#/definitions/ScenarioEngine_DeferMaintenance"
+              }
+            ]
+          },
+          "title": "Reference Overrides",
+          "type": "array"
+        },
+        "reference_planning_config": {
+          "$ref": "#/definitions/ScenarioEngine_ScenarioPlanningConfig"
+        },
+        "reference_sampling": {
+          "$ref": "#/definitions/ScenarioEngine_SamplingEvidence"
+        },
+        "reference_semantic_input_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Reference Semantic Input Hash",
+          "type": "string"
+        },
+        "runs": {
+          "items": {
+            "$ref": "#/definitions/ScenarioEngine_ComparedRun"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Runs",
+          "type": "array"
+        },
+        "score_comparison": {
+          "const": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "default": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "title": "Score Comparison",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reference_identity",
+        "reference_semantic_input_hash",
+        "reference_planning_config",
+        "reference_overrides",
+        "reference_sampling",
+        "runs"
+      ],
+      "title": "CompareResult",
+      "type": "object"
+    },
+    "EngineResult": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ScenarioEngine_EvaluationResult"
+        },
+        {
+          "$ref": "#/definitions/ScenarioEngine_SensitivityResult"
+        }
+      ]
+    },
+    "Comparison": {
+      "$ref": "#/definitions/ScenarioEngine_CompareResult"
+    },
+    "LiveCreated": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "workspace_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "source_run_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "decision_case_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mode": {
+          "const": "LIVE"
+        },
+        "current_head": {
+          "$ref": "#/definitions/Head"
+        }
+      },
+      "required": [
+        "workspace_id",
+        "source_run_id",
+        "decision_case_id",
+        "mode",
+        "current_head"
+      ]
+    },
+    "post_scenario_workspaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/Workspace"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "get_scenario_workspaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Workspace"
+              }
+            },
+            "next_cursor": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "items",
+            "next_cursor"
+          ]
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "get_scenario_workspaces_by_workspace_id": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/Workspace"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "get_scenario_workspaces_by_workspace_id_baseline_entities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/BaselineEntities"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "post_scenario_workspaces_by_workspace_id_scenarios": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/Draft"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "get_scenario_workspaces_by_workspace_id_scenarios": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Draft"
+              }
+            },
+            "next_cursor": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "items",
+            "next_cursor"
+          ]
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "get_scenario_workspaces_by_workspace_id_scenarios_by_scenario_id": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/Draft"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "patch_scenario_workspaces_by_workspace_id_scenarios_by_scenario_id": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/Draft"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "post_scenario_workspaces_by_workspace_id_runs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/Job"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "get_scenario_workspaces_by_workspace_id_runs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Job"
+              }
+            },
+            "next_cursor": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "items",
+            "next_cursor"
+          ]
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "get_scenario_workspaces_by_workspace_id_runs_by_run_id": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/Job"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "get_scenario_workspaces_by_workspace_id_compare": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/Comparison"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "post_scenario_workspaces_by_workspace_id_sensitivity_jobs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/Job"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "get_scenario_workspaces_by_workspace_id_sensitivity_jobs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Job"
+              }
+            },
+            "next_cursor": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "items",
+            "next_cursor"
+          ]
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "get_scenario_workspaces_by_workspace_id_sensitivity_jobs_by_job_id": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/Job"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    },
+    "post_scenario_workspaces_by_workspace_id_live_evaluations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "data": {
+          "$ref": "#/definitions/LiveCreated"
+        }
+      },
+      "required": [
+        "success",
+        "data"
+      ]
+    }
+  }
+}

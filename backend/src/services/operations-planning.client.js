@@ -22,18 +22,24 @@ function positiveInteger(value, fallback, maximum) {
   return number;
 }
 
-async function readJson(response) {
+async function readJson(response, signal) {
   if (!response.headers.get('content-type')?.includes('application/json')) {
     await response.body?.cancel().catch(() => {});
     throw failure('INVALID_AI_RESPONSE');
   }
   const reader = response.body?.getReader();
   if (!reader) throw failure('INVALID_AI_RESPONSE');
+  // Own cancellation after headers too: a pending stream read must not rely
+  // solely on fetch propagating its abort into the response body.
+  const abort = () => { void reader.cancel(signal.reason).catch(() => {}); };
+  signal.addEventListener('abort', abort, { once: true });
   const chunks = [];
   let size = 0;
   try {
+    if (signal.aborted) abort();
     while (true) {
       const { done, value } = await reader.read();
+      signal.throwIfAborted();
       if (done) break;
       size += value.byteLength;
       if (size > 4 * 1024 * 1024) {
@@ -42,7 +48,10 @@ async function readJson(response) {
       }
       chunks.push(Buffer.from(value));
     }
-  } finally { reader.releaseLock(); }
+  } finally {
+    signal.removeEventListener('abort', abort);
+    reader.releaseLock();
+  }
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); }
   catch { throw failure('INVALID_AI_RESPONSE'); }
 }
@@ -99,10 +108,10 @@ class OperationsPlanningClient {
           // Error bodies are advisory only. Gateways commonly produce HTML/text
           // for 502/503, which must retain the documented retry semantics.
           if (!response.ok) {
-            try { data = await readJson(response); }
+            try { data = await readJson(response, combined); }
             catch { data = undefined; }
           } else {
-            data = await readJson(response);
+            data = await readJson(response, combined);
           }
         } catch (error) {
           combined.throwIfAborted();

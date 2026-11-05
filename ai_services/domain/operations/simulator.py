@@ -33,6 +33,10 @@ class DeterministicSimulator:
     of emergency downtime. The pseudo-random generator is seeded per schedule.
     """
 
+    def __init__(self, *, draw_provider=None, check_cancelled=None):
+        self.draw_provider = draw_provider
+        self.check_cancelled = check_cancelled
+
     def calculate(
         self,
         snapshot: FactorySnapshot,
@@ -129,6 +133,8 @@ class DeterministicSimulator:
         failure_count = 0
         downtime = 0.0
         for run_index in range(simulation_runs):
+            if run_index % 128 == 0 and self.check_cancelled is not None:
+                self.check_cancelled()
             if run_index % 128 == 0 and deadline is not None and time.monotonic() >= deadline:
                 raise PlanningTimeoutError("planning deadline exceeded during simulation")
             run_failures = 0
@@ -136,7 +142,8 @@ class DeterministicSimulator:
                 probability = health.failure_probability
                 if health.machine_id in maintained_machines:
                     probability *= 0.30
-                if rng.random() < probability:
+                draw = rng.random() if self.draw_provider is None else self.draw_provider(health, run_index)
+                if draw < probability:
                     run_failures += 1
                     downtime += min(
                         float(health.failure_probability_horizon_minutes), horizon_minutes

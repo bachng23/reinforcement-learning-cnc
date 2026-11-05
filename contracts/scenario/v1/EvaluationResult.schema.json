@@ -1,0 +1,2163 @@
+{
+  "$defs": {
+    "AssignmentStatus": {
+      "enum": [
+        "PROPOSED",
+        "COMMITTED",
+        "RUNNING",
+        "COMPLETED",
+        "CANCELLED"
+      ],
+      "title": "AssignmentStatus",
+      "type": "string"
+    },
+    "AssignmentType": {
+      "enum": [
+        "PRODUCTION",
+        "MAINTENANCE",
+        "BLOCKED_TIME"
+      ],
+      "title": "AssignmentType",
+      "type": "string"
+    },
+    "CandidateAvailability": {
+      "additionalProperties": false,
+      "properties": {
+        "outcome": {
+          "enum": [
+            "FEASIBLE",
+            "NO_FEASIBLE_PLAN",
+            "TIMEOUT",
+            "NOT_EVALUATED"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "strategy": {
+          "title": "Strategy",
+          "type": "string"
+        }
+      },
+      "required": [
+        "strategy",
+        "outcome"
+      ],
+      "title": "CandidateAvailability",
+      "type": "object"
+    },
+    "CandidatePlan": {
+      "additionalProperties": false,
+      "properties": {
+        "assumptions": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Assumptions",
+          "type": "array"
+        },
+        "candidate_plan_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Candidate Plan Id",
+          "type": "string"
+        },
+        "decision_case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Decision Case Id",
+          "type": "string"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "kpis": {
+          "$ref": "#/$defs/PlanKPIs"
+        },
+        "plan_version": {
+          "minimum": 1,
+          "title": "Plan Version",
+          "type": "integer"
+        },
+        "schedule": {
+          "$ref": "#/$defs/Schedule"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_agent_run_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Source Agent Run Ids",
+          "type": "array"
+        },
+        "source_engine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Engine Id",
+          "type": "string"
+        },
+        "source_engine_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Engine Version",
+          "type": "string"
+        },
+        "strategy": {
+          "$ref": "#/$defs/PlanStrategy"
+        },
+        "validation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlanValidation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "warnings": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "candidate_plan_id",
+        "decision_case_id",
+        "snapshot_id",
+        "plan_version",
+        "strategy",
+        "source_engine_id",
+        "source_engine_version",
+        "generated_at",
+        "schedule",
+        "kpis"
+      ],
+      "title": "CandidatePlan",
+      "type": "object"
+    },
+    "Comparison": {
+      "additionalProperties": false,
+      "properties": {
+        "metric_registry_version": {
+          "const": "scenario-metrics:1",
+          "default": "scenario-metrics:1",
+          "title": "Metric Registry Version",
+          "type": "string"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/MetricComparison"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "model_assumptions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Model Assumptions",
+          "type": "array"
+        },
+        "score_comparison": {
+          "const": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "default": "NOT_COMPARABLE_ACROSS_REFERENCES",
+          "title": "Score Comparison",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metrics",
+        "model_assumptions"
+      ],
+      "title": "Comparison",
+      "type": "object"
+    },
+    "ConstraintSeverity": {
+      "enum": [
+        "ERROR",
+        "WARNING"
+      ],
+      "title": "ConstraintSeverity",
+      "type": "string"
+    },
+    "ConstraintViolation": {
+      "additionalProperties": false,
+      "properties": {
+        "constraint_code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Constraint Code",
+          "type": "string"
+        },
+        "entity_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Entity Refs",
+          "type": "array"
+        },
+        "message": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/ConstraintSeverity"
+        },
+        "time_window": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TimeWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "violation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Violation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "violation_id",
+        "constraint_code",
+        "severity",
+        "message"
+      ],
+      "title": "ConstraintViolation",
+      "type": "object"
+    },
+    "DeferMaintenance": {
+      "additionalProperties": false,
+      "properties": {
+        "earliest_start_at": {
+          "format": "date-time",
+          "title": "Earliest Start At",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "DEFER_MAINTENANCE",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "maintenance_request_id",
+        "earliest_start_at"
+      ],
+      "title": "DeferMaintenance",
+      "type": "object"
+    },
+    "Diagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field"
+        },
+        "message": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "target_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Target Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "Diagnostic",
+      "type": "object"
+    },
+    "DiscreteRULDistribution": {
+      "additionalProperties": false,
+      "properties": {
+        "model_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Model Version",
+          "type": "string"
+        },
+        "probability_mass": {
+          "items": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "type": "number"
+          },
+          "minItems": 2,
+          "title": "Probability Mass",
+          "type": "array"
+        },
+        "support_minutes": {
+          "items": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minItems": 2,
+          "title": "Support Minutes",
+          "type": "array"
+        },
+        "survival_beyond_horizon": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Survival Beyond Horizon",
+          "type": "number"
+        }
+      },
+      "required": [
+        "support_minutes",
+        "probability_mass",
+        "survival_beyond_horizon",
+        "model_version"
+      ],
+      "title": "DiscreteRULDistribution",
+      "type": "object"
+    },
+    "EffectiveDiff": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "before": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "field": {
+          "enum": [
+            "availability",
+            "expected_duration_minutes",
+            "earliest_start_at"
+          ],
+          "title": "Field",
+          "type": "string"
+        },
+        "target_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Target Id",
+          "type": "string"
+        },
+        "target_type": {
+          "enum": [
+            "TECHNICIAN",
+            "MAINTENANCE_REQUEST"
+          ],
+          "title": "Target Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_type",
+        "target_id",
+        "field",
+        "before",
+        "after"
+      ],
+      "title": "EffectiveDiff",
+      "type": "object"
+    },
+    "EffectiveInput": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostics": {
+          "items": {
+            "$ref": "#/$defs/Diagnostic"
+          },
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "diff": {
+          "items": {
+            "$ref": "#/$defs/EffectiveDiff"
+          },
+          "title": "Diff",
+          "type": "array"
+        },
+        "effective_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Effective Hash"
+        },
+        "hash_version": {
+          "const": "scenario-jcs-sha256:1",
+          "default": "scenario-jcs-sha256:1",
+          "title": "Hash Version",
+          "type": "string"
+        },
+        "overrides": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "DEFER_MAINTENANCE": "#/$defs/DeferMaintenance",
+                "MAINTENANCE_DURATION": "#/$defs/MaintenanceDuration",
+                "TECHNICIAN_UNAVAILABLE": "#/$defs/TechnicianUnavailable"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TechnicianUnavailable"
+              },
+              {
+                "$ref": "#/$defs/MaintenanceDuration"
+              },
+              {
+                "$ref": "#/$defs/DeferMaintenance"
+              }
+            ]
+          },
+          "title": "Overrides",
+          "type": "array"
+        },
+        "snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FactorySnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Source Hash",
+          "type": "string"
+        },
+        "transform_version": {
+          "const": "scenario-transform:1",
+          "default": "scenario-transform:1",
+          "title": "Transform Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_hash",
+        "overrides",
+        "snapshot",
+        "effective_hash",
+        "diff"
+      ],
+      "title": "EffectiveInput",
+      "type": "object"
+    },
+    "Evaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_availability": {
+          "items": {
+            "$ref": "#/$defs/CandidateAvailability"
+          },
+          "title": "Candidate Availability",
+          "type": "array"
+        },
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/CandidatePlan"
+          },
+          "maxItems": 3,
+          "title": "Candidates",
+          "type": "array"
+        },
+        "diagnostics": {
+          "items": {
+            "$ref": "#/$defs/Diagnostic"
+          },
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "outcome": {
+          "enum": [
+            "FEASIBLE",
+            "NO_FEASIBLE_PLAN",
+            "TIMEOUT",
+            "FAILED"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "partial": {
+          "default": false,
+          "title": "Partial",
+          "type": "boolean"
+        },
+        "ranking": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ranking"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "selected_candidate_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected Candidate Id"
+        }
+      },
+      "required": [
+        "outcome"
+      ],
+      "title": "Evaluation",
+      "type": "object"
+    },
+    "FactorySnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "current_schedule": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Schedule"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Factory Id",
+          "type": "string"
+        },
+        "health_snapshots": {
+          "items": {
+            "$ref": "#/$defs/HealthSnapshot"
+          },
+          "title": "Health Snapshots",
+          "type": "array"
+        },
+        "jobs": {
+          "items": {
+            "$ref": "#/$defs/ProductionJob"
+          },
+          "title": "Jobs",
+          "type": "array"
+        },
+        "machines": {
+          "items": {
+            "$ref": "#/$defs/Machine"
+          },
+          "minItems": 1,
+          "title": "Machines",
+          "type": "array"
+        },
+        "maintenance_requests": {
+          "items": {
+            "$ref": "#/$defs/MaintenanceRequest"
+          },
+          "title": "Maintenance Requests",
+          "type": "array"
+        },
+        "planning_window": {
+          "$ref": "#/$defs/TimeWindow"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "technicians": {
+          "items": {
+            "$ref": "#/$defs/Technician"
+          },
+          "title": "Technicians",
+          "type": "array"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "factory_id",
+        "captured_at",
+        "planning_window",
+        "machines"
+      ],
+      "title": "FactorySnapshot",
+      "type": "object"
+    },
+    "HealthSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "failure_probability": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Failure Probability",
+          "type": "number"
+        },
+        "failure_probability_horizon_minutes": {
+          "minimum": 1,
+          "title": "Failure Probability Horizon Minutes",
+          "type": "integer"
+        },
+        "health_index": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Health Index",
+          "type": "number"
+        },
+        "health_snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Health Snapshot Id",
+          "type": "string"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "observed_wear_um": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed Wear Um"
+        },
+        "rul_distribution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DiscreteRULDistribution"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source_model_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Model Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "health_snapshot_id",
+        "machine_id",
+        "observed_at",
+        "health_index",
+        "failure_probability_horizon_minutes",
+        "failure_probability",
+        "confidence",
+        "source_model_version"
+      ],
+      "title": "HealthSnapshot",
+      "type": "object"
+    },
+    "Identity": {
+      "additionalProperties": false,
+      "properties": {
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Factory Id",
+          "type": "string"
+        },
+        "frozen_input_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Frozen Input Hash",
+          "type": "string"
+        },
+        "run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "factory_id",
+        "workspace_id",
+        "run_id",
+        "frozen_input_hash"
+      ],
+      "title": "Identity",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "LiveMapping": {
+      "additionalProperties": false,
+      "properties": {
+        "mapped_defer_bounds": {
+          "items": {
+            "$ref": "#/$defs/DeferMaintenance"
+          },
+          "title": "Mapped Defer Bounds",
+          "type": "array"
+        },
+        "mapped_weights": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObjectiveWeights"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "supported": {
+          "title": "Supported",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "supported",
+        "mapped_weights",
+        "mapped_defer_bounds",
+        "reasons"
+      ],
+      "title": "LiveMapping",
+      "type": "object"
+    },
+    "Machine": {
+      "additionalProperties": false,
+      "properties": {
+        "capabilities": {
+          "items": {
+            "$ref": "#/$defs/MachineCapability"
+          },
+          "minItems": 1,
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "display_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "machine_family": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Family",
+          "type": "string"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/MachineStatus"
+        }
+      },
+      "required": [
+        "machine_id",
+        "display_name",
+        "machine_family",
+        "status",
+        "capabilities"
+      ],
+      "title": "Machine",
+      "type": "object"
+    },
+    "MachineCapability": {
+      "additionalProperties": false,
+      "properties": {
+        "damage_factor": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Damage Factor",
+          "type": "number"
+        },
+        "load_factor": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Load Factor",
+          "type": "number"
+        },
+        "nominal_processing_minutes": {
+          "minimum": 1,
+          "title": "Nominal Processing Minutes",
+          "type": "integer"
+        },
+        "operation_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Operation Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_type",
+        "nominal_processing_minutes"
+      ],
+      "title": "MachineCapability",
+      "type": "object"
+    },
+    "MachineOption": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_damage": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Damage"
+        },
+        "load_factor": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Load Factor",
+          "type": "number"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "processing_minutes": {
+          "minimum": 1,
+          "title": "Processing Minutes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "machine_id",
+        "processing_minutes"
+      ],
+      "title": "MachineOption",
+      "type": "object"
+    },
+    "MachineStatus": {
+      "enum": [
+        "IDLE",
+        "RUNNING",
+        "WARNING",
+        "MAINTENANCE",
+        "FAILED",
+        "UNAVAILABLE"
+      ],
+      "title": "MachineStatus",
+      "type": "string"
+    },
+    "MaintenanceDuration": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_duration_minutes": {
+          "maximum": 43200,
+          "minimum": 1,
+          "title": "Expected Duration Minutes",
+          "type": "integer"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "MAINTENANCE_DURATION",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "maintenance_request_id",
+        "expected_duration_minutes"
+      ],
+      "title": "MaintenanceDuration",
+      "type": "object"
+    },
+    "MaintenancePriority": {
+      "enum": [
+        "LOW",
+        "NORMAL",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "MaintenancePriority",
+      "type": "string"
+    },
+    "MaintenanceRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "action_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Action Type",
+          "type": "string"
+        },
+        "earliest_start_at": {
+          "format": "date-time",
+          "title": "Earliest Start At",
+          "type": "string"
+        },
+        "expected_duration_minutes": {
+          "minimum": 1,
+          "title": "Expected Duration Minutes",
+          "type": "integer"
+        },
+        "latest_start_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Start At"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        },
+        "maintenance_type": {
+          "$ref": "#/$defs/MaintenanceType"
+        },
+        "mandatory": {
+          "default": false,
+          "title": "Mandatory",
+          "type": "boolean"
+        },
+        "minimum_skill_level": {
+          "default": 1,
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Minimum Skill Level",
+          "type": "integer"
+        },
+        "priority": {
+          "$ref": "#/$defs/MaintenancePriority"
+        },
+        "requested_at": {
+          "format": "date-time",
+          "title": "Requested At",
+          "type": "string"
+        },
+        "required_skill_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Required Skill Ids",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/$defs/MaintenanceRequestStatus"
+        }
+      },
+      "required": [
+        "maintenance_request_id",
+        "machine_id",
+        "maintenance_type",
+        "action_type",
+        "priority",
+        "status",
+        "requested_at",
+        "earliest_start_at",
+        "expected_duration_minutes",
+        "required_skill_ids"
+      ],
+      "title": "MaintenanceRequest",
+      "type": "object"
+    },
+    "MaintenanceRequestStatus": {
+      "enum": [
+        "OPEN",
+        "SCHEDULED",
+        "IN_PROGRESS",
+        "COMPLETED",
+        "CANCELLED"
+      ],
+      "title": "MaintenanceRequestStatus",
+      "type": "string"
+    },
+    "MaintenanceType": {
+      "enum": [
+        "PREVENTIVE",
+        "CORRECTIVE"
+      ],
+      "title": "MaintenanceType",
+      "type": "string"
+    },
+    "MetricComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "absolute_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Absolute Delta"
+        },
+        "baseline": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Baseline"
+        },
+        "change": {
+          "enum": [
+            "IMPROVED_UNDER_MODEL",
+            "WORSENED_UNDER_MODEL",
+            "UNCHANGED",
+            "UNAVAILABLE"
+          ],
+          "title": "Change",
+          "type": "string"
+        },
+        "metric": {
+          "title": "Metric",
+          "type": "string"
+        },
+        "percent_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Percent Delta"
+        },
+        "preferred_direction": {
+          "enum": [
+            "LOWER",
+            "HIGHER"
+          ],
+          "title": "Preferred Direction",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reason"
+        },
+        "scenario": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Scenario"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "unit",
+        "preferred_direction",
+        "baseline",
+        "scenario",
+        "absolute_delta",
+        "percent_delta",
+        "reason",
+        "change"
+      ],
+      "title": "MetricComparison",
+      "type": "object"
+    },
+    "ObjectiveWeights": {
+      "additionalProperties": false,
+      "properties": {
+        "maintenance": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Maintenance",
+          "type": "number"
+        },
+        "production": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Production",
+          "type": "number"
+        },
+        "reliability": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Reliability",
+          "type": "number"
+        },
+        "schedule_stability": {
+          "default": 0.25,
+          "minimum": 0.0,
+          "title": "Schedule Stability",
+          "type": "number"
+        },
+        "workforce": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Workforce",
+          "type": "number"
+        }
+      },
+      "title": "ObjectiveWeights",
+      "type": "object"
+    },
+    "Operation": {
+      "additionalProperties": false,
+      "properties": {
+        "machine_options": {
+          "items": {
+            "$ref": "#/$defs/MachineOption"
+          },
+          "minItems": 1,
+          "title": "Machine Options",
+          "type": "array"
+        },
+        "operation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "operation_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Operation Type",
+          "type": "string"
+        },
+        "predecessor_operation_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Predecessor Operation Ids",
+          "type": "array"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/OperationStatus",
+          "default": "PENDING"
+        }
+      },
+      "required": [
+        "operation_id",
+        "sequence",
+        "operation_type",
+        "machine_options"
+      ],
+      "title": "Operation",
+      "type": "object"
+    },
+    "OperationStatus": {
+      "enum": [
+        "PENDING",
+        "READY",
+        "SCHEDULED",
+        "RUNNING",
+        "COMPLETED",
+        "BLOCKED"
+      ],
+      "title": "OperationStatus",
+      "type": "string"
+    },
+    "PlanKPIs": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_latency_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Latency Ms"
+        },
+        "expected_emergency_downtime_minutes": {
+          "minimum": 0.0,
+          "title": "Expected Emergency Downtime Minutes",
+          "type": "number"
+        },
+        "expected_failure_count": {
+          "minimum": 0.0,
+          "title": "Expected Failure Count",
+          "type": "number"
+        },
+        "failure_probability": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Failure Probability",
+          "type": "number"
+        },
+        "maintenance_cost": {
+          "minimum": 0.0,
+          "title": "Maintenance Cost",
+          "type": "number"
+        },
+        "makespan_minutes": {
+          "minimum": 0.0,
+          "title": "Makespan Minutes",
+          "type": "number"
+        },
+        "maximum_tardiness_minutes": {
+          "minimum": 0.0,
+          "title": "Maximum Tardiness Minutes",
+          "type": "number"
+        },
+        "on_time_completion_rate": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "On Time Completion Rate",
+          "type": "number"
+        },
+        "schedule_changes": {
+          "minimum": 0,
+          "title": "Schedule Changes",
+          "type": "integer"
+        },
+        "technician_utilization": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Technician Utilization",
+          "type": "number"
+        },
+        "total_tardiness_minutes": {
+          "minimum": 0.0,
+          "title": "Total Tardiness Minutes",
+          "type": "number"
+        }
+      },
+      "required": [
+        "makespan_minutes",
+        "total_tardiness_minutes",
+        "maximum_tardiness_minutes",
+        "on_time_completion_rate",
+        "expected_failure_count",
+        "failure_probability",
+        "expected_emergency_downtime_minutes",
+        "maintenance_cost",
+        "technician_utilization",
+        "schedule_changes"
+      ],
+      "title": "PlanKPIs",
+      "type": "object"
+    },
+    "PlanStrategy": {
+      "enum": [
+        "CURRENT",
+        "PRODUCTION_PRIORITY",
+        "BALANCED",
+        "RELIABILITY_PRIORITY",
+        "MANUAL",
+        "EXPERIMENTAL"
+      ],
+      "title": "PlanStrategy",
+      "type": "string"
+    },
+    "PlanValidation": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_plan_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Candidate Plan Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "3.0",
+          "default": "3.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "simulation_runs": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Simulation Runs",
+          "type": "integer"
+        },
+        "validated_at": {
+          "format": "date-time",
+          "title": "Validated At",
+          "type": "string"
+        },
+        "validation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Validation Id",
+          "type": "string"
+        },
+        "validator_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Validator Version",
+          "type": "string"
+        },
+        "verdict": {
+          "$ref": "#/$defs/ValidationVerdict"
+        },
+        "violations": {
+          "items": {
+            "$ref": "#/$defs/ConstraintViolation"
+          },
+          "title": "Violations",
+          "type": "array"
+        },
+        "warnings": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "validation_id",
+        "candidate_plan_id",
+        "validator_version",
+        "verdict",
+        "validated_at"
+      ],
+      "title": "PlanValidation",
+      "type": "object"
+    },
+    "ProductionJob": {
+      "additionalProperties": false,
+      "properties": {
+        "display_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "due_at": {
+          "format": "date-time",
+          "title": "Due At",
+          "type": "string"
+        },
+        "job_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "operations": {
+          "items": {
+            "$ref": "#/$defs/Operation"
+          },
+          "minItems": 1,
+          "title": "Operations",
+          "type": "array"
+        },
+        "priority": {
+          "default": 50,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Priority",
+          "type": "integer"
+        },
+        "release_at": {
+          "format": "date-time",
+          "title": "Release At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id",
+        "display_name",
+        "release_at",
+        "due_at",
+        "operations"
+      ],
+      "title": "ProductionJob",
+      "type": "object"
+    },
+    "Ranking": {
+      "additionalProperties": false,
+      "properties": {
+        "constant_range_benefit": {
+          "const": 1,
+          "default": 1,
+          "title": "Constant Range Benefit",
+          "type": "integer"
+        },
+        "normalization_reference_id": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Normalization Reference Id",
+          "type": "string"
+        },
+        "normalized_weights": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Normalized Weights",
+          "type": "object"
+        },
+        "raw_weights": {
+          "$ref": "#/$defs/ObjectiveWeights"
+        },
+        "reference_bounds": {
+          "additionalProperties": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "title": "Reference Bounds",
+          "type": "object"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/RankingRow"
+          },
+          "title": "Rows",
+          "type": "array"
+        },
+        "tie_break": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tie Break",
+          "type": "array"
+        },
+        "version": {
+          "const": "objective-minmax:1",
+          "default": "objective-minmax:1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "normalization_reference_id",
+        "reference_bounds",
+        "tie_break",
+        "raw_weights",
+        "normalized_weights",
+        "rows"
+      ],
+      "title": "Ranking",
+      "type": "object"
+    },
+    "RankingRow": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_plan_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Candidate Plan Id",
+          "type": "string"
+        },
+        "metric_benefits": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Metric Benefits",
+          "type": "object"
+        },
+        "objective_benefits": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Objective Benefits",
+          "type": "object"
+        },
+        "raw_kpis": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Raw Kpis",
+          "type": "object"
+        },
+        "score": {
+          "title": "Score",
+          "type": "number"
+        },
+        "strategy": {
+          "title": "Strategy",
+          "type": "string"
+        },
+        "tied_with": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Tied With",
+          "type": "array"
+        },
+        "weighted_contributions": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Weighted Contributions",
+          "type": "object"
+        }
+      },
+      "required": [
+        "candidate_plan_id",
+        "strategy",
+        "score",
+        "raw_kpis",
+        "metric_benefits",
+        "objective_benefits",
+        "weighted_contributions",
+        "tied_with"
+      ],
+      "title": "RankingRow",
+      "type": "object"
+    },
+    "SamplingEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha256-first53-uniform:1",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "base_seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "coupling": {
+          "const": "COMMON_RANDOM_NUMBERS",
+          "default": "COMMON_RANDOM_NUMBERS",
+          "title": "Coupling",
+          "type": "string"
+        },
+        "coupling_key": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Coupling Key",
+          "type": "string"
+        },
+        "observation_set_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Observation Set Hash",
+          "type": "string"
+        },
+        "sample_count": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "version": {
+          "const": "scenario-crn:1",
+          "default": "scenario-crn:1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "base_seed",
+        "sample_count",
+        "algorithm",
+        "observation_set_hash",
+        "coupling_key"
+      ],
+      "title": "SamplingEvidence",
+      "type": "object"
+    },
+    "Schedule": {
+      "additionalProperties": false,
+      "properties": {
+        "assignments": {
+          "items": {
+            "$ref": "#/$defs/ScheduleAssignment"
+          },
+          "title": "Assignments",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Factory Id",
+          "type": "string"
+        },
+        "planning_window": {
+          "$ref": "#/$defs/TimeWindow"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schedule_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Schedule Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schedule_id",
+        "factory_id",
+        "revision",
+        "planning_window",
+        "created_at"
+      ],
+      "title": "Schedule",
+      "type": "object"
+    },
+    "ScheduleAssignment": {
+      "additionalProperties": false,
+      "properties": {
+        "assignment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Assignment Id",
+          "type": "string"
+        },
+        "assignment_type": {
+          "$ref": "#/$defs/AssignmentType"
+        },
+        "end_at": {
+          "format": "date-time",
+          "title": "End At",
+          "type": "string"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Job Id"
+        },
+        "locked": {
+          "default": false,
+          "title": "Locked",
+          "type": "boolean"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maintenance Request Id"
+        },
+        "operation_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operation Id"
+        },
+        "start_at": {
+          "format": "date-time",
+          "title": "Start At",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/AssignmentStatus"
+        },
+        "technician_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Technician Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "assignment_id",
+        "assignment_type",
+        "status",
+        "machine_id",
+        "start_at",
+        "end_at"
+      ],
+      "title": "ScheduleAssignment",
+      "type": "object"
+    },
+    "Technician": {
+      "additionalProperties": false,
+      "properties": {
+        "availability": {
+          "items": {
+            "$ref": "#/$defs/TimeWindow"
+          },
+          "title": "Availability",
+          "type": "array"
+        },
+        "display_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "skills": {
+          "items": {
+            "$ref": "#/$defs/TechnicianSkill"
+          },
+          "minItems": 1,
+          "title": "Skills",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/$defs/TechnicianStatus"
+        },
+        "technician_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Technician Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "technician_id",
+        "display_name",
+        "status",
+        "skills"
+      ],
+      "title": "Technician",
+      "type": "object"
+    },
+    "TechnicianSkill": {
+      "additionalProperties": false,
+      "properties": {
+        "certified_action_types": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Certified Action Types",
+          "type": "array"
+        },
+        "certified_machine_families": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Certified Machine Families",
+          "type": "array"
+        },
+        "level": {
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Level",
+          "type": "integer"
+        },
+        "skill_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Skill Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skill_id",
+        "level"
+      ],
+      "title": "TechnicianSkill",
+      "type": "object"
+    },
+    "TechnicianStatus": {
+      "enum": [
+        "AVAILABLE",
+        "ASSIGNED",
+        "OFF_SHIFT",
+        "UNAVAILABLE"
+      ],
+      "title": "TechnicianStatus",
+      "type": "string"
+    },
+    "TechnicianUnavailable": {
+      "additionalProperties": false,
+      "properties": {
+        "end_at": {
+          "format": "date-time",
+          "title": "End At",
+          "type": "string"
+        },
+        "start_at": {
+          "format": "date-time",
+          "title": "Start At",
+          "type": "string"
+        },
+        "technician_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Technician Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "TECHNICIAN_UNAVAILABLE",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "technician_id",
+        "start_at",
+        "end_at"
+      ],
+      "title": "TechnicianUnavailable",
+      "type": "object"
+    },
+    "TimeWindow": {
+      "additionalProperties": false,
+      "properties": {
+        "end_at": {
+          "format": "date-time",
+          "title": "End At",
+          "type": "string"
+        },
+        "start_at": {
+          "format": "date-time",
+          "title": "Start At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start_at",
+        "end_at"
+      ],
+      "title": "TimeWindow",
+      "type": "object"
+    },
+    "ValidationVerdict": {
+      "enum": [
+        "VALID",
+        "INVALID",
+        "ERROR"
+      ],
+      "title": "ValidationVerdict",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "baseline": {
+      "$ref": "#/$defs/Evaluation"
+    },
+    "comparison": {
+      "$ref": "#/$defs/Comparison"
+    },
+    "contract_version": {
+      "const": "scenario-engine:1.0",
+      "default": "scenario-engine:1.0",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "effective": {
+      "$ref": "#/$defs/EffectiveInput"
+    },
+    "engine_version": {
+      "const": "scenario-evaluator:1.0.0",
+      "default": "scenario-evaluator:1.0.0",
+      "title": "Engine Version",
+      "type": "string"
+    },
+    "identity": {
+      "$ref": "#/$defs/Identity"
+    },
+    "live_mapping": {
+      "$ref": "#/$defs/LiveMapping"
+    },
+    "sampling": {
+      "$ref": "#/$defs/SamplingEvidence"
+    },
+    "scenario": {
+      "$ref": "#/$defs/Evaluation"
+    },
+    "semantic_input_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Semantic Input Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "identity",
+    "semantic_input_hash",
+    "sampling",
+    "effective",
+    "baseline",
+    "scenario",
+    "comparison",
+    "live_mapping"
+  ],
+  "title": "EvaluationResult",
+  "type": "object"
+}
