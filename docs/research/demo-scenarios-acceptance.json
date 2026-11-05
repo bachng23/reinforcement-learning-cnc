@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "integratedBaseSha": "0dc38d54a4bb2c8ed4d7fe9d55e986757b9ae326",
+  "acceptanceHeadSha": null,
+  "status": "BLOCKED_BY_REGISTERED_CHECKPOINTS",
+  "completedCleanRuns": 0,
+  "groups": [
+    {"id":"playback","status":"NOT_RUN","checks":["Start", "speed x1/x2/x5", "Step", "Pause/Resume", "one in-flight command"]},
+    {"id":"failure","status":"NOT_RUN","checks":["real event creates notice", "pause default", "pause toggle respects mandatory REVIEW", "no automatic navigation"]},
+    {"id":"drilldown","status":"NOT_RUN","checks":["machine/session identity", "historical event tick with current state"]},
+    {"id":"review","status":"NOT_RUN","checks":["proposal freezes boundary", "human UI approval", "legal override and WAIT", "durations and commitments"]},
+    {"id":"after-approval","status":"NOT_RUN","checks":["explicit playback resume", "auto-approval opt-in", "new failure pause", "CM completion"]},
+    {"id":"persistence","status":"NOT_RUN","checks":["reload RUNNING/REVIEW/repaired/COMPLETE", "history preserved", "no reload POST or auto-resume"]},
+    {"id":"conflicts","status":"NOT_RUN","checks":["double click", "lost-response retry", "stale revision", "two clients", "no duplicate dispatch/advance"]},
+    {"id":"errors","status":"NOT_RUN","checks":["missing runtime/checkpoint", "API failure", "missing session", "other owner", "no fixture fallback or stuck loading"]},
+    {"id":"complete","status":"NOT_RUN","checks":["H48 plus tail16", "both replay audits PASS", "no advance after COMPLETE", "no assumption S outperforms F"]}
+  ],
+  "runs": []
+}

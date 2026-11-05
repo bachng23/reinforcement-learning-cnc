@@ -1,0 +1,315 @@
+{
+  "schemaVersion": 1,
+  "preparationBaseSha": "3359d97a0b2bbef35b9d7ae02fe4200acaa7fb64",
+  "integratedSha": "508f4288b7c43bb3a10a76283bc791e7c9d4b62a",
+  "criteria": {
+    "nearFailureMaxTicks": 2,
+    "indices": "zero-based",
+    "demo03RequiredClassification": "WAIT_REQUIRED",
+    "demo02RequiresSharedTechnicianAndNoJointMatching": true,
+    "demo02And03RequirePolicyHorizon": true
+  },
+  "searchBudget": {
+    "maxSeeds": 32,
+    "maxSeconds": 300,
+    "perSeedSeconds": 120,
+    "maxOutputMiB": 64
+  },
+  "scenarios": [
+    {
+      "id": "DEMO-01",
+      "title": "First breakdown and corrective dispatch",
+      "case": "base",
+      "mode": "incident",
+      "seed": "990000001",
+      "controller": "S",
+      "verificationStatus": "VERIFIED",
+      "browserStatus": "NOT_RUN",
+      "approvalAssumption": "CLI accepts policy automatically; browser requires human UI approval",
+      "milestones": [
+        {
+          "tick": 5,
+          "event": "failure",
+          "machineIndex": 2,
+          "componentIndex": 1
+        },
+        {
+          "tick": 5,
+          "event": "start",
+          "machineIndex": 2,
+          "componentIndex": 1
+        },
+        {
+          "tick": 7,
+          "event": "completion",
+          "machineIndex": 2,
+          "componentIndex": 1
+        }
+      ],
+      "provenance": {
+        "traceSha256": "57b385fc0bdefd15040747229eb7ef8e2825167da509f043054334e4998f15c8",
+        "releases": {
+          "S": {
+            "release_id": "se1-base-S-root0-96k",
+            "sha256": "95391e51b2cb057fb240f3c9e4db27d5a3faf71b02b0f65d82708aaf4ed3b136"
+          },
+          "F": {
+            "release_id": "se1-base-F-root0-96k",
+            "sha256": "b1cb493ec657e4e0b57aefe8ea8f361624dec8fa1a4eaa036e7e1537ddbe37b0"
+          }
+        },
+        "vendorSourceCommit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+        "runtime": {
+          "python": "3.12.13",
+          "platform": "macOS-27.0.1-arm64-arm-64bit",
+          "torch": "2.14.0"
+        },
+        "audits": {
+          "primary": {
+            "status": "PASS",
+            "scope": "independent physical replay of included episodes only",
+            "records": 64,
+            "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e"
+          },
+          "baseline": {
+            "status": "PASS",
+            "scope": "independent physical replay of included episodes only",
+            "records": 64,
+            "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e"
+          }
+        }
+      },
+      "evidence": {
+        "boundary": 5,
+        "jobs": [
+          null,
+          null
+        ],
+        "action": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "DEMO-02",
+      "title": "Two nearby failures competing for one technician",
+      "case": "base",
+      "mode": "policy",
+      "seed": "990000019",
+      "controller": "S",
+      "verificationStatus": "VERIFIED",
+      "browserStatus": "NOT_RUN",
+      "approvalAssumption": "Automatic registered policy during search",
+      "milestones": [
+        {
+          "tick": 4,
+          "event": "failure",
+          "machineIndex": 1,
+          "componentIndex": 1
+        },
+        {
+          "tick": 4,
+          "event": "failure",
+          "machineIndex": 2,
+          "componentIndex": 0
+        }
+      ],
+      "provenance": {
+        "traceSha256": "0c996869ddc8601583a0d33b4b5e116d2a7e39323f374ffa00e4cb7cf2170e00",
+        "releases": {
+          "S": {
+            "release_id": "se1-base-S-root0-96k",
+            "sha256": "95391e51b2cb057fb240f3c9e4db27d5a3faf71b02b0f65d82708aaf4ed3b136"
+          },
+          "F": {
+            "release_id": "se1-base-F-root0-96k",
+            "sha256": "b1cb493ec657e4e0b57aefe8ea8f361624dec8fa1a4eaa036e7e1537ddbe37b0"
+          }
+        },
+        "vendorSourceCommit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+        "runtime": {
+          "python": "3.12.13",
+          "platform": "macOS-27.0.1-arm64-arm-64bit",
+          "torch": "2.14.0"
+        },
+        "audits": {
+          "primary": {
+            "status": "PASS",
+            "scope": "independent physical replay of included episodes only",
+            "records": 64,
+            "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e"
+          },
+          "baseline": {
+            "status": "PASS",
+            "scope": "independent physical replay of included episodes only",
+            "records": 64,
+            "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e"
+          }
+        }
+      },
+      "evidence": {
+        "boundary": 4,
+        "sharedAvailableTechnicians": [
+          1
+        ],
+        "deltaTicks": 0,
+        "action": [
+          [
+            2,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "DEMO-03",
+      "title": "Compatible technicians occupied",
+      "case": "base",
+      "mode": "policy",
+      "seed": "990000001",
+      "controller": "S",
+      "verificationStatus": "VERIFIED",
+      "browserStatus": "NOT_RUN",
+      "approvalAssumption": "Automatic registered policy during search",
+      "milestones": [
+        {
+          "tick": 8,
+          "event": "failure",
+          "machineIndex": 1,
+          "componentIndex": 1
+        }
+      ],
+      "provenance": {
+        "traceSha256": "6bc8a821ca9e9046d408232c936f5746f7116e2486fc13725ca3d16425d431eb",
+        "releases": {
+          "S": {
+            "release_id": "se1-base-S-root0-96k",
+            "sha256": "95391e51b2cb057fb240f3c9e4db27d5a3faf71b02b0f65d82708aaf4ed3b136"
+          },
+          "F": {
+            "release_id": "se1-base-F-root0-96k",
+            "sha256": "b1cb493ec657e4e0b57aefe8ea8f361624dec8fa1a4eaa036e7e1537ddbe37b0"
+          }
+        },
+        "vendorSourceCommit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+        "runtime": {
+          "python": "3.12.13",
+          "platform": "macOS-27.0.1-arm64-arm-64bit",
+          "torch": "2.14.0"
+        },
+        "audits": {
+          "primary": {
+            "status": "PASS",
+            "scope": "independent physical replay of included episodes only",
+            "records": 64,
+            "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e"
+          },
+          "baseline": {
+            "status": "PASS",
+            "scope": "independent physical replay of included episodes only",
+            "records": 64,
+            "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e"
+          }
+        }
+      },
+      "evidence": {
+        "boundary": 8,
+        "machineIndex": 1,
+        "componentIndex": 1,
+        "classification": "WAIT_REQUIRED",
+        "compatibleBusy": [
+          0,
+          1
+        ],
+        "legalAvailableTechnicians": [],
+        "jobs": [
+          {
+            "machine": 2,
+            "component": 0,
+            "technician": 0,
+            "kind": "PM",
+            "remaining": 1
+          },
+          {
+            "machine": 0,
+            "component": 1,
+            "technician": 1,
+            "kind": "PM",
+            "remaining": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEMO-04",
+      "title": "Repair completion followed by another breakdown",
+      "case": "base",
+      "mode": "incident",
+      "seed": "990000001",
+      "controller": "S",
+      "verificationStatus": "VERIFIED",
+      "browserStatus": "NOT_RUN",
+      "approvalAssumption": "CLI accepts policy automatically; browser requires human UI approval",
+      "milestones": [
+        {
+          "tick": 7,
+          "event": "completion",
+          "machineIndex": 2,
+          "componentIndex": 1
+        },
+        {
+          "tick": 7,
+          "event": "failure",
+          "machineIndex": 1,
+          "componentIndex": 1
+        }
+      ],
+      "provenance": {
+        "traceSha256": "57b385fc0bdefd15040747229eb7ef8e2825167da509f043054334e4998f15c8",
+        "releases": {
+          "S": {
+            "release_id": "se1-base-S-root0-96k",
+            "sha256": "95391e51b2cb057fb240f3c9e4db27d5a3faf71b02b0f65d82708aaf4ed3b136"
+          },
+          "F": {
+            "release_id": "se1-base-F-root0-96k",
+            "sha256": "b1cb493ec657e4e0b57aefe8ea8f361624dec8fa1a4eaa036e7e1537ddbe37b0"
+          }
+        },
+        "vendorSourceCommit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+        "runtime": {
+          "python": "3.12.13",
+          "platform": "macOS-27.0.1-arm64-arm-64bit",
+          "torch": "2.14.0"
+        },
+        "audits": {
+          "primary": {
+            "status": "PASS",
+            "scope": "independent physical replay of included episodes only",
+            "records": 64,
+            "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e"
+          },
+          "baseline": {
+            "status": "PASS",
+            "scope": "independent physical replay of included episodes only",
+            "records": 64,
+            "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e"
+          }
+        }
+      },
+      "evidence": {
+        "deltaTicks": 0
+      }
+    }
+  ]
+}
