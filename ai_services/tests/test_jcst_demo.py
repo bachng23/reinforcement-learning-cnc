@@ -138,3 +138,61 @@ def test_autoplay_bounds_and_review_pause_preserve_state():
     frozen = copy.deepcopy(session)
     autoplay(session, 'review', 8)
     assert session == frozen
+
+
+def test_continuous_operation_retains_state_past_episode_and_bounds_history():
+    from domain.jcst.demo import autoplay, HISTORY_LIMIT
+    session = initialize(mode='policy', primary='risk', baseline='corrective', continuous=True)
+    for _ in range(40):
+        autoplay(session, 'complete', 8)
+    assert session['status'] == 'RUNNING'
+    assert session['primary']['state']['tick'] == 320
+    assert session['baseline']['state']['tick'] == 320
+    assert session['primary']['records'][0]['tick'] == 320 - HISTORY_LIMIT
+    assert len(session['primary']['records']) == HISTORY_LIMIT
+    assert len(session['workflow']) <= HISTORY_LIMIT
+    assert len(session['decisions']) <= HISTORY_LIMIT
+    assert session['primary']['tail_cost'] == 0
+    assert session['primary']['total_cost'] == session['primary']['controlled_cost']
+    assert session['primary']['failures'] > 0
+    assert sum(session['primary']['completed_jobs']) > 0
+    assert 'audits' not in session
+
+
+def test_policy_switch_keeps_physics_jobs_and_resets_comparison_origin():
+    from domain.jcst.demo import configure
+    session = initialize()
+    for _ in range(5):
+        prepare(session)
+    prepare(session)
+    commit(session, session['pending']['action'], 'human', 'Accept dispatch')
+    states = copy.deepcopy([session['primary']['state'], session['baseline']['state']])
+    configure(session, 'S', 'corrective')
+    assert [session['primary']['state'], session['baseline']['state']] == states
+    assert session['continuous'] is True
+    assert session['pending'] is None
+    assert session['primary']['comparison_start']['tick'] == 6
+    assert session['baseline']['controller'] == 'corrective'
+    before = copy.deepcopy(session)
+    with pytest.raises(ValueError):
+        configure(session, 'S', 'S')
+    assert session == before
+
+
+def test_continuous_learned_policy_stays_active_after_64_without_resetting_physical_time(monkeypatch):
+    import domain.jcst.demo as demo
+    session = initialize(mode='policy', continuous=True)
+    calls = []
+    original = demo.infer
+    def capture(config, state, release, horizon, tail):
+        calls.append((state.tick, release['arm'], horizon, tail))
+        return original(config, state, release, horizon, tail)
+    monkeypatch.setattr(demo, 'infer', capture)
+    while session['primary']['state']['tick'] < 70:
+        demo.autoplay(session, 'complete', 8 if session['primary']['state']['tick'] < 64 else 1)
+    assert session['status'] == 'RUNNING'
+    assert session['primary']['state']['tick'] == 70
+    assert all(tick == 0 and (horizon, tail) == (48, 16) for tick, _, horizon, tail in calls)
+    assert {arm for _, arm, _, _ in calls[-12:]} == {'S', 'F'}
+    assert [record['tick'] for record in session['primary']['records']] == list(range(70))
+    assert session['primary']['tail_cost'] == 0

@@ -12,6 +12,7 @@ const write = requireRole(['ADMIN', 'ENGINEER']);
 const id = z.string().uuid();
 const identifier = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/);
 const integer = z.number().int().nonnegative();
+const demoPolicy = z.enum(['S','A','F','risk','corrective','threshold5','wait']);
 const pagination = z.object({ page: z.coerce.number().int().min(1).max(100000).default(1), limit: z.coerce.number().int().min(1).max(100).default(20) }).strict();
 const branch = z.object({ episode_id: id, tick: integer, action: z.array(z.tuple([integer, integer, integer])).max(3),
   reason: z.string().trim().min(1).max(1000), expected_episode_hash: z.string().regex(/^[a-f0-9]{64}$/),
@@ -25,13 +26,14 @@ router.use((req, _res, next) => { if (process.env.RESEARCH_API_ENABLED === 'fals
 router.use(requireAuth);
 // Engineering simulation is isolated from immutable scientific campaign evidence.
 router.post('/demo/sessions', write, async (req, res) => {
-  const input = parse(z.object({case:z.enum(['base','generalist']).default('base'), seed:z.string().regex(/^99[0-9]{7}$/).default('990000001'), mode:z.enum(['incident','policy']).default('incident'), primary:z.enum(['S','A','F']).default('S'), baseline:z.enum(['S','A','F']).default('F')}).strict().refine(v => v.primary !== v.baseline, 'Choose different comparison policies'), req.body);
+  const input = parse(z.object({case:z.enum(['base','generalist']).default('base'), seed:z.string().regex(/^99[0-9]{7}$/).default('990000001'), mode:z.enum(['incident','policy']).default('incident'), primary:demoPolicy.default('S'), baseline:demoPolicy.default('F'), continuous:z.boolean().default(true)}).strict().refine(v => v.primary !== v.baseline, 'Choose different comparison policies'), req.body);
   ok(res, await demo.create(req.user, input, key(req)), 201);
 });
 router.get('/demo/sessions/:id', async (req,res) => ok(res, demo.present(await demo.read(req.user, parse(id,req.params.id)))));
 router.post('/demo/sessions/:id/commands', write, async (req,res) => {
   const shared = { revision: integer };
   const input = parse(z.discriminatedUnion('command', [
+    z.object({...shared,command:z.literal('configure'),primary:demoPolicy,baseline:demoPolicy,continuous:z.literal(true)}).strict().refine(v => v.primary !== v.baseline, 'Choose different comparison policies'),
     z.object({...shared,command:z.literal('advance'),autoApprove:z.boolean().default(false)}).strict(),
     z.object({...shared,command:z.literal('autoplay'),stopAt:z.enum(['incident','review','dispatch','repair','complete']),maxTicks:z.number().int().min(1).max(8).default(8)}).strict(),
     z.object({...shared,command:z.literal('approve'),reason:z.string().trim().min(1).max(1000)}).strict(),

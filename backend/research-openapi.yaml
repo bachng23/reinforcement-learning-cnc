@@ -11,7 +11,7 @@ paths:
   /demo/sessions:
     post:
       summary: Create a persistent engineering simulation; ADMIN or ENGINEER
-      description: Registered policies, root 0 and 96k budget. H=48 and fixed-risk tail=16. Incident mode shares WAIT until the first simulator failure; policy mode starts both policies at tick 0. Scientific campaign evidence is not modified.
+      description: Continuous operation is the default. Learned releases use root 0 and 96k budget with rolling 48/16 observation features. Set continuous=false for finite H=48 and fixed-risk tail=16. Incident mode shares WAIT until the first simulator failure; policy mode starts both policies at tick 0. Scientific campaign evidence is not modified.
       parameters: [ { $ref: '#/components/parameters/key' } ]
       requestBody:
         required: true
@@ -24,8 +24,9 @@ paths:
                 case: { type: string, enum: [base, generalist], default: base }
                 seed: { type: string, pattern: '^99[0-9]{7}$', default: '990000001' }
                 mode: { type: string, enum: [incident, policy], default: incident }
-                primary: { type: string, enum: [S, A, F], default: S }
-                baseline: { type: string, enum: [S, A, F], default: F }
+                continuous: { type: boolean, default: true }
+                primary: { type: string, enum: [S, A, F, risk, corrective, threshold5, wait], default: S }
+                baseline: { type: string, enum: [S, A, F, risk, corrective, threshold5, wait], default: F }
       responses:
         '201': { description: Session id, revision, pinned source/checkpoints, config, primary/baseline states and traces. Identical creation retries return the same session. }
         '409': { description: Idempotency key belongs to another scenario }
@@ -38,8 +39,8 @@ paths:
   /demo/sessions/{id}/commands:
     parameters: [ { $ref: '#/components/parameters/id' } ]
     post:
-      summary: Advance, autoplay, approve or override a simulation session; ADMIN or ENGINEER
-      description: Revision is required. Autoplay explicitly confirms policy actions automatically, computes at most eight physical ticks per command and can stop at incident/review/dispatch/repair milestones. REVIEW otherwise freezes both lanes. Only WAIT is automatic when no alternative is legal. All transitions use the same physical seed. Exact retries of the latest command are replayed; stale commands are rejected. COMPLETE sessions cannot advance.
+      summary: Configure, advance, autoplay, approve or override a simulation session; ADMIN or ENGINEER
+      description: Revision is required. Autoplay explicitly confirms policy actions automatically, computes at most eight physical ticks per command and can stop at incident/review/dispatch/repair milestones. REVIEW otherwise freezes both lanes. Only WAIT is automatic when no alternative is legal. All transitions use the same physical seed. Exact retries of the latest command are replayed; stale commands are rejected. COMPLETE sessions cannot advance until configured for continuous operation. Configure validates two distinct policies, preserves physical state and active commitments, clears any uncommitted proposal, and records a new comparison origin when policies change. Continuous traces retain 256 recent intervals with cumulative counters.
       parameters: [ { $ref: '#/components/parameters/key' } ]
       requestBody:
         required: true
@@ -47,6 +48,15 @@ paths:
           application/json:
             schema:
               oneOf:
+                - type: object
+                  additionalProperties: false
+                  required: [revision, command, primary, baseline, continuous]
+                  properties:
+                    revision: { type: integer, minimum: 0 }
+                    command: { const: configure }
+                    primary: { type: string, enum: [S, A, F, risk, corrective, threshold5, wait] }
+                    baseline: { type: string, enum: [S, A, F, risk, corrective, threshold5, wait] }
+                    continuous: { const: true }
                 - type: object
                   additionalProperties: false
                   required: [revision, command]

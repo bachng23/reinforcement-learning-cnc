@@ -2,12 +2,15 @@ import type { Config, State, Record as TickRecord } from '@/types/generated/jcst
 export type Matching = number[][];
 export type SimulationRecord = Omit<TickRecord, 'events'> & { events: (Omit<TickRecord['events'][number], 'uniform'> & { uniform?: number | string | null })[] };
 export type Lane = {
+  comparison_start?: { tick: number; failures: number; total_cost: number; downtime: number };
+  completed_jobs?: number[];
   controller: string; state: State; records: SimulationRecord[];
   total_cost: number; controlled_cost: number; tail_cost: number;
   failures: number; unavailable_machine_ticks: number; technician_busy_ticks: number; overrides: number;
 };
 export type Simulation = {
   id: string; revision: number; case_id: string; physical_seed: string; mode: 'incident' | 'policy';
+  continuous?: boolean; simulation_start?: string; step_seconds?: number;
   horizon: number; tail: number; source_commit: string; config: Config;
   releases: Record<string, { release_id: string; sha256: string }>;
   primary: Lane; baseline: Lane; status: 'RUNNING' | 'REVIEW' | 'COMPLETE'; activated: boolean;

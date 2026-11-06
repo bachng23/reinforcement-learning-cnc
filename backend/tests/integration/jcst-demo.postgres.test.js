@@ -10,7 +10,7 @@ const enabled = Boolean(process.env.JCST_RELEASE_REGISTRY);
     const response=await fetch(base+'/api/v1/research/demo/sessions'+url,{method:body===undefined?'GET':'POST',headers:{...(user?{Authorization:'Bearer '+jwt.sign({id:user.id},process.env.JWT_SECRET)}:{}),'Content-Type':'application/json','Idempotency-Key':identity},body:body===undefined?undefined:JSON.stringify(body)});
     return {status:response.status,json:await response.json()};
   }
-  const create=(body={},identity)=>req('',{body,identity});
+  const create=(body={},identity)=>req('',{body:{continuous:false,...body},identity});
   const command=(body,options={})=>req(`/${session.id}/commands`,{...options,body:{revision:session.revision,...body}});
   beforeAll(async()=>{
     for(const [name,role] of [['owner','ENGINEER'],['other','ENGINEER'],['viewer','VIEWER']]){
@@ -95,6 +95,13 @@ print(json.dumps(s))`;
     expect(session.audits.primary.status).toBe('PASS');expect(session.audits.baseline.status).toBe('PASS');
     expect(session.audits.primary.records).toBe(64);
     expect((await command({command:'advance'})).status).toBe(409);
+    const resumed=await command({command:'configure',primary:'S',baseline:'corrective',continuous:true});
+    expect(resumed.status).toBe(200);session=resumed.json.data;
+    expect(session.primary.state.tick).toBe(64);
+    expect(session.status).toBe('RUNNING');
+    const continued=await command({command:'advance',autoApprove:true});
+    expect(continued.status).toBe(200);
+    expect(continued.json.data.primary.state.tick).toBe(65);
   },30000);
 
   test('bounded autoplay pauses at incident/review/dispatch/repair and records automatic confirmation',async()=>{
@@ -114,4 +121,24 @@ print(json.dumps(s))`;
     session=first.json.data;
   },30000);
 
+  test('live defaults, policy changes and continuous resumption preserve physical commitments', async () => {
+    const created = await req('', {body:{mode:'policy',primary:'risk',baseline:'corrective'}});
+    expect(created.status).toBe(201);
+    session = created.json.data;
+    expect(session.continuous).toBe(true);
+    const initialDate = session.simulation_start;
+    let r = await command({command:'autoplay',stopAt:'complete',maxTicks:8});
+    expect(r.status).toBe(200); session=r.json.data;
+    const before=structuredClone(session.primary.state);
+    r=await command({command:'configure',primary:'S',baseline:'corrective',continuous:true});
+    expect(r.status).toBe(200); session=r.json.data;
+    expect(session.primary.state).toEqual(before);
+    expect(session.primary.comparison_start.tick).toBe(before.tick);
+    expect(session.simulation_start).toBe(initialDate);
+    expect((await command({command:'configure',primary:'S',baseline:'S',continuous:true})).status).toBe(400);
+    expect((await command({command:'configure',primary:'fake',baseline:'S',continuous:true})).status).toBe(400);
+    r=await command({command:'advance',autoApprove:true});
+    expect(r.status).toBe(200);
+    expect(r.json.data.primary.state.tick).toBe(before.tick+1);
+  },30000);
 });

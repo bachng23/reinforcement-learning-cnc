@@ -4,6 +4,68 @@ The Application now executes simulator transitions and registered policy inferen
 It does not use the old Overview fixture. Scientific campaign records remain in
 Research, separate from engineering simulation sessions.
 
+## Continuous factory operation (November 2026)
+
+New web sessions run continuously (`continuous: true`, policy control from the
+start). Automatic confirmation is enabled and incident pausing is off by default;
+both remain user controls. Playback runs while the page is open and resumes paused
+after reload. The server persists physical state after every command; it does not
+run a background simulation when no client is advancing it.
+
+The main clock and floor timeline display a 24-hour calendar. One engine interval
+maps to 15 simulated minutes for presentation; this is not a calibrated industrial
+cycle time. The start timestamp is persisted. Real component age, keyed failure
+randomness, service commitments and costs remain in the JCST engine.
+
+The visible policy selector supports the registered structured PPO (S), ablated
+PPO (A), flat PPO (F), and the existing RiskMatching, corrective, threshold-5 and
+WAIT controls. Missing registered releases are disabled. Overview and scenario
+setup show only Maintenance policy; inline comparison controls and metrics have
+been removed. Applying a policy keeps machine conditions and active jobs. The
+existing dedicated comparison page remains separate; further comparison design
+is deferred. The API still maintains its second lane, using corrective maintenance
+(or RiskMatching when corrective is selected) without requiring an Overview choice.
+
+Continuous learned inference presents each observation as a new 48/16 planning
+window (time feature zero); it never resets the actual physical transition time
+and never replaces learned control with the evaluation tail. This rolling use is
+an engineering demonstration, separate from SE1 evidence. Recent records,
+workflow and decision entries are bounded at 256; lifetime counters and technician
+completion counts remain cumulative. Existing completed sessions can enable
+continuous operation without resetting their state.
+
+Finite protocol runs remain available explicitly with `continuous: false`. They
+retain 48 learned intervals, 16 RiskMatching tail intervals and independent final
+physics audits. The finite walkthrough below describes that protocol and manual
+incident-review settings; new live sessions use the continuous defaults above.
+
+## Workshops and Dashboard
+
+`/simulation` replaces the Overview navigation label; `/overview` remains a valid
+legacy link. The Workshop selector offers four proposed server-PSU workshops inspired by
+LITEON's public product portfolio: SMT board assembly, power-board insertion and
+soldering, PSU final assembly, and reliability/pack-out. Twelve electronics
+machine categories and PCB/PSU carriers replace the generic machining and bottle
+examples. The process proposal, source links and abstraction boundaries are in
+`docs/design/liteon-server-psu-workshops.md`. Orthogonal conveyors connect each
+workshop's three controlled stations, and technician paths avoid equipment.
+
+Each workshop opens a separate persisted demo session. Browser storage remembers
+the session assigned to each workshop, and links include the workshop identifier.
+Switching stops playback and restores the destination session paused. The models
+are visual manufacturing context over the same three-station, two-component JCST
+maintenance physics; process-specific physics and real production counts are not
+claimed. First visits initialize dedicated engineering seeds per layout.
+
+`/dashboard` displays lifetime availability, failures, cost and technician
+utilization, with explicitly labelled recent-window state/failure charts, cost
+breakdown, maintenance mix, component condition and station reliability.
+Unavailable machine-time is reconstructed from pre-transition failure state and
+actual occupancy events (including dispatch and completion intervals). Component
+risk uses the pinned engine's conditional Weibull hazard for the next operating
+interval; it is not a learned failure forecast. Station links open the selected
+machine in Simulation. Refresh data reads persisted state without advancing it.
+
 ## Local setup
 
 1. Apply additive Prisma migrations and regenerate the backend client.
@@ -19,53 +81,44 @@ source/configuration/catalogue/checkpoint hashes and Torch compatibility. Missin
 or incompatible releases fail explicitly rather than replacing learned decisions
 with a heuristic. These files are local artifacts, not committed weights.
 
-## One-click presentation
+## Live observation walkthrough
 
-Press **Auto demo** in the page header. It creates a new incident-mode session
-using the selected scenario and engineering seed, then automatically presents:
-factory → first failure → actual AI workflow → matching proposal → automatic
-policy confirmation → technicians in service → corrective completion → S/F
-comparison. The proposal remains visible for four seconds; incident, workflow
-and service views have short reading pauses. The view automatically scrolls to
-the active panel, while Pause/Resume stays visible. The simulation is never modified
-to manufacture the presentation events.
+1. Open `/overview`, choose Base / engineering seed `990000001` / “After first
+   failure”, then press **Start simulation**. This creates a real session and
+   starts single-interval playback. No automatic screen switching or staged
+   confirmation occurs.
+2. Playback offers ×1 / ×2 / ×5: 2 / 1 / 0.4 seconds of display delay **plus runtime
+   computation** per command. These are presentation speeds, not physical time.
+   Pause stops scheduling; an in-flight interval can finish. Reload restores the
+   persisted trace paused.
+3. **Pause on new failure** defaults on. M3/C2 fails at boundary 5 for the seed
+   above. Overview stays visible; a clickable incident notification appears.
+   Notifications come from primary-lane failure/CM-completion events and retain
+   history across reloads. Historical notices open the machine's current state.
+4. Click the notification or the machine name. Inspect machine type, line, batch,
+   position, failed components and service commitments. Factory context remains
+   illustrative and does not alter JCST physics.
+5. Click **View dispatch proposal**. This requests the next decision boundary,
+   then opens Decision Center. If only WAIT is legal, one interval can advance;
+   this is disclosed in the dialog. At boundary 5, S proposes T1 → M1/C1 (PM)
+   and T2 → M3/C2 (CM), both taking two ticks.
+6. Inspect the proposal, technician compatibility and actual AI workflow.
+   **Approve & dispatch** advances one interval and returns to Factory with
+   playback running. The checked “Continue simulation and auto-approve subsequent
+   policy decisions” option enables automatic confirmation for later decisions;
+   uncheck it to keep reviewing every choice. New failures still pause by default.
+   Explicit approval/override remains recorded as human; later automatic decisions
+   retain their automatic actor. No LLM explanation is fabricated.
+7. Boundary 6 shows both technicians occupied with one tick left. Boundary 7
+   completes the jobs and restores M3/C2, emitting a completion notification.
+   Another machine can fail in the same interval, causing a new pause.
+8. Switch to **S vs F comparison** whenever desired. Both lanes advance under
+   the same seed/configuration/noise; comparisons during playback are partial.
+   Turn off incident pauses and enable auto-approval to run through to completion.
+   The final 64-record traces still require independent physical replay.
 
-**Pause auto demo** stops scheduling the next command; **Resume auto demo**
-continues. A bounded in-flight command can finish before the pause takes effect
-on simulation state. **Manual control** stops the guided scheduler and restores
-manual review. A reload restores the session but does not resume automatic
-confirmation without another explicit action.
-
-Autoplay computes up to eight physical ticks in one runtime process, avoiding
-Torch startup for each display frame. Every intermediate transition, event,
-matching and cost remains in the stored trace. It stops early at the requested
-real event, and both final traces still require independent physical replay.
-Automatic confirmations are recorded with actor `automatic` and the reason
-“Guided auto demo; policy matching confirmed automatically”. No human approval
-is fabricated. Exact retries and optimistic revision checks cover the whole
-bounded command.
-
-## Manual presentation walkthrough
-
-- Open `/overview`, select Base, engineering seed `990000001`, and “After first
-  failure”. Create simulation and press Run simulator with auto-approval off.
-- The real simulator emits failure of M3/C2 at boundary 5. S proposes T1 → M1/C1
-  (PM) and T2 → M3/C2 (CM), both with 2 ticks of service.
-- Open AI workflow to inspect observation, registered-policy inference, catalogue
-  validation and pending review. These are actual completed operations; no LLM
-  explanation or independent multi-agent RL reasoning is fabricated.
-- Open Decision Center. The simulator is frozen at the pending boundary, even
-  after a reload. Inspect compatibility and service durations. Approve & dispatch.
-- At boundary 6 both technicians are occupied with one tick remaining. Step once:
-  boundary 7 completes both jobs and restores M3/C2. New failures can occur
-  elsewhere according to the unchanged simulator; service completion does not
-  guarantee that the entire factory stays healthy.
-- Open Compare controllers and run with auto-approval. Both lanes advance with
-  their respective policy, same seed/configuration and common physical noise.
-  The UI shows partial/completed results, H/tail/total costs, failures, unavailable
-  machine-ticks, busy-ticks and actual cumulative cost curves.
-- New session with “At tick 0” runs policies without the shared incident prelude.
-  Use Research → SE1 for the existing multi-root scientific evidence.
+The bounded `autoplay` API remains available for batch clients, but the live web
+playback uses one `advance` command per interval so each state can be observed.
 
 All times are simulator ticks. The dispatch connections show assignments, not
 physical travel times. Unavailable machine-ticks include both service and
@@ -114,7 +167,15 @@ npm --prefix backend run test:integration
 
 Direct Computer Use verified session creation, automatic incident detection,
 manual dispatch, service completion, reload persistence and the live comparison.
-Screenshots are in `docs/design/screenshots/simulator-*.png`.
+Historical screenshots are in `docs/design/screenshots/simulator-*.png`.
+
+On 2026-11-03, Computer Use verified the new live observation flow against the
+local API: session `917dc0f7-bea2-4897-aba7-7489e1054098` stopped at the real M3/C2
+failure (tick 5), notification opened M3 context, requesting the proposal held
+tick 5, approval dispatched both technicians at tick 6, and tick 7 completed both
+services while a new M2/C2 failure paused playback. Reload retained tick 7 and the
+incident history without resuming. Current screenshots:
+`live-machine-incident.png` and `live-simulator-notifications.png`.
 
 
 ## Inspect a machine

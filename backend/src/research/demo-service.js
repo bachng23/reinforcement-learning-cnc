@@ -3,7 +3,7 @@ const { bridge } = require('./bridge');
 const { ApiError } = require('../lib/api-error');
 const { canonical, sha } = require('./artifact-store');
 const scope = user => user.role === 'ADMIN' ? {} : { ownerId: user.id };
-const present = row => ({ id: row.id, revision: row.revision, createdAt: row.createdAt, ...row.payloadJson });
+const present = row => ({ id: row.id, revision: row.revision, createdAt: row.createdAt, simulation_start: row.createdAt.toISOString(), step_seconds: 900, ...row.payloadJson });
 
 async function read(user, id) {
   const row = await prisma.demoSession.findFirst({ where: { id, ...scope(user) } });
@@ -43,9 +43,11 @@ async function command(user, id, input, key) {
     return present(row);
   }
   if (row.revision !== input.revision) throw new ApiError(409, 'DEMO_STALE', 'Session changed; reload before deciding');
-  if (row.payloadJson.status === 'COMPLETE') throw new ApiError(409, 'DEMO_COMPLETE', 'Simulation has completed');
+  if (row.payloadJson.status === 'COMPLETE' && input.command !== 'configure') throw new ApiError(409, 'DEMO_COMPLETE', 'Simulation has completed');
   let payloadJson;
-  if (input.command === 'autoplay') {
+  if (input.command === 'configure') {
+    payloadJson = await bridge({ operation: 'demo_configure', session: row.payloadJson, primary: input.primary, baseline: input.baseline, continuous: true });
+  } else if (input.command === 'autoplay') {
     payloadJson = await bridge({ operation: 'demo_autoplay', session: row.payloadJson, stop_at: input.stopAt, max_ticks: input.maxTicks });
   } else if (input.command === 'advance') {
     if (row.payloadJson.status === 'REVIEW') throw new ApiError(409, 'DEMO_REVIEW_REQUIRED', 'Review the pending matching before advancing');

@@ -13,9 +13,11 @@ from domain.jcst.runtime import audit_episode, branch_episode, controller, gener
 def execute(request: dict):
     operation = request["operation"]
     if operation.startswith("demo_"):
-        from domain.jcst.demo import initialize, prepare, commit, autoplay
+        from domain.jcst.demo import initialize, prepare, commit, autoplay, configure
         if operation == "demo_init":
             return initialize(**request["options"])
+        if operation == "demo_configure":
+            return configure(request["session"], request["primary"], request["baseline"], request["continuous"])
         if operation == "demo_prepare":
             return prepare(request["session"])
         if operation == "demo_autoplay":

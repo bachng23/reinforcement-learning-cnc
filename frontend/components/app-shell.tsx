@@ -21,13 +21,14 @@ import { getUserFromToken, logout, type TokenUser } from "@/lib/auth";
 
 const navigation = [
   {
-    href: "/overview",
-    label: "Overview",
-    icon: LayoutDashboard,
-    activePaths: ["/operations"],
+    href: "/simulation",
+    label: "Simulation",
+    icon: Activity,
+    activePaths: ["/overview", "/operations"],
   },
+  {href:"/dashboard",label:"Dashboard",icon:LayoutDashboard},
   { href: "/decisions", label: "Decision Center", icon: ClipboardCheck },
-  { href: "/agents", label: "Agent Control Room", icon: Bot },
+  { href: "/agents", label: "Decision activity", icon: Bot },
   { href: "/what-if", label: "Compare controllers", icon: SlidersHorizontal },
 ];
 
@@ -65,12 +66,13 @@ function NavItem({
 
 export function AppShell({
   children,
-  title = "Operations overview",
   simulationId,
+  workshopId,
 }: {
   children: ReactNode;
   title?: string;
   simulationId?: string;
+  workshopId?: string;
 }) {
   const router = useRouter();
   const [user, setUser] = useState<TokenUser | null>(null);
@@ -84,18 +86,9 @@ export function AppShell({
       if (localStorage.getItem("dss-density") === "compact")
         setDensity("compact");
     } catch {
-      /* Storage may be disabled; the control still works for this session. */
+      /* Use the default density when storage is unavailable. */
     }
   }, []);
-
-  const changeDensity = (value: "comfortable" | "compact") => {
-    setDensity(value);
-    try {
-      localStorage.setItem("dss-density", value);
-    } catch {
-      /* Session-only preference. */
-    }
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -128,7 +121,7 @@ export function AppShell({
       </a>
       <aside className="workspace-sidebar" aria-label="Workspace sidebar">
         <Link
-          href={simulationId ? `/overview?session=${simulationId}` : "/overview"}
+          href={simulationId ? `/simulation?session=${simulationId}${workshopId ? `&workshop=${workshopId}` : ""}` : "/simulation"}
           className="workspace-brand"
           title="Maintenance Coordination Workspace"
         >
@@ -144,32 +137,24 @@ export function AppShell({
             Application
           </p>
           {navigation.map((item) => (
-            <NavItem key={item.href} {...item} href={simulationId ? `${item.href}?session=${simulationId}` : item.href} collapsed={collapsed} />
+            <NavItem key={item.href} {...item} href={simulationId ? `${item.href}?session=${simulationId}${workshopId ? `&workshop=${workshopId}` : ""}` : item.href} collapsed={collapsed} />
           ))}
           {process.env.NEXT_PUBLIC_RESEARCH_ENABLED !== "false" && <>
             <p className={collapsed ? "sr-only" : "nav-group-label nav-group-secondary"}>Research</p>
             <NavItem href="/research" label="Research workspace" icon={FlaskConical} collapsed={collapsed} />
           </>}
-          <p
-            className={
-              collapsed ? "sr-only" : "nav-group-label nav-group-secondary"
-            }
-          >
-            Legacy & administration
-          </p>
-          <NavItem
-            href="/experiments"
-            label="Legacy CNC experiments"
-            icon={FlaskConical}
-            collapsed={collapsed}
-          />
           {user.role === "ADMIN" && (
+            <>
+            <p className={collapsed ? "sr-only" : "nav-group-label nav-group-secondary"}>
+              Administration
+            </p>
             <NavItem
               href="/admin"
               label="Users"
               icon={Users}
               collapsed={collapsed}
             />
+            </>
           )}
         </nav>
         <div className="sidebar-footer">
@@ -210,30 +195,6 @@ export function AppShell({
         </div>
       </aside>
       <div className="workspace-body">
-        <header className="workspace-topbar">
-          <div className="workspace-breadcrumb">
-            <span>Workspace</span>
-            <ChevronRight size={15} aria-hidden="true" />
-            <p>{title}</p>
-          </div>
-          <div
-            className="workspace-display-controls"
-            role="group"
-            aria-label="Display density"
-          >
-            <span>Density</span>
-            {(["comfortable", "compact"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={density === value}
-                onClick={() => changeDensity(value)}
-              >
-                {value === "comfortable" ? "Comfortable" : "Compact"}
-              </button>
-            ))}
-          </div>
-        </header>
         <div id="workspace-content" tabIndex={-1}>
           <ErrorBoundary>{children}</ErrorBoundary>
         </div>

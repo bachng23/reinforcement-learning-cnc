@@ -1,24 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { afterBatch, beatView, presentationAction } from '@/lib/simulation/presentation';
-import type { Simulation } from '@/lib/simulation/types';
-const boundary=(changes:Partial<Simulation>={}):Simulation=>({status:'RUNNING',first_incident_tick:null,primary:{records:[]},...changes} as Simulation);
-describe('guided presentation milestones',()=>{
-  it('only announces incidents, review and completed repairs returned by the simulator',()=>{
-    expect(afterBatch('factory',boundary())).toBe('factory');
-    expect(afterBatch('factory',boundary({first_incident_tick:5}))).toBe('incident');
-    expect(afterBatch('incident',boundary())).toBe('incident');
-    expect(afterBatch('incident',boundary({status:'REVIEW'}))).toBe('workflow');
-    const started=boundary();started.primary.records=[{events:[{type:'start',kind:'CM'}]}] as Simulation['primary']['records'];
-    expect(afterBatch('dispatch',started)).toBe('servicing');
-    expect(afterBatch('servicing',boundary())).toBe('servicing');
-    const repaired=boundary();repaired.primary.records=[{events:[{type:'completion',kind:'CM'}]}] as Simulation['primary']['records'];
-    expect(afterBatch('servicing',repaired)).toBe('repair');
-    expect(afterBatch('factory',boundary({status:'COMPLETE'}))).toBe('done');
+import { hasNewFailure, incidentNotifications } from '@/lib/simulation/presentation';
+import type { Simulation, SimulationRecord } from '@/lib/simulation/types';
+const record=(events:unknown[])=>({events} as SimulationRecord);
+describe('live simulator event presentation',()=>{
+  it('pauses only for newly appended primary failures, including failures within a batch',()=>{
+    const primary={records:[record([{type:'failure'}]),record([{type:'completion',kind:'CM'}]) ]};
+    const s={primary} as Simulation;
+    expect(hasNewFailure(0,s)).toBe(true);expect(hasNewFailure(1,s)).toBe(false);
+    primary.records.push(record([{type:'failure'}]),record([]));
+    expect(hasNewFailure(2,s)).toBe(true);
   });
-  it('holds the decision visibly before automatic dispatch and ends on the comparison',()=>{
-    expect(beatView.workflow).toBe('agents');expect(beatView.decision).toBe('decision');
-    expect(presentationAction('decision')).toEqual({delay:4000,next:'dispatch'});
-    expect(presentationAction('servicing').stopAt).toBe('repair');
-    expect(beatView.done).toBe('compare');expect(presentationAction('done').stopAt).toBeUndefined();
+  it('shows chronological evidence newest first, excludes PM and does not mutate the trace',()=>{
+    const records=[record([{type:'failure',tick:5},{type:'occupancy',tick:5}]),record([{type:'completion',kind:'PM',tick:7},{type:'failure',tick:7},{type:'completion',kind:'CM',tick:7}])];
+    expect(incidentNotifications(records)).toEqual([{type:'failure',tick:7},{type:'completion',kind:'CM',tick:7},{type:'failure',tick:5}]);
+    expect(records[0].events[0].type).toBe('failure');expect(records[1].events).toHaveLength(3);
+  });
+});
+
+describe('continuous simulator history', () => {
+  it('detects new failures after old trace records have been discarded', () => {
+    const s = { primary: { records: [
+      {tick: 255, events: [{type:'failure'}]}, {tick: 256, events: []},
+      {tick: 257, events: [{type:'failure'}]},
+    ] } } as unknown as Simulation;
+    expect(hasNewFailure(256,s)).toBe(true);
+    expect(hasNewFailure(258,s)).toBe(false);
   });
 });
