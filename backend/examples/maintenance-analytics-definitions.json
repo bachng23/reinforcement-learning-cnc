@@ -1,0 +1,114 @@
+{
+  "metric_definition_version": "maintenance-analytics.v1",
+  "definitions": [
+    {
+      "metric_key": "open_orders",
+      "grain": "ORDER",
+      "cohort": "CURRENT",
+      "unit": "count",
+      "formula": "Status not CLOSED/CANCELLED, including COMPLETED"
+    },
+    {
+      "metric_key": "overdue_orders",
+      "grain": "ORDER",
+      "cohort": "CURRENT",
+      "unit": "count",
+      "formula": "Open and planned_end_at < read_at"
+    },
+    {
+      "metric_key": "blocked_orders",
+      "grain": "ORDER",
+      "cohort": "CURRENT",
+      "unit": "count",
+      "formula": "Status BLOCKED, including MANAGER_HOLD"
+    },
+    {
+      "metric_key": "waiting_verification_orders",
+      "grain": "ORDER",
+      "cohort": "CURRENT",
+      "unit": "count",
+      "formula": "Status COMPLETED"
+    },
+    {
+      "metric_key": "created_orders",
+      "grain": "ORDER",
+      "cohort": "CREATE",
+      "unit": "count",
+      "formula": "Distinct orders with CREATE in period"
+    },
+    {
+      "metric_key": "closed_orders",
+      "grain": "ORDER",
+      "cohort": "CLOSE",
+      "unit": "count",
+      "formula": "Distinct orders with CLOSE in period, including VERIFIED_STOPPED"
+    },
+    {
+      "metric_key": "cancelled_orders",
+      "grain": "ORDER",
+      "cohort": "CANCEL",
+      "unit": "count",
+      "formula": "Distinct orders with CANCEL in period"
+    },
+    {
+      "metric_key": "successful_verified_orders",
+      "grain": "ORDER",
+      "cohort": "CLOSE",
+      "unit": "count",
+      "formula": "CLOSE with SUCCESS completion and VERIFIED verification"
+    },
+    {
+      "metric_key": "rework_decision_rate",
+      "grain": "DECISION",
+      "cohort": "VERIFICATION_DECISION",
+      "unit": "fraction",
+      "formula": "Rework decisions / CLOSE and both rework decisions"
+    },
+    {
+      "metric_key": "first_pass_verified_rate",
+      "grain": "ORDER",
+      "cohort": "CLOSE",
+      "unit": "fraction",
+      "formula": "Attempt 1 SUCCESS VERIFIED closes / all closes"
+    },
+    {
+      "metric_key": "time_to_first_accept",
+      "grain": "ORDER",
+      "cohort": "FIRST_ACCEPT",
+      "unit": "seconds",
+      "formula": "CREATE to first ACCEPT",
+      "percentile": "PostgreSQL percentile_cont",
+      "exclusions": [
+        "MISSING_HISTORY",
+        "INCONSISTENT_HISTORY"
+      ],
+      "meaning": "Workflow elapsed seconds; not labor, downtime or MTTR"
+    },
+    {
+      "metric_key": "active_execution_time",
+      "grain": "ATTEMPT",
+      "cohort": "COMPLETE",
+      "unit": "seconds",
+      "formula": "Sum IN_PROGRESS event intervals within completed attempt; excludes blocked and incomplete attempts",
+      "percentile": "PostgreSQL percentile_cont",
+      "exclusions": [
+        "MISSING_HISTORY",
+        "INCONSISTENT_HISTORY"
+      ],
+      "meaning": "Workflow elapsed seconds; not labor, downtime or MTTR"
+    },
+    {
+      "metric_key": "verification_wait_time",
+      "grain": "DECISION",
+      "cohort": "VERIFICATION_DECISION",
+      "unit": "seconds",
+      "formula": "Preceding attempt COMPLETE to CLOSE or rework decision",
+      "percentile": "PostgreSQL percentile_cont",
+      "exclusions": [
+        "MISSING_HISTORY",
+        "INCONSISTENT_HISTORY"
+      ],
+      "meaning": "Workflow elapsed seconds; not labor, downtime or MTTR"
+    }
+  ]
+}

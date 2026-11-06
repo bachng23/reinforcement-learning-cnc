@@ -25,5 +25,6 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "retain-on-failure",
     ...devices["Desktop Chrome"],
+    ...(process.env.OPERATIONS_BROWSER_EXECUTABLE ? {launchOptions: {executablePath: process.env.OPERATIONS_BROWSER_EXECUTABLE}} : {}),
   },
 });

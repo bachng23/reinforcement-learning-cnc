@@ -19,7 +19,7 @@ describe("Decision Cases discovery", () => {
     render(<DecisionCasesPage api={api} apiMode="real" initialQuery={{ factory_id: "factory-1" }} />);
     expect(screen.getByText("Loading decision cases")).toBeInTheDocument();
     const link = await screen.findByRole("link", { name: `Open recommendation for ${page.data[0].decision_case_id}` });
-    expect(link).toHaveAttribute("href", `/operations/recommendations?caseId=${page.data[0].decision_case_id}`);
+    expect(link).toHaveAttribute("href", `/operations/recommendations?factory_id=factory-1&caseId=${page.data[0].decision_case_id}`);
     expect(screen.getByText("Stale basis")).toBeInTheDocument();
     expect(screen.getByText(/Published plan version 1/)).toBeInTheDocument();
     expect(screen.getByText("Case revision")).toBeInTheDocument();
@@ -36,13 +36,15 @@ describe("Decision Cases discovery", () => {
       if (params.has("cursor")) return Response.json({ ...page, data: [second] });
       return Response.json({ ...page, meta: { ...page.meta, has_more: true, next_cursor: "opaque-first" } });
     });
-    render(<DecisionCasesPage api={createOperationsApiClient({ fetcher })} apiMode="real" initialQuery={{ factory_id: "factory-1", limit: 1 }} />);
+    const api = createOperationsApiClient({ fetcher });
+    const view = render(<DecisionCasesPage key="initial" api={api} apiMode="real" initialQuery={{ factory_id: "factory-1", limit: 1 }} />);
     await user.click(await screen.findByRole("button", { name: "Load more cases" }));
     expect(await screen.findByText("2 cases loaded")).toBeInTheDocument();
     expect(String(fetcher.mock.calls[1][0])).toContain("cursor=opaque-first");
     await user.selectOptions(screen.getByLabelText("Status"), "APPROVED");
     await user.selectOptions(screen.getByLabelText("Case mode"), "SIMULATION_ONLY");
     await user.click(screen.getByRole("button", { name: "Apply filters" }));
+    view.rerender(<DecisionCasesPage key="filtered" api={api} apiMode="real" initialQuery={{ factory_id: "factory-1", status: "APPROVED", mode: "SIMULATION_ONLY", limit: 1 }} />);
     await waitFor(() => expect(screen.getAllByRole("article")).toHaveLength(1));
     const filtered = new URL(String(fetcher.mock.lastCall?.[0]), "http://localhost");
     expect(Object.fromEntries(filtered.searchParams)).toEqual({ factory_id: "factory-1", status: "APPROVED", mode: "SIMULATION_ONLY", limit: "1" });
@@ -52,11 +54,34 @@ describe("Decision Cases discovery", () => {
     expect(String(fetcher.mock.lastCall?.[0])).not.toContain("cursor=");
     expect(fetcher.mock.calls.every(([, options]) => options?.method === "GET")).toBe(true);
   });
+  it("waits for route commitment before reading a changed filter scope", async () => {
+    const user = userEvent.setup();
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json(caseListFixture()));
+    const api = createOperationsApiClient({ fetcher });
+    const view = render(<DecisionCasesPage key="initial-route" api={api} apiMode="real" initialQuery={{ factory_id: "factory-1" }} />);
+    await screen.findByText("Stale basis");
+    replace.mockClear();
+
+    await user.selectOptions(screen.getByLabelText("Status"), "COMMITTED");
+    await user.selectOptions(screen.getByLabelText("Case mode"), "LIVE");
+    await user.click(screen.getByRole("button", { name: "Apply filters" }));
+    expect(replace).toHaveBeenCalledWith("/operations/cases?factory_id=factory-1&status=COMMITTED&mode=LIVE", { scroll: false });
+    // router.replace is asynchronous. Do not display filtered results while a
+    // reload would still use the old URL. Model the RSC route committing below.
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    view.rerender(<DecisionCasesPage key="committed-route" api={api} apiMode="real" initialQuery={{ factory_id: "factory-1", status: "COMMITTED", mode: "LIVE" }} />);
+    await screen.findByText("Stale basis");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    const applied = new URL(String(fetcher.mock.lastCall?.[0]), "http://localhost");
+    expect(Object.fromEntries(applied.searchParams)).toEqual({ factory_id: "factory-1", status: "COMMITTED", mode: "LIVE", limit: "25" });
+    expect(fetcher.mock.calls.every(([, options]) => options?.method === "GET")).toBe(true);
+  });
   it("uses the mock adapter's same DTO path and shows an explicit empty state", async () => {
     const api = createMockOperationsApiClient();
     render(<DecisionCasesPage api={api} apiMode="mock" initialQuery={{ factory_id: "factory-demo-01" }} />);
     expect(await screen.findByText("No matching cases")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Create a case" })).toHaveAttribute("href", "/operations");
+    expect(screen.getByRole("link", { name: "Create a case from Overview" })).toHaveAttribute("href", "/overview?factory_id=factory-demo-01&demo=1");
   });
   it("renders mock-created canonical cases through the same typed list component without changing status", async () => {
     const api = createMockOperationsApiClient();
@@ -89,11 +114,13 @@ describe("Decision Cases discovery", () => {
     const user = userEvent.setup();
     const page = caseListFixture();
     const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json(page)).mockResolvedValue(Response.json({ ...page, data: [], meta: { ...page.meta, factory_id: "factory-2" } }));
-    render(<DecisionCasesPage api={createOperationsApiClient({ fetcher })} initialQuery={{ factory_id: "factory-1" }} />);
+    const api = createOperationsApiClient({ fetcher });
+    const view = render(<DecisionCasesPage key="factory-1" api={api} initialQuery={{ factory_id: "factory-1" }} />);
     await screen.findByText("Stale basis");
     await user.clear(screen.getByLabelText("Factory ID"));
     await user.type(screen.getByLabelText("Factory ID"), "factory-2");
     await user.click(screen.getByRole("button", { name: "Apply filters" }));
+    view.rerender(<DecisionCasesPage key="factory-2" api={api} initialQuery={{ factory_id: "factory-2" }} />);
     await screen.findByText("No matching cases");
     expect(screen.queryByText("Stale basis")).not.toBeInTheDocument();
     expect(String(fetcher.mock.lastCall?.[0])).toContain("factory_id=factory-2");

@@ -34,7 +34,9 @@ describe("IntegratedSchedulePage API integration", () => {
     expect(await screen.findByRole("heading", { name: "Current committed schedule" })).toBeInTheDocument();
 
     const context = within(screen.getByLabelText("Schedule context"));
-    expect(context.getByText("snapshot-demo-20260922-0800")).toBeInTheDocument();
+    expect(context.getAllByText("snapshot-demo-20260922-0800")).toHaveLength(2);
+    expect(context.getByText("Observation snapshot ID")).toBeInTheDocument();
+    expect(context.getByText("Published basis snapshot ID")).toBeInTheDocument();
     expect(context.getByText("schedule-demo-current")).toBeInTheDocument();
     expect(screen.getByText("Plan version").closest("article")).toHaveTextContent("1");
     expect(screen.getByText("Schedule revision").closest("article")).toHaveTextContent("1");

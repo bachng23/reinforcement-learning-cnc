@@ -44,6 +44,8 @@ export {
   type OperationsApiClient,
 } from "@/lib/operations-api/client";
 export { createMockOperationsApiClient } from "@/lib/operations-api/mock";
+export { useOperationsOverview, type OperationsOverviewState } from "./use-operations-overview";
+export type { OperationsOverview } from "./overview";
 export {
   useOperationsContext,
   type OperationsContextData,

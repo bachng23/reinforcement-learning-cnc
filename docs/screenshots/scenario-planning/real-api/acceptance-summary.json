@@ -1,0 +1,140 @@
+{
+  "git_sha": "8b67bad414322b8bcf44e21e971a7e07ffb88626",
+  "source_tree_dirty": false,
+  "run_count": 3,
+  "acceptance": "THREE_BROWSER_RUNS_PASSED",
+  "runs": [
+    {
+      "git_sha": "8b67bad414322b8bcf44e21e971a7e07ffb88626",
+      "producer_sha": "d49ddfbbe3ffddb51cea03077aa032e4acb2ee1e",
+      "source_tree_dirty": false,
+      "run": 1,
+      "workspace_id": "dd66bf8e-5490-4c18-8efd-033a2e2809c4",
+      "run_id": "e4963f5a-1c5b-43c0-8396-6f276b148fbf",
+      "live_case_id": "1d91c0d0-0088-44e6-9b3a-56c69a87afc8",
+      "golden_workspace_id": "c603e2b9-72a8-4e8e-9b93-d0498e21cca6",
+      "semantic_input_hash": "6d5da41f01d2bb31571805181b495f33b2736e423b673370bb0efa4a4aff3c0a",
+      "viewports": [
+        {
+          "width": 1440,
+          "height": 900
+        },
+        {
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "width": 2560,
+          "height": 1440
+        }
+      ],
+      "assertions_passed": [
+        "lost_run_response_retries_same_key_body_single_persisted_job",
+        "typed_override_changes_real_validated_schedule",
+        "candidate_url_kpi_provenance_gantt_and_reload_match_postgresql_without_enqueue",
+        "revision_conflict_retains_input_and_prior_frozen_run",
+        "same_effective_inputs_ignore_new_job_uuid_and_note_revision",
+        "five_physical_samples_and_point_url_reload_keep_saved_outcomes",
+        "five_weight_samples_reuse_candidate_kpi_and_normalization_reference",
+        "baseline_and_scenario_compare_through_real_engine",
+        "simulation_keeps_operational_head_and_publication_unchanged",
+        "supported_defer_opens_new_authoritative_live_case_for_fresh_planning_and_approval",
+        "stale_head_409_never_rebases_or_creates_another_case",
+        "historical_editor_entities_stay_pinned_after_S2",
+        "independent_golden_90_91_boundary_has_real_infeasible_gaps_and_point_constraints",
+        "viewer_read_only_and_server_403",
+        "cross_factory_workspace_run_ids_are_scoped_404",
+        "inactive_actor_loses_access_without_stale_data",
+        "real_simulation_only_case_commit_is_denied_and_preserves_publication"
+      ]
+    },
+    {
+      "git_sha": "8b67bad414322b8bcf44e21e971a7e07ffb88626",
+      "producer_sha": "d49ddfbbe3ffddb51cea03077aa032e4acb2ee1e",
+      "source_tree_dirty": false,
+      "run": 2,
+      "workspace_id": "522628e0-cc12-4c45-8003-92feef0f9b54",
+      "run_id": "b3bc8d30-a03a-4b98-8503-febc41ff7e95",
+      "live_case_id": "67f42499-dee5-4322-b4fe-057ace8123e8",
+      "golden_workspace_id": "e2d864a4-6751-4fc5-b1f5-d1cc444c9430",
+      "semantic_input_hash": "6d5da41f01d2bb31571805181b495f33b2736e423b673370bb0efa4a4aff3c0a",
+      "viewports": [
+        {
+          "width": 1440,
+          "height": 900
+        },
+        {
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "width": 2560,
+          "height": 1440
+        }
+      ],
+      "assertions_passed": [
+        "lost_run_response_retries_same_key_body_single_persisted_job",
+        "typed_override_changes_real_validated_schedule",
+        "candidate_url_kpi_provenance_gantt_and_reload_match_postgresql_without_enqueue",
+        "revision_conflict_retains_input_and_prior_frozen_run",
+        "same_effective_inputs_ignore_new_job_uuid_and_note_revision",
+        "five_physical_samples_and_point_url_reload_keep_saved_outcomes",
+        "five_weight_samples_reuse_candidate_kpi_and_normalization_reference",
+        "baseline_and_scenario_compare_through_real_engine",
+        "simulation_keeps_operational_head_and_publication_unchanged",
+        "supported_defer_opens_new_authoritative_live_case_for_fresh_planning_and_approval",
+        "stale_head_409_never_rebases_or_creates_another_case",
+        "historical_editor_entities_stay_pinned_after_S2",
+        "independent_golden_90_91_boundary_has_real_infeasible_gaps_and_point_constraints",
+        "viewer_read_only_and_server_403",
+        "cross_factory_workspace_run_ids_are_scoped_404",
+        "inactive_actor_loses_access_without_stale_data",
+        "real_simulation_only_case_commit_is_denied_and_preserves_publication"
+      ]
+    },
+    {
+      "git_sha": "8b67bad414322b8bcf44e21e971a7e07ffb88626",
+      "producer_sha": "d49ddfbbe3ffddb51cea03077aa032e4acb2ee1e",
+      "source_tree_dirty": false,
+      "run": 3,
+      "workspace_id": "ddaeb46c-1973-4969-8d7a-4cf04e4416cd",
+      "run_id": "8cbf9237-04b2-487f-8344-b3e36024e0ce",
+      "live_case_id": "53bdc990-5b01-498b-8963-b07ce92359fe",
+      "golden_workspace_id": "0068fc64-47dd-4dba-abcf-0ffba407f6f4",
+      "semantic_input_hash": "6d5da41f01d2bb31571805181b495f33b2736e423b673370bb0efa4a4aff3c0a",
+      "viewports": [
+        {
+          "width": 1440,
+          "height": 900
+        },
+        {
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "width": 2560,
+          "height": 1440
+        }
+      ],
+      "assertions_passed": [
+        "lost_run_response_retries_same_key_body_single_persisted_job",
+        "typed_override_changes_real_validated_schedule",
+        "candidate_url_kpi_provenance_gantt_and_reload_match_postgresql_without_enqueue",
+        "revision_conflict_retains_input_and_prior_frozen_run",
+        "same_effective_inputs_ignore_new_job_uuid_and_note_revision",
+        "five_physical_samples_and_point_url_reload_keep_saved_outcomes",
+        "five_weight_samples_reuse_candidate_kpi_and_normalization_reference",
+        "baseline_and_scenario_compare_through_real_engine",
+        "simulation_keeps_operational_head_and_publication_unchanged",
+        "supported_defer_opens_new_authoritative_live_case_for_fresh_planning_and_approval",
+        "stale_head_409_never_rebases_or_creates_another_case",
+        "historical_editor_entities_stay_pinned_after_S2",
+        "independent_golden_90_91_boundary_has_real_infeasible_gaps_and_point_constraints",
+        "viewer_read_only_and_server_403",
+        "cross_factory_workspace_run_ids_are_scoped_404",
+        "inactive_actor_loses_access_without_stale_data",
+        "real_simulation_only_case_commit_is_denied_and_preserves_publication"
+      ]
+    }
+  ]
+}

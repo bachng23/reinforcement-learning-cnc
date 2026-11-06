@@ -30,6 +30,8 @@ async function ingestFactorySnapshot(input, db = require('../config/prisma')) {
   return db.$transaction(async (tx) => {
     // Same lock namespace as canonical seed; no unrelated factory is globally locked.
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${factoryId}, 0))::text`;
+    if (!await tx.factory.findUnique({ where: { factoryId }, select: { factoryId: true } }))
+      throw new ApiError(404, 'FACTORY_NOT_REGISTERED', 'Factory must be registered before ingestion');
     const key = { factoryId_snapshotId: { factoryId, snapshotId: payload.snapshot_id } };
     const existing = await tx.factorySnapshot.findUnique({ where: key });
     const current = await tx.operationsHead.findUnique({ where: { factoryId } });

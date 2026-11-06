@@ -8,14 +8,14 @@ const { PrismaClient } = require('@prisma/client');
 const { OperationsPlanningClient } = require('../../src/services/operations-planning.client');
 const { planPersistedSnapshot } = require('../../src/services/operations-planning.service');
 const { seedOperations, readOperations } = require('../../src/services/operations-context.service');
-const { ingestFactorySnapshot } = require('../../src/services/operations-snapshot.service');
+const { ingestFactorySnapshot } = require('../helpers/factory-fixtures');
 const { loadCanonicalSeedPlan, validatePayload } = require('../../src/services/operations-contract.service');
 const { command } = require('../../../scripts/check-migration-paths');
 
 const root = path.resolve(__dirname, '../..');
 const db = new PrismaClient();
 const baseUrl = process.env.AI_SERVICE_URL;
-const user = { id: 'planning-integration-admin', role: 'ADMIN' };
+let user, outsider;
 let plan, request;
 const calls = async () => (await fetch(`${baseUrl}/test/requests`)).json();
 const client = (mode, options = {}) => new OperationsPlanningClient({
@@ -26,6 +26,8 @@ beforeAll(async () => {
   if (!/^product_api_it_planning_\w+$/.test(new URL(process.env.DATABASE_URL).searchParams.get('schema'))) {
     throw new Error('Use npm run test:operations-planning to isolate PostgreSQL and start FastAPI');
   }
+  user = await db.user.create({ data: { username: 'planning-admin', passwordHash: 'test', role: 'ADMIN' } });
+  outsider = await db.user.create({ data: { username: 'planning-outsider', passwordHash: 'test', role: 'VIEWER' } });
   plan = await loadCanonicalSeedPlan();
   await seedOperations(db, plan, { factoryId: plan.factory_id });
   const context = await readOperations(db, user, plan.factory_id);
@@ -82,14 +84,15 @@ test('reads another persisted snapshot and never silently falls back to canonica
   const count = (await calls()).length;
   await expect(planPersistedSnapshot(db, user, { factoryId: 'missing', decisionCaseId: 'case-missing' }))
     .rejects.toMatchObject({ code: 'FACTORY_NOT_FOUND' });
-  await expect(planPersistedSnapshot(db, { id: 'outsider', role: 'VIEWER' }, { factoryId: plan.factory_id, decisionCaseId: 'case-forbidden' }))
+  await expect(planPersistedSnapshot(db, outsider, { factoryId: plan.factory_id, decisionCaseId: 'case-forbidden' }))
     .rejects.toMatchObject({ code: 'FACTORY_NOT_FOUND' });
   expect((await calls()).length).toBe(count);
 });
 
 test('development command calls the real planner and prints only canonical recommendation JSON', async () => {
   const child = spawn(process.execPath, ['scripts/plan-operations-demo.js', plan.factory_id, 'case-cli-planning'], {
-    cwd: root, env: { ...process.env, OPERATIONS_DEMO_DATABASE_URL: process.env.DATABASE_URL },
+    cwd: root, env: { ...process.env, OPERATIONS_DEMO_DATABASE_URL: process.env.DATABASE_URL,
+      OPERATIONS_ACTOR_USER_ID: user.id },
     windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
   });
   let output = '', error = '';
@@ -173,10 +176,10 @@ test.each(['timeout', 'slow-body'])('%s is bounded by one deadline and is not re
   expect((await calls()).length - count).toBe(1);
 });
 
-test('cancellation aborts a real in-flight request without retry; pre-abort makes no HTTP request', async () => {
+test.each(['timeout', 'slow-body'])('%s cancellation aborts a real in-flight request without retry; pre-abort makes no HTTP request', async mode => {
   const count = (await calls()).length;
   const controller = new AbortController();
-  const pending = client('timeout').plan(request, { signal: controller.signal });
+  const pending = client(mode).plan(request, { signal: controller.signal });
   const assertion = expect(pending).rejects.toMatchObject({ code: 'PLANNING_CANCELLED' });
   try {
     for (let i = 0; i < 100 && (await calls()).length === count; i++) await delay(25);

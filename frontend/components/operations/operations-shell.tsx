@@ -1,6 +1,6 @@
 "use client";
 
-import { Beaker, Bot, CalendarRange, Factory, LayoutDashboard, GitCompareArrows, ListChecks } from "lucide-react";
+import { Beaker, Bot, CalendarRange, Factory, GitCompareArrows, ListChecks } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -8,15 +8,19 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/research/page-header";
 import { cn } from "@/lib/utils";
+import { operationsHref } from "@/lib/operations-ui";
 
-const screens = [
-  { href: "/overview", label: "Overview", icon: LayoutDashboard },
-  { href: "/operations", label: "Resources", icon: Factory },
+const productionScreens = [
+  { href: "/overview", label: "Factory Overview", icon: Factory },
+  { href: "/operations", label: "Factory resources", icon: Factory },
   { href: "/operations/schedule", label: "Integrated Schedule", icon: CalendarRange },
-  { href: "/operations/recommendations", label: "Recommendations", icon: GitCompareArrows },
   { href: "/operations/cases", label: "Decision Cases", icon: ListChecks },
+  { href: "/operations/incidents", label: "Incident Center", icon: ListChecks },
+  { href: "/operations/scenarios", label: "Scenario Planning", icon: Beaker },
+] as const;
+const researchScreens = [
+  { href: "/operations/recommendations", label: "Recommendations preview", icon: GitCompareArrows },
   { href: "/operations/agents", label: "Agent Control Room", icon: Bot },
-  { href: "/operations/what-if", label: "What-if", icon: Beaker },
 ] as const;
 
 export function OperationsShell({
@@ -26,6 +30,8 @@ export function OperationsShell({
   actions,
   dataSource = "fixture",
   dataSourceMessage,
+  factoryId,
+  demo = false,
 }: {
   title: string;
   description: string;
@@ -33,12 +39,16 @@ export function OperationsShell({
   actions?: ReactNode;
   dataSource?: "fixture" | "live";
   dataSourceMessage?: string;
+  factoryId?: string;
+  demo?: boolean;
 }) {
   const pathname = usePathname();
+  const screens = pathname.startsWith("/operations/agents") || pathname.startsWith("/operations/what-if")
+    ? [...productionScreens, ...researchScreens] : productionScreens;
 
   return (
-    <AppShell title={title}>
-      <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <AppShell title={title} factoryId={factoryId} demo={demo}>
+      <main className="mx-auto w-full max-w-[1600px] min-w-0 space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <PageHeader
           title={title}
           description={description}
@@ -59,7 +69,7 @@ export function OperationsShell({
               return (
                 <Link
                   key={href}
-                  href={href}
+                  href={operationsHref(href, factoryId, { demo })}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors",

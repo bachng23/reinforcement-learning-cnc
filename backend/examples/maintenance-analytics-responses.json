@@ -1,0 +1,960 @@
+{
+  "overview": {
+    "success": true,
+    "data": {
+      "snapshot": {
+        "open_orders": {
+          "value": 0,
+          "availability": "AVAILABLE"
+        },
+        "overdue_orders": {
+          "value": 0,
+          "availability": "AVAILABLE"
+        },
+        "blocked_orders": {
+          "value": 0,
+          "availability": "AVAILABLE"
+        },
+        "waiting_verification_orders": {
+          "value": 0,
+          "availability": "AVAILABLE"
+        }
+      },
+      "period": {
+        "created_orders": {
+          "current": {
+            "value": 1,
+            "availability": "AVAILABLE"
+          },
+          "previous": {
+            "value": 0,
+            "availability": "AVAILABLE"
+          },
+          "delta": {
+            "absolute": 1,
+            "percent": null
+          }
+        },
+        "closed_orders": {
+          "current": {
+            "value": 1,
+            "availability": "AVAILABLE",
+            "verification": {
+              "VERIFIED": 1,
+              "VERIFIED_STOPPED": 0
+            }
+          },
+          "previous": {
+            "value": 0,
+            "availability": "AVAILABLE",
+            "verification": {
+              "VERIFIED": 0,
+              "VERIFIED_STOPPED": 0
+            }
+          },
+          "delta": {
+            "absolute": 1,
+            "percent": null
+          }
+        },
+        "cancelled_orders": {
+          "current": {
+            "value": 0,
+            "availability": "AVAILABLE"
+          },
+          "previous": {
+            "value": 0,
+            "availability": "AVAILABLE"
+          },
+          "delta": {
+            "absolute": 0,
+            "percent": null
+          }
+        },
+        "successful_verified_orders": {
+          "current": {
+            "value": 1,
+            "availability": "AVAILABLE"
+          },
+          "previous": {
+            "value": 0,
+            "availability": "AVAILABLE"
+          },
+          "delta": {
+            "absolute": 1,
+            "percent": null
+          }
+        },
+        "rework_decision_rate": {
+          "current": {
+            "numerator": 2,
+            "denominator": 3,
+            "value": 0.6666666666666666,
+            "availability": "AVAILABLE"
+          },
+          "previous": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "availability": "NO_DATA"
+          },
+          "delta_percentage_points": null
+        },
+        "first_pass_verified_rate": {
+          "current": {
+            "numerator": 0,
+            "denominator": 1,
+            "value": 0,
+            "availability": "AVAILABLE"
+          },
+          "previous": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "availability": "NO_DATA"
+          },
+          "delta_percentage_points": null
+        },
+        "time_to_first_accept": {
+          "current": {
+            "median": 10,
+            "p90": 10,
+            "sample_count": 1,
+            "excluded_count": 0,
+            "exclusions": {
+              "MISSING_HISTORY": 0,
+              "INCONSISTENT_HISTORY": 0
+            },
+            "availability": "AVAILABLE",
+            "unit": "seconds"
+          },
+          "previous": {
+            "median": null,
+            "p90": null,
+            "sample_count": 0,
+            "excluded_count": 0,
+            "exclusions": {
+              "MISSING_HISTORY": 0,
+              "INCONSISTENT_HISTORY": 0
+            },
+            "availability": "NO_DATA",
+            "unit": "seconds"
+          },
+          "delta": {
+            "median": {
+              "absolute": null,
+              "percent": null
+            },
+            "p90": {
+              "absolute": null,
+              "percent": null
+            }
+          }
+        },
+        "active_execution_time": {
+          "current": {
+            "median": 30,
+            "p90": 38,
+            "sample_count": 3,
+            "excluded_count": 0,
+            "exclusions": {
+              "MISSING_HISTORY": 0,
+              "INCONSISTENT_HISTORY": 0
+            },
+            "availability": "AVAILABLE",
+            "unit": "seconds"
+          },
+          "previous": {
+            "median": null,
+            "p90": null,
+            "sample_count": 0,
+            "excluded_count": 0,
+            "exclusions": {
+              "MISSING_HISTORY": 0,
+              "INCONSISTENT_HISTORY": 0
+            },
+            "availability": "NO_DATA",
+            "unit": "seconds"
+          },
+          "delta": {
+            "median": {
+              "absolute": null,
+              "percent": null
+            },
+            "p90": {
+              "absolute": null,
+              "percent": null
+            }
+          }
+        },
+        "verification_wait_time": {
+          "current": {
+            "median": 20,
+            "p90": 20,
+            "sample_count": 3,
+            "excluded_count": 0,
+            "exclusions": {
+              "MISSING_HISTORY": 0,
+              "INCONSISTENT_HISTORY": 0
+            },
+            "availability": "AVAILABLE",
+            "unit": "seconds"
+          },
+          "previous": {
+            "median": null,
+            "p90": null,
+            "sample_count": 0,
+            "excluded_count": 0,
+            "exclusions": {
+              "MISSING_HISTORY": 0,
+              "INCONSISTENT_HISTORY": 0
+            },
+            "availability": "NO_DATA",
+            "unit": "seconds"
+          },
+          "delta": {
+            "median": {
+              "absolute": null,
+              "percent": null
+            },
+            "p90": {
+              "absolute": null,
+              "percent": null
+            }
+          }
+        }
+      },
+      "coverage": "AVAILABLE"
+    },
+    "meta": {
+      "read_at": "2026-10-24T12:36:52.030700Z",
+      "metric_definition_version": "maintenance-analytics.v1",
+      "filters": {
+        "factory_id": "wo-f67f439d-6979-451d-b68d-4e177d743f7a",
+        "machine_id": null
+      },
+      "period": {
+        "from": "2026-09-22T04:00:00.000000Z",
+        "to": "2026-09-22T04:04:00.000000Z"
+      },
+      "timezone": "UTC",
+      "comparison_period": {
+        "from": "2026-09-22T03:56:00.000000Z",
+        "to": "2026-09-22T04:00:00.000000Z"
+      }
+    }
+  },
+  "trends": {
+    "success": true,
+    "data": [
+      {
+        "start": "2026-09-22T04:00:00.000Z",
+        "end": "2026-09-22T04:04:00.000Z",
+        "metric": {
+          "median": 30,
+          "p90": 38,
+          "sample_count": 3,
+          "excluded_count": 0,
+          "exclusions": {
+            "MISSING_HISTORY": 0,
+            "INCONSISTENT_HISTORY": 0
+          },
+          "availability": "AVAILABLE",
+          "unit": "seconds"
+        }
+      }
+    ],
+    "meta": {
+      "read_at": "2026-10-24T12:36:52.051552Z",
+      "metric_definition_version": "maintenance-analytics.v1",
+      "filters": {
+        "factory_id": "wo-f67f439d-6979-451d-b68d-4e177d743f7a",
+        "machine_id": null
+      },
+      "period": {
+        "from": "2026-09-22T04:00:00.000000Z",
+        "to": "2026-09-22T04:04:00.000000Z"
+      },
+      "timezone": "UTC",
+      "comparison_period": {
+        "from": "2026-09-22T03:56:00.000000Z",
+        "to": "2026-09-22T04:00:00.000000Z"
+      }
+    }
+  },
+  "machines": {
+    "success": true,
+    "data": {
+      "items": [
+        {
+          "machine_id": "M01",
+          "name": "CNC M01",
+          "present_in_current_snapshot": true,
+          "metrics": {
+            "open_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "overdue_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "blocked_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "waiting_verification_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "created_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "closed_orders": {
+              "value": 0,
+              "availability": "AVAILABLE",
+              "verification": {
+                "VERIFIED": 0,
+                "VERIFIED_STOPPED": 0
+              }
+            },
+            "cancelled_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "successful_verified_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "rework_decision_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null,
+              "availability": "NO_DATA"
+            },
+            "first_pass_verified_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null,
+              "availability": "NO_DATA"
+            },
+            "time_to_first_accept": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            },
+            "active_execution_time": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            },
+            "verification_wait_time": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            }
+          }
+        },
+        {
+          "machine_id": "M02",
+          "name": "CNC M02",
+          "present_in_current_snapshot": true,
+          "metrics": {
+            "open_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "overdue_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "blocked_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "waiting_verification_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "created_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "closed_orders": {
+              "value": 0,
+              "availability": "AVAILABLE",
+              "verification": {
+                "VERIFIED": 0,
+                "VERIFIED_STOPPED": 0
+              }
+            },
+            "cancelled_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "successful_verified_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "rework_decision_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null,
+              "availability": "NO_DATA"
+            },
+            "first_pass_verified_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null,
+              "availability": "NO_DATA"
+            },
+            "time_to_first_accept": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            },
+            "active_execution_time": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            },
+            "verification_wait_time": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            }
+          }
+        },
+        {
+          "machine_id": "M03",
+          "name": "CNC M03",
+          "present_in_current_snapshot": true,
+          "metrics": {
+            "open_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "overdue_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "blocked_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "waiting_verification_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "created_orders": {
+              "value": 1,
+              "availability": "AVAILABLE"
+            },
+            "closed_orders": {
+              "value": 1,
+              "availability": "AVAILABLE",
+              "verification": {
+                "VERIFIED": 1,
+                "VERIFIED_STOPPED": 0
+              }
+            },
+            "cancelled_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "successful_verified_orders": {
+              "value": 1,
+              "availability": "AVAILABLE"
+            },
+            "rework_decision_rate": {
+              "numerator": 2,
+              "denominator": 3,
+              "value": 0.6666666666666666,
+              "availability": "AVAILABLE"
+            },
+            "first_pass_verified_rate": {
+              "numerator": 0,
+              "denominator": 1,
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "time_to_first_accept": {
+              "median": 10,
+              "p90": 10,
+              "sample_count": 1,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "AVAILABLE",
+              "unit": "seconds"
+            },
+            "active_execution_time": {
+              "median": 30,
+              "p90": 38,
+              "sample_count": 3,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "AVAILABLE",
+              "unit": "seconds"
+            },
+            "verification_wait_time": {
+              "median": 20,
+              "p90": 20,
+              "sample_count": 3,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "AVAILABLE",
+              "unit": "seconds"
+            }
+          }
+        },
+        {
+          "machine_id": "M04",
+          "name": "CNC M04",
+          "present_in_current_snapshot": true,
+          "metrics": {
+            "open_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "overdue_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "blocked_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "waiting_verification_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "created_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "closed_orders": {
+              "value": 0,
+              "availability": "AVAILABLE",
+              "verification": {
+                "VERIFIED": 0,
+                "VERIFIED_STOPPED": 0
+              }
+            },
+            "cancelled_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "successful_verified_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "rework_decision_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null,
+              "availability": "NO_DATA"
+            },
+            "first_pass_verified_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null,
+              "availability": "NO_DATA"
+            },
+            "time_to_first_accept": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            },
+            "active_execution_time": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            },
+            "verification_wait_time": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            }
+          }
+        },
+        {
+          "machine_id": "M05",
+          "name": "CNC M05",
+          "present_in_current_snapshot": true,
+          "metrics": {
+            "open_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "overdue_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "blocked_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "waiting_verification_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "created_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "closed_orders": {
+              "value": 0,
+              "availability": "AVAILABLE",
+              "verification": {
+                "VERIFIED": 0,
+                "VERIFIED_STOPPED": 0
+              }
+            },
+            "cancelled_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "successful_verified_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "rework_decision_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null,
+              "availability": "NO_DATA"
+            },
+            "first_pass_verified_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null,
+              "availability": "NO_DATA"
+            },
+            "time_to_first_accept": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            },
+            "active_execution_time": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            },
+            "verification_wait_time": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            }
+          }
+        },
+        {
+          "machine_id": "M06",
+          "name": "CNC M06",
+          "present_in_current_snapshot": true,
+          "metrics": {
+            "open_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "overdue_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "blocked_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "waiting_verification_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "created_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "closed_orders": {
+              "value": 0,
+              "availability": "AVAILABLE",
+              "verification": {
+                "VERIFIED": 0,
+                "VERIFIED_STOPPED": 0
+              }
+            },
+            "cancelled_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "successful_verified_orders": {
+              "value": 0,
+              "availability": "AVAILABLE"
+            },
+            "rework_decision_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null,
+              "availability": "NO_DATA"
+            },
+            "first_pass_verified_rate": {
+              "numerator": 0,
+              "denominator": 0,
+              "value": null,
+              "availability": "NO_DATA"
+            },
+            "time_to_first_accept": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            },
+            "active_execution_time": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            },
+            "verification_wait_time": {
+              "median": null,
+              "p90": null,
+              "sample_count": 0,
+              "excluded_count": 0,
+              "exclusions": {
+                "MISSING_HISTORY": 0,
+                "INCONSISTENT_HISTORY": 0
+              },
+              "availability": "NO_DATA",
+              "unit": "seconds"
+            }
+          }
+        }
+      ],
+      "total": 6,
+      "has_more": false,
+      "next_cursor": null
+    },
+    "meta": {
+      "read_at": "2026-10-24T12:36:52.068300Z",
+      "metric_definition_version": "maintenance-analytics.v1",
+      "filters": {
+        "factory_id": "wo-f67f439d-6979-451d-b68d-4e177d743f7a",
+        "machine_id": null
+      },
+      "period": {
+        "from": "2026-09-22T04:00:00.000000Z",
+        "to": "2026-09-22T04:04:00.000000Z"
+      },
+      "timezone": "UTC",
+      "comparison_period": {
+        "from": "2026-09-22T03:56:00.000000Z",
+        "to": "2026-09-22T04:00:00.000000Z"
+      }
+    }
+  },
+  "drilldown": {
+    "success": true,
+    "data": {
+      "items": [
+        {
+          "reason": null,
+          "status": "CLOSED",
+          "attempt": 3,
+          "command": "COMPLETE",
+          "event_id": null,
+          "cohort_at": "2026-09-22T04:03:20.000000Z",
+          "sample_id": "37ecf4aa-13cd-4181-b404-d43ea678f05f",
+          "factory_id": "wo-f67f439d-6979-451d-b68d-4e177d743f7a",
+          "machine_id": "M03",
+          "metric_key": "active_execution_time",
+          "schedule_id": "wo-schedule-9283dddb-bbdc-4730-a905-effe8a472989",
+          "contribution": 1,
+          "assignment_id": "A-maintenance-plan-production-priority",
+          "completion_id": "37ecf4aa-13cd-4181-b404-d43ea678f05f",
+          "work_order_id": "de857dab-449c-4ce5-8f21-f4f1848a0e78",
+          "source_case_id": "9283dddb-bbdc-4730-a905-effe8a472989",
+          "duration_seconds": 20,
+          "exclusion_reason": null,
+          "basis_snapshot_id": "snapshot-demo-20260922-0800",
+          "schedule_revision": 2,
+          "verification_result": null,
+          "published_plan_version": 1,
+          "grain": "ATTEMPT"
+        },
+        {
+          "reason": null,
+          "status": "CLOSED",
+          "attempt": 2,
+          "command": "COMPLETE",
+          "event_id": null,
+          "cohort_at": "2026-09-22T04:02:10.000000Z",
+          "sample_id": "35b242a1-dd12-4129-955a-8ac38b66acc0",
+          "factory_id": "wo-f67f439d-6979-451d-b68d-4e177d743f7a",
+          "machine_id": "M03",
+          "metric_key": "active_execution_time",
+          "schedule_id": "wo-schedule-9283dddb-bbdc-4730-a905-effe8a472989",
+          "contribution": 1,
+          "assignment_id": "A-maintenance-plan-production-priority",
+          "completion_id": "35b242a1-dd12-4129-955a-8ac38b66acc0",
+          "work_order_id": "de857dab-449c-4ce5-8f21-f4f1848a0e78",
+          "source_case_id": "9283dddb-bbdc-4730-a905-effe8a472989",
+          "duration_seconds": 30,
+          "exclusion_reason": null,
+          "basis_snapshot_id": "snapshot-demo-20260922-0800",
+          "schedule_revision": 2,
+          "verification_result": null,
+          "published_plan_version": 1,
+          "grain": "ATTEMPT"
+        },
+        {
+          "reason": null,
+          "status": "CLOSED",
+          "attempt": 1,
+          "command": "COMPLETE",
+          "event_id": null,
+          "cohort_at": "2026-09-22T04:01:20.000000Z",
+          "sample_id": "420aa2f0-fe87-45e0-913c-250237952a3b",
+          "factory_id": "wo-f67f439d-6979-451d-b68d-4e177d743f7a",
+          "machine_id": "M03",
+          "metric_key": "active_execution_time",
+          "schedule_id": "wo-schedule-9283dddb-bbdc-4730-a905-effe8a472989",
+          "contribution": 1,
+          "assignment_id": "A-maintenance-plan-production-priority",
+          "completion_id": "420aa2f0-fe87-45e0-913c-250237952a3b",
+          "work_order_id": "de857dab-449c-4ce5-8f21-f4f1848a0e78",
+          "source_case_id": "9283dddb-bbdc-4730-a905-effe8a472989",
+          "duration_seconds": 40,
+          "exclusion_reason": null,
+          "basis_snapshot_id": "snapshot-demo-20260922-0800",
+          "schedule_revision": 2,
+          "verification_result": null,
+          "published_plan_version": 1,
+          "grain": "ATTEMPT"
+        }
+      ],
+      "total": 3,
+      "has_more": false,
+      "next_cursor": null
+    },
+    "meta": {
+      "read_at": "2026-10-24T12:36:52.089200Z",
+      "metric_definition_version": "maintenance-analytics.v1",
+      "filters": {
+        "factory_id": "wo-f67f439d-6979-451d-b68d-4e177d743f7a",
+        "machine_id": null
+      },
+      "period": {
+        "from": "2026-09-22T04:00:00.000000Z",
+        "to": "2026-09-22T04:04:00.000000Z"
+      },
+      "timezone": "UTC",
+      "comparison_period": {
+        "from": "2026-09-22T03:56:00.000000Z",
+        "to": "2026-09-22T04:00:00.000000Z"
+      }
+    }
+  }
+}

@@ -125,23 +125,6 @@ export function RecommendationPackageView({
 
   return (
     <>
-      <OperationsPanel title="Why this recommendation?" description="Explanation and evidence are rendered directly from RecommendationPackage.explanation.">
-        <div className="p-4 sm:p-5">
-          <p className="max-w-4xl text-sm leading-6">{explanation.summary}</p>
-          <div className="mt-4 grid gap-4 lg:grid-cols-3">
-            <div><h3 className="text-xs font-semibold uppercase text-[var(--color-ash-gray)]">Primary reasons</h3><TextList items={explanation.primary_reasons} /></div>
-            <div><h3 className="text-xs font-semibold uppercase text-[var(--color-ash-gray)]">Tradeoffs</h3><TextList items={explanation.tradeoffs} /></div>
-            <div><h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase text-[var(--color-ash-gray)]"><ShieldAlert className="h-3.5 w-3.5" />Residual risks</h3><TextList items={explanation.residual_risks} /></div>
-          </div>
-          <div className="mt-5">
-            <h3 className="text-xs font-semibold uppercase text-[var(--color-ash-gray)]">Evidence references</h3>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {explanation.evidence_refs.map((reference) => <code key={reference} className="max-w-full break-all rounded bg-stone-100 px-2 py-1 text-xs">{reference}</code>)}
-            </div>
-          </div>
-        </div>
-      </OperationsPanel>
-
       <OperationsPanel title="Candidate comparison" description="Only backend-validated candidates are selectable. The frontend does not rank candidates or calculate KPI deltas.">
         <div className="p-4 sm:p-5">
           <div className="overflow-x-auto pb-2" aria-label="Candidate selector">
@@ -166,10 +149,10 @@ export function RecommendationPackageView({
           </div>
 
           <p className="my-4 text-xs text-[var(--color-ash-gray)]">Every value below comes directly from <code>CandidatePlan.kpis</code>.</p>
-          <div className="overflow-x-auto rounded-md border border-[var(--color-stone-border)]" data-testid="candidate-kpi-scroll">
+          <div className="max-h-[520px] overflow-auto rounded-md border border-[var(--color-stone-border)]" data-testid="candidate-kpi-scroll" role="region" aria-label="Returned candidate KPIs" tabIndex={0}>
             <table className="w-full min-w-[1180px] text-left text-sm">
-              <thead className="bg-stone-50"><tr><th className="px-3 py-3 text-xs uppercase text-[var(--color-ash-gray)]">Returned KPI</th>{selectable.map((candidate) => <th key={candidate.candidate_plan_id} className={`px-3 py-3 align-top ${selected.candidate_plan_id === candidate.candidate_plan_id ? "bg-sky-50" : ""}`}><span className="block break-all font-mono text-[11px]">{candidate.candidate_plan_id}</span><span className="mt-1 block text-xs font-normal text-[var(--color-ash-gray)]">{candidate.strategy.replaceAll("_", " ")} · v{candidate.plan_version}</span></th>)}</tr></thead>
-              <tbody className="divide-y divide-[var(--color-stone-border)]">{KPI_ROWS.map((row) => <tr key={row.key}><th className="px-3 py-2 text-xs font-medium text-[var(--color-ash-gray)]">{row.label}</th>{selectable.map((candidate) => <td key={candidate.candidate_plan_id} data-selected={selected.candidate_plan_id === candidate.candidate_plan_id || undefined} className={`px-3 py-2 font-semibold ${selected.candidate_plan_id === candidate.candidate_plan_id ? "bg-sky-50" : ""}`}>{row.format(candidate.kpis[row.key] ?? undefined)}</td>)}</tr>)}</tbody>
+              <thead className="sticky top-0 z-20 bg-stone-50"><tr><th className="sticky left-0 bg-stone-50 px-3 py-3 text-xs uppercase text-[var(--color-ash-gray)]">Returned KPI</th>{selectable.map((candidate) => <th key={candidate.candidate_plan_id} className={`px-3 py-3 text-right align-top ${selected.candidate_plan_id === candidate.candidate_plan_id ? "bg-sky-50" : ""}`}><span className="block break-all font-mono text-[11px]">{candidate.candidate_plan_id}</span><span className="mt-1 block text-xs font-normal text-[var(--color-ash-gray)]">{candidate.strategy.replaceAll("_", " ")} · v{candidate.plan_version}</span></th>)}</tr></thead>
+              <tbody className="divide-y divide-[var(--color-stone-border)]">{KPI_ROWS.map((row) => <tr key={row.key}><th scope="row" className="sticky left-0 z-10 bg-white px-3 py-2 text-xs font-medium text-[var(--color-ash-gray)]">{row.label}</th>{selectable.map((candidate) => <td key={candidate.candidate_plan_id} data-selected={selected.candidate_plan_id === candidate.candidate_plan_id || undefined} className={`px-3 py-2 text-right font-mono font-semibold tabular-nums ${selected.candidate_plan_id === candidate.candidate_plan_id ? "bg-sky-50" : ""}`}>{row.format(candidate.kpis[row.key] ?? undefined)}</td>)}</tr>)}</tbody>
             </table>
           </div>
 
@@ -181,6 +164,23 @@ export function RecommendationPackageView({
               </ul>
             </section>
           ) : null}
+        </div>
+      </OperationsPanel>
+
+      <OperationsPanel title="Why this recommendation?" description="Explanation and evidence are rendered directly from RecommendationPackage.explanation.">
+        <div className="p-4 sm:p-5">
+          <p className="max-w-4xl text-sm leading-6">{explanation.summary}</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-3">
+            <div><h3 className="text-xs font-semibold uppercase text-[var(--color-ash-gray)]">Primary reasons</h3><TextList items={explanation.primary_reasons} /></div>
+            <div><h3 className="text-xs font-semibold uppercase text-[var(--color-ash-gray)]">Tradeoffs</h3><TextList items={explanation.tradeoffs} /></div>
+            <div><h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase text-[var(--color-ash-gray)]"><ShieldAlert className="h-3.5 w-3.5" />Residual risks</h3><TextList items={explanation.residual_risks} /></div>
+          </div>
+          <div className="mt-5">
+            <h3 className="text-xs font-semibold uppercase text-[var(--color-ash-gray)]">Evidence references</h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {explanation.evidence_refs.map((reference) => <code key={reference} className="max-w-full break-all rounded bg-stone-100 px-2 py-1 text-xs">{reference}</code>)}
+            </div>
+          </div>
         </div>
       </OperationsPanel>
 

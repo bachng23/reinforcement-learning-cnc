@@ -11,3 +11,6 @@
 **/*.log
 **/*.tsbuildinfo
 data/
+artifacts/
+**/test-results/
+**/playwright-report/

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from domain.operations.contracts import CandidatePlan, ObjectiveWeights, PlanStrategy
 
@@ -11,6 +11,9 @@ from domain.operations.contracts import CandidatePlan, ObjectiveWeights, PlanStr
 class ScoredPlan:
     plan: CandidatePlan
     score: float
+    metric_benefits: dict[str, float] = field(default_factory=dict)
+    objective_benefits: dict[str, float] = field(default_factory=dict)
+    weighted_contributions: dict[str, float] = field(default_factory=dict)
 
 
 _STRATEGY_ORDER = {
@@ -29,8 +32,22 @@ def _benefit(values: list[float], value: float, *, lower_is_better: bool) -> flo
 
 
 class ObjectiveScorer:
+    metric_directions = {
+        "makespan_minutes": True, "total_tardiness_minutes": True,
+        "on_time_completion_rate": False, "expected_failure_count": True,
+        "expected_emergency_downtime_minutes": True, "maintenance_cost": True,
+        "technician_utilization": True, "schedule_changes": True,
+    }
+
+    def normalization_reference(self, candidates: list[CandidatePlan]) -> dict[str, list[float]]:
+        if not candidates:
+            return {}
+        return {name: [min(getattr(c.kpis, name) for c in candidates), max(getattr(c.kpis, name) for c in candidates)]
+                for name in self.metric_directions}
+
     def rank(
-        self, candidates: list[CandidatePlan], weights: ObjectiveWeights
+        self, candidates: list[CandidatePlan], weights: ObjectiveWeights,
+        *, reference: dict[str, list[float]] | None = None,
     ) -> list[ScoredPlan]:
         if not candidates:
             return []
@@ -43,6 +60,22 @@ class ObjectiveScorer:
         maintenance_cost = [item.maintenance_cost for item in kpis]
         technician_utilization = [item.technician_utilization for item in kpis]
         changes = [float(item.schedule_changes) for item in kpis]
+        if reference is not None:
+            if set(reference) != set(self.metric_directions):
+                raise ValueError("normalization reference has unsupported or missing metrics")
+            for name, bounds in reference.items():
+                if len(bounds) != 2 or bounds[0] > bounds[1] or any(
+                    not bounds[0] <= getattr(candidate.kpis, name) <= bounds[1] for candidate in candidates
+                ):
+                    raise ValueError("candidate lies outside normalization reference")
+            makespan = reference["makespan_minutes"]
+            tardiness = reference["total_tardiness_minutes"]
+            on_time = reference["on_time_completion_rate"]
+            failures = reference["expected_failure_count"]
+            downtime = reference["expected_emergency_downtime_minutes"]
+            maintenance_cost = reference["maintenance_cost"]
+            technician_utilization = reference["technician_utilization"]
+            changes = reference["schedule_changes"]
         total_weight = (
             weights.production
             + weights.reliability
@@ -80,7 +113,15 @@ class ObjectiveScorer:
                 + weights.workforce * workforce
                 + weights.schedule_stability * stability
             ) / total_weight
-            scored.append(ScoredPlan(plan=plan, score=round(score, 12)))
+            metric_values = dict(zip(self.metric_directions, [makespan, tardiness, on_time, failures, downtime,
+                                                             maintenance_cost, technician_utilization, changes]))
+            benefits = {name: _benefit(metric_values[name], getattr(kpi, name), lower_is_better=lower)
+                        for name, lower in self.metric_directions.items()}
+            objectives = {"production": production, "reliability": reliability, "maintenance": maintenance,
+                          "workforce": workforce, "schedule_stability": stability}
+            contributions = {name: value * getattr(weights, name) / total_weight for name, value in objectives.items()}
+            scored.append(ScoredPlan(plan=plan, score=round(score, 12), metric_benefits=benefits,
+                                    objective_benefits=objectives, weighted_contributions=contributions))
         return sorted(
             scored,
             key=lambda item: (

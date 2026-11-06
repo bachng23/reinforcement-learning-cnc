@@ -1,11 +1,20 @@
 # Multi-Agent PdM Operations Contract v3
 
+## P0 integration baseline
+
+Use [P0 contract v1.0](p0-contract.md) for the implemented HTTP boundary, version
+semantics, ownership and acceptance for both P0 tasks. The generated
+[Operations OpenAPI](operations-http.openapi.json) freezes only these routes.
+The domain vocabulary below also describes future capabilities; it does not
+imply that MODIFY, cancellation or event streaming is implemented.
+
 ## Tooling
 
 - Generate wire types: `npm --prefix frontend run contracts:generate`.
+- Install gate dependencies: `npm ci --prefix frontend` and `npm ci --ignore-scripts --prefix backend`.
 - Full local/CI gate: `uv run --frozen --project ai_services python scripts/check-contracts.py`.
 - Shared demo payloads and Week 2 seed/reset handoff: [fixtures/README.md](fixtures/README.md).
-- Typed HTTP skeleton for the proposed envelope-based `/api/v1` operations routes:
+- Typed HTTP adapter for the implemented `/api/v1` operations routes:
   `frontend/lib/operations-api/client.ts`.
 - Setup and regeneration steps: [DEV-LOCAL.md](../../DEV-LOCAL.md).
 
@@ -194,6 +203,9 @@ Frontend:
 
 ### Human decision
 
+The following describes canonical models. HTTP commands use the explicit version
+mapping and APPROVE/REJECT/COMMIT subset in the P0 baseline; MODIFY is deferred.
+
 - Approve cần `candidate_plan_id`, `expected_plan_version` và `expected_snapshot_id`.
 - Modify cần thêm `modified_schedule`; schedule này phải validate lại trước commit.
 - Reject không chọn candidate và bắt buộc có note.
@@ -260,6 +272,9 @@ Ví dụ:
 
 ## Event streaming
 
+Current HTTP integration polls a separate backend HistoryEvent DTO; see the P0
+baseline. The streaming model below is reserved domain vocabulary.
+
 `DecisionEvent` là envelope dùng cho SSE hoặc WebSocket. Backend là nguồn sequence
 authoritative.
 
@@ -271,7 +286,9 @@ authoritative.
 
 ## Error contract
 
-Mọi service trả `ErrorResponse` cho lỗi domain/application:
+`ErrorResponse` là model canonical cho lỗi domain/application. HTTP hiện tại
+có hai dạng lỗi theo nhóm route, được mô tả chính xác trong [P0 baseline](p0-contract.md);
+không giả định mọi HTTP endpoint dùng model này. Các field của model:
 
 - `error_id`: định danh lỗi cho support/audit;
 - `code`: mã ổn định cho client;
@@ -282,7 +299,7 @@ Mọi service trả `ErrorResponse` cho lỗi domain/application:
 
 Không trả stack trace, secret, prompt hoặc raw solver dump cho frontend.
 
-## HTTP mapping đề xuất
+## HTTP mapping đề xuất (domain guidance)
 
 | Tình huống | HTTP status |
 |---|---:|

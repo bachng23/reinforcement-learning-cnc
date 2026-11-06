@@ -4,13 +4,13 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { PrismaClient } = require('@prisma/client');
-const { ingestFactorySnapshot } = require('../../src/services/operations-snapshot.service');
+const { ingestFactorySnapshot } = require('../helpers/factory-fixtures');
 const { loadCanonicalSeedPlan, validatePayload, contentHash } = require('../../src/services/operations-contract.service');
 const { readOperations } = require('../../src/services/operations-context.service');
 
 describe('Snapshot ingestion — isolated PostgreSQL schema', () => {
-  let db, canonical;
-  beforeAll(async () => { db = new PrismaClient(); canonical = await validatePayload(await loadCanonicalSeedPlan(), 'seed'); });
+  let db, canonical, admin;
+  beforeAll(async () => { db = new PrismaClient(); admin = await db.user.create({ data: { username: randomUUID(), passwordHash: 'test-only', role: 'ADMIN' } }); canonical = await validatePayload(await loadCanonicalSeedPlan(), 'seed'); });
   afterAll(async () => { await db.$disconnect(); });
   const factory = () => `ingest-${randomUUID()}`;
   function snapshot(factoryId, snapshotId = 'S1') {
@@ -41,7 +41,7 @@ describe('Snapshot ingestion — isolated PostgreSQL schema', () => {
     expect(result).toMatchObject({ snapshotId: 'S1', sourceId: 'simulator-v1', replayed: false,
       head: { revision: 1, snapshotId: 'S1', scheduleId: null, scheduleRevision: null, planVersion: 0 } });
     expect(await db.operationSchedule.count({ where: { factoryId: id } })).toBe(0);
-    const audit = await db.auditLog.findFirst({ where: { entityId: id } });
+    const audit = await db.auditLog.findFirst({ where: { entityId: id, action: 'OPERATIONS_SNAPSHOT_INGESTED' } });
     expect(audit).toMatchObject({ action: 'OPERATIONS_SNAPSHOT_INGESTED', actorUserId: null,
       payloadJson: { sourceId: 'simulator-v1', previousHeadRevision: 0, headRevision: 1, contentHash: result.contentHash } });
     expect(audit.createdAt).toBeInstanceOf(Date);
@@ -58,7 +58,7 @@ describe('Snapshot ingestion — isolated PostgreSQL schema', () => {
     expect(result.head).toEqual({ snapshotId: 'S2', revision: before.revision + 1,
       scheduleId: before.scheduleId, scheduleRevision: before.scheduleRevision, planVersion: 1 });
     expect(await db.factorySnapshot.findUnique({ where: { factoryId_snapshotId: { factoryId: id, snapshotId: 'S1' } } })).toEqual(priorSnapshot);
-    const read = await readOperations(db, { role: 'ADMIN' }, id);
+    const read = await readOperations(db, admin, id);
     expect(read.snapshot.snapshot.snapshot_id).toBe('S2');
     expect(read.schedule.schedule.schedule_id).toBe(before.scheduleId);
     expect(read.meta).toMatchObject({ snapshot_id: 'S2', schedule_basis_snapshot_id: 'S1', plan_version: 1, head_revision: 2 });
@@ -121,7 +121,7 @@ describe('Snapshot ingestion — isolated PostgreSQL schema', () => {
       (s) => { s.factory_id = 'another-factory'; s.current_schedule.factory_id = 'another-factory'; },
     ]) {
       const value = snapshot(id); mutate(value);
-      await expect(ingest(id, value, 0, { $transaction: txSpy })).rejects.toMatchObject({ statusCode: 400 });
+      await expect(require('../../src/services/operations-snapshot.service').ingestFactorySnapshot({factoryId:id, snapshot:value, expectedHeadRevision:0, sourceId:'test'}, { $transaction: txSpy })).rejects.toMatchObject({ statusCode: 400 });
     }
     expect(txSpy).not.toHaveBeenCalled();
     expect(await db.factorySnapshot.count({ where: { factoryId: id } })).toBe(0);
@@ -140,7 +140,7 @@ describe('Snapshot ingestion — isolated PostgreSQL schema', () => {
     if (exists) await baseline(id);
     const before = await head(id);
     const injected = { $transaction: (fn, options) => db.$transaction((tx) => fn({
-      $queryRaw: tx.$queryRaw.bind(tx), factorySnapshot: tx.factorySnapshot, operationsHead: tx.operationsHead,
+      $queryRaw: tx.$queryRaw.bind(tx), factory: tx.factory, factorySnapshot: tx.factorySnapshot, operationsHead: tx.operationsHead,
       auditLog: { create: async () => { throw new Error('injected audit failure'); } },
     }), options) };
     await expect(ingest(id, snapshot(id, 'S2'), exists ? 1 : 0, injected)).rejects.toThrow('injected audit failure');
@@ -163,6 +163,7 @@ describe('Snapshot ingestion — isolated PostgreSQL schema', () => {
       expect(run({ NODE_ENV: 'test' }).status).toBe(1);
       expect(run({ NODE_ENV: 'development', OPERATIONS_DEMO_DATABASE_URL: '' }).status).toBe(1);
       expect(await head(id)).toBeNull();
+      await require('../../src/services/factory-registry.service').bootstrapFactory(db, id, 'cli-test');
       const success = run({ NODE_ENV: 'development' });
       expect(success.status).toBe(0);
       expect(JSON.parse(success.stdout)).toMatchObject({ replayed: false, head: { revision: 1, planVersion: 0 } });

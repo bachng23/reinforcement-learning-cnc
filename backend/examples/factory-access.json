@@ -1,0 +1,96 @@
+{
+  "factory": {
+    "success": true,
+    "data": {
+      "factory_id": "factory-A",
+      "name": "Factory A",
+      "created_at": "2026-10-21T00:00:00Z",
+      "updated_at": "2026-10-21T00:00:00Z",
+      "has_snapshot": false
+    }
+  },
+  "list": {
+    "success": true,
+    "data": [
+      {
+        "factory_id": "factory-A",
+        "name": "Factory A",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "has_snapshot": false
+      }
+    ],
+    "meta": {
+      "limit": 25,
+      "has_more": false,
+      "next_cursor": null,
+      "access_source": "database"
+    }
+  },
+  "members": {
+    "success": true,
+    "data": [
+      {
+        "membership_id": "12121212-1212-4212-8212-121212121212",
+        "factory_id": "factory-A",
+        "user": {
+          "user_id": "34343434-3434-4434-8434-343434343434",
+          "username": "operator-a",
+          "active": true
+        },
+        "active": true,
+        "granted_by": "56565656-5656-4656-8656-565656565656",
+        "granted_at": "2026-10-21T00:00:00Z",
+        "grant_source": "http",
+        "revoked_by": null,
+        "revoked_at": null,
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z"
+      }
+    ],
+    "meta": {
+      "limit": 25,
+      "has_more": false,
+      "next_cursor": null,
+      "access_source": "database"
+    }
+  },
+  "grant": {
+    "success": true,
+    "data": {
+      "membership": {
+        "membership_id": "12121212-1212-4212-8212-121212121212",
+        "factory_id": "factory-A",
+        "user": {
+          "user_id": "34343434-3434-4434-8434-343434343434",
+          "username": "operator-a",
+          "active": true
+        },
+        "active": true,
+        "granted_by": "56565656-5656-4656-8656-565656565656",
+        "granted_at": "2026-10-21T00:00:00Z",
+        "grant_source": "http",
+        "revoked_by": null,
+        "revoked_at": null,
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z"
+      },
+      "changed": true
+    }
+  },
+  "revoke_absent": {
+    "success": true,
+    "data": {
+      "membership": null,
+      "changed": false
+    }
+  },
+  "mode_error": {
+    "success": false,
+    "error": {
+      "code": "FACTORY_ACCESS_MODE_MISMATCH",
+      "message": "Membership administration requires database mode"
+    },
+    "requestId": "factory-access-example"
+  }
+}

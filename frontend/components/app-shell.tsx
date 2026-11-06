@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { operationsHref } from "@/lib/operations-ui";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { getUserFromToken, logout, type TokenUser } from "@/lib/auth";
 
@@ -27,7 +28,7 @@ const navigation = [
     activePaths: ["/overview", "/operations"],
   },
   {href:"/dashboard",label:"Dashboard",icon:LayoutDashboard},
-  { href: "/decisions", label: "Decision Center", icon: ClipboardCheck },
+  { href: "/decisions", label: "Decision Center", icon: ClipboardCheck, activePaths:["/operations/cases","/operations/recommendations"] },
   { href: "/agents", label: "Decision activity", icon: Bot },
   { href: "/what-if", label: "Compare controllers", icon: SlidersHorizontal },
 ];
@@ -66,11 +67,15 @@ function NavItem({
 
 export function AppShell({
   children,
+  factoryId,
+  demo = false,
   simulationId,
   workshopId,
 }: {
   children: ReactNode;
   title?: string;
+  factoryId?: string;
+  demo?: boolean;
   simulationId?: string;
   workshopId?: string;
 }) {
@@ -137,7 +142,7 @@ export function AppShell({
             Application
           </p>
           {navigation.map((item) => (
-            <NavItem key={item.href} {...item} href={simulationId ? `${item.href}?session=${simulationId}${workshopId ? `&workshop=${workshopId}` : ""}` : item.href} collapsed={collapsed} />
+            <NavItem key={item.href} {...item} href={factoryId && item.href === "/decisions" ? operationsHref("/operations/cases",factoryId,{demo}) : simulationId ? `${item.href}?session=${simulationId}${workshopId ? `&workshop=${workshopId}` : ""}` : item.href} collapsed={collapsed} />
           ))}
           {process.env.NEXT_PUBLIC_RESEARCH_ENABLED !== "false" && <>
             <p className={collapsed ? "sr-only" : "nav-group-label nav-group-secondary"}>Research</p>

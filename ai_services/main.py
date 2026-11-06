@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from scenario_api import router as scenario_router, error_response as scenario_error_response
 
 from domain.operations.contracts import (
     ErrorDetail,
@@ -22,6 +23,7 @@ app = FastAPI(
 )
 
 planning_service = DecisionPlanningService()
+app.include_router(scenario_router)
 
 
 def _error_response(
@@ -46,6 +48,8 @@ def _error_response(
 async def request_validation_error_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
+    if request.url.path.startswith("/v1/scenarios/"):
+        return scenario_error_response(request, 422, "INVALID_SCENARIO_INPUT", "Request does not conform to scenario-engine:1.0")
     details = [
         ErrorDetail(
             field=".".join(str(item) for item in error["loc"])[:256],

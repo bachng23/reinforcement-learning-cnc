@@ -5,12 +5,10 @@ import { useEffect, useRef, useState } from "react";
 
 import { OperationsPanel } from "./operations-shell";
 import { candidateRejectionReason, recommendationPackageFailure } from "./recommendation-package-view";
-import { CurrentSchedule } from "@/components/pages/integrated-schedule-page";
-import { AsyncState } from "@/components/research/async-state";
-import { OperationsApiError, type OperationsApiClient, type OperationsDecisionCommand, type OperationsDecisionCaseReadResponse, type OperationsCommitMetadata } from "@/lib/operations-api/client";
+import { OperationsApiError, type OperationsApiClient, type OperationsDecisionCommand, type OperationsDecisionCaseReadResponse } from "@/lib/operations-api/client";
 import { useOperationsAction } from "@/lib/operations-api/use-operations-action";
 import { getOperationsActorId } from "@/lib/operations-api/actor";
-import { useOperationsContext } from "@/lib/operations-api/use-operations-context";
+import { useWorkspaceUser } from "@/lib/workspace-user";
 import type { RecommendationCenterStatusData } from "@/lib/recommendation-center";
 import { formatDateTime } from "@/lib/operations/format";
 import type { CandidatePlan } from "@/types/generated/operations";
@@ -46,32 +44,7 @@ function commandDisabledReason(data: ReadyData, choice: Choice, candidate: Candi
   return undefined;
 }
 
-export function PublishedDecisionSchedule({ api, commit }: { api: OperationsApiClient; commit: OperationsCommitMetadata }) {
-  const { state, retry } = useOperationsContext({ api, factoryId: commit.factory_id });
-  const publishedMismatch = state.kind === "ready" && (
-    state.data.scheduleResponse.plan_version < commit.plan_version
-    || (state.data.scheduleResponse.plan_version === commit.plan_version && (
-      state.data.scheduleResponse.schedule?.schedule_id !== commit.schedule_id
-      || state.data.scheduleResponse.schedule.revision !== commit.schedule_revision
-      || state.data.scheduleResponse.basis_snapshot?.snapshot_id !== commit.snapshot_id
-      || state.data.scheduleResponse.commit?.decision_case_id !== commit.decision_case_id
-      || state.data.scheduleResponse.commit?.schedule_hash !== commit.schedule_hash
-    ))
-  );
-  return (
-    <OperationsPanel title="Published schedule" description="Current schedule reloaded from the backend after commit.">
-      <div className="space-y-4 p-4 sm:p-5">
-        <p role="status" className="break-words text-sm font-semibold text-emerald-800">Published plan version {commit.plan_version} · schedule <code className="break-all">{commit.schedule_id}</code></p>
-        <p className="break-all text-xs">Committed by {commit.actor_id} at {formatDateTime(commit.committed_at)}</p>
-        {state.kind === "loading" ? <AsyncState kind="loading" title="Refreshing published schedule" /> : null}
-        {state.kind !== "loading" && state.kind !== "ready" ? <AsyncState kind="error" title="Published schedule could not be refreshed" description={state.message} onRetry={retry} /> : null}
-        {publishedMismatch ? <AsyncState kind="error" title="Published schedule context mismatch" description="The read does not match this publication. Refresh to verify the current authoritative schedule." onRetry={retry} /> : null}
-        {state.kind === "ready" && !publishedMismatch ? <CurrentSchedule data={state.data} /> : null}
-        <div className="flex flex-wrap gap-3 text-sm"><Link className="underline" href="/operations">Open refreshed factory resources</Link><Link className="underline" href="/operations/schedule">Open current Gantt</Link></div>
-      </div>
-    </OperationsPanel>
-  );
-}
+export { PublishedDecisionSchedule } from "./published-plan";
 
 export function LiveDecisionControls({ api, data, selectedCandidateId, refreshing, onRefresh }: {
   api: OperationsApiClient;
@@ -80,6 +53,7 @@ export function LiveDecisionControls({ api, data, selectedCandidateId, refreshin
   refreshing: boolean;
   onRefresh: () => void;
 }) {
+  const readOnly = useWorkspaceUser()?.role.toUpperCase() === "VIEWER";
   const [confirmation, setConfirmation] = useState<{ choice: Choice; candidate?: CandidatePlan } | null>(null);
   const [note, setNote] = useState("");
   const [noteError, setNoteError] = useState("");
@@ -104,9 +78,7 @@ export function LiveDecisionControls({ api, data, selectedCandidateId, refreshin
     },
     onAccepted: response => {
       setConfirmation(null);
-      if (response.caseStatus.status === "COMMITTED") {
-        window.dispatchEvent(new CustomEvent("operations-context-changed", { detail: { factoryId: data.snapshot.factory_id } }));
-      }
+      window.dispatchEvent(new CustomEvent("operations-context-changed", { detail: { factoryId: data.snapshot.factory_id } }));
       onRefresh();
     },
     onConflict: () => { setConfirmation(null); onRefresh(); },
@@ -130,7 +102,7 @@ export function LiveDecisionControls({ api, data, selectedCandidateId, refreshin
 
   const reason = (choice: Choice) => commandDisabledReason(data, choice, choice === "COMMIT" ? approvedPlan : selected);
   const open = (choice: Choice) => {
-    if (busy || unresolved || needsReview || reason(choice)) return;
+    if (readOnly || busy || unresolved || needsReview || reason(choice)) return;
     setNote(""); setNoteError("");
     setConfirmation({ choice, candidate: choice === "COMMIT" ? approvedPlan : selected });
   };
@@ -141,23 +113,23 @@ export function LiveDecisionControls({ api, data, selectedCandidateId, refreshin
         <p className="break-all text-xs">Case revision {data.caseMeta?.case_revision ?? "Not provided"} · head plan version {data.caseMeta?.current_context?.plan_version ?? "Not provided"}</p>
         {approved ? <p className="break-all text-sm">Approved candidate: <code>{approved.candidate_plan_id}</code> · candidate v{approved.candidate_version}. Commit always publishes this candidate, independent of the comparison selection.</p> : null}
         {data.caseMeta?.human_decision ? <p className="break-all text-xs">{data.caseMeta.human_decision.decision} by {data.caseMeta.human_decision.actor_id} at {formatDateTime(data.caseMeta.human_decision.decided_at)}{data.caseMeta.human_decision.note ? ` · ${data.caseMeta.human_decision.note}` : ""}</p> : null}
-        <div className="flex flex-wrap gap-2">
-          {(["APPROVE", "REJECT", "COMMIT"] as const).map(choice => <button key={choice} type="button" className={button} onClick={() => open(choice)} disabled={busy || unresolved || needsReview || !!reason(choice)} title={reason(choice)}>{choice === "APPROVE" ? "Approve" : choice === "REJECT" ? "Reject" : "Commit approved schedule"}</button>)}
+        {readOnly ? <p className="text-sm text-slate-500">VIEWER access is read-only. Decision and publication commands require an authorized role.</p> : <div className="flex flex-wrap gap-2">
+          {(["APPROVE", "REJECT", "COMMIT"] as const).map(choice => <button key={choice} type="button" className={choice === "REJECT" ? button : "dss-primary"} onClick={() => open(choice)} disabled={busy || unresolved || needsReview || !!reason(choice)} title={reason(choice)}>{choice === "APPROVE" ? "Approve" : choice === "REJECT" ? "Reject" : "Commit approved schedule"}</button>)}
           <button type="button" className={button} disabled title="Backend MODIFY and revalidation are not available.">Modify</button>
-        </div>
+        </div>}
         <p className="text-xs text-[var(--color-ash-gray)]">Modify is unavailable: the backend does not provide modification and revalidation commands.</p>
         {!["COMMITTED", "REJECTED"].includes(data.caseStatus.status) && reason(data.caseStatus.status === "APPROVED" ? "COMMIT" : "APPROVE") ? <p className="text-sm text-amber-800">{reason(data.caseStatus.status === "APPROVED" ? "COMMIT" : "APPROVE")}</p> : null}
         {busy ? <p role="status" aria-busy="true" className="text-sm">{action.busy ? "Submitting decision… Double submission is blocked." : "Refreshing authoritative case. Commands are temporarily disabled."}</p> : null}
         {!busy && action.state.kind !== "idle" ? <p role="alert" className="text-sm text-rose-800">{action.state.message}</p> : null}
-        {action.state.kind === "recoverable" || action.state.kind === "unauthorized" ? <button type="button" disabled={busy} onClick={action.recover} className={button}>Recover decision outcome</button> : null}
+        {!readOnly && (action.state.kind === "recoverable" || action.state.kind === "unauthorized") ? <button type="button" disabled={busy} onClick={action.recover} className={button}>Recover decision outcome</button> : null}
         {action.state.kind === "accepted" && !refreshing ? <button type="button" className={button} onClick={onRefresh}>Refresh authoritative case</button> : null}
         {needsReview ? <button type="button" disabled={refreshing} onClick={() => { action.acknowledge(); setConfirmation(null); }} className={button}>I have reviewed the refreshed case</button> : null}
         {action.state.kind === "unauthorized" ? <Link href="/login" className="block text-sm underline">Sign in with decision permission</Link> : null}
       </div>
-      {confirmation ? <dialog ref={dialog} aria-labelledby="decision-confirm-title" onCancel={event => { if (busy) event.preventDefault(); else setConfirmation(null); }} className="fixed inset-0 z-50 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-lg border bg-white p-5 shadow-xl backdrop:bg-stone-950/50">
+      {confirmation && !readOnly ? <dialog ref={dialog} aria-labelledby="decision-confirm-title" onCancel={event => { if (busy) event.preventDefault(); else setConfirmation(null); }} className="fixed inset-0 z-50 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-lg border bg-white p-5 shadow-xl backdrop:bg-stone-950/50">
         <form onSubmit={event => {
           event.preventDefault();
-          if (busy || unresolved || needsReview || commandDisabledReason(data, confirmation.choice, confirmation.candidate)) return;
+          if (readOnly || busy || unresolved || needsReview || commandDisabledReason(data, confirmation.choice, confirmation.candidate)) return;
           if (confirmation.choice === "REJECT" && !note.trim()) { setNoteError("A rejection note is required."); return; }
           const meta = data.caseMeta!;
           const common = { schema_version: "3.0" as const, decision_case_id: data.caseStatus.decision_case_id,
@@ -172,6 +144,7 @@ export function LiveDecisionControls({ api, data, selectedCandidateId, refreshin
         }} className="space-y-4">
           <h2 id="decision-confirm-title" className="text-lg font-semibold">Confirm {confirmation.choice.toLowerCase()}</h2>
           <p className="text-sm">{confirmation.choice === "COMMIT" ? "Publish the exact approved schedule to the factory. This advances the current plan version." : confirmation.choice === "APPROVE" ? "Record approval for the selected candidate. The current schedule will stay unchanged until you commit." : "Reject this recommendation package and record your reason."}</p>
+          <dl className="space-y-2 break-all rounded-md bg-slate-50 p-3 text-xs" aria-label="Confirmation factory context"><div><dt>Factory</dt><dd className="font-mono font-semibold">{data.snapshot.factory_id}</dd></div><div><dt>Case / basis snapshot / head plan version</dt><dd>{data.caseStatus.decision_case_id}<br />{data.snapshot.snapshot_id} · plan {data.caseMeta?.base_plan_version}</dd></div></dl>
           {confirmation.candidate ? <dl className="space-y-2 break-all text-xs" aria-label="Confirmation provenance">
             <div><dt>Candidate / version</dt><dd className="font-mono font-semibold">{confirmation.candidate.candidate_plan_id} · v{confirmation.candidate.plan_version}</dd></div>
             <div><dt>Engine</dt><dd>{confirmation.candidate.source_engine_id}@{confirmation.candidate.source_engine_version}</dd></div>
@@ -181,7 +154,7 @@ export function LiveDecisionControls({ api, data, selectedCandidateId, refreshin
           {confirmation.choice !== "COMMIT" ? <label className="block text-xs font-semibold">Decision note {confirmation.choice === "REJECT" ? "(required)" : "(optional)"}<textarea aria-label="Decision note" rows={3} maxLength={4000} disabled={busy} value={note} onChange={event => setNote(event.target.value)} className="mt-1 block w-full rounded-md border p-3 text-sm" /></label> : null}
           {noteError ? <p role="alert" className="text-sm text-rose-800">{noteError}</p> : null}
           {action.busy ? <p role="status">Submitting decision…</p> : null}
-          <div className="flex flex-wrap justify-end gap-2"><button type="button" className={button} disabled={busy} onClick={() => setConfirmation(null)}>Cancel</button><button type="submit" className={button} disabled={busy || unresolved || !!commandDisabledReason(data, confirmation.choice, confirmation.candidate)}>{busy ? "Submitting…" : `Confirm ${confirmation.choice.toLowerCase()}`}</button></div>
+          <div className="flex flex-wrap justify-end gap-2"><button type="button" className={button} disabled={busy} onClick={() => setConfirmation(null)}>Cancel</button><button type="submit" className="dss-primary" disabled={busy || unresolved || !!commandDisabledReason(data, confirmation.choice, confirmation.candidate)}>{busy ? "Submitting…" : `Confirm ${confirmation.choice.toLowerCase()}`}</button></div>
         </form>
       </dialog> : null}
     </OperationsPanel>

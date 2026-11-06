@@ -4,14 +4,8 @@ const { commitMetadata } = require('./decision-metadata');
 const notFound = () => new ApiError(404, 'FACTORY_NOT_FOUND', 'Factory was not found');
 const conflict = () => new ApiError(409, 'OPERATIONS_SEED_CONFLICT', 'Immutable seed content or current head differs; seed will not overwrite it');
 
-function authorizeFactory(user, factoryId) {
-  if (user.role === 'ADMIN') return;
-  let grants;
-  try { grants = JSON.parse(process.env.OPERATIONS_FACTORY_ACCESS || '{}'); }
-  catch { throw new ApiError(503, 'FACTORY_ACCESS_UNAVAILABLE', 'Factory access configuration is unavailable'); }
-  if (!grants || typeof grants !== 'object' || Array.isArray(grants)) throw new ApiError(503, 'FACTORY_ACCESS_UNAVAILABLE', 'Factory access configuration is unavailable');
-  if (!Object.hasOwn(grants, factoryId) || !Array.isArray(grants[factoryId]) || !grants[factoryId].includes(user.id)) throw notFound();
-}
+const { authorizeFactory } = require('./factory-access.service');
+const { ensureFactory } = require('./factory-registry.service');
 
 async function seedOperations(db, plan, { factoryId } = {}) {
   const payload = await validatePayload(plan, 'seed');
@@ -23,6 +17,7 @@ async function seedOperations(db, plan, { factoryId } = {}) {
   // Stable IDs and per-factory transaction advisory lock serialize concurrent seed replays.
   return db.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${factoryId}, 0))::text`;
+    await ensureFactory(tx, factoryId, 'canonical-seed');
     const where = { factoryId_snapshotId: { factoryId, snapshotId: payload.snapshot_id } };
     let snapshotRow = await tx.factorySnapshot.findUnique({ where });
     if (snapshotRow && (snapshotRow.contentHash !== snapshotHash || contentHash(snapshotRow.payloadJson) !== snapshotHash || snapshotRow.schemaVersion !== '3.0')) throw conflict();
@@ -51,8 +46,15 @@ async function seedOperations(db, plan, { factoryId } = {}) {
 
 async function readOperations(db, user, factoryId, { signal } = {}) {
   signal?.throwIfAborted();
-  authorizeFactory(user, factoryId);
-  const head = await db.$transaction((tx) => tx.operationsHead.findUnique({ where: { factoryId }, include: { snapshot: true, schedule: { include: { snapshot: true, commit: true } } } }), { isolationLevel: 'RepeatableRead' });
+  const head = await db.$transaction(async tx => {
+    await authorizeFactory(tx, user, factoryId);
+    return tx.operationsHead.findUnique({ where: { factoryId }, include: { snapshot: true, schedule: { include: { snapshot: true, commit: true } } } });
+  }, { isolationLevel: 'RepeatableRead' });
+  return projectOperationsHead(head, factoryId, { signal });
+}
+
+// Validate immutable selected rows without rereading the mutable head.
+async function projectOperationsHead(head, factoryId, { signal } = {}) {
   if (!head) throw notFound();
   signal?.throwIfAborted();
   const { snapshot, schedule } = head;
@@ -103,4 +105,4 @@ async function readOperations(db, user, factoryId, { signal } = {}) {
     },
   };
 }
-module.exports = { seedOperations, readOperations, authorizeFactory };
+module.exports = { seedOperations, readOperations, authorizeFactory, projectOperationsHead };

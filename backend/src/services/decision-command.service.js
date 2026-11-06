@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const { ApiError } = require('../lib/api-error');
+const { authorizeFactoryWrite } = require('./factory-access.service');
 const { contentHash, validatePayload } = require('./operations-contract.service');
 const { accessible, parse, caseResponse } = require('./decision-case.service');
 
@@ -38,6 +39,8 @@ async function executeDecisionCommand(db, user, id, rawBody, rawKey) {
   return db.$transaction(async tx => {
     // Same namespace/order as ingestion and case creation. READ COMMITTED sees the winner after waiting.
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${scoped.factoryId}, 0))::text`;
+    try { user = await authorizeFactoryWrite(tx, user, scoped.factoryId); }
+    catch (error) { if (error.statusCode === 404) throw new ApiError(404, 'DECISION_CASE_NOT_FOUND', 'Decision case was not found'); throw error; }
     await tx.$queryRaw`SELECT id FROM decision_cases WHERE id=${id}::uuid FOR UPDATE`;
     const row = await accessible(tx, user, id);
     const receipt = await tx.decisionCaseIdempotencyReceipt.findUnique({ where: {

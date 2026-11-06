@@ -101,7 +101,8 @@ test('upgrades populated main without checksum drift, version backfill or schedu
       scheduleId: schedule.schedule_id, scheduleRevision: schedule.revision, planVersion: 7 });
     expect(await db.factorySnapshot.count()).toBe(2);
     const { createDecisionCase } = require('../../src/services/decision-case.service');
-    const created = await createDecisionCase(db, { role: 'ADMIN', id: '00000000-0000-4000-8000-000000000001' }, {
+    const admin = await db.user.create({ data: { role: 'ADMIN', username: 'upgrade-admin', passwordHash: 'test' } });
+    const created = await createDecisionCase(db, admin, {
       factory_id: factoryId, schema_version: '3.0', expected_snapshot_id: 'upgrade-S2', expected_plan_version: 7,
       request: { mode: 'LIVE', trigger: { type: 'MANUAL_REPLAN', reason: 'Upgrade regression' }, planning_config: { horizon_minutes: 720 } },
     }, 'upgrade-create');

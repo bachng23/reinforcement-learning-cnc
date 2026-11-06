@@ -14,6 +14,7 @@ def run(*args: str, cwd: Path = ROOT) -> None:
 
 
 def main() -> None:
+    run(sys.executable, str(ROOT / "ai_services/scripts/export_scenario_contracts.py"), "--check")
     with tempfile.TemporaryDirectory(prefix="operations-contract-") as temp:
         generated = Path(temp) / "operations-domain.schema.json"
         run(sys.executable, str(ROOT / "ai_services/scripts/export_operations_contracts.py"),
@@ -27,6 +28,11 @@ def main() -> None:
     npm = shutil.which("npm.cmd" if sys.platform == "win32" else "npm")
     if not npm:
         raise SystemExit("npm is required; install frontend dependencies with npm ci first")
+    node = shutil.which("node")
+    if not node:
+        raise SystemExit("node is required")
+    run(node, "backend/scripts/export-operations-http-contract.js", "--check")
+    run(node, "backend/scripts/export-scenario-contract.js", "--check")
     run(npm, "run", "contracts:check", cwd=ROOT / "frontend")
     run(npm, "run", "typecheck", cwd=ROOT / "frontend")
     run(npm, "exec", "--", "vitest", "run", "tests/operations-api-client.test.ts", cwd=ROOT / "frontend")

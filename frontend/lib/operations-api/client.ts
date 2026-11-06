@@ -4,6 +4,7 @@ import type {
   PlanningConfig, RecommendationPackage, RunDecisionCaseRequest, Schedule,
 } from "@/types/generated/operations";
 import type { DecisionCaseListQuery, DecisionCaseListResponse, DecisionCaseEventsResponse } from "./decision-case-reads";
+import { validateOverview, type OperationsOverview } from "./overview";
 
 export interface OperationsRequestOptions { signal?: AbortSignal }
 export interface OperationsEventRequestOptions extends OperationsRequestOptions { limit?: number }
@@ -166,6 +167,11 @@ export function createOperationsApiClient({
     return { caseStatus: envelope.data, meta: envelope.meta };
   }
   return {
+    getOperationsOverview: async (factoryId: string, options?: OperationsRequestOptions): Promise<OperationsOverview> => {
+      const data = await request<unknown>(`/operations/overview?factory_id=${id(factoryId)}`, options);
+      validateOverview(data, factoryId);
+      return data;
+    },
     listDecisionCases: async (query: DecisionCaseListQuery, options?: OperationsRequestOptions): Promise<DecisionCaseListResponse> => {
       const params = new URLSearchParams({ factory_id: query.factory_id });
       if (query.status) params.set("status", query.status);

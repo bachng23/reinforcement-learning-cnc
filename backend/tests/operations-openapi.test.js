@@ -6,7 +6,7 @@ const canonical = require('../../contracts/v3/operations-domain.schema.json');
 
 test('Operations OpenAPI uses canonical schemas without changing Schedule wire shape', () => {
   for (const [name, schema] of Object.entries(api.components.schemas)) {
-    if (!name.startsWith('Operations') || name === 'OperationsReadMeta') continue;
+    if (!name.startsWith('Operations') || ['OperationsReadMeta', 'OperationsOverview', 'OperationsOverviewResponse'].includes(name)) continue;
     const local = JSON.parse(JSON.stringify(schema).replaceAll('#/components/schemas/Operations', '#/$defs/'));
     expect(local).toEqual(canonical.$defs[name.slice('Operations'.length)]);
   }

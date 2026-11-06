@@ -1942,6 +1942,29 @@
       "title": "MaintenanceRequestedTrigger",
       "type": "object"
     },
+    "MaintenanceStartConstraint": {
+      "additionalProperties": false,
+      "properties": {
+        "earliest_start_at": {
+          "format": "date-time",
+          "title": "Earliest Start At",
+          "type": "string"
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Maintenance Request Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "maintenance_request_id",
+        "earliest_start_at"
+      ],
+      "title": "MaintenanceStartConstraint",
+      "type": "object"
+    },
     "MaintenanceType": {
       "enum": [
         "PREVENTIVE",
@@ -1959,6 +1982,14 @@
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
           "title": "Event Id",
           "type": "string"
+        },
+        "maintenance_start_constraints": {
+          "items": {
+            "$ref": "#/$defs/MaintenanceStartConstraint"
+          },
+          "maxItems": 5,
+          "title": "Maintenance Start Constraints",
+          "type": "array"
         },
         "occurred_at": {
           "format": "date-time",

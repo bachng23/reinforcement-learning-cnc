@@ -1,0 +1,41 @@
+{
+  "evidence_kind": "historical_local_http_smoke",
+  "runtime_state": "stopped_after_capture; start the API with the retained demo schema to reproduce",
+  "api": "http://127.0.0.1:55364/api/v1",
+  "schema": "analytics_demo_81ade522dc9d47c39f8218a7224671b3",
+  "factory_id": "wo-f67f439d-6979-451d-b68d-4e177d743f7a",
+  "work_order_id": "de857dab-449c-4ce5-8f21-f4f1848a0e78",
+  "login_status": 200,
+  "results": [
+    {
+      "endpoint": "definitions",
+      "status": 200,
+      "cache": "no-store",
+      "request_id": "analytics-cookie-handoff"
+    },
+    {
+      "endpoint": "overview",
+      "status": 200,
+      "cache": "no-store",
+      "request_id": "analytics-cookie-handoff"
+    },
+    {
+      "endpoint": "trends",
+      "status": 200,
+      "cache": "no-store",
+      "request_id": "analytics-cookie-handoff"
+    },
+    {
+      "endpoint": "machines",
+      "status": 200,
+      "cache": "no-store",
+      "request_id": "analytics-cookie-handoff"
+    },
+    {
+      "endpoint": "drilldown",
+      "status": 200,
+      "cache": "no-store",
+      "request_id": "analytics-cookie-handoff"
+    }
+  ]
+}

@@ -184,7 +184,8 @@ describe("RecommendationPackageView", () => {
 
     expect(screen.getAllByText(longId)[0]).toHaveClass("break-all");
     expect(screen.getByText(longEvidence)).toHaveClass("break-all", "max-w-full");
-    expect(screen.getByTestId("candidate-kpi-scroll")).toHaveClass("overflow-x-auto");
+    expect(screen.getByRole("region", { name: "Returned candidate KPIs" })).toHaveAttribute("tabindex", "0");
+    expect(screen.getByRole("region", { name: "Returned candidate KPIs" })).toHaveTextContent(longId);
   });
 
   it("shows an explicit empty state when the selected schedule has no assignments", async () => {

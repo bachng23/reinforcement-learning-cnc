@@ -27,6 +27,7 @@ import {
   type RecommendationCenterStatusData,
 } from "@/lib/recommendation-center";
 import type { HumanDecisionRequest } from "@/types/generated/operations";
+import { operationsHref, operationsUiClient } from "@/lib/operations-ui";
 
 function PreviewRecommendation({ data }: { data: RecommendationCenterPreviewData }) {
   const recommendation = data.recommendation;
@@ -67,7 +68,7 @@ function PreviewRecommendation({ data }: { data: RecommendationCenterPreviewData
       ) : null}
 
       {preview ? (
-        <OperationsPanel title="Fixture payload preview" description="This comparison fixture does not submit requests. Create a case from Factory resources to use the complete mock or live workflow.">
+        <OperationsPanel title="Fixture payload preview" description="This comparison fixture does not submit requests. Create a case from Overview to use the complete mock or live workflow.">
           <div className="p-4 sm:p-5">
             <p role="status" className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-700"><FileJson2 className="h-4 w-4" />{preview.decision} request ready for adapter integration</p>
             <pre className="max-h-96 overflow-auto rounded-md bg-stone-950 p-4 text-xs text-stone-100">{JSON.stringify(preview, null, 2)}</pre>
@@ -145,6 +146,8 @@ function RealRecommendation({
     <>
       <OperationsPanel title="Decision case status" description="Authoritative workflow and processing metadata returned by the live Decision Case API.">
         <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4 sm:p-5">
+          <div className="min-w-0"><p className="text-xs text-slate-500">Authoritative factory</p><p className="mt-1 break-all font-mono text-sm font-semibold">{data.caseMeta?.factory_id ?? "Not provided"}</p></div>
+          <div><p className="text-xs text-slate-500">Basis / head plan version</p><p className="mt-1 font-mono text-sm font-semibold">{data.caseMeta?.base_plan_version ?? "Not provided"} / {data.caseMeta?.current_context?.plan_version ?? "Not provided"}</p></div>
           <div><p className="text-xs text-[var(--color-ash-gray)]">Case</p><p className="mt-1 break-all font-mono text-sm font-semibold">{decisionCase.decision_case_id}</p></div>
           <div><p className="text-xs text-[var(--color-ash-gray)]">Stage</p><p className="mt-1"><OperationsStatus value={decisionCase.status} /></p></div>
           <div><p className="text-xs text-[var(--color-ash-gray)]">Mode</p><p className="mt-1"><OperationsStatus value={decisionCase.mode} /></p></div>
@@ -157,7 +160,8 @@ function RealRecommendation({
         </div>
       </OperationsPanel>
 
-      {data.caseMeta?.stale && decisionCase.status !== "COMMITTED" ? <AsyncState kind="error" compact title="Case basis is stale" description="The factory context has changed. This case cannot approve or publish against the new basis. Create a new case from the latest factory context." action={<Link href="/operations" className="min-h-10 rounded-md border bg-white px-4 py-2 text-sm font-semibold">Create a new case</Link>} /> : null}
+      {data.artifactState === "ready" && decisionCase.status === "COMMITTED" && data.caseMeta?.commit ? <PublishedDecisionSchedule data={data} showGantt={false} /> : null}
+      {data.caseMeta?.stale && decisionCase.status !== "COMMITTED" ? <AsyncState kind="error" compact title="Case basis is stale" description="The factory context has changed. This case cannot approve or publish against the new basis. Create a new case from the latest Overview context." action={<Link href={operationsHref("/overview", data.caseMeta.factory_id, { demo: data.source === "mock-workflow" })} className="dss-secondary">Create a new case</Link>} /> : null}
 
       {polling ? (
         <AsyncState
@@ -208,7 +212,6 @@ function RealRecommendation({
 
       <a href="#decision-case-audit" className="inline-flex min-h-10 items-center rounded-md border bg-white px-4 text-sm font-medium">View audit timeline</a>
       {data.artifactState === "ready" ? <LiveDecisionControls api={api} data={data} selectedCandidateId={effectiveCandidateId} refreshing={refreshing} onRefresh={onRetry} /> : null}
-      {data.artifactState === "ready" && decisionCase.status === "COMMITTED" && data.caseMeta?.commit ? <PublishedDecisionSchedule api={api} commit={data.caseMeta.commit} /> : null}
       <DecisionCaseAuditTimeline api={api} caseId={decisionCase.decision_case_id} publication={data.caseMeta?.commit}
         refreshToken={`${decisionCase.updated_at}:${data.caseMeta?.case_revision ?? ""}`} />
     </>
@@ -220,14 +223,16 @@ export function RecommendationCenterPage({
   caseId,
   api,
   apiMode,
+  factoryHint,
 }: {
   dataSource?: RecommendationCenterDataSource;
   caseId?: string;
   api?: OperationsApiClient;
   apiMode?: OperationsApiMode;
+  factoryHint?: string;
 } = {}) {
   const configuredMode = dataSource?.mode ?? apiMode ?? getOperationsApiMode();
-  const client = useMemo(() => api ?? dataSource?.client ?? getOperationsApiClient(), [api, dataSource]);
+  const client = useMemo(() => api ?? dataSource?.client ?? (apiMode ? operationsUiClient(apiMode) : getOperationsApiClient()), [api, dataSource, apiMode]);
   const source = useMemo(() => {
     if (dataSource) return dataSource;
     if (configuredMode === "mock") return createMockRecommendationCenterDataSource(client);
@@ -235,10 +240,14 @@ export function RecommendationCenterPage({
   }, [client, configuredMode, dataSource]);
   const selectedCaseId = caseId ?? getRecommendationCenterCaseId();
   const { state, retry, refresh, polling, refreshing } = useRecommendationCenter({ dataSource: source, caseId: selectedCaseId });
+  const authoritativeFactory = state.kind === "ready" ? state.data.source === "mock" ? state.data.snapshot.factory_id : state.data.caseMeta?.factory_id : undefined;
+  const scopeMismatch = state.kind === "ready" && !!factoryHint && factoryHint !== authoritativeFactory;
 
   return (
     <OperationsShell
       title="Recommendation Center"
+      factoryId={authoritativeFactory ?? factoryHint}
+      demo={source.mode === "mock"}
       description="Inspect authoritative decision status and compare recommendation candidates only when the selected data source provides them."
       dataSource={source.mode === "real" ? "live" : "fixture"}
       dataSourceMessage={source.mode === "real"
@@ -257,14 +266,15 @@ export function RecommendationCenterPage({
       )}
     >
       {state.kind === "loading" ? <AsyncState kind="loading" title="Loading decision case" description={`Requesting authoritative status for ${selectedCaseId ?? "the selected case"}.`} /> : null}
-      {state.kind === "missing-case-id" ? <AsyncState kind="empty" title="Decision case ID required" description="Find an existing case in Decision Cases, or create a new one from Overview." action={<Link href="/operations/cases" className="min-h-10 rounded-md border bg-white px-4 py-2 text-sm font-medium">Browse decision cases</Link>} /> : null}
+      {state.kind === "missing-case-id" ? <AsyncState kind="empty" title="Decision case ID required" description="Find an existing case in Decision Cases, or create a new one from Overview." action={<Link href={operationsHref("/operations/cases", factoryHint, { demo: source.mode === "mock" })} className="dss-secondary">Browse decision cases</Link>} /> : null}
       {state.kind === "unauthorized" ? <AsyncState kind="error" title="Recommendation access required" description={state.message} action={<Link href="/login" className="inline-flex min-h-10 items-center rounded-md border border-[var(--color-stone-border)] bg-white px-4 text-sm font-medium">Sign in</Link>} /> : null}
       {state.kind === "not-found" ? <AsyncState kind="empty" title="Decision case not found" description={state.message} onRetry={retry} retryLabel="Retry case" /> : null}
       {state.kind === "conflict" ? <AsyncState kind="error" title="Decision case changed" description={state.message} onRetry={retry} retryLabel="Refresh case" /> : null}
       {state.kind === "unavailable" ? <AsyncState kind="empty" title="Recommendation service unavailable" description={state.message} onRetry={retry} retryLabel="Retry case" /> : null}
       {state.kind === "network-error" || state.kind === "error" ? <AsyncState kind="error" title="Recommendation data could not be loaded" description={state.message} onRetry={retry} /> : null}
-      {state.kind === "ready" && state.data.source === "mock" ? <PreviewRecommendation key={state.data.recommendation.recommendation_id} data={state.data} /> : null}
-      {state.kind === "ready" && state.data.source !== "mock" ? <RealRecommendation key={state.data.caseStatus.decision_case_id} api={client} data={state.data} polling={polling} refreshing={refreshing} onRetry={refresh} /> : null}
+      {scopeMismatch ? <AsyncState kind="error" title="Case factory mismatch" description="The factory hint on this URL does not match the authoritative case factory. Candidate data and commands are hidden. Open the case from the correct factory list; the case ID will not be changed automatically." onRetry={retry} /> : null}
+      {state.kind === "ready" && !scopeMismatch && state.data.source === "mock" ? <PreviewRecommendation key={state.data.recommendation.recommendation_id} data={state.data} /> : null}
+      {state.kind === "ready" && !scopeMismatch && state.data.source !== "mock" ? <RealRecommendation key={state.data.caseStatus.decision_case_id} api={client} data={state.data} polling={polling} refreshing={refreshing} onRetry={refresh} /> : null}
     </OperationsShell>
   );
 }

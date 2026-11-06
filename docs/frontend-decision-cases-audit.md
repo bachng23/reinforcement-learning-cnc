@@ -170,3 +170,18 @@ Discovery runs before the race phase closes the original page. Its read-only
 command evidence is captured at the end of discovery, so later intentional race
 commands are not included. Desktop/mobile acceptance applies filters through the
 form, opens the case and uses browser Back to confirm the same scoped list.
+
+## Filter navigation and reload consistency
+
+The applied list scope comes only from the server route's committed searchParams.
+Applying changed filters uses a router transition; the list does not fetch the new
+scope until the keyed route commits. While the transition is pending, Apply is
+disabled and the previous results keep their original meaning. Applying the same
+filters refreshes the current list. Reload and Back therefore restore the same
+factory/status/mode that produced the displayed result set.
+
+Regression coverage includes a unit test holding route props at their previous
+values and a desktop/mobile browser test holding the RSC navigation while API
+responses remain fast. The tests verify that the new scoped read cannot run ahead
+of the URL, then release navigation and immediately reload to verify filter and
+read-query preservation without mutations.

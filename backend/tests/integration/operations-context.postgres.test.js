@@ -1,4 +1,5 @@
 const { randomUUID } = require('node:crypto');
+const { bootstrapFactory } = require('../../src/services/factory-registry.service');
 const jwt = require('jsonwebtoken');
 const prisma = require('../../src/config/prisma');
 const app = require('../../src/app');
@@ -135,6 +136,7 @@ describe('Operations Context — canonical seed, PostgreSQL persistence and auth
       const id = `factory-${scenario}`;
       const payload = { ...structuredClone(canonical), factory_id: id, snapshot_id: `snapshot-${scenario}`, current_schedule: null };
       if (scenario === 'schema') payload.machines[0] = { ...payload.machines[0], status: 'INVALID_STATUS' };
+      await bootstrapFactory(prisma, id, 'corruption-test');
       await prisma.factorySnapshot.create({ data: { factoryId: id, snapshotId: payload.snapshot_id, schemaVersion: '3.0',
         payloadJson: payload, contentHash: scenario === 'hash' ? '0'.repeat(64) : contentHash(payload), capturedAt: new Date(payload.captured_at) } });
       await prisma.operationsHead.create({ data: { factoryId: id, snapshotId: payload.snapshot_id } });

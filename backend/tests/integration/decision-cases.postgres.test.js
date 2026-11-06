@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../../src/config/prisma');
 const app = require('../../src/app');
 const { loadCanonicalSeedPlan, validatePayload, contentHash } = require('../../src/services/operations-contract.service');
-const { ingestFactorySnapshot } = require('../../src/services/operations-snapshot.service');
+const { ingestFactorySnapshot } = require('../helpers/factory-fixtures');
 const { createDecisionCase } = require('../../src/services/decision-case.service');
 
 describe('Decision case creation and durable history', () => {
@@ -94,7 +94,7 @@ describe('Decision case creation and durable history', () => {
   });
   test.each(['decisionCaseEvent', 'decisionCaseIdempotencyReceipt'])('%s insertion failure rolls back transaction', async model => {
     const before = await counts();
-    const broken = { $transaction: (fn, options) => db.$transaction(tx => fn(new Proxy(tx, { get(target, key) {
+    const broken = { user: db.user, factory: db.factory, factoryMembership: db.factoryMembership, $transaction: (fn, options) => db.$transaction(tx => fn(new Proxy(tx, { get(target, key) {
       return key === model ? new Proxy(target[key], { get(delegate, method) {
         return method === 'create' ? () => { throw new Error('injected insertion failure'); } : delegate[method];
       } }) : target[key];

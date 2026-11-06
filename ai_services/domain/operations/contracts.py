@@ -635,12 +635,24 @@ class MaintenanceRequestedTrigger(ContractModel):
     maintenance_request_id: Identifier
 
 
+class MaintenanceStartConstraint(ContractModel):
+    maintenance_request_id: Identifier
+    earliest_start_at: AwareDatetime
+
+
 class ManualReplanTrigger(ContractModel):
     type: Literal["MANUAL_REPLAN"] = "MANUAL_REPLAN"
     event_id: Identifier
     occurred_at: AwareDatetime
     requested_by_user_id: Identifier
     reason: LongText
+    maintenance_start_constraints: list[MaintenanceStartConstraint] = Field(default_factory=list, max_length=5, exclude_if=lambda value: not value)
+
+    @model_validator(mode="after")
+    def unique_bounds(self):
+        if len({value.maintenance_request_id for value in self.maintenance_start_constraints}) != len(self.maintenance_start_constraints):
+            raise ValueError("duplicate maintenance start constraint")
+        return self
 
 
 class WhatIfTrigger(ContractModel):
@@ -674,6 +686,14 @@ class RunDecisionCaseRequest(ContractModel):
 
     @model_validator(mode="after")
     def validate_mode(self) -> RunDecisionCaseRequest:
+        if isinstance(self.trigger, ManualReplanTrigger):
+            window = self.factory_snapshot.planning_window
+            for bound in self.trigger.maintenance_start_constraints:
+                target = next((m for m in self.factory_snapshot.maintenance_requests if m.maintenance_request_id == bound.maintenance_request_id), None)
+                if target is None or target.status.value in {"COMPLETED", "CANCELLED"}:
+                    raise ValueError("maintenance start constraint requires an active pinned target")
+                if not max(window.start_at, target.earliest_start_at) <= bound.earliest_start_at < window.end_at:
+                    raise ValueError("maintenance start constraint cannot relax lower bound or exceed planning window")
         if isinstance(self.trigger, WhatIfTrigger) and self.mode is not DecisionMode.SIMULATION_ONLY:
             raise ValueError("WHAT_IF triggers require SIMULATION_ONLY mode")
         machine_ids = {machine.machine_id for machine in self.factory_snapshot.machines}

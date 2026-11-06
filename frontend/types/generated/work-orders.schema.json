@@ -1,0 +1,1529 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "definitions": {
+    "WorkOrderACCEPTCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "enum": [
+            "ACCEPT"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision"
+      ],
+      "type": "object"
+    },
+    "WorkOrderASSIGNCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "assignee_user_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "command": {
+          "enum": [
+            "ASSIGN"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision",
+        "assignee_user_id"
+      ],
+      "type": "object"
+    },
+    "WorkOrderAssignee": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "type": "boolean"
+        },
+        "user_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "user_id",
+        "username",
+        "active"
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "WorkOrderBLOCKCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "enum": [
+            "BLOCK"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "reason": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "WorkOrderCANCELCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "enum": [
+            "CANCEL"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "reason": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "WorkOrderCLOSECommand": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "enum": [
+            "CLOSE"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "verification": {
+          "$ref": "#/definitions/WorkOrderVerification"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision",
+        "verification"
+      ],
+      "type": "object"
+    },
+    "WorkOrderCOMPLETECommand": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "enum": [
+            "COMPLETE"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "report": {
+          "$ref": "#/definitions/WorkOrderReport"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision",
+        "report"
+      ],
+      "type": "object"
+    },
+    "WorkOrderCommandRequest": {
+      "discriminator": {
+        "propertyName": "command"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/definitions/WorkOrderASSIGNCommand"
+        },
+        {
+          "$ref": "#/definitions/WorkOrderACCEPTCommand"
+        },
+        {
+          "$ref": "#/definitions/WorkOrderSTARTCommand"
+        },
+        {
+          "$ref": "#/definitions/WorkOrderBLOCKCommand"
+        },
+        {
+          "$ref": "#/definitions/WorkOrderRESUMECommand"
+        },
+        {
+          "$ref": "#/definitions/WorkOrderCOMPLETECommand"
+        },
+        {
+          "$ref": "#/definitions/WorkOrderCLOSECommand"
+        },
+        {
+          "$ref": "#/definitions/WorkOrderREQUEST_REWORKCommand"
+        },
+        {
+          "$ref": "#/definitions/WorkOrderCANCELCommand"
+        },
+        {
+          "$ref": "#/definitions/WorkOrderREASSIGNCommand"
+        },
+        {
+          "$ref": "#/definitions/WorkOrderMANAGER_HOLDCommand"
+        },
+        {
+          "$ref": "#/definitions/WorkOrderREASSIGN_FOR_REWORKCommand"
+        }
+      ]
+    },
+    "WorkOrderCompletion": {
+      "additionalProperties": false,
+      "properties": {
+        "actor_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "attempt": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "completed_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "report": {
+          "$ref": "#/definitions/WorkOrderReport"
+        }
+      },
+      "required": [
+        "attempt",
+        "actor_id",
+        "completed_at",
+        "report"
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "WorkOrderCreateRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_head": {
+          "$ref": "#/definitions/WorkOrderExpectedHead"
+        },
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "overlap_override_reason": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/WorkOrderSourceInput"
+        }
+      },
+      "required": [
+        "factory_id",
+        "source",
+        "expected_head"
+      ],
+      "type": "object"
+    },
+    "WorkOrderDetail": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_completed_at": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "actual_started_at": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "assignee": {
+          "$ref": "#/definitions/WorkOrderAssignee"
+        },
+        "attempt": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "available_commands": {
+          "items": {
+            "enum": [
+              "ASSIGN",
+              "ACCEPT",
+              "START",
+              "BLOCK",
+              "RESUME",
+              "COMPLETE",
+              "CLOSE",
+              "REQUEST_REWORK",
+              "CANCEL",
+              "REASSIGN",
+              "MANAGER_HOLD",
+              "REASSIGN_FOR_REWORK"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "basis_snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "blocker": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cancel_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cancelled_at": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "latest_completion": {
+          "$ref": "#/definitions/WorkOrderCompletion"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "machine_in_current_snapshot": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "overdue": {
+          "type": "boolean"
+        },
+        "planned_end_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "planned_start_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "requirements": {
+          "$ref": "#/definitions/WorkOrderRequirements"
+        },
+        "revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/definitions/WorkOrderSource"
+        },
+        "source_is_current": {
+          "type": "boolean"
+        },
+        "source_technician_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "UNASSIGNED",
+            "ASSIGNED",
+            "ACCEPTED",
+            "IN_PROGRESS",
+            "BLOCKED",
+            "COMPLETED",
+            "CLOSED",
+            "CANCELLED"
+          ],
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "verification": {
+          "additionalProperties": false,
+          "properties": {
+            "actor_id": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "note": {
+              "description": "Trimmed, nonblank text.",
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "result": {
+              "enum": [
+                "VERIFIED",
+                "VERIFIED_STOPPED"
+              ],
+              "type": "string"
+            },
+            "verified_at": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          "required": [
+            "actor_id",
+            "verified_at",
+            "result",
+            "note"
+          ],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "waiting_verification": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "factory_id",
+        "machine_id",
+        "maintenance_request_id",
+        "basis_snapshot_id",
+        "source",
+        "status",
+        "revision",
+        "assignee",
+        "planned_start_at",
+        "planned_end_at",
+        "actual_started_at",
+        "actual_completed_at",
+        "created_at",
+        "updated_at",
+        "source_is_current",
+        "machine_in_current_snapshot",
+        "overdue",
+        "waiting_verification",
+        "source_technician_ids",
+        "requirements",
+        "attempt",
+        "blocker",
+        "latest_completion",
+        "verification",
+        "cancel_reason",
+        "cancelled_at",
+        "available_commands"
+      ],
+      "type": "object"
+    },
+    "WorkOrderEligibleAssigneesResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "user_id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "user_id",
+              "username"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "has_more": {
+              "type": "boolean"
+            },
+            "next_after": {
+              "format": "uuid",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "read_at": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "timezone": {
+              "enum": [
+                "UTC"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "read_at",
+            "timezone",
+            "has_more",
+            "next_after"
+          ],
+          "type": "object"
+        },
+        "success": {
+          "enum": [
+            true
+          ],
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "success",
+        "data",
+        "meta"
+      ],
+      "type": "object"
+    },
+    "WorkOrderError": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "type": "object"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "success": {
+          "enum": [
+            false
+          ],
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "success",
+        "error",
+        "requestId"
+      ],
+      "type": "object"
+    },
+    "WorkOrderEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "actor_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "command": {
+          "enum": [
+            "CREATE",
+            "ASSIGN",
+            "ACCEPT",
+            "START",
+            "BLOCK",
+            "RESUME",
+            "COMPLETE",
+            "CLOSE",
+            "REQUEST_REWORK",
+            "CANCEL",
+            "REASSIGN",
+            "MANAGER_HOLD",
+            "REASSIGN_FOR_REWORK"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/definitions/WorkOrderEventPayload"
+        },
+        "sequence": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "work_order_id": {
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "work_order_id",
+        "sequence",
+        "actor_id",
+        "occurred_at",
+        "command",
+        "payload"
+      ],
+      "type": "object"
+    },
+    "WorkOrderEventPayload": {
+      "additionalProperties": false,
+      "properties": {
+        "assignee_user_id": {
+          "format": "uuid",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attempt": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "from_status": {
+          "enum": [
+            "UNASSIGNED",
+            "ASSIGNED",
+            "ACCEPTED",
+            "IN_PROGRESS",
+            "BLOCKED",
+            "COMPLETED",
+            "CLOSED",
+            "CANCELLED",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "overlap_override_reason": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "overlapping_work_order_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "reason": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "report": {
+          "$ref": "#/definitions/WorkOrderReport"
+        },
+        "revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "to_status": {
+          "enum": [
+            "UNASSIGNED",
+            "ASSIGNED",
+            "ACCEPTED",
+            "IN_PROGRESS",
+            "BLOCKED",
+            "COMPLETED",
+            "CLOSED",
+            "CANCELLED"
+          ],
+          "type": "string"
+        },
+        "verification": {
+          "$ref": "#/definitions/WorkOrderVerification"
+        }
+      },
+      "required": [
+        "from_status",
+        "to_status",
+        "revision",
+        "attempt",
+        "assignee_user_id"
+      ],
+      "type": "object"
+    },
+    "WorkOrderEventsResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "items": {
+            "$ref": "#/definitions/WorkOrderEvent"
+          },
+          "type": "array"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "has_more": {
+              "type": "boolean"
+            },
+            "limit": {
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "next_after_sequence": {
+              "minimum": 1,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "read_at": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "timezone": {
+              "enum": [
+                "UTC"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "read_at",
+            "timezone",
+            "limit",
+            "has_more",
+            "next_after_sequence"
+          ],
+          "type": "object"
+        },
+        "success": {
+          "enum": [
+            true
+          ],
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "success",
+        "data",
+        "meta"
+      ],
+      "type": "object"
+    },
+    "WorkOrderExpectedHead": {
+      "additionalProperties": false,
+      "properties": {
+        "plan_version": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "plan_version",
+        "revision"
+      ],
+      "type": "object"
+    },
+    "WorkOrderListResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "items": {
+            "$ref": "#/definitions/WorkOrderSummary"
+          },
+          "type": "array"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "has_more": {
+              "type": "boolean"
+            },
+            "limit": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "next_cursor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "read_at": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "timezone": {
+              "enum": [
+                "UTC"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "read_at",
+            "timezone",
+            "limit",
+            "has_more",
+            "next_cursor"
+          ],
+          "type": "object"
+        },
+        "success": {
+          "enum": [
+            true
+          ],
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "success",
+        "data",
+        "meta"
+      ],
+      "type": "object"
+    },
+    "WorkOrderLookupResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "items": {
+            "$ref": "#/definitions/WorkOrderSummary"
+          },
+          "type": "array"
+        },
+        "meta": {
+          "$ref": "#/definitions/WorkOrderReadMeta"
+        },
+        "success": {
+          "enum": [
+            true
+          ],
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "success",
+        "data",
+        "meta"
+      ],
+      "type": "object"
+    },
+    "WorkOrderMANAGER_HOLDCommand": {
+      "additionalProperties": false,
+      "description": "ADMIN/ENGINEER explicitly puts IN_PROGRESS work on hold without impersonating its assignee. Preserves actual start and reports; records manager identity and reason. No access restoration required.",
+      "properties": {
+        "command": {
+          "enum": [
+            "MANAGER_HOLD"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "reason": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "WorkOrderOriginResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "type": "object"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "read_at": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "timezone": {
+              "enum": [
+                "UTC"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "read_at",
+            "timezone"
+          ],
+          "type": "object"
+        },
+        "success": {
+          "enum": [
+            true
+          ],
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "success",
+        "data",
+        "meta"
+      ],
+      "type": "object"
+    },
+    "WorkOrderREASSIGNCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "assignee_user_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "command": {
+          "enum": [
+            "REASSIGN"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "reason": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision",
+        "assignee_user_id",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "WorkOrderREASSIGN_FOR_REWORKCommand": {
+      "additionalProperties": false,
+      "description": "Independent ADMIN/ENGINEER returns COMPLETED work to ASSIGNED with a different eligible assignee. Increments attempt, preserves old completion and actual start. New assignee must ACCEPT then START.",
+      "properties": {
+        "assignee_user_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "command": {
+          "enum": [
+            "REASSIGN_FOR_REWORK"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "reason": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision",
+        "assignee_user_id",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "WorkOrderREQUEST_REWORKCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "enum": [
+            "REQUEST_REWORK"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "reason": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "WorkOrderRESUMECommand": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "enum": [
+            "RESUME"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "reason": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "WorkOrderReadMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "read_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "timezone": {
+          "enum": [
+            "UTC"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "read_at",
+        "timezone"
+      ],
+      "type": "object"
+    },
+    "WorkOrderReport": {
+      "additionalProperties": false,
+      "description": "STOPPED requires stop_reason. Server records completion time; caller timestamps are rejected.",
+      "properties": {
+        "outcome": {
+          "enum": [
+            "SUCCESS",
+            "PARTIAL",
+            "STOPPED"
+          ],
+          "type": "string"
+        },
+        "result": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "stop_reason": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "work_performed": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "outcome",
+        "work_performed",
+        "result"
+      ],
+      "type": "object"
+    },
+    "WorkOrderRequirements": {
+      "additionalProperties": false,
+      "properties": {
+        "action_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "expected_duration_minutes": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "maintenance_type": {
+          "type": "string"
+        },
+        "mandatory": {
+          "type": "boolean"
+        },
+        "minimum_skill_level": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "required_skill_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "maintenance_type",
+        "action_type",
+        "priority",
+        "required_skill_ids",
+        "minimum_skill_level",
+        "mandatory",
+        "expected_duration_minutes"
+      ],
+      "type": "object"
+    },
+    "WorkOrderResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/WorkOrderDetail"
+        },
+        "meta": {
+          "$ref": "#/definitions/WorkOrderReadMeta"
+        },
+        "success": {
+          "enum": [
+            true
+          ],
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "success",
+        "data",
+        "meta"
+      ],
+      "type": "object"
+    },
+    "WorkOrderSTARTCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "enum": [
+            "START"
+          ],
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "command",
+        "expected_revision"
+      ],
+      "type": "object"
+    },
+    "WorkOrderSource": {
+      "additionalProperties": false,
+      "properties": {
+        "assignment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "basis_snapshot_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        "basis_snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "decision_case_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "published_plan_version": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "schedule_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        "schedule_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "schedule_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "decision_case_id",
+        "schedule_id",
+        "schedule_revision",
+        "schedule_hash",
+        "assignment_id",
+        "published_plan_version",
+        "basis_snapshot_id",
+        "basis_snapshot_hash"
+      ],
+      "type": "object"
+    },
+    "WorkOrderSourceInput": {
+      "additionalProperties": false,
+      "properties": {
+        "assignment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "decision_case_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "schedule_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        "schedule_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "schedule_revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "decision_case_id",
+        "schedule_id",
+        "schedule_revision",
+        "schedule_hash",
+        "assignment_id"
+      ],
+      "type": "object"
+    },
+    "WorkOrderSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_completed_at": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "actual_started_at": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "assignee": {
+          "$ref": "#/definitions/WorkOrderAssignee"
+        },
+        "basis_snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "factory_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "machine_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "machine_in_current_snapshot": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "maintenance_request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        "overdue": {
+          "type": "boolean"
+        },
+        "planned_end_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "planned_start_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/definitions/WorkOrderSource"
+        },
+        "source_is_current": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "UNASSIGNED",
+            "ASSIGNED",
+            "ACCEPTED",
+            "IN_PROGRESS",
+            "BLOCKED",
+            "COMPLETED",
+            "CLOSED",
+            "CANCELLED"
+          ],
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "waiting_verification": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "factory_id",
+        "machine_id",
+        "maintenance_request_id",
+        "basis_snapshot_id",
+        "source",
+        "status",
+        "revision",
+        "assignee",
+        "planned_start_at",
+        "planned_end_at",
+        "actual_started_at",
+        "actual_completed_at",
+        "created_at",
+        "updated_at",
+        "source_is_current",
+        "machine_in_current_snapshot",
+        "overdue",
+        "waiting_verification"
+      ],
+      "type": "object"
+    },
+    "WorkOrderVerification": {
+      "additionalProperties": false,
+      "properties": {
+        "note": {
+          "description": "Trimmed, nonblank text.",
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "VERIFIED",
+            "VERIFIED_STOPPED"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "note"
+      ],
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "status": "INTEGRATED_CONTRACT",
+  "producer_sha": "c4d849492f02f082677835832fca7c2957735733",
+  "source_sha256": "5e4f7676d18e3a7e88c49599887caae4ba0efd311193249e8da8301677a0b6c4",
+  "engine_result": "scenario-engine:1.0",
+  "comparison": "scenario-engine:1.0",
+  "runnable": true,
+  "sensitivity": true,
+  "live_handoff": true
+}

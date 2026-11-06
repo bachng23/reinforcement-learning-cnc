@@ -82,7 +82,8 @@ async function main() {
       await delay(60000, undefined, { signal: controller.signal });
     } else {
       await command([path.join(root, 'node_modules/jest/bin/jest.js'), '--config',
-        'tests/planning/jest.config.js', '--runInBand'], { cwd: root, env, signal: controller.signal });
+        'tests/planning/jest.config.js', '--runInBand',
+        ...(process.argv.includes('--scenario') ? ['--runTestsByPath', 'tests/planning/scenario-worker.test.js'] : [])], { cwd: root, env, signal: controller.signal });
     }
   } catch (error) { errors.push(error); }
   finally {

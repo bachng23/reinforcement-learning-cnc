@@ -83,7 +83,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: operations-e2e-${{ github.sha }}-${{ github.run_attempt }}
-          path: artifacts/operations-e2e/
+          path: |
+            artifacts/operations-e2e/
+            artifacts/maintenance-analytics/
+            artifacts/scenario-e2e/
           if-no-files-found: warn
           retention-days: 14
       - name: Clean any schemas left by an interrupted runner

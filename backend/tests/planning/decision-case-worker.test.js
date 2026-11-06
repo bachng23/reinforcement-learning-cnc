@@ -38,6 +38,7 @@ beforeAll(async () => {
   if (!/^product_api_it_planning_\w+$/.test(new URL(process.env.DATABASE_URL).searchParams.get('schema'))) {
     throw new Error('Use npm run test:operations-planning to isolate PostgreSQL and start FastAPI');
   }
+  await db.user.create({ data: { ...actor, username: actor.id, passwordHash: 'test' } });
   plan = await loadCanonicalSeedPlan();
   factoryId = plan.factory_id;
   snapshotId = plan.run_request.factory_snapshot.snapshot_id;
@@ -175,7 +176,9 @@ test('graceful shutdown aborts the AI call and releases the lease for another wo
 
 test('the same pinned request has deterministic planner replay before persistence', async () => {
   const caseId = await createCase('deterministic-replay');
-  const claim = await lifecycle.claimNextDecisionCase(db, { leaseMs: 5000 });
+  // This direct lifecycle probe has no worker heartbeat and performs two real
+  // planner calls plus validation. Lease expiry is exercised separately.
+  const claim = await lifecycle.claimNextDecisionCase(db, { leaseMs: 30000 });
   const request = await lifecycle.buildPlanningRequest(claim);
   const options = { requestId: claim.requestId, correlationId: claim.correlationId };
   const first = await planningClient().plan(request, options);

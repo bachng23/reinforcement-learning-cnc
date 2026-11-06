@@ -1,0 +1,446 @@
+openapi: 3.1.0
+info:
+  title: Factory Incident Center — contract-first draft
+  version: 0.1.0
+  description: Proposal only. Not a deployed endpoint. See incidents.md for invariants and ownership.
+servers: [{ url: /api/v1 }]
+security: [{ session: [] }]
+paths:
+  /incidents:
+    get:
+      operationId: listIncidents
+      parameters:
+        - $ref: '#/components/parameters/Factory'
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/Status' } }
+        - { name: severity, in: query, schema: { type: string, enum: [INFO, WARNING, CRITICAL, UNCONFIRMED] } }
+        - { name: owner_user_id, in: query, schema: { type: string, format: uuid } }
+        - { name: machine_id, in: query, schema: { type: string, minLength: 1, maxLength: 128 } }
+        - { name: q, in: query, schema: { type: string, minLength: 1, maxLength: 200 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 4096 } }
+      responses:
+        '200':
+          description: Authorized AND-filtered page; created_at DESC, UUID DESC. Not a cross-page snapshot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data, meta]
+                properties:
+                  success: { const: true }
+                  data: { type: array, items: { $ref: '#/components/schemas/IncidentSummary' } }
+                  meta: { $ref: '#/components/schemas/PageMeta' }
+        default: { $ref: '#/components/responses/Error' }
+    post:
+      operationId: reportIncident
+      parameters: [{ $ref: '#/components/parameters/Key' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/Report' } } }
+      responses:
+        '201': { $ref: '#/components/responses/Incident' }
+        '200': { description: Existing source identity returned without another occurrence; same Incident envelope., content: { application/json: { schema: { $ref: '#/components/schemas/IncidentEnvelope' } } } }
+        default: { $ref: '#/components/responses/Error' }
+  /incidents/summary:
+    get:
+      operationId: getIncidentCounts
+      parameters: [{ $ref: '#/components/parameters/Factory' }]
+      responses:
+        '200':
+          description: Entire factory, independent of list pagination. No SLA or overdue policy.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data, meta]
+                properties:
+                  success: { const: true }
+                  data:
+                    type: object
+                    additionalProperties: false
+                    required: [factory_id, total, by_status, by_severity, unconfirmed_severity, unassigned, awaiting_verification]
+                    properties:
+                      factory_id: { type: string }
+                      total: { type: integer, minimum: 0 }
+                      by_status:
+                        type: object
+                        additionalProperties: false
+                        required: [OPEN, ACKNOWLEDGED, INVESTIGATING, RESOLVED, CLOSED]
+                        properties:
+                          OPEN: { type: integer, minimum: 0 }
+                          ACKNOWLEDGED: { type: integer, minimum: 0 }
+                          INVESTIGATING: { type: integer, minimum: 0 }
+                          RESOLVED: { type: integer, minimum: 0 }
+                          CLOSED: { type: integer, minimum: 0 }
+                      by_severity:
+                        type: object
+                        additionalProperties: false
+                        required: [INFO, WARNING, CRITICAL]
+                        properties:
+                          INFO: { type: integer, minimum: 0 }
+                          WARNING: { type: integer, minimum: 0 }
+                          CRITICAL: { type: integer, minimum: 0 }
+                      unconfirmed_severity: { type: integer, minimum: 0 }
+                      unassigned: { type: integer, minimum: 0 }
+                      awaiting_verification: { type: integer, minimum: 0 }
+                  meta: { $ref: '#/components/schemas/ReadMeta' }
+        default: { $ref: '#/components/responses/Error' }
+  /incidents/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      operationId: getIncident
+      responses:
+        '200': { $ref: '#/components/responses/Incident' }
+        default: { $ref: '#/components/responses/Error' }
+  /incidents/{id}/commands:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      operationId: commandIncident
+      parameters: [{ $ref: '#/components/parameters/Key' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/Command' } } }
+      responses:
+        '200': { $ref: '#/components/responses/Incident' }
+        default: { $ref: '#/components/responses/Error' }
+  /incidents/{id}/events:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      operationId: listIncidentEvents
+      parameters: [{ $ref: '#/components/parameters/After' }, { $ref: '#/components/parameters/HistoryLimit' }]
+      responses:
+        '200':
+          description: Append-only sanitized history, ordered by sequence ascending.
+          content: { application/json: { schema: { $ref: '#/components/schemas/EventPage' } } }
+        default: { $ref: '#/components/responses/Error' }
+  /incidents/{id}/occurrences:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      operationId: listIncidentOccurrences
+      parameters: [{ $ref: '#/components/parameters/After' }, { $ref: '#/components/parameters/HistoryLimit' }]
+      responses:
+        '200':
+          description: Immutable, authorized source references in sequence order; no raw case request.
+          content: { application/json: { schema: { $ref: '#/components/schemas/OccurrencePage' } } }
+        default: { $ref: '#/components/responses/Error' }
+  /incidents/{id}/links:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      operationId: linkIncidentTarget
+      parameters: [{ $ref: '#/components/parameters/Key' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_revision, target]
+              properties:
+                expected_revision: { type: integer, minimum: 1 }
+                target:
+                  type: object
+                  additionalProperties: false
+                  required: [type, id]
+                  properties:
+                    type: { type: string, enum: [case, work_order] }
+                    id: { type: string, format: uuid }
+      responses:
+        '200': { $ref: '#/components/responses/Incident' }
+        default: { $ref: '#/components/responses/Error' }
+  /incidents/{id}/links/{link_id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+      - { name: link_id, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      operationId: unlinkIncidentTarget
+      parameters: [{ $ref: '#/components/parameters/Key' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_revision, reason]
+              properties:
+                expected_revision: { type: integer, minimum: 1 }
+                reason: { $ref: '#/components/schemas/Note' }
+      responses:
+        '200': { $ref: '#/components/responses/Incident' }
+        default: { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    session: { type: apiKey, in: cookie, name: pdm_token }
+  parameters:
+    Factory: { name: factory_id, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 128 } }
+    Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    Key: { name: Idempotency-Key, in: header, required: true, schema: { type: string, pattern: '^[!-~]{1,128}$' } }
+    After: { name: after_sequence, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+    HistoryLimit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 100 } }
+  responses:
+    Incident:
+      description: Incident projection; replay returns historical body. Refetch before the next command.
+      headers:
+        Cache-Control: { schema: { const: no-store } }
+        Idempotency-Replayed: { schema: { type: boolean } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/IncidentEnvelope' } } }
+    Error:
+      description: '400 validation; 401 inactive/unauthenticated; 403 role; scoped 404; 409 revision/state/source/key conflict; 500 integrity; 503 DB/linked target unavailable. No raw evidence or diagnostics.'
+      headers:
+        Cache-Control: { schema: { const: no-store } }
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [success, error, requestId]
+            properties:
+              success: { const: false }
+              error:
+                type: object
+                required: [code, message]
+                properties: { code: { type: string }, message: { type: string } }
+              requestId: { type: string }
+  schemas:
+    Status: { type: string, enum: [OPEN, ACKNOWLEDGED, INVESTIGATING, RESOLVED, CLOSED] }
+    Severity: { type: string, enum: [INFO, WARNING, CRITICAL] }
+    Category: { type: string, enum: [EQUIPMENT, PROCESS, SAFETY, OTHER] }
+    Note: { type: string, minLength: 1, maxLength: 4000, pattern: '\S' }
+    Machine:
+      type: object
+      additionalProperties: false
+      required: [machine_id, basis_snapshot_id]
+      properties: { machine_id: { type: string, minLength: 1, maxLength: 128 }, basis_snapshot_id: { type: string, minLength: 1, maxLength: 128 } }
+    Source:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [type, source_event_id]
+          properties: { type: { const: manual }, source_event_id: { type: string, format: uuid } }
+        - type: object
+          additionalProperties: false
+          required: [type, case_id]
+          properties: { type: { const: case_health_alert }, case_id: { type: string, format: uuid } }
+    Report:
+      type: object
+      additionalProperties: false
+      required: [factory_id, source, title, description, category]
+      properties:
+        factory_id: { type: string, minLength: 1, maxLength: 128 }
+        source: { $ref: '#/components/schemas/Source' }
+        title: { type: string, minLength: 1, maxLength: 200, pattern: '\S' }
+        description: { $ref: '#/components/schemas/Note' }
+        category: { $ref: '#/components/schemas/Category' }
+        machine: { $ref: '#/components/schemas/Machine' }
+        proposed_severity: { $ref: '#/components/schemas/Severity' }
+        severity: { $ref: '#/components/schemas/Severity' }
+        related_incident_reason: { $ref: '#/components/schemas/Note' }
+      allOf:
+        - if: { properties: { source: { properties: { type: { const: case_health_alert } } } } }
+          then: { not: { required: [machine] } }
+      description: Official severity only ADMIN/ENGINEER; otherwise null until confirmation. From-case machine/evidence derived server-side. Unknown fields rejected.
+    Resolution:
+      type: object
+      additionalProperties: false
+      required: [code, summary, evidence]
+      properties:
+        code: { type: string, enum: [FIXED, FALSE_POSITIVE, NO_ACTION_REQUIRED] }
+        summary: { $ref: '#/components/schemas/Note' }
+        evidence: { $ref: '#/components/schemas/Note' }
+    Verification:
+      type: object
+      additionalProperties: false
+      required: [resolution_code, note]
+      properties:
+        resolution_code: { type: string, enum: [FIXED, FALSE_POSITIVE, NO_ACTION_REQUIRED] }
+        note: { $ref: '#/components/schemas/Note' }
+    Command:
+      type: object
+      required: [command, expected_revision]
+      properties:
+        expected_revision: { type: integer, minimum: 1 }
+      oneOf:
+        - properties: { command: { const: ASSIGN }, owner_user_id: { type: string, format: uuid } }
+          required: [owner_user_id]
+        - properties: { command: { const: REASSIGN }, owner_user_id: { type: string, format: uuid }, reason: { $ref: '#/components/schemas/Note' } }
+          required: [owner_user_id, reason]
+        - properties: { command: { enum: [ACKNOWLEDGE, START_INVESTIGATION] } }
+        - properties: { command: { const: CHANGE_SEVERITY }, severity: { $ref: '#/components/schemas/Severity' }, reason: { $ref: '#/components/schemas/Note' } }
+          required: [severity, reason]
+        - properties: { command: { const: MARK_RESOLVED }, resolution: { $ref: '#/components/schemas/Resolution' }, work_order_override_reason: { $ref: '#/components/schemas/Note' } }
+          required: [resolution]
+        - properties: { command: { const: CLOSE }, verification: { $ref: '#/components/schemas/Verification' }, work_order_override_reason: { $ref: '#/components/schemas/Note' } }
+          required: [verification]
+        - properties: { command: { const: REOPEN }, reason: { $ref: '#/components/schemas/Note' } }
+          required: [reason]
+        - properties: { command: { const: APPEND_OCCURRENCE }, source: { $ref: '#/components/schemas/Source' }, reason: { $ref: '#/components/schemas/Note' } }
+          required: [source, reason]
+      unevaluatedProperties: false
+    IncidentSummary:
+      type: object
+      additionalProperties: false
+      required: [id, factory_id, title, category, machine, source, severity, proposed_severity, status, owner_user_id, revision, first_occurred_at, last_occurred_at, occurrence_count, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        factory_id: { type: string }
+        title: { type: string }
+        category: { $ref: '#/components/schemas/Category' }
+        machine: { anyOf: [{ $ref: '#/components/schemas/Machine' }, { type: 'null' }] }
+        source: { type: string, enum: [manual, case_health_alert] }
+        severity: { anyOf: [{ $ref: '#/components/schemas/Severity' }, { type: 'null' }] }
+        proposed_severity: { anyOf: [{ $ref: '#/components/schemas/Severity' }, { type: 'null' }] }
+        status: { $ref: '#/components/schemas/Status' }
+        owner_user_id: { type: [string, 'null'], format: uuid }
+        revision: { type: integer, minimum: 1 }
+        first_occurred_at: { type: string, format: date-time }
+        last_occurred_at: { type: string, format: date-time }
+        occurrence_count: { type: integer, minimum: 1 }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    IncidentEnvelope:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: { const: true }
+        data:
+          type: object
+          additionalProperties: false
+          required: [incident, description, acknowledgment, resolution, closure, links, available_commands]
+          properties:
+            incident: { $ref: '#/components/schemas/IncidentSummary' }
+            description: { type: string }
+            acknowledgment: { anyOf: [{ $ref: '#/components/schemas/ActorTime' }, { type: 'null' }] }
+            resolution: { anyOf: [{ type: object, required: [actor_id, occurred_at, report], properties: { actor_id: { type: string, format: uuid }, occurred_at: { type: string, format: date-time }, report: { $ref: '#/components/schemas/Resolution' } } }, { type: 'null' }] }
+            closure: { anyOf: [{ type: object, required: [actor_id, occurred_at, verification], properties: { actor_id: { type: string, format: uuid }, occurred_at: { type: string, format: date-time }, verification: { $ref: '#/components/schemas/Verification' } } }, { type: 'null' }] }
+            links: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/Link' } }
+            available_commands: { type: array, items: { type: string, enum: [ASSIGN, REASSIGN, ACKNOWLEDGE, START_INVESTIGATION, MARK_RESOLVED, CLOSE, REOPEN, CHANGE_SEVERITY, APPEND_OCCURRENCE] } }
+        meta: { $ref: '#/components/schemas/ReadMeta' }
+    ActorTime:
+      type: object
+      additionalProperties: false
+      required: [actor_id, occurred_at]
+      properties: { actor_id: { type: string, format: uuid }, occurred_at: { type: string, format: date-time } }
+    Link:
+      type: object
+      additionalProperties: false
+      required: [id, type, target_id, association_scope, created_by, created_at, availability]
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [case, work_order] }
+        target_id: { type: string, format: uuid }
+        association_scope: { type: string, enum: [case, machine] }
+        created_by: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+        availability: { type: string, enum: [available, unavailable, not_found] }
+      description: Active link identity only. Target summary comes from authorized producer contract; not invented here. Maximum50 active links per incident.
+    ReadMeta:
+      type: object
+      required: [read_at]
+      properties: { read_at: { type: string, format: date-time } }
+    PageMeta:
+      type: object
+      required: [read_at, limit, has_more, next_cursor]
+      properties:
+        read_at: { type: string, format: date-time }
+        limit: { type: integer }
+        has_more: { type: boolean }
+        next_cursor: { type: [string, 'null'] }
+    HistoryMeta:
+      type: object
+      required: [read_at, has_more, next_after_sequence]
+      properties:
+        read_at: { type: string, format: date-time }
+        has_more: { type: boolean }
+        next_after_sequence: { type: integer, minimum: 0 }
+    EventPage:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: { const: true }
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, incident_id, sequence, command, actor_id, occurred_at, payload]
+            properties:
+              id: { type: string, format: uuid }
+              incident_id: { type: string, format: uuid }
+              sequence: { type: integer, minimum: 1 }
+              command: { type: string }
+              actor_id: { type: string, format: uuid }
+              occurred_at: { type: string, format: date-time }
+              payload: { type: object, description: Allowlisted per command; no raw source/target request or private artifact. }
+        meta: { $ref: '#/components/schemas/HistoryMeta' }
+    OccurrencePage:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: { const: true }
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, incident_id, sequence, factory_id, source, machine, actor_id, recorded_at, evidence]
+            properties:
+              id: { type: string, format: uuid }
+              incident_id: { type: string, format: uuid }
+              sequence: { type: integer, minimum: 1 }
+              factory_id: { type: string }
+              source: { $ref: '#/components/schemas/Source' }
+              machine: { anyOf: [{ $ref: '#/components/schemas/Machine' }, { type: 'null' }] }
+              actor_id: { type: string, format: uuid }
+              recorded_at: { type: string, format: date-time }
+              evidence: { $ref: '#/components/schemas/IncidentEvidence' }
+        meta: { $ref: '#/components/schemas/HistoryMeta' }
+    IncidentEvidence:
+      oneOf:
+        - $ref: '#/components/schemas/ManualIncidentEvidence'
+        - $ref: '#/components/schemas/CaseHealthAlertEvidence'
+      discriminator: { propertyName: kind }
+    ManualIncidentEvidence:
+      type: object
+      additionalProperties: false
+      required: [kind, report_text]
+      properties:
+        kind: { const: manual }
+        report_text: { $ref: '#/components/schemas/Note' }
+      description: Human report only; no claim of measured health or physical recovery.
+    CaseHealthAlertEvidence:
+      type: object
+      additionalProperties: false
+      required: [kind, case_id, factory_id, basis_snapshot_id, case_created_at, machine_id, trigger, health_samples]
+      properties:
+        kind: { const: case_health_alert }
+        case_id: { type: string, format: uuid }
+        factory_id: { type: string, minLength: 1, maxLength: 128 }
+        basis_snapshot_id: { type: string, minLength: 1, maxLength: 128 }
+        case_created_at: { type: string, format: date-time }
+        machine_id: { type: string, minLength: 1, maxLength: 128 }
+        trigger:
+          type: object
+          additionalProperties: false
+          required: [type, failure_probability, alert_threshold]
+          properties:
+            type: { const: HEALTH_ALERT }
+            failure_probability: { type: number, minimum: 0, maximum: 1 }
+            alert_threshold: { type: number, minimum: 0, maximum: 1 }
+          description: Validated trigger probability meets its threshold. No inferred severity. Product request does not persist canonical event_id/occurred_at; never fabricate them from case creation time.
+        health_samples:
+          type: array
+          items: { $ref: '#/components/schemas/IncidentHealthEvidence' }
+          description: Only matching machine samples in the immutable basis; empty when absent. These are evidence samples, not a sensor-history series.
+    IncidentHealthEvidence:
+      type: object
+      additionalProperties: false
+      required: [health_snapshot_id, machine_id, observed_at, health_index, failure_probability_horizon_minutes, failure_probability, confidence, source_model_version]
+      properties:
+        health_snapshot_id: { type: string, minLength: 1, maxLength: 128 }
+        machine_id: { type: string, minLength: 1, maxLength: 128 }
+        observed_at: { type: string, format: date-time }
+        health_index: { type: number, minimum: 0, maximum: 1 }
+        failure_probability_horizon_minutes: { type: integer, minimum: 1 }
+        failure_probability: { type: number, minimum: 0, maximum: 1 }
+        confidence: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        source_model_version: { type: string, minLength: 1, maxLength: 128 }

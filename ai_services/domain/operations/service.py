@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from domain.operations.contracts import (
     CandidatePlan,
@@ -37,6 +37,7 @@ class PlanningDiagnostics:
     validations: list[PlanValidation]
     rejected_plan_ids: list[str]
     timed_out: bool = False
+    strategy_failures: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,10 @@ class PlanningResult:
 
 class DecisionPlanningError(Exception):
     code = "PLANNING_ERROR"
+
+    def __init__(self, message, *, diagnostics=None):
+        super().__init__(message)
+        self.diagnostics = diagnostics
 
 
 class NoFeasiblePlan(DecisionPlanningError):
@@ -75,8 +80,16 @@ class DecisionPlanningService:
         simulator: DeterministicSimulator | None = None,
         scorer: ObjectiveScorer | None = None,
         recommendation_builder: RecommendationBuilder | None = None,
+        constraint_profile: str = "legacy-v1",
+        check_cancelled=None,
     ) -> None:
-        self.validator = validator or OperationsValidatorV1()
+        if constraint_profile not in {"legacy-v1", "scenario-strict:1"}:
+            raise ValueError("unsupported constraint profile")
+        if validator is not None and getattr(validator, "constraint_profile", "legacy-v1") != constraint_profile:
+            raise ValueError("validator and scheduler constraint profiles must match")
+        self.constraint_profile = constraint_profile
+        self.check_cancelled = check_cancelled
+        self.validator = validator or OperationsValidatorV1(constraint_profile=constraint_profile)
         self.simulator = simulator or DeterministicSimulator()
         self.scorer = scorer or ObjectiveScorer()
         self.recommendation_builder = recommendation_builder or RecommendationBuilder()
@@ -84,18 +97,32 @@ class DecisionPlanningService:
     def plan(self, request: RunDecisionCaseRequest) -> RecommendationPackage:
         return self.plan_with_diagnostics(request).recommendation
 
-    def plan_with_diagnostics(self, request: RunDecisionCaseRequest) -> PlanningResult:
+    def plan_with_diagnostics(self, request: RunDecisionCaseRequest, *, deadline: float | None = None) -> PlanningResult:
+        bounds = getattr(request.trigger, 'maintenance_start_constraints', [])
+        if bounds:
+            from domain.operations.maintenance_constraints import with_start_constraints
+            try:
+                snapshot = with_start_constraints(request.factory_snapshot, bounds)
+            except ValueError as error:
+                raise NoFeasiblePlan('Maintenance start constraints conflict with pinned hard bounds') from error
+            effective = request.model_copy(update={"factory_snapshot": snapshot,
+                "trigger": request.trigger.model_copy(update={"maintenance_start_constraints": []})})
+            return DecisionPlanningService(constraint_profile="scenario-strict:1", simulator=self.simulator,
+                scorer=self.scorer, recommendation_builder=self.recommendation_builder,
+                check_cancelled=self.check_cancelled).plan_with_diagnostics(effective, deadline=deadline)
         strategies = self._strategies(request)
-        deadline = time.monotonic() + request.planning_config.solver_timeout_seconds
+        point_deadline = time.monotonic() + request.planning_config.solver_timeout_seconds
+        deadline = min(deadline, point_deadline) if deadline is not None else point_deadline
         candidates: list[CandidatePlan] = []
         validations: list[PlanValidation] = []
         timed_out = False
         last_infeasibility: Exception | None = None
+        strategy_failures = {}
 
         for strategy in strategies:
             try:
                 scheduled = DeterministicScheduler(
-                    request.factory_snapshot, deadline
+                    request.factory_snapshot, deadline, constraint_profile=self.constraint_profile, check_cancelled=self.check_cancelled
                 ).build(strategy, request.decision_case_id)
                 plan_id = _plan_id(request, strategy)
                 provisional = CandidatePlan(
@@ -137,9 +164,11 @@ class DecisionPlanningService:
                 candidates.append(candidate)
                 validations.append(validation)
             except PlanningTimeoutError:
+                strategy_failures[strategy.value] = "Planning deadline exceeded"
                 timed_out = True
                 break
             except NoFeasiblePlanError as exc:
+                strategy_failures[strategy.value] = str(exc)
                 last_infeasibility = exc
                 continue
 
@@ -151,9 +180,13 @@ class DecisionPlanningService:
         ]
         if not valid:
             if timed_out:
-                raise PlanningTimedOut("planning timed out before a valid candidate was found")
+                raise PlanningTimedOut("planning timed out before a valid candidate was found", diagnostics=strategy_failures)
             message = str(last_infeasibility) if last_infeasibility else "no feasible candidate"
-            raise NoFeasiblePlan(message)
+            for candidate in candidates:
+                if candidate.validation and candidate.validation.verdict is ValidationVerdict.INVALID:
+                    strategy_failures[candidate.strategy.value] = "; ".join(
+                        f"{v.constraint_code}: {v.message}" for v in candidate.validation.violations)
+            raise NoFeasiblePlan(message, diagnostics=strategy_failures)
 
         # Timeout policy: return only valid best-known candidates that completed
         # before the deadline; never emit a partially built candidate.
@@ -173,6 +206,7 @@ class DecisionPlanningService:
                 validations=validations,
                 rejected_plan_ids=rejected,
                 timed_out=timed_out,
+                strategy_failures=strategy_failures,
             ),
         )
 

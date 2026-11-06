@@ -2,7 +2,7 @@ const { createHmac, timingSafeEqual } = require('node:crypto');
 const { Prisma } = require('@prisma/client');
 const { z } = require('zod');
 const { ApiError } = require('../lib/api-error');
-const { authorizeFactory } = require('./operations-context.service');
+const { authorizeFactory } = require('./factory-access.service');
 const { parse } = require('./decision-case.service');
 
 const identifier = z.string().min(1).max(128).regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/);
@@ -73,9 +73,9 @@ function summary(row, head) {
 }
 async function listDecisionCases(db, user, rawQuery) {
   const query = parse(listQuery, rawQuery);
-  authorizeFactory(user, query.factory_id);
   const after = decodeCursor(query.cursor, query, user);
   return db.$transaction(async tx => {
+    await authorizeFactory(tx, user, query.factory_id);
     const head = await tx.operationsHead.findUnique({ where: { factoryId: query.factory_id },
       select: { snapshotId: true, planVersion: true } });
     if (!head) throw new ApiError(404, 'FACTORY_NOT_FOUND', 'Factory was not found');
@@ -98,4 +98,4 @@ async function listDecisionCases(db, user, rawQuery) {
         next_cursor: hasMore ? encodeCursor(page.at(-1), query, user) : null } };
   }, { isolationLevel: 'RepeatableRead' });
 }
-module.exports = { listDecisionCases, listQuery };
+module.exports = { listDecisionCases, listQuery, summarySelect, summary };

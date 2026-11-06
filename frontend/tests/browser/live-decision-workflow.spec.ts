@@ -23,7 +23,8 @@ async function backendContractHarness(page: Page) {
     try {
       let data: unknown;
       let meta: unknown;
-      if (url.pathname.endsWith("/operations/snapshot")) data = await api.getOperationsSnapshot(factoryId);
+      if (url.pathname.endsWith("/operations/overview")) data = await api.getOperationsOverview(factoryId);
+      else if (url.pathname.endsWith("/operations/snapshot")) data = await api.getOperationsSnapshot(factoryId);
       else if (url.pathname.endsWith("/schedules/current")) data = await api.getCurrentSchedule(factoryId);
       else if (request.method() === "POST" && url.pathname.endsWith("/decision-cases")) {
         const body = request.postDataJSON() as OperationsCreateDecisionCaseRequest;
@@ -68,7 +69,7 @@ async function createThroughOverview(page: Page) {
   await expect(page.getByLabel("Planning reason")).toBeVisible();
   await page.getByLabel("Planning reason").fill("Review production and maintenance alternatives");
   await page.getByRole("button", { name: "Create case", exact: true }).click();
-  await expect(page).toHaveURL(/recommendations\?caseId=/);
+  await expect(page).toHaveURL(/recommendations\?.*caseId=/);
   await expect(page.getByRole("heading", { name: "Candidate comparison" })).toBeVisible();
 }
 
@@ -109,22 +110,24 @@ test("create → select → approve → commit → published Gantt; reload never
   await page.getByRole("button", { name: "Confirm commit", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Published schedule", exact: true })).toBeVisible();
   await expect(page.getByText(/Published plan version 2/)).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Current committed schedule", exact: true })).toBeVisible();
   await capture(page, info, "success", "Published schedule");
-  await capture(page, info, "published-gantt", "Current committed schedule");
   const committed = await harness.api.getCurrentSchedule(factoryId);
   expect(committed.schedule?.schedule_id).toContain("reliability-priority");
   expect(harness.writes[0].key).not.toBe(harness.writes[1].key);
   await page.reload();
   await expect(page.getByText(/Published plan version 2/)).toBeVisible();
   expect(harness.writes).toHaveLength(2);
+  await page.getByRole("link", { name: "Open this published Gantt" }).click();
+  await expect(page.getByRole("heading", { name: "Published schedule", exact: true })).toBeVisible();
+  await capture(page, info, "published-gantt", "Published schedule");
+  await expect(page).toHaveURL(/\/operations\/schedule\?.*caseId=/);
   await page.getByRole("link", { name: "Open current Gantt" }).click();
-  await expect(page).toHaveURL(/\/operations\/schedule$/);
+  await expect(page).toHaveURL(/\/operations\/schedule\?factory_id=/);
   await expect(page.getByRole("heading", { name: "Current committed schedule", exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Schedule context" }).getByText(committed.schedule!.schedule_id, { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  await expect(page).toHaveURL(/\/operations$/);
-  await expect(page.getByRole("region", { name: "Snapshot context" }).getByText(committed.schedule!.schedule_id, { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/overview\?factory_id=/);
+  await expect(page.getByRole("region", { name: "Published factory plan" })).toContainText(committed.schedule!.schedule_id);
   expect(harness.writes).toHaveLength(2);
 });
 

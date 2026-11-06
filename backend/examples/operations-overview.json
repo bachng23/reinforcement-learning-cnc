@@ -1,0 +1,255 @@
+{
+  "populated": {
+    "success": true,
+    "data": {
+      "context": {
+        "factory_id": "factory-demo-01",
+        "snapshot_id": "snapshot-S2",
+        "plan_version": 1,
+        "head_revision": 3,
+        "captured_at": "2026-10-20T09:00:00Z",
+        "read_at": "2026-10-20T09:05:00Z",
+        "publication": {
+          "schedule_id": "schedule-P1",
+          "schedule_revision": 1,
+          "basis_snapshot_id": "snapshot-S1"
+        }
+      },
+      "machines": {
+        "total": 6,
+        "by_status": {
+          "IDLE": 1,
+          "RUNNING": 1,
+          "WARNING": 1,
+          "MAINTENANCE": 1,
+          "FAILED": 1,
+          "UNAVAILABLE": 1
+        }
+      },
+      "cases": {
+        "LIVE": {
+          "total": 1,
+          "by_status": {
+            "CREATED": 0,
+            "ANALYZING": 0,
+            "GENERATING": 0,
+            "VALIDATING": 0,
+            "EXPLAINING": 0,
+            "AWAITING_APPROVAL": 1,
+            "APPROVED": 0,
+            "MODIFIED": 0,
+            "REJECTED": 0,
+            "COMMITTED": 0,
+            "FAILED": 0,
+            "CANCELLED": 0
+          },
+          "by_processing": {
+            "PENDING": 0,
+            "RUNNING": 0,
+            "SUCCEEDED": 1,
+            "FAILED": 0
+          }
+        },
+        "SIMULATION_ONLY": {
+          "total": 0,
+          "by_status": {
+            "CREATED": 0,
+            "ANALYZING": 0,
+            "GENERATING": 0,
+            "VALIDATING": 0,
+            "EXPLAINING": 0,
+            "AWAITING_APPROVAL": 0,
+            "APPROVED": 0,
+            "MODIFIED": 0,
+            "REJECTED": 0,
+            "COMMITTED": 0,
+            "FAILED": 0,
+            "CANCELLED": 0
+          },
+          "by_processing": {
+            "PENDING": 0,
+            "RUNNING": 0,
+            "SUCCEEDED": 0,
+            "FAILED": 0
+          }
+        }
+      },
+      "review_preview": {
+        "items": [
+          {
+            "schema_version": "3.0",
+            "decision_case_id": "12121212-1212-4212-8212-121212121212",
+            "factory_id": "factory-demo-01",
+            "mode": "LIVE",
+            "status": "AWAITING_APPROVAL",
+            "snapshot_id": "snapshot-S1",
+            "created_at": "2026-10-20T08:00:00Z",
+            "updated_at": "2026-10-20T08:01:00Z",
+            "recommendation_id": "recommendation-01",
+            "committed_schedule_id": null,
+            "error_code": null,
+            "base_plan_version": 0,
+            "case_revision": 6,
+            "current_context": {
+              "snapshot_id": "snapshot-S2",
+              "plan_version": 1
+            },
+            "stale": true,
+            "human_decision": null,
+            "publication": null
+          }
+        ],
+        "limit": 6,
+        "has_more": false,
+        "filters": {
+          "factory_id": "factory-demo-01",
+          "mode": "LIVE",
+          "status": "AWAITING_APPROVAL"
+        }
+      },
+      "provenance": {
+        "machines": {
+          "source": "validated_current_snapshot",
+          "snapshot_id": "snapshot-S2",
+          "observed_at": "2026-10-20T09:00:00Z",
+          "population": 6,
+          "covered": 6
+        },
+        "cases": {
+          "source": "decision_cases",
+          "scope": "all_factory_cases_including_stale_and_terminal",
+          "read_at": "2026-10-20T09:05:00Z"
+        }
+      }
+    }
+  },
+  "unpublished_missing_health": {
+    "success": true,
+    "data": {
+      "context": {
+        "factory_id": "factory-demo-01",
+        "snapshot_id": "snapshot-S2",
+        "plan_version": 0,
+        "head_revision": 3,
+        "captured_at": "2026-10-20T09:00:00Z",
+        "read_at": "2026-10-20T09:05:00Z",
+        "publication": null
+      },
+      "machines": {
+        "total": 6,
+        "by_status": {
+          "IDLE": 1,
+          "RUNNING": 1,
+          "WARNING": 1,
+          "MAINTENANCE": 1,
+          "FAILED": 1,
+          "UNAVAILABLE": 1
+        }
+      },
+      "cases": {
+        "LIVE": {
+          "total": 1,
+          "by_status": {
+            "CREATED": 0,
+            "ANALYZING": 0,
+            "GENERATING": 0,
+            "VALIDATING": 0,
+            "EXPLAINING": 0,
+            "AWAITING_APPROVAL": 1,
+            "APPROVED": 0,
+            "MODIFIED": 0,
+            "REJECTED": 0,
+            "COMMITTED": 0,
+            "FAILED": 0,
+            "CANCELLED": 0
+          },
+          "by_processing": {
+            "PENDING": 0,
+            "RUNNING": 0,
+            "SUCCEEDED": 1,
+            "FAILED": 0
+          }
+        },
+        "SIMULATION_ONLY": {
+          "total": 0,
+          "by_status": {
+            "CREATED": 0,
+            "ANALYZING": 0,
+            "GENERATING": 0,
+            "VALIDATING": 0,
+            "EXPLAINING": 0,
+            "AWAITING_APPROVAL": 0,
+            "APPROVED": 0,
+            "MODIFIED": 0,
+            "REJECTED": 0,
+            "COMMITTED": 0,
+            "FAILED": 0,
+            "CANCELLED": 0
+          },
+          "by_processing": {
+            "PENDING": 0,
+            "RUNNING": 0,
+            "SUCCEEDED": 0,
+            "FAILED": 0
+          }
+        }
+      },
+      "review_preview": {
+        "items": [
+          {
+            "schema_version": "3.0",
+            "decision_case_id": "12121212-1212-4212-8212-121212121212",
+            "factory_id": "factory-demo-01",
+            "mode": "LIVE",
+            "status": "AWAITING_APPROVAL",
+            "snapshot_id": "snapshot-S1",
+            "created_at": "2026-10-20T08:00:00Z",
+            "updated_at": "2026-10-20T08:01:00Z",
+            "recommendation_id": "recommendation-01",
+            "committed_schedule_id": null,
+            "error_code": null,
+            "base_plan_version": 0,
+            "case_revision": 6,
+            "current_context": {
+              "snapshot_id": "snapshot-S2",
+              "plan_version": 0
+            },
+            "stale": true,
+            "human_decision": null,
+            "publication": null
+          }
+        ],
+        "limit": 6,
+        "has_more": false,
+        "filters": {
+          "factory_id": "factory-demo-01",
+          "mode": "LIVE",
+          "status": "AWAITING_APPROVAL"
+        }
+      },
+      "provenance": {
+        "machines": {
+          "source": "validated_current_snapshot",
+          "snapshot_id": "snapshot-S2",
+          "observed_at": "2026-10-20T09:00:00Z",
+          "population": 6,
+          "covered": 6
+        },
+        "cases": {
+          "source": "decision_cases",
+          "scope": "all_factory_cases_including_stale_and_terminal",
+          "read_at": "2026-10-20T09:05:00Z"
+        }
+      }
+    }
+  },
+  "unavailable": {
+    "schema_version": "3.0",
+    "error_id": "34343434-3434-4434-8434-343434343434",
+    "code": "OPERATIONS_VALIDATOR_UNAVAILABLE",
+    "message": "Operations context is unavailable",
+    "correlation_id": "overview-example",
+    "retryable": true,
+    "details": []
+  }
+}

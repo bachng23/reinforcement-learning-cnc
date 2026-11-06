@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../../src/config/prisma');
 const app = require('../../src/app');
 const { loadCanonicalSeedPlan, validatePayload, contentHash } = require('../../src/services/operations-contract.service');
-const { ingestFactorySnapshot } = require('../../src/services/operations-snapshot.service');
+const { ingestFactorySnapshot } = require('../helpers/factory-fixtures');
 const { createDecisionCase, getDecisionCase } = require('../../src/services/decision-case.service');
 const { claimDecisionCase, persistDecisionRecommendation } = require('../../src/services/decision-planning.service');
 const { executeDecisionCommand } = require('../../src/services/decision-command.service');
@@ -224,7 +224,7 @@ describe('human decisions and atomic schedule publication (real HTTP/PostgreSQL)
   test.each(['decisionCaseEvent', 'decisionCaseIdempotencyReceipt'])('failure at %s rolls back publication, head, case and audit; retry succeeds', async model => {
     const f = await fixture(); await http(f.body);
     const before = await effects(f), key = randomUUID();
-    const broken = { decisionCase: db.decisionCase, $transaction: (fn, options) => db.$transaction(tx => fn(new Proxy(tx, {
+    const broken = { user: db.user, factory: db.factory, factoryMembership: db.factoryMembership, decisionCase: db.decisionCase, $transaction: (fn, options) => db.$transaction(tx => fn(new Proxy(tx, {
       get(target, prop) { return prop === model ? new Proxy(target[prop], {
         get(delegate, method) { return method === 'create' ? () => { throw new Error('injected write failure'); } : delegate[method]; },
       }) : target[prop]; },

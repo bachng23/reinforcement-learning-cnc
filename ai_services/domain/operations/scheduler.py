@@ -66,7 +66,11 @@ class DeterministicScheduler:
     replanned and later counted by the KPI simulator as schedule change.
     """
 
-    def __init__(self, snapshot: FactorySnapshot, deadline: float) -> None:
+    def __init__(self, snapshot: FactorySnapshot, deadline: float, *, constraint_profile: str = "legacy-v1", check_cancelled=None) -> None:
+        if constraint_profile not in {"legacy-v1", "scenario-strict:1"}:
+            raise ValueError("unsupported constraint profile")
+        self.constraint_profile = constraint_profile
+        self.check_cancelled = check_cancelled
         self.snapshot = snapshot
         self.deadline = deadline
         self.machines = {machine.machine_id: machine for machine in snapshot.machines}
@@ -85,8 +89,11 @@ class DeterministicScheduler:
         self._check_deadline()
         assignments = self._locked_assignments()
         self._seed_calendars(assignments)
+        retained_requests = {a.maintenance_request_id for a in assignments
+                             if a.assignment_type is AssignmentType.MAINTENANCE}
         requests = sorted(
-            (request for request in self.snapshot.maintenance_requests if _active_request(request)),
+            (request for request in self.snapshot.maintenance_requests if _active_request(request)
+             and not (self.constraint_profile == "scenario-strict:1" and request.maintenance_request_id in retained_requests)),
             key=lambda request: (
                 not request.mandatory,
                 request.latest_start_at or self.snapshot.planning_window.end_at,
@@ -139,6 +146,8 @@ class DeterministicScheduler:
         )
 
     def _check_deadline(self) -> None:
+        if self.check_cancelled is not None:
+            self.check_cancelled()
         if time.monotonic() >= self.deadline:
             raise PlanningTimeoutError("planning deadline exceeded")
 
@@ -183,6 +192,8 @@ class DeterministicScheduler:
                 job.operations, key=lambda item: (item.sequence, item.operation_id)
             ):
                 self._check_deadline()
+                if self.constraint_profile == "scenario-strict:1" and operation.status.value == "BLOCKED":
+                    raise NoFeasiblePlanError(f"blocked operation {operation.operation_id} cannot be scheduled")
                 if (
                     operation.status.value == "COMPLETED"
                     or operation.operation_id in locked_operations

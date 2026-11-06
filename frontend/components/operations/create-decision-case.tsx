@@ -9,6 +9,8 @@ import { OperationsApiError, type OperationsApiClient, type OperationsCreateDeci
 import type { OperationsContextData } from "@/lib/operations-api/use-operations-context";
 import { useOperationsAction } from "@/lib/operations-api/use-operations-action";
 import { getOperationsActorId } from "@/lib/operations-api/actor";
+import { useWorkspaceUser } from "@/lib/workspace-user";
+import { operationsHref } from "@/lib/operations-ui";
 
 export function CreateDecisionCase({ api, data, mode, onRefresh }: {
   api: OperationsApiClient;
@@ -17,6 +19,7 @@ export function CreateDecisionCase({ api, data, mode, onRefresh }: {
   onRefresh: () => void;
 }) {
   const router = useRouter();
+  const readOnly = useWorkspaceUser()?.role.toUpperCase() === "VIEWER";
   const [reason, setReason] = useState("");
   const [horizon, setHorizon] = useState(720);
   const { snapshotResponse: context } = data;
@@ -32,10 +35,12 @@ export function CreateDecisionCase({ api, data, mode, onRefresh }: {
     onAccepted: response => {
       if (!response.caseStatus.decision_case_id || response.meta?.factory_id !== context.factory_id) return;
       action.acknowledge();
-      router.push(`/operations/recommendations?caseId=${encodeURIComponent(response.caseStatus.decision_case_id)}`);
+      router.push(operationsHref("/operations/recommendations", context.factory_id, { caseId: response.caseStatus.decision_case_id, demo: mode === "mock" }));
     },
   });
-  const blocked = action.busy || action.hasUnresolvedAction || action.state.kind === "conflict";
+  const blocked = readOnly || action.busy || action.hasUnresolvedAction || action.state.kind === "conflict";
+
+  if (readOnly) return <OperationsPanel title="Planning access" description="Your VIEWER role is read-only. An authorized planner can create a case against this context."><p className="p-5 text-sm text-slate-500">Browse the Decision Center to inspect cases, evidence and published plans.</p></OperationsPanel>;
 
   return (
     <OperationsPanel title="Create decision case" description={mode === "real" ? "Request live planning against the displayed backend context. A case does not change the published schedule." : "Preview planning uses the canonical demo; no backend writes occur."}>
@@ -58,7 +63,7 @@ export function CreateDecisionCase({ api, data, mode, onRefresh }: {
         {action.state.kind !== "idle" ? <p role={action.busy ? "status" : "alert"} className="text-sm">{action.state.message}</p> : null}
         {action.state.kind === "unauthorized" ? <Link href="/login" className="text-sm underline">Sign in with decision permission</Link> : null}
         <div className="flex flex-wrap gap-2">
-          <button type="submit" disabled={blocked || !reason.trim()} className="min-h-10 rounded-md bg-sky-700 px-4 text-sm font-semibold text-white disabled:opacity-50">{action.busy ? "Creating case…" : "Create case"}</button>
+          <button type="submit" disabled={blocked || !reason.trim()} className="dss-primary">{action.busy ? "Creating case…" : "Create case"}</button>
           {action.state.kind === "recoverable" || action.state.kind === "unauthorized" ? <button type="button" onClick={action.recover} className="min-h-10 rounded-md border px-4 text-sm">Recover create outcome</button> : null}
           {action.state.kind === "conflict" ? <button type="button" onClick={() => { action.acknowledge(); onRefresh(); }} className="min-h-10 rounded-md border px-4 text-sm">Refresh context and review</button> : null}
         </div>

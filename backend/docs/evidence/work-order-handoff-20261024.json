@@ -1,0 +1,176 @@
+{
+  "schema": "work_order_demo_bcec27eeffb84f8888ce7a6388f9f102",
+  "users": {
+    "ADMIN": {
+      "id": "8897f4bd-e474-4d54-a8f4-b53c7e93b1f4",
+      "username": "e7388c93-643c-4460-8756-4fda9bb512af",
+      "role": "ADMIN",
+      "active": true
+    },
+    "MANAGER": {
+      "id": "ff508a25-47e4-422d-82bd-bf161327e9fc",
+      "username": "e5851bc0-ca7c-47a2-8baf-4a9d62588cd7",
+      "role": "ENGINEER",
+      "active": true
+    },
+    "OPERATOR": {
+      "id": "6519b1c4-25d2-4aac-9568-6145e4014670",
+      "username": "e54b32b2-12a9-4cee-86ae-14b8bcb708d9",
+      "role": "OPERATOR",
+      "active": true
+    },
+    "OTHER": {
+      "id": "192e6a93-e477-4abb-b83f-cd7a41111b89",
+      "username": "4fd6cfcc-8931-4ccd-ac21-fcb01889f278",
+      "role": "ENGINEER",
+      "active": true
+    },
+    "VIEWER": {
+      "id": "1d6a221e-baf8-460e-9015-524c5be501ee",
+      "username": "a6092c60-b9a4-4299-86dc-0ef7677604c4",
+      "role": "VIEWER",
+      "active": true
+    },
+    "OUTSIDER": {
+      "id": "3d748c30-52d7-4d4e-b44e-bf73221ab2fe",
+      "username": "ec79f46c-909b-45e2-8ff5-2af0b3196ab8",
+      "role": "OPERATOR",
+      "active": true
+    },
+    "INACTIVE": {
+      "id": "abb24484-635c-441a-925e-d1996980bd90",
+      "username": "b7f170c3-75b1-43a2-9f07-8c26682ece7a",
+      "role": "OPERATOR",
+      "active": false
+    }
+  },
+  "factories": [
+    {
+      "factory_id": "wo-aefc2945-e627-467e-a8b5-4f3482f04cc4",
+      "source": {
+        "decision_case_id": "feb88fce-ff63-4815-abd8-c6e72ef63cc4",
+        "schedule_id": "wo-schedule-feb88fce-ff63-4815-abd8-c6e72ef63cc4",
+        "schedule_revision": 2,
+        "schedule_hash": "0f84f46b068b57a040742d7c3a3e87cf53d26f195db214bbc489092a8cc4be69",
+        "assignment_id": "A-maintenance-plan-production-priority"
+      },
+      "expected_head": {
+        "snapshot_id": "snapshot-demo-20260922-0800",
+        "plan_version": 1,
+        "revision": 2
+      }
+    },
+    {
+      "factory_id": "wo-adf88009-d2c7-41f2-bc49-22cdce0c20f3",
+      "source": {
+        "decision_case_id": "c9f4a2ec-92d4-4ad7-87c3-173abe8fd49f",
+        "schedule_id": "wo-schedule-c9f4a2ec-92d4-4ad7-87c3-173abe8fd49f",
+        "schedule_revision": 2,
+        "schedule_hash": "db08d6c73d8415435d89a2fc55616adc67673a3ac9aa36bfbd7ff83b34a3c573",
+        "assignment_id": "A-maintenance-plan-production-priority"
+      },
+      "expected_head": {
+        "snapshot_id": "snapshot-demo-20260922-0800",
+        "plan_version": 1,
+        "revision": 2
+      }
+    }
+  ],
+  "work_orders": [
+    {
+      "id": "5a624515-8d9b-4050-80c1-8229ab6f93cb",
+      "factory_id": "wo-aefc2945-e627-467e-a8b5-4f3482f04cc4",
+      "machine_id": "M03",
+      "maintenance_request_id": "MR-M03-001",
+      "basis_snapshot_id": "snapshot-demo-20260922-0800",
+      "source": {
+        "decision_case_id": "feb88fce-ff63-4815-abd8-c6e72ef63cc4",
+        "schedule_id": "wo-schedule-feb88fce-ff63-4815-abd8-c6e72ef63cc4",
+        "schedule_revision": 2,
+        "schedule_hash": "0f84f46b068b57a040742d7c3a3e87cf53d26f195db214bbc489092a8cc4be69",
+        "assignment_id": "A-maintenance-plan-production-priority",
+        "published_plan_version": 1,
+        "basis_snapshot_id": "snapshot-demo-20260922-0800",
+        "basis_snapshot_hash": "10944743b0fb7545a0ac16f322280981558a0206a97e2ff9fba39bd4e21ee06b"
+      },
+      "status": "UNASSIGNED",
+      "revision": 1,
+      "assignee": null,
+      "planned_start_at": "2026-09-22T03:00:00.000Z",
+      "planned_end_at": "2026-09-22T04:00:00.000Z",
+      "actual_started_at": null,
+      "actual_completed_at": null,
+      "created_at": "2026-10-23T17:00:28.164Z",
+      "updated_at": "2026-10-23T17:00:28.164Z",
+      "source_is_current": true,
+      "machine_in_current_snapshot": true,
+      "overdue": true,
+      "waiting_verification": false
+    },
+    {
+      "id": "4209a474-6465-4c28-830e-8f42991adf66",
+      "factory_id": "wo-adf88009-d2c7-41f2-bc49-22cdce0c20f3",
+      "machine_id": "M03",
+      "maintenance_request_id": "MR-M03-001",
+      "basis_snapshot_id": "snapshot-demo-20260922-0800",
+      "source": {
+        "decision_case_id": "c9f4a2ec-92d4-4ad7-87c3-173abe8fd49f",
+        "schedule_id": "wo-schedule-c9f4a2ec-92d4-4ad7-87c3-173abe8fd49f",
+        "schedule_revision": 2,
+        "schedule_hash": "db08d6c73d8415435d89a2fc55616adc67673a3ac9aa36bfbd7ff83b34a3c573",
+        "assignment_id": "A-maintenance-plan-production-priority",
+        "published_plan_version": 1,
+        "basis_snapshot_id": "snapshot-demo-20260922-0800",
+        "basis_snapshot_hash": "8ffe8a101c050b5b6cf008382ad520907dcabb63e595a4ba1dee508556281ff4"
+      },
+      "status": "UNASSIGNED",
+      "revision": 1,
+      "assignee": null,
+      "planned_start_at": "2026-09-22T03:00:00.000Z",
+      "planned_end_at": "2026-09-22T04:00:00.000Z",
+      "actual_started_at": null,
+      "actual_completed_at": null,
+      "created_at": "2026-10-23T17:00:28.808Z",
+      "updated_at": "2026-10-23T17:00:28.808Z",
+      "source_is_current": true,
+      "machine_in_current_snapshot": true,
+      "overdue": true,
+      "waiting_verification": false
+    }
+  ],
+  "api_url": "http://127.0.0.1:51357/api/v1",
+  "scope_checks": [
+    {
+      "role": "VIEWER",
+      "path": "/work-orders/summaries?factory_id=wo-aefc2945-e627-467e-a8b5-4f3482f04cc4&ids=5a624515-8d9b-4050-80c1-8229ab6f93cb",
+      "status": 200
+    },
+    {
+      "role": "VIEWER",
+      "path": "/work-orders/summaries?factory_id=wo-adf88009-d2c7-41f2-bc49-22cdce0c20f3&ids=4209a474-6465-4c28-830e-8f42991adf66",
+      "status": 200
+    },
+    {
+      "role": "OPERATOR",
+      "path": "/work-orders/summaries?factory_id=wo-aefc2945-e627-467e-a8b5-4f3482f04cc4&ids=5a624515-8d9b-4050-80c1-8229ab6f93cb",
+      "status": 200
+    },
+    {
+      "role": "OPERATOR",
+      "path": "/work-orders/summaries?factory_id=wo-adf88009-d2c7-41f2-bc49-22cdce0c20f3&ids=4209a474-6465-4c28-830e-8f42991adf66",
+      "status": 404
+    },
+    {
+      "role": "OUTSIDER",
+      "path": "/work-orders/summaries?factory_id=wo-aefc2945-e627-467e-a8b5-4f3482f04cc4&ids=5a624515-8d9b-4050-80c1-8229ab6f93cb",
+      "status": 404
+    },
+    {
+      "role": "OUTSIDER",
+      "path": "/work-orders/summaries?factory_id=wo-adf88009-d2c7-41f2-bc49-22cdce0c20f3&ids=4209a474-6465-4c28-830e-8f42991adf66",
+      "status": 200
+    }
+  ],
+  "kind": "live local test capture; regenerate IDs on another database",
+  "runtime_sha": "c96c0d8c4cd9b726754083f5f662f901506d2a09"
+}

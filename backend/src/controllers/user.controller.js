@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const { z } = require('zod');
 const prisma = require('../config/prisma');
+const { lockUsers, currentUser } = require('../services/factory-access.service');
 
 const VALID_ROLES = ['ADMIN', 'OPERATOR', 'ENGINEER', 'VIEWER'];
 const USER_SELECT = {
@@ -148,6 +149,8 @@ const updateUser = async (req, res, next) => {
     }
 
     const user = await prisma.$transaction(async (tx) => {
+      await lockUsers(tx, [req.user.id, id], true);
+      await currentUser(tx, req.user, ['ADMIN']);
       const existingUser = await tx.user.findUnique({ where: { id } });
       if (!existingUser) {
         const notFoundError = new Error('NOT_FOUND: User not found');
@@ -199,6 +202,8 @@ const deleteUser = async (req, res, next) => {
     }
 
     await prisma.$transaction(async (tx) => {
+      await lockUsers(tx, [req.user.id, id], true);
+      await currentUser(tx, req.user, ['ADMIN']);
       const existingUser = await tx.user.findUnique({ where: { id } });
       if (!existingUser) {
         const notFoundError = new Error('NOT_FOUND: User not found');

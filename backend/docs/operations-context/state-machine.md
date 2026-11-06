@@ -1,5 +1,10 @@
 # Decision Case — state-machine transition table
 
+> Historical design draft. Superseded for P0 integration by the
+> [frozen Operations contract](../../../contracts/v3/p0-contract.md) and
+> [implemented HTTP specification](../../openapi.yaml). Do not implement the
+> proposed DTOs, MODIFY flow or error envelope below as the current API.
+
 Status: DESIGN DRAFT, 2026-09-21. State names follow Operations and Multi-Agent Contract v3.0; edge guards and retry semantics are proposed backend behavior. This is separate from MaintenanceDecisionStatus.
 
 Related: [persistence/transaction design](prisma-design-note.md), [API commands](api-endpoint-spec.md).

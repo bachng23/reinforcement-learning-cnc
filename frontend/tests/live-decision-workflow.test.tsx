@@ -9,6 +9,8 @@ import { createOperationsApiClient, OperationsApiError, type OperationsDecisionC
 import { createMockOperationsApiClient } from "@/lib/operations-api/mock";
 import { createRealRecommendationCenterDataSource } from "@/lib/recommendation-center";
 import { deferred } from "@/tests/product-api-test-utils";
+import { WorkspaceUserContext } from "@/lib/workspace-user";
+import { IntegratedSchedulePage } from "@/components/pages/integrated-schedule-page";
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("@/components/app-shell", () => ({ AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div> }));
@@ -30,6 +32,49 @@ async function readyCase() {
 }
 
 describe("create, live approval and publication", () => {
+  it("fails closed on a conflicting factory hint, without reading another case or writing", async () => {
+    const { api, caseId } = await readyCase();
+    const read = vi.spyOn(api, "getDecisionCase");
+    const submit = vi.spyOn(api, "submitDecisionCommand");
+    render(<RecommendationCenterPage api={api} apiMode="real" caseId={caseId} factoryHint="wrong-factory" />);
+    expect(await screen.findByRole("heading", { name: "Case factory mismatch" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Candidate comparison" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+    expect(read.mock.calls.every(([id]) => id === caseId)).toBe(true);
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("has no write CTA for VIEWER even if a cached case advertises commands", async () => {
+    const { api, caseId } = await readyCase();
+    const submit = vi.spyOn(api, "submitDecisionCommand");
+    render(<WorkspaceUserContext.Provider value={{ id: "viewer", role: "VIEWER" }}><RecommendationCenterPage api={api} apiMode="real" caseId={caseId} /></WorkspaceUserContext.Provider>);
+    await screen.findByRole("heading", { name: "Candidate comparison" });
+    expect(screen.getByText(/VIEWER access is read-only/)).toBeInTheDocument();
+    for (const name of ["Approve", "Reject", "Commit approved schedule", "Modify", "Recover decision outcome"]) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("reopens the exact published artifact with its old basis, never a newer factory head", async () => {
+    const { api, caseId, status, artifact } = await readyCase();
+    const candidate = artifact.recommendation.candidate_plans[0];
+    const command = { schema_version: "3.0" as const, decision_case_id: caseId, recommendation_id: artifact.recommendation.recommendation_id,
+      expected_snapshot_id: status.caseStatus.snapshot_id, expected_plan_version: status.meta!.base_plan_version,
+      expected_case_revision: status.meta!.case_revision, candidate_plan_id: candidate.candidate_plan_id, candidate_version: candidate.plan_version };
+    const approved = await api.submitDecisionCommand(caseId, { ...command, command: "APPROVE" }, { idempotencyKey: "published-approval" });
+    await api.submitDecisionCommand(caseId, { ...command, command: "COMMIT", expected_case_revision: approved.meta!.case_revision }, { idempotencyKey: "published-commit" });
+    const snapshotRead = vi.spyOn(api, "getOperationsSnapshot");
+    const scheduleRead = vi.spyOn(api, "getCurrentSchedule");
+    const submit = vi.spyOn(api, "submitDecisionCommand");
+    render(<IntegratedSchedulePage api={api} apiMode="real" factoryId={factoryId} caseId={caseId} />);
+    expect(await screen.findByRole("heading", { name: "Published schedule" })).toBeInTheDocument();
+    expect(screen.getByText(/Published plan version 2/)).toBeInTheDocument();
+    expect(screen.getByText(/stale flag reflects/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open this published Gantt" })).toHaveAttribute("href", `/operations/schedule?factory_id=${factoryId}&caseId=${caseId}`);
+    expect(snapshotRead).not.toHaveBeenCalled();
+    expect(scheduleRead).not.toHaveBeenCalled();
+    expect(submit).not.toHaveBeenCalled();
+  });
+
   it("creates from Overview head tokens and navigates using the backend case ID", async () => {
     const user = userEvent.setup();
     const api = createMockOperationsApiClient();
@@ -40,7 +85,7 @@ describe("create, live approval and publication", () => {
     await user.click(screen.getByRole("button", { name: "Create case" }));
     await waitFor(() => expect(router.push).toHaveBeenCalled());
     const response = await create.mock.results[0].value;
-    expect(router.push).toHaveBeenCalledWith(`/operations/recommendations?caseId=${response.caseStatus.decision_case_id}`);
+    expect(router.push).toHaveBeenCalledWith(`/operations/recommendations?factory_id=${factoryId}&caseId=${response.caseStatus.decision_case_id}`);
     expect(create.mock.calls[0][0]).toMatchObject({ expected_plan_version: 1, request: { mode: "LIVE", trigger: { type: "MANUAL_REPLAN", reason: "Review maintenance windows" } } });
     expect(create.mock.calls[0][1]).toMatchObject({ idempotencyKey: expect.any(String), signal: expect.any(AbortSignal) });
   });
@@ -83,11 +128,14 @@ describe("create, live approval and publication", () => {
     await user.click(screen.getByRole("button", { name: new RegExp(artifact.recommendation.candidate_plans[0].candidate_plan_id) }));
     await user.click(screen.getByRole("button", { name: "Commit approved schedule" }));
     expect(screen.getByRole("dialog")).toHaveTextContent(selected.candidate_plan_id);
+    expect(screen.getByRole("dialog")).toHaveTextContent(factoryId);
+    expect(screen.getByLabelText("Confirmation factory context")).toHaveTextContent(caseId);
     await user.click(screen.getByRole("button", { name: "Confirm commit" }));
     expect(await screen.findByRole("heading", { name: "Published schedule" })).toBeInTheDocument();
-    await screen.findByRole("heading", { name: "Current committed schedule" });
+    expect(screen.getByRole("link", { name: "Open this published Gantt" })).toHaveAttribute("href", `/operations/schedule?factory_id=${factoryId}&caseId=${caseId}`);
     expect(screen.getByText(/Published plan version 2/)).toBeInTheDocument();
-    expect(scheduleRead).toHaveBeenCalled();
+    // The publication is tied to this immutable artifact, never a later head.
+    expect(scheduleRead).not.toHaveBeenCalled();
     expect(submit.mock.calls[1][1]).toMatchObject({ command: "COMMIT", candidate_plan_id: selected.candidate_plan_id, expected_case_revision: 3 });
     expect(submit.mock.calls[0][2].idempotencyKey).not.toBe(submit.mock.calls[1][2].idempotencyKey);
   });

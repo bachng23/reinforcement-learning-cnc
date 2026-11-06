@@ -12,6 +12,11 @@ router.use('/research', require('../../research/routes'));
 
 router.use('/auth', authRoute);
 router.use('/users', userRoute);
+router.use('/factories', require('./factory.route'));
+router.use('/scenario-workspaces', require('./scenario.route'));
+router.use('/work-orders', require('./work-order.route'));
+router.use('/incidents', require('./incident.route'));
+router.use('/maintenance-analytics', require('./maintenance-analytics.route'));
 router.use('/policies', policyRoute);
 router.use('/experiments', experimentRoute);
 router.use('/episodes', episodeRoute);

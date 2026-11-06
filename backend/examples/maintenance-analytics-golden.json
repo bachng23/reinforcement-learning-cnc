@@ -1,0 +1,23 @@
+{
+  "description": "Hand-calculated expectations, independent of aggregate implementation. All offsets seconds from 2026-09-22T04:00:00Z. Seeding controls only Work Order server clock; real HTTP, guards and PostgreSQL remain active.",
+  "base": "2026-09-22T04:00:00Z",
+  "period": { "from": "2026-09-22T04:00:00Z", "to": "2026-09-22T04:04:00Z" },
+  "events": [
+    [0, "CREATE"], [5, "ASSIGN"], [10, "ACCEPT"], [20, "START"],
+    [30, "BLOCK"], [50, "RESUME"], [80, "COMPLETE"],
+    [100, "REQUEST_REWORK"], [130, "COMPLETE"], [150, "REASSIGN_FOR_REWORK"],
+    [170, "ACCEPT"], [180, "START"], [200, "COMPLETE"], [220, "CLOSE"]
+  ],
+  "expected": {
+    "created_orders": 1,
+    "closed_orders": 1,
+    "cancelled_orders": 0,
+    "successful_verified_orders": 1,
+    "open_orders": 0,
+    "rework_decision_rate": { "numerator": 2, "denominator": 3 },
+    "first_pass_verified_rate": { "numerator": 0, "denominator": 1 },
+    "time_to_first_accept": { "median": 10, "p90": 10, "sample_count": 1 },
+    "active_execution_time": { "samples": [40, 30, 20], "median": 30, "p90": 38, "sample_count": 3 },
+    "verification_wait_time": { "median": 20, "p90": 20, "sample_count": 3 }
+  }
+}

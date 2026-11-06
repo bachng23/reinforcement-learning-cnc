@@ -1,6 +1,7 @@
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-at-least-32-characters';
 
 const app = require('../src/app');
+const yaml = require('js-yaml');
 
 let server;
 let baseUrl;
@@ -49,7 +50,8 @@ test('serves the versioned OpenAPI contract', async () => {
 
   expect(response.status).toBe(200);
   expect(response.headers.get('content-type')).toContain('application/yaml');
-  expect(document).toContain('openapi: 3.1.0');
-  expect(document).toContain('url: http://localhost:5000/api/v1');
-  expect(document).toContain('/experiments/{experimentId}/run:');
+  const contract = yaml.safeLoad(document);
+  expect(contract.openapi).toBe('3.1.0');
+  expect(contract.servers).toEqual(expect.arrayContaining([expect.objectContaining({ url: 'http://localhost:5000/api/v1' })]));
+  expect(contract.paths['/experiments/{experimentId}/run']).toBeDefined();
 });

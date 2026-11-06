@@ -1,0 +1,146 @@
+{
+  "manual_report": {
+    "factory_id": "factory-A",
+    "source": {
+      "type": "manual",
+      "source_event_id": "10000000-0000-4000-8000-000000000001"
+    },
+    "title": "Unexpected vibration reported",
+    "description": "Operator report; not an automated sensor alert.",
+    "category": "EQUIPMENT",
+    "machine": {
+      "machine_id": "M03",
+      "basis_snapshot_id": "snapshot-A-S1"
+    },
+    "proposed_severity": "WARNING"
+  },
+  "from_case_report": {
+    "factory_id": "factory-A",
+    "source": {
+      "type": "case_health_alert",
+      "case_id": "20000000-0000-4000-8000-000000000001"
+    },
+    "title": "Review health alert evidence",
+    "description": "Explicit human report from an authorized LIVE HEALTH_ALERT case.",
+    "category": "EQUIPMENT",
+    "proposed_severity": "WARNING"
+  },
+  "commands": [
+    {
+      "command": "ASSIGN",
+      "expected_revision": 1,
+      "owner_user_id": "30000000-0000-4000-8000-000000000001"
+    },
+    {
+      "command": "CHANGE_SEVERITY",
+      "expected_revision": 2,
+      "severity": "WARNING",
+      "reason": "Engineer reviewed the report"
+    },
+    {
+      "command": "ACKNOWLEDGE",
+      "expected_revision": 3
+    },
+    {
+      "command": "START_INVESTIGATION",
+      "expected_revision": 4
+    },
+    {
+      "command": "MARK_RESOLVED",
+      "expected_revision": 5,
+      "resolution": {
+        "code": "FALSE_POSITIVE",
+        "summary": "No defect found during inspection",
+        "evidence": "Manual inspection report recorded by the owner"
+      }
+    },
+    {
+      "command": "CLOSE",
+      "expected_revision": 6,
+      "verification": {
+        "resolution_code": "FALSE_POSITIVE",
+        "note": "Independent engineer reviewed inspection evidence"
+      }
+    },
+    {
+      "command": "REOPEN",
+      "expected_revision": 7,
+      "reason": "New evidence requires another investigation"
+    }
+  ],
+  "link_work_order": {
+    "expected_revision": 5,
+    "target": {
+      "type": "work_order",
+      "id": "40000000-0000-4000-8000-000000000001"
+    }
+  },
+  "unlink": {
+    "expected_revision": 6,
+    "reason": "Incorrect association reviewed by engineer"
+  },
+  "summary": {
+    "success": true,
+    "data": {
+      "factory_id": "factory-A",
+      "total": 2,
+      "by_status": {
+        "OPEN": 1,
+        "ACKNOWLEDGED": 0,
+        "INVESTIGATING": 0,
+        "RESOLVED": 1,
+        "CLOSED": 0
+      },
+      "by_severity": {
+        "INFO": 0,
+        "WARNING": 1,
+        "CRITICAL": 0
+      },
+      "unconfirmed_severity": 1,
+      "unassigned": 1,
+      "awaiting_verification": 1
+    },
+    "meta": {
+      "read_at": "2026-10-22T09:00:00Z"
+    }
+  },
+  "conflict": {
+    "success": false,
+    "error": {
+      "code": "INCIDENT_REVISION_CONFLICT",
+      "message": "Incident changed; review the latest state"
+    },
+    "requestId": "request-example"
+  },
+  "evidence_examples": {
+    "manual": {
+      "kind": "manual",
+      "report_text": "Operator reported vibration; not a sensor reading."
+    },
+    "case_health_alert": {
+      "kind": "case_health_alert",
+      "case_id": "20000000-0000-4000-8000-000000000001",
+      "factory_id": "factory-A",
+      "basis_snapshot_id": "snapshot-A-S1",
+      "case_created_at": "2026-10-22T09:00:00Z",
+      "machine_id": "M03",
+      "trigger": {
+        "type": "HEALTH_ALERT",
+        "failure_probability": 0.8,
+        "alert_threshold": 0.5
+      },
+      "health_samples": [
+        {
+          "health_snapshot_id": "health-M03",
+          "machine_id": "M03",
+          "observed_at": "2026-10-22T08:55:00Z",
+          "health_index": 0.6,
+          "failure_probability_horizon_minutes": 60,
+          "failure_probability": 0.8,
+          "confidence": "MEDIUM",
+          "source_model_version": "model-v1"
+        }
+      ]
+    }
+  }
+}

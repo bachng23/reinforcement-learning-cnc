@@ -7,13 +7,14 @@ test('content hashes ignore object key order, preserve array order and reject no
   expect(() => contentHash({ value: NaN })).toThrow();
   expect(() => contentHash({ value: Infinity })).toThrow();
 });
-test('factory access fails closed unless user ID is explicitly granted; admin may read all', () => {
-  const previous = process.env.OPERATIONS_FACTORY_ACCESS;
-  try {
-    process.env.OPERATIONS_FACTORY_ACCESS = JSON.stringify({ factory1: ['viewer-id'] });
-    expect(() => authorizeFactory({ id: 'viewer-id', role: 'VIEWER' }, 'factory1')).not.toThrow();
-    expect(() => authorizeFactory({ id: 'other', role: 'ENGINEER' }, 'factory1')).toThrow('Factory was not found');
-    expect(() => authorizeFactory({ id: 'viewer-id', role: 'VIEWER' }, 'factory2')).toThrow();
-    expect(() => authorizeFactory({ id: 'admin', role: 'ADMIN' }, 'factory2')).not.toThrow();
-  } finally { if (previous === undefined) delete process.env.OPERATIONS_FACTORY_ACCESS; else process.env.OPERATIONS_FACTORY_ACCESS = previous; }
+test('factory access async lookup fails closed and explicit environment mode respects DB role', async () => {
+  const old=process.env.OPERATIONS_FACTORY_ACCESS;
+  const viewer='11111111-1111-4111-8111-111111111111';
+  const db={user:{findUnique:async ({where})=>({id:where.id,active:true,role:'VIEWER'})},factory:{findUnique:async()=>({factoryId:'factory1'})}};
+  try {process.env.OPERATIONS_FACTORY_ACCESS=JSON.stringify({factory1:[viewer]});
+    await expect(authorizeFactory(db,{id:viewer,role:'ADMIN'},'factory1')).resolves.toMatchObject({role:'VIEWER'});
+    await expect(authorizeFactory(db,{id:viewer},'factory2')).rejects.toMatchObject({statusCode:404});
+    db.user.findUnique=async()=>{throw Object.assign(new Error('private'),{code:'P1001'});};
+    await expect(authorizeFactory(db,{id:viewer},'factory1')).rejects.toMatchObject({statusCode:503});
+  }finally{if(old===undefined)delete process.env.OPERATIONS_FACTORY_ACCESS;else process.env.OPERATIONS_FACTORY_ACCESS=old;}
 });

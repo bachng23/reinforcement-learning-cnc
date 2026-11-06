@@ -1,8 +1,143 @@
+model FactoryIncident {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ factoryId String @map("factory_id")
+ title String
+ description String
+ category String
+ machineId String? @map("machine_id")
+ basisSnapshotId String? @map("basis_snapshot_id")
+ source String
+ severity String?
+ proposedSeverity String? @map("proposed_severity")
+ status String @default("OPEN")
+ ownerUserId String? @map("owner_user_id") @db.Uuid
+ revision Int @default(1)
+ occurrenceCount Int @default(1) @map("occurrence_count")
+ firstOccurredAt DateTime @default(now()) @map("first_occurred_at") @db.Timestamptz(6)
+ lastOccurredAt DateTime @default(now()) @map("last_occurred_at") @db.Timestamptz(6)
+ acknowledgedBy String? @map("acknowledged_by") @db.Uuid
+ acknowledgedAt DateTime? @map("acknowledged_at") @db.Timestamptz(6)
+ resolvedBy String? @map("resolved_by") @db.Uuid
+ resolvedAt DateTime? @map("resolved_at") @db.Timestamptz(6)
+ resolution Json? @db.JsonB
+ closedBy String? @map("closed_by") @db.Uuid
+ closedAt DateTime? @map("closed_at") @db.Timestamptz(6)
+ verification Json? @db.JsonB
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+ factory Factory @relation(fields: [factoryId], references: [factoryId], onDelete: Restrict, onUpdate: Restrict)
+ basis FactorySnapshot? @relation(fields: [factoryId, basisSnapshotId], references: [factoryId, snapshotId], onDelete: Restrict, onUpdate: Restrict)
+ owner User? @relation("IncidentOwner", fields: [ownerUserId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ acknowledger User? @relation("IncidentAcknowledger", fields: [acknowledgedBy], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ resolver User? @relation("IncidentResolver", fields: [resolvedBy], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ verifier User? @relation("IncidentVerifier", fields: [closedBy], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ occurrences IncidentOccurrence[]
+ events IncidentEvent[]
+ receipts IncidentCommandReceipt[]
+ caseLinks IncidentCaseLink[]
+ workOrderLinks IncidentWorkOrderLink[]
+ @@unique([factoryId, id])
+ @@index([factoryId, createdAt(sort: Desc), id(sort: Desc)], map: "factory_incidents_list_idx")
+ @@index([factoryId, machineId, status], map: "factory_incidents_machine_idx")
+ @@map("factory_incidents")
+}
+
+model IncidentOccurrence {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ factoryId String @map("factory_id")
+ incidentId String @map("incident_id") @db.Uuid
+ sequence Int
+ sourceType String @map("source_type")
+ sourceId String @map("source_id") @db.Uuid
+ sourceHash String @map("source_hash") @db.Char(64)
+ machineId String? @map("machine_id")
+ basisSnapshotId String? @map("basis_snapshot_id")
+ evidence Json @db.JsonB
+ actorId String @map("actor_id") @db.Uuid
+ recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+ incident FactoryIncident @relation(fields: [factoryId, incidentId], references: [factoryId, id], onDelete: Restrict, onUpdate: Restrict)
+ basis FactorySnapshot? @relation(fields: [factoryId, basisSnapshotId], references: [factoryId, snapshotId], onDelete: Restrict, onUpdate: Restrict)
+ actor User @relation(fields: [actorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ @@unique([factoryId, sourceType, sourceId])
+ @@unique([incidentId, sequence])
+ @@map("incident_occurrences")
+}
+
+model IncidentEvent {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ incidentId String @map("incident_id") @db.Uuid
+ sequence Int
+ command String
+ actorId String @map("actor_id") @db.Uuid
+ occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+ payload Json @db.JsonB
+ incident FactoryIncident @relation(fields: [incidentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ actor User @relation(fields: [actorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ @@unique([incidentId, sequence])
+ @@map("incident_events")
+}
+
+model IncidentCommandReceipt {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ factoryId String @map("factory_id")
+ actorId String @map("actor_id") @db.Uuid
+ key String @map("idempotency_key") @db.VarChar(128)
+ requestHash String @map("request_hash") @db.Char(64)
+ incidentId String @map("incident_id") @db.Uuid
+ responseStatus Int @map("response_status")
+ responseBody Json @map("response_body") @db.JsonB
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ factory Factory @relation(fields: [factoryId], references: [factoryId], onDelete: Restrict, onUpdate: NoAction)
+ incident FactoryIncident @relation(fields: [factoryId, incidentId], references: [factoryId, id], onDelete: Restrict, onUpdate: NoAction)
+ actor User @relation(fields: [actorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ @@unique([factoryId, actorId, key])
+ @@map("incident_command_receipts")
+}
+
+model IncidentCaseLink {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ incidentId String @map("incident_id") @db.Uuid
+ targetId String @map("target_id") @db.Uuid
+ associationScope String @map("association_scope")
+ createdBy String @map("created_by") @db.Uuid
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ removedBy String? @map("removed_by") @db.Uuid
+ removedAt DateTime? @map("removed_at") @db.Timestamptz(6)
+ removalReason String? @map("removal_reason")
+ incident FactoryIncident @relation(fields: [incidentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ target DecisionCase @relation(fields: [targetId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ creator User @relation("IncidentCaseLinkCreator", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ remover User? @relation("IncidentCaseLinkRemover", fields: [removedBy], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ // Active-target uniqueness is a partial index enforced by the SQL migration.
+ @@map("incident_case_links")
+}
+
+model IncidentWorkOrderLink {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ incidentId String @map("incident_id") @db.Uuid
+ targetId String @map("target_id") @db.Uuid
+ associationScope String @map("association_scope")
+ createdBy String @map("created_by") @db.Uuid
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ removedBy String? @map("removed_by") @db.Uuid
+ removedAt DateTime? @map("removed_at") @db.Timestamptz(6)
+ removalReason String? @map("removal_reason")
+ incident FactoryIncident @relation(fields: [incidentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ creator User @relation("IncidentWorkOrderLinkCreator", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ remover User? @relation("IncidentWorkOrderLinkRemover", fields: [removedBy], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ // Producer-owned target lookup; active-target uniqueness is a partial SQL index.
+ @@map("incident_work_order_links")
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
 model FactorySnapshot {
+  scenario_workspaces ScenarioWorkspace[]
+  incidents FactoryIncident[]
+  incidentOccurrences IncidentOccurrence[]
+  factory Factory @relation(fields: [factoryId], references: [factoryId], onDelete: Restrict, onUpdate: Restrict)
   factoryId String @map("factory_id")
   snapshotId String @map("snapshot_id")
   sourceId String? @map("source_id")
@@ -21,6 +156,7 @@ model FactorySnapshot {
 }
 
 model OperationSchedule {
+  scenario_workspaces ScenarioWorkspace[]
   factoryId String @map("factory_id")
   scheduleId String @map("schedule_id")
   revision Int
@@ -58,6 +194,8 @@ datasource db {
 }
 
 model DecisionCase {
+  scenarioLiveEvaluations ScenarioLiveEvaluation[]
+  incidentLinks IncidentCaseLink[]
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   factoryId String @map("factory_id")
   snapshotId String @map("snapshot_id")
@@ -84,6 +222,7 @@ model DecisionCase {
   receipts DecisionCaseIdempotencyReceipt[]
   @@index([factoryId, createdAt])
   @@index([factoryId, createdAt(sort: Desc), id(sort: Desc)], map: "decision_cases_factory_created_id_desc_idx")
+  @@unique([id, factoryId], map: "decision_cases_id_factory_key")
   @@unique([id, snapshotId])
   @@map("decision_cases")
 }
@@ -105,6 +244,7 @@ model DecisionHumanRecord {
 }
 
 model DecisionCommit {
+  workOrders WorkOrder[]
   caseId String @id @map("case_id") @db.Uuid
   factoryId String @map("factory_id")
   snapshotId String @map("snapshot_id")
@@ -114,11 +254,13 @@ model DecisionCommit {
   planVersion Int @map("plan_version")
   actorId String @map("actor_id") @db.Uuid
   committedAt DateTime @default(now()) @map("committed_at") @db.Timestamptz(6)
-  case DecisionCase @relation(fields: [caseId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  case DecisionCase @relation(fields: [caseId, factoryId], references: [id, factoryId], onDelete: Restrict, onUpdate: Restrict, map: "decision_commits_case_factory_fkey")
   schedule OperationSchedule @relation(fields: [factoryId, snapshotId, scheduleId, scheduleRevision], references: [factoryId, snapshotId, scheduleId, revision], onDelete: Restrict, onUpdate: Restrict)
   @@unique([factoryId, scheduleId, scheduleRevision])
   @@unique([factoryId, snapshotId, scheduleId, scheduleRevision])
+  @@unique([caseId, factoryId], map: "decision_commits_case_factory_key")
   @@unique([factoryId, planVersion])
+  @@unique([caseId, factoryId, snapshotId, scheduleId, scheduleRevision, scheduleHash, planVersion], map: "decision_commits_work_order_source_key")
   @@map("decision_commits")
 }
 
@@ -161,7 +303,7 @@ model DecisionCaseIdempotencyReceipt {
   caseId String @map("case_id") @db.Uuid
   responseJson Json @map("response_json") @db.JsonB
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  case DecisionCase @relation(fields: [caseId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  case DecisionCase @relation(fields: [caseId, factoryId], references: [id, factoryId], onDelete: Restrict, onUpdate: Restrict, map: "decision_receipts_case_factory_fkey")
   @@unique([factoryId, actorId, key])
   @@map("decision_case_idempotency_receipts")
 }
@@ -315,6 +457,32 @@ model User {
   researchCampaigns ResearchCampaign[]
   researchJobs ResearchJob[]
   researchReviews ResearchReview[]
+  scenarioLiveEvaluations ScenarioLiveEvaluation[]
+  scenario_command_receipts     ScenarioCommandReceipt[]
+  scenario_draft_revisions      ScenarioDraftRevision[]
+  scenario_drafts               ScenarioDraft[]
+  scenario_events               ScenarioEvent[]
+  scenario_jobs                 ScenarioJob[]
+  scenario_workspaces           ScenarioWorkspace[]
+  ownedIncidents FactoryIncident[] @relation("IncidentOwner")
+  acknowledgedIncidents FactoryIncident[] @relation("IncidentAcknowledger")
+  resolvedIncidents FactoryIncident[] @relation("IncidentResolver")
+  verifiedIncidents FactoryIncident[] @relation("IncidentVerifier")
+  incidentOccurrences IncidentOccurrence[]
+  incidentEvents IncidentEvent[]
+  incidentReceipts IncidentCommandReceipt[]
+  createdIncidentCaseLinks IncidentCaseLink[] @relation("IncidentCaseLinkCreator")
+  removedIncidentCaseLinks IncidentCaseLink[] @relation("IncidentCaseLinkRemover")
+  createdIncidentWorkOrderLinks IncidentWorkOrderLink[] @relation("IncidentWorkOrderLinkCreator")
+  removedIncidentWorkOrderLinks IncidentWorkOrderLink[] @relation("IncidentWorkOrderLinkRemover")
+  assignedWorkOrders WorkOrder[] @relation("WorkOrderAssignee")
+  createdWorkOrders WorkOrder[] @relation("WorkOrderCreator")
+  workOrderEvents WorkOrderEvent[]
+  workOrderCompletions WorkOrderCompletion[]
+  workOrderReceipts WorkOrderCommandReceipt[]
+  factoryMemberships FactoryMembership[] @relation("MemberUser")
+  factoryGrants FactoryMembership[] @relation("GrantActor")
+  factoryRevocations FactoryMembership[] @relation("RevokeActor")
   maintenanceActions MaintenanceDecisionAction[]
   id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username     String       @unique
@@ -333,7 +501,412 @@ model User {
   @@map("users")
 }
 
-// JCST domain is additive. Existing v2/v3 rows and payloads retain their meaning.
+model AuditLog {
+  factoryId String? @map("factory_id")
+  factory Factory? @relation(fields: [factoryId], references: [factoryId], onDelete: Restrict, onUpdate: Restrict)
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityType  EntityType @map("entity_type")
+  entityId    String     @map("entity_id")
+  action      String
+  actorUserId String?    @map("actor_user_id") @db.Uuid
+  payloadJson Json?      @map("payload_json")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  actor       User?      @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([factoryId, createdAt], map: "audit_logs_factory_created_idx")
+  @@index([entityType, entityId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+enum ExperimentStatus {
+  DRAFT
+  READY
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum EpisodeStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum UserRole {
+  VIEWER
+  OPERATOR
+  ENGINEER
+  ADMIN
+}
+
+enum EntityType {
+  MAINTENANCE_DECISION
+  AUTH
+  EXPERIMENT
+  POLICY
+  EPISODE
+  SYSTEM
+}
+
+enum MaintenanceDecisionStatus {
+  PENDING_REVIEW
+  APPROVED
+  OVERRIDDEN
+  REJECTED
+}
+
+model MaintenanceDecision {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recommendationId String @unique @map("recommendation_id") @db.Uuid
+  status MaintenanceDecisionStatus @default(PENDING_REVIEW)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  recommendation PolicyRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Restrict)
+  actions MaintenanceDecisionAction[]
+
+  @@map("maintenance_decisions")
+}
+
+model MaintenanceDecisionAction {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  decisionId String @unique @map("decision_id") @db.Uuid
+  actorUserId String @map("actor_user_id") @db.Uuid
+  fromStatus MaintenanceDecisionStatus @default(PENDING_REVIEW) @map("from_status")
+  toStatus MaintenanceDecisionStatus @map("to_status")
+  reason String?
+  selectedAction Json? @map("selected_action")
+  recommendationSnapshot Json @map("recommendation_snapshot")
+  riskSnapshot Json @map("risk_snapshot")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  decision MaintenanceDecision @relation(fields: [decisionId], references: [id], onDelete: Restrict)
+  actor User @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@map("maintenance_decision_actions")
+}
+
+model Factory {
+  scenario_command_receipts ScenarioCommandReceipt[]
+ incidents FactoryIncident[]
+ incidentReceipts IncidentCommandReceipt[]
+ workOrders WorkOrder[]
+ factoryId String @id @map("factory_id")
+ name String
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+ snapshots FactorySnapshot[]
+ memberships FactoryMembership[]
+ auditLogs AuditLog[]
+ @@map("factories")
+}
+model FactoryMembership {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ factoryId String @map("factory_id")
+ userId String @map("user_id") @db.Uuid
+ active Boolean @default(true)
+ grantedBy String? @map("granted_by") @db.Uuid
+ grantedAt DateTime @default(now()) @map("granted_at") @db.Timestamptz(6)
+ grantSource String @map("grant_source")
+ revokedBy String? @map("revoked_by") @db.Uuid
+ revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+ factory Factory @relation(fields: [factoryId], references: [factoryId], onDelete: Restrict, onUpdate: Restrict)
+ user User @relation("MemberUser", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+ grantActor User? @relation("GrantActor", fields: [grantedBy], references: [id], onDelete: Restrict, onUpdate: Restrict)
+ revokeActor User? @relation("RevokeActor", fields: [revokedBy], references: [id], onDelete: Restrict, onUpdate: Restrict)
+ @@unique([factoryId,userId])
+ @@index([userId,active,factoryId], map: "factory_memberships_user_active_factory_idx")
+ @@index([factoryId,active,userId], map: "factory_memberships_factory_active_user_idx")
+ @@map("factory_memberships")
+}
+
+model WorkOrder {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ factoryId String @map("factory_id")
+ sourceCaseId String @map("source_case_id") @db.Uuid
+ basisSnapshotId String @map("basis_snapshot_id")
+ scheduleId String @map("schedule_id")
+ scheduleRevision Int @map("schedule_revision")
+ scheduleHash String @map("schedule_hash") @db.Char(64)
+ publishedPlanVersion Int @map("published_plan_version")
+ basisSnapshotHash String @map("basis_snapshot_hash") @db.Char(64)
+ assignmentId String @map("assignment_id")
+ machineId String @map("machine_id")
+ maintenanceRequestId String @map("maintenance_request_id")
+ plannedStartAt DateTime @map("planned_start_at") @db.Timestamptz(6)
+ plannedEndAt DateTime @map("planned_end_at") @db.Timestamptz(6)
+ sourceTechnicianIds String[] @map("source_technician_ids")
+ requirementsJson Json @map("requirements_json") @db.JsonB
+ status String @default("UNASSIGNED")
+ revision Int @default(1)
+ attempt Int @default(1)
+ assigneeUserId String? @map("assignee_user_id") @db.Uuid
+ actorId String @map("actor_id") @db.Uuid
+ blocker String?
+ actualStartedAt DateTime? @map("actual_started_at") @db.Timestamptz(6)
+ actualCompletedAt DateTime? @map("actual_completed_at") @db.Timestamptz(6)
+ verificationJson Json? @map("verification_json") @db.JsonB
+ cancelReason String? @map("cancel_reason")
+ cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz(6)
+ createdAt DateTime @default(dbgenerated("clock_timestamp()")) @map("created_at") @db.Timestamptz(6)
+ updatedAt DateTime @default(dbgenerated("clock_timestamp()")) @map("updated_at") @db.Timestamptz(6)
+ factory Factory @relation(fields:[factoryId], references:[factoryId], onDelete:Restrict, onUpdate:Restrict)
+ source DecisionCommit @relation(fields:[sourceCaseId,factoryId,basisSnapshotId,scheduleId,scheduleRevision,scheduleHash,publishedPlanVersion], references:[caseId,factoryId,snapshotId,scheduleId,scheduleRevision,scheduleHash,planVersion], onDelete:Restrict, onUpdate:Restrict)
+ assignee User? @relation("WorkOrderAssignee",fields:[assigneeUserId],references:[id],onDelete:Restrict,onUpdate:Restrict)
+ creator User @relation("WorkOrderCreator",fields:[actorId],references:[id],onDelete:Restrict,onUpdate:Restrict)
+ events WorkOrderEvent[]
+ completions WorkOrderCompletion[]
+ receipts WorkOrderCommandReceipt[]
+ @@unique([id,factoryId])
+ @@unique([factoryId,scheduleId,scheduleRevision,assignmentId])
+ @@index([factoryId,createdAt(sort:Desc),id(sort:Desc)],map:"work_orders_factory_created_id_idx")
+ @@index([factoryId,assigneeUserId,createdAt(sort:Desc),id(sort:Desc)],map:"work_orders_factory_assignee_idx")
+ @@index([factoryId,status,createdAt(sort:Desc),id(sort:Desc)],map:"work_orders_factory_status_idx")
+ @@map("work_orders")
+}
+model WorkOrderEvent {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ workOrderId String @map("work_order_id") @db.Uuid
+ factoryId String @map("factory_id")
+ sequence Int
+ actorId String @map("actor_id") @db.Uuid
+ command String
+ occurredAt DateTime @default(dbgenerated("clock_timestamp()")) @map("occurred_at") @db.Timestamptz(6)
+ payloadJson Json @map("payload_json") @db.JsonB
+ order WorkOrder @relation(fields:[workOrderId,factoryId],references:[id,factoryId],onDelete:Restrict,onUpdate:Restrict)
+ actor User @relation(fields:[actorId],references:[id],onDelete:Restrict,onUpdate:Restrict)
+ @@unique([workOrderId,sequence])
+ @@map("work_order_events")
+}
+model WorkOrderCompletion {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ workOrderId String @map("work_order_id") @db.Uuid
+ factoryId String @map("factory_id")
+ attempt Int
+ actorId String @map("actor_id") @db.Uuid
+ completedAt DateTime @default(dbgenerated("clock_timestamp()")) @map("completed_at") @db.Timestamptz(6)
+ reportJson Json @map("report_json") @db.JsonB
+ order WorkOrder @relation(fields:[workOrderId,factoryId],references:[id,factoryId],onDelete:Restrict,onUpdate:Restrict)
+ actor User @relation(fields:[actorId],references:[id],onDelete:Restrict,onUpdate:Restrict)
+ @@unique([workOrderId,attempt])
+ @@map("work_order_completions")
+}
+model WorkOrderCommandReceipt {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ factoryId String @map("factory_id")
+ actorId String @map("actor_id") @db.Uuid
+ key String
+ requestHash String @map("request_hash") @db.Char(64)
+ workOrderId String @map("work_order_id") @db.Uuid
+ statusCode Int @map("status_code")
+ responseJson Json @map("response_json") @db.JsonB
+ createdAt DateTime @default(dbgenerated("clock_timestamp()")) @map("created_at") @db.Timestamptz(6)
+ order WorkOrder @relation(fields:[workOrderId,factoryId],references:[id,factoryId],onDelete:Restrict,onUpdate:Restrict)
+ actor User @relation(fields:[actorId],references:[id],onDelete:Restrict,onUpdate:Restrict)
+ @@unique([factoryId,actorId,key])
+ @@map("work_order_command_receipts")
+}
+
+
+model ScenarioWorkspace {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  factoryId String @map("factory_id")
+  name String
+  snapshotId String @map("snapshot_id")
+  snapshotHash String @db.Char(64) @map("snapshot_hash")
+  planVersion Int @map("plan_version")
+  scheduleId String? @map("schedule_id")
+  scheduleRevision Int? @map("schedule_revision")
+  scheduleHash String? @db.Char(64) @map("schedule_hash")
+  baselineJson Json @map("baseline_json")
+  configJson Json @map("config_json")
+  samplingJson Json @map("sampling_json")
+  engineVersion String @map("engine_version")
+  contractVersion String @map("contract_version")
+  actorId String @db.Uuid @map("actor_id")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  commandReceipts ScenarioCommandReceipt[]
+  drafts ScenarioDraft[]
+  events ScenarioEvent[]
+  jobs ScenarioJob[]
+  actor User @relation(fields: [actorId], references: [id], onUpdate: Restrict)
+  referenceSchedule OperationSchedule? @relation(fields: [factoryId, scheduleId, scheduleRevision], references: [factoryId, scheduleId, revision], onUpdate: Restrict)
+  snapshot FactorySnapshot @relation(fields: [factoryId, snapshotId], references: [factoryId, snapshotId], onUpdate: Restrict)
+
+  @@unique([factoryId, id])
+  @@index([factoryId, createdAt(sort: Desc), id(sort: Desc)], map: "scenario_workspaces_page_idx")
+  @@map("scenario_workspaces")
+}
+
+model ScenarioDraft {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  revision Int @default(1)
+  actorId String @db.Uuid @map("actor_id")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("updated_at")
+  revisions ScenarioDraftRevision[] @relation("scenario_draft_revisions_factory_id_workspace_id_scenario_idToscenario_drafts")
+  actor User @relation(fields: [actorId], references: [id], onUpdate: Restrict)
+  currentRevision ScenarioDraftRevision @relation("scenario_drafts_factory_id_workspace_id_id_revisionToscenario_draft_revisions", fields: [factoryId, workspaceId, id, revision], references: [factoryId, workspaceId, scenarioId, revision], onDelete: NoAction, onUpdate: NoAction, map: "scenario_drafts_current_revision_fkey")
+  workspaces ScenarioWorkspace @relation(fields: [factoryId, workspaceId], references: [factoryId, id], onUpdate: Restrict)
+
+  @@unique([factoryId, workspaceId, id])
+  @@index([factoryId, workspaceId, createdAt(sort: Desc), id(sort: Desc)], map: "scenario_drafts_page_idx")
+  @@map("scenario_drafts")
+}
+
+model ScenarioDraftRevision {
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  scenarioId String @db.Uuid @map("scenario_id")
+  revision Int
+  payloadJson Json @map("payload_json")
+  contentHash String @db.Char(64) @map("content_hash")
+  actorId String @db.Uuid @map("actor_id")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  actor User @relation(fields: [actorId], references: [id], onUpdate: Restrict)
+  draft ScenarioDraft @relation("scenario_draft_revisions_factory_id_workspace_id_scenario_idToscenario_drafts", fields: [factoryId, workspaceId, scenarioId], references: [factoryId, workspaceId, id], onUpdate: Restrict)
+  currentForDrafts ScenarioDraft[] @relation("scenario_drafts_factory_id_workspace_id_id_revisionToscenario_draft_revisions")
+  jobs ScenarioJob[]
+
+  @@id([factoryId, workspaceId, scenarioId, revision])
+  @@map("scenario_draft_revisions")
+}
+
+model ScenarioJob {
+  liveEvaluations ScenarioLiveEvaluation[]
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  kind String
+  sourceScenarioId String? @db.Uuid @map("source_scenario_id")
+  sourceRevision Int? @map("source_revision")
+  sourceRunId String? @db.Uuid @map("source_run_id")
+  inputJson Json @map("input_json")
+  inputHash String @db.Char(64) @map("input_hash")
+  engineVersion String @map("engine_version")
+  contractVersion String @map("contract_version")
+  status String @default("QUEUED")
+  attempt Int @default(0)
+  leaseToken String? @db.Uuid @map("lease_token")
+  leaseExpiresAt DateTime? @db.Timestamptz(6) @map("lease_expires_at")
+  workerId String? @map("worker_id")
+  deadlineAt DateTime @db.Timestamptz(6) @map("deadline_at")
+  startedAt DateTime? @db.Timestamptz(6) @map("started_at")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  errorCode String? @map("error_code")
+  resultJson Json? @map("result_json")
+  resultHash String? @db.Char(64) @map("result_hash")
+  actorId String @db.Uuid @map("actor_id")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("updated_at")
+  attempts ScenarioAttempt[]
+  events ScenarioEvent[]
+  actor User @relation(fields: [actorId], references: [id], onUpdate: Restrict)
+  workspaces ScenarioWorkspace @relation(fields: [factoryId, workspaceId], references: [factoryId, id], onUpdate: Restrict)
+  jobs ScenarioJob? @relation("scenario_jobsToscenario_jobs", fields: [factoryId, workspaceId, sourceRunId], references: [factoryId, workspaceId, id], onUpdate: Restrict)
+  derivedJobs ScenarioJob[] @relation("scenario_jobsToscenario_jobs")
+  draftRevisions ScenarioDraftRevision? @relation(fields: [factoryId, workspaceId, sourceScenarioId, sourceRevision], references: [factoryId, workspaceId, scenarioId, revision], onUpdate: Restrict)
+  points ScenarioPoint[]
+
+  @@unique([factoryId, workspaceId, id])
+  @@index([factoryId, workspaceId, kind, createdAt(sort: Desc), id(sort: Desc)], map: "scenario_jobs_page_idx")
+  @@map("scenario_jobs")
+}
+
+model ScenarioAttempt {
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  jobId String @db.Uuid @map("job_id")
+  attempt Int
+  leaseToken String @unique @db.Uuid @map("lease_token")
+  workerId String @map("worker_id")
+  status String
+  startedAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("started_at")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  errorCode String? @map("error_code")
+  jobs ScenarioJob @relation(fields: [factoryId, workspaceId, jobId], references: [factoryId, workspaceId, id], onUpdate: Restrict)
+
+  @@id([factoryId, workspaceId, jobId, attempt])
+  @@map("scenario_attempts")
+}
+
+model ScenarioPoint {
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  jobId String @db.Uuid @map("job_id")
+  pointIndex Int @map("point_index")
+  value Float?
+  role String
+  inputJson Json @map("input_json")
+  inputHash String @db.Char(64) @map("input_hash")
+  status String @default("QUEUED")
+  resultJson Json? @map("result_json")
+  resultHash String? @db.Char(64) @map("result_hash")
+  errorCode String? @map("error_code")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  jobs ScenarioJob @relation(fields: [factoryId, workspaceId, jobId], references: [factoryId, workspaceId, id], onUpdate: Restrict)
+
+  @@id([factoryId, workspaceId, jobId, pointIndex])
+  @@map("scenario_points")
+}
+
+model ScenarioCommandReceipt {
+  factoryId String @map("factory_id")
+  actorId String @db.Uuid @map("actor_id")
+  key String
+  workspaceId String @db.Uuid @map("workspace_id")
+  requestHash String @db.Char(64) @map("request_hash")
+  responseJson Json @map("response_json")
+  responseStatus Int @map("response_status")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  actor User @relation(fields: [actorId], references: [id], onUpdate: Restrict)
+  factory Factory @relation(fields: [factoryId], references: [factoryId], onUpdate: Restrict)
+  workspaces ScenarioWorkspace @relation(fields: [factoryId, workspaceId], references: [factoryId, id], onUpdate: Restrict)
+
+  @@id([factoryId, actorId, key])
+  @@map("scenario_command_receipts")
+}
+
+model ScenarioEvent {
+  sequence BigInt @id @default(autoincrement())
+  factoryId String @map("factory_id")
+  workspaceId String @db.Uuid @map("workspace_id")
+  jobId String? @db.Uuid @map("job_id")
+  type String
+  actorId String? @db.Uuid @map("actor_id")
+  source String
+  payloadJson Json @map("payload_json")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6) @map("created_at")
+  actor User? @relation(fields: [actorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  workspaces ScenarioWorkspace @relation(fields: [factoryId, workspaceId], references: [factoryId, id], onUpdate: Restrict)
+  jobs ScenarioJob? @relation(fields: [factoryId, workspaceId, jobId], references: [factoryId, workspaceId, id], onUpdate: Restrict)
+
+  @@index([factoryId, workspaceId, sequence], map: "scenario_events_workspace_sequence_idx")
+  @@map("scenario_events")
+}
+
+model ScenarioLiveEvaluation {
+  caseId String @id @map("case_id") @db.Uuid
+  factoryId String @map("factory_id")
+  workspaceId String @map("workspace_id") @db.Uuid
+  runId String @map("run_id") @db.Uuid
+  actorId String @map("actor_id") @db.Uuid
+  inputHash String @map("input_hash") @db.Char(64)
+  resultHash String @map("result_hash") @db.Char(64)
+  headRevision Int @map("head_revision")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @map("created_at") @db.Timestamptz(6)
+  decisionCase DecisionCase @relation(fields: [caseId, factoryId], references: [id, factoryId], onDelete: Restrict, onUpdate: Restrict)
+  run ScenarioJob @relation(fields: [factoryId, workspaceId, runId], references: [factoryId, workspaceId, id], onDelete: Restrict, onUpdate: Restrict)
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@index([factoryId, workspaceId, runId, createdAt, caseId], map: "scenario_live_evaluations_run_idx")
+  @@map("scenario_live_evaluations")
+}
+
 model ResearchCampaign {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ownerId String @map("owner_id") @db.Uuid
@@ -428,90 +1001,6 @@ model ResearchReview {
   actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
   @@map("research_reviews")
 }
-
-model AuditLog {
-  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  entityType  EntityType @map("entity_type")
-  entityId    String     @map("entity_id")
-  action      String
-  actorUserId String?    @map("actor_user_id") @db.Uuid
-  payloadJson Json?      @map("payload_json")
-  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  actor       User?      @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
-
-  @@index([entityType, entityId])
-  @@index([createdAt(sort: Desc)])
-  @@map("audit_logs")
-}
-
-enum ExperimentStatus {
-  DRAFT
-  READY
-  RUNNING
-  COMPLETED
-  FAILED
-  CANCELLED
-}
-
-enum EpisodeStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  FAILED
-  CANCELLED
-}
-
-enum UserRole {
-  VIEWER
-  OPERATOR
-  ENGINEER
-  ADMIN
-}
-
-enum EntityType {
-  MAINTENANCE_DECISION
-  AUTH
-  EXPERIMENT
-  POLICY
-  EPISODE
-  SYSTEM
-}
-
-enum MaintenanceDecisionStatus {
-  PENDING_REVIEW
-  APPROVED
-  OVERRIDDEN
-  REJECTED
-}
-
-model MaintenanceDecision {
-  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  recommendationId String @unique @map("recommendation_id") @db.Uuid
-  status MaintenanceDecisionStatus @default(PENDING_REVIEW)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  recommendation PolicyRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Restrict)
-  actions MaintenanceDecisionAction[]
-
-  @@map("maintenance_decisions")
-}
-
-model MaintenanceDecisionAction {
-  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  decisionId String @unique @map("decision_id") @db.Uuid
-  actorUserId String @map("actor_user_id") @db.Uuid
-  fromStatus MaintenanceDecisionStatus @default(PENDING_REVIEW) @map("from_status")
-  toStatus MaintenanceDecisionStatus @map("to_status")
-  reason String?
-  selectedAction Json? @map("selected_action")
-  recommendationSnapshot Json @map("recommendation_snapshot")
-  riskSnapshot Json @map("risk_snapshot")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  decision MaintenanceDecision @relation(fields: [decisionId], references: [id], onDelete: Restrict)
-  actor User @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
-
-  @@map("maintenance_decision_actions")
-}
-
 
 model DemoSession {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid

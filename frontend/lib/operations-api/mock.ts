@@ -10,6 +10,7 @@ import {
 } from "./client";
 import { createOperationsDemoFixtures, createOperationsRecommendationFixture } from "./fixtures";
 import type { DecisionCaseHistoryEvent, DecisionCaseListItem } from "./decision-case-reads";
+import { caseStatuses, machineStatuses, processingStatuses, zeroBuckets, type OperationsOverview } from "./overview";
 
 function normalizedRequest(value: unknown): string {
   return JSON.stringify(value, (_key, item: unknown) => {
@@ -18,7 +19,7 @@ function normalizedRequest(value: unknown): string {
   });
 }
 
-export type OperationsMockMode = "success" | "empty-schedule" | "unauthorized" | "unavailable";
+export type OperationsMockMode = "success" | "empty-schedule" | "unauthorized" | "unavailable" | "forbidden" | "missing-snapshot" | "integrity-error";
 
 /** Isolated, explicit preview workflow using the same transport DTOs as HTTP. */
 export function createMockOperationsApiClient({
@@ -66,6 +67,9 @@ export function createMockOperationsApiClient({
     options?.signal?.throwIfAborted();
     if (mode === "unauthorized") fail(401, "UNAUTHORIZED", "Authentication or permission is required");
     if (mode === "unavailable") fail(503, "DB_UNAVAILABLE", "Operations context is unavailable");
+    if (mode === "forbidden") fail(403, "FORBIDDEN", "Access is forbidden");
+    if (mode === "missing-snapshot") fail(404, "OPERATIONS_CONTEXT_NOT_FOUND", "Operations context was not found");
+    if (mode === "integrity-error") fail(500, "OPERATIONS_INTEGRITY_ERROR", "Operations context is inconsistent");
   }
 
   function read(factoryId: string, options?: OperationsRequestOptions) {
@@ -99,6 +103,36 @@ export function createMockOperationsApiClient({
   }
 
   return {
+    async getOperationsOverview(factoryId, options): Promise<OperationsOverview> {
+      const snapshot = read(factoryId, options);
+      const readAt = new Date().toISOString();
+      const machines = { total: snapshot.machines.length, by_status: zeroBuckets(machineStatuses) };
+      for (const machine of snapshot.machines) ++machines.by_status[machine.status];
+      const emptyCounts = () => ({ total: 0, by_status: zeroBuckets(caseStatuses), by_processing: zeroBuckets(processingStatuses) });
+      const counts = { LIVE: emptyCounts(), SIMULATION_ONLY: emptyCounts() };
+      for (const { response } of cases.values()) {
+        const group = counts[response.caseStatus.mode];
+        ++group.total;
+        ++group.by_status[response.caseStatus.status];
+        ++group.by_processing[response.meta?.processing?.status ?? "SUCCEEDED"];
+      }
+      const preview = [...cases.values()].map(item => listItem(item.response))
+        .filter(item => item.mode === "LIVE" && item.status === "AWAITING_APPROVAL")
+        .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.decision_case_id.localeCompare(a.decision_case_id));
+      return {
+        context: { factory_id: factoryId, snapshot_id: snapshot.snapshot_id, plan_version: planVersion,
+          head_revision: planVersion, captured_at: snapshot.captured_at, read_at: readAt,
+          publication: published ? { schedule_id: published.schedule_id, schedule_revision: published.revision, basis_snapshot_id: basis.snapshot_id } : null },
+        machines, cases: counts,
+        review_preview: { items: preview.slice(0, 6), limit: 6, has_more: preview.length > 6,
+          filters: { factory_id: factoryId, mode: "LIVE", status: "AWAITING_APPROVAL" } },
+        provenance: {
+          machines: { source: "validated_current_snapshot", snapshot_id: snapshot.snapshot_id, observed_at: snapshot.captured_at,
+            population: machines.total, covered: machines.total },
+          cases: { source: "decision_cases", scope: "all_factory_cases_including_stale_and_terminal", read_at: readAt },
+        },
+      };
+    },
     async listDecisionCases(query, options) {
       read(query.factory_id, options);
       const limit = query.limit ?? 25;

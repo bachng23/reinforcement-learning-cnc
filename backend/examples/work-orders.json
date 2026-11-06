@@ -1,0 +1,238 @@
+{
+  "create_request": {
+    "factory_id": "factory-A",
+    "source": {
+      "decision_case_id": "a0000000-0000-4000-8000-000000000001",
+      "schedule_id": "schedule-committed",
+      "schedule_revision": 1,
+      "schedule_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "assignment_id": "A-MAINT-M03"
+    },
+    "expected_head": {
+      "snapshot_id": "snapshot-current-S2",
+      "plan_version": 2,
+      "revision": 5
+    }
+  },
+  "created": {
+    "success": true,
+    "data": {
+      "id": "a0000000-0000-4000-8000-000000000001",
+      "factory_id": "factory-A",
+      "machine_id": "M03",
+      "maintenance_request_id": "MR-M03",
+      "basis_snapshot_id": "snapshot-basis-S1",
+      "source": {
+        "decision_case_id": "a0000000-0000-4000-8000-000000000001",
+        "schedule_id": "schedule-committed",
+        "schedule_revision": 1,
+        "schedule_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "assignment_id": "A-MAINT-M03",
+        "published_plan_version": 2,
+        "basis_snapshot_id": "snapshot-basis-S1",
+        "basis_snapshot_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "status": "UNASSIGNED",
+      "revision": 1,
+      "assignee": null,
+      "planned_start_at": "2026-10-22T01:00:00.000Z",
+      "planned_end_at": "2026-10-22T02:00:00.000Z",
+      "actual_started_at": null,
+      "actual_completed_at": null,
+      "created_at": "2026-10-22T00:00:00.000Z",
+      "updated_at": "2026-10-22T00:00:00.000Z",
+      "source_is_current": true,
+      "machine_in_current_snapshot": true,
+      "overdue": false,
+      "waiting_verification": false,
+      "source_technician_ids": [
+        "T01"
+      ],
+      "requirements": {
+        "maintenance_type": "CORRECTIVE",
+        "action_type": "REPLACE",
+        "priority": "HIGH",
+        "required_skill_ids": [
+          "SKILL-MAINT"
+        ],
+        "minimum_skill_level": 1,
+        "mandatory": true,
+        "expected_duration_minutes": 60
+      },
+      "attempt": 1,
+      "blocker": null,
+      "latest_completion": null,
+      "verification": null,
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "available_commands": [
+        "ASSIGN",
+        "CANCEL"
+      ]
+    },
+    "meta": {
+      "read_at": "2026-10-22T00:00:00.000Z",
+      "timezone": "UTC"
+    }
+  },
+  "summary": {
+    "success": true,
+    "data": [
+      {
+        "id": "a0000000-0000-4000-8000-000000000001",
+        "factory_id": "factory-A",
+        "machine_id": "M03",
+        "maintenance_request_id": "MR-M03",
+        "basis_snapshot_id": "snapshot-basis-S1",
+        "source": {
+          "decision_case_id": "a0000000-0000-4000-8000-000000000001",
+          "schedule_id": "schedule-committed",
+          "schedule_revision": 1,
+          "schedule_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "assignment_id": "A-MAINT-M03",
+          "published_plan_version": 2,
+          "basis_snapshot_id": "snapshot-basis-S1",
+          "basis_snapshot_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "status": "UNASSIGNED",
+        "revision": 1,
+        "assignee": null,
+        "planned_start_at": "2026-10-22T01:00:00.000Z",
+        "planned_end_at": "2026-10-22T02:00:00.000Z",
+        "actual_started_at": null,
+        "actual_completed_at": null,
+        "created_at": "2026-10-22T00:00:00.000Z",
+        "updated_at": "2026-10-22T00:00:00.000Z",
+        "source_is_current": true,
+        "machine_in_current_snapshot": true,
+        "overdue": false,
+        "waiting_verification": false
+      }
+    ],
+    "meta": {
+      "read_at": "2026-10-22T00:00:00.000Z",
+      "timezone": "UTC"
+    }
+  },
+  "list": {
+    "success": true,
+    "data": [
+      {
+        "id": "a0000000-0000-4000-8000-000000000001",
+        "factory_id": "factory-A",
+        "machine_id": "M03",
+        "maintenance_request_id": "MR-M03",
+        "basis_snapshot_id": "snapshot-basis-S1",
+        "source": {
+          "decision_case_id": "a0000000-0000-4000-8000-000000000001",
+          "schedule_id": "schedule-committed",
+          "schedule_revision": 1,
+          "schedule_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "assignment_id": "A-MAINT-M03",
+          "published_plan_version": 2,
+          "basis_snapshot_id": "snapshot-basis-S1",
+          "basis_snapshot_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "status": "UNASSIGNED",
+        "revision": 1,
+        "assignee": null,
+        "planned_start_at": "2026-10-22T01:00:00.000Z",
+        "planned_end_at": "2026-10-22T02:00:00.000Z",
+        "actual_started_at": null,
+        "actual_completed_at": null,
+        "created_at": "2026-10-22T00:00:00.000Z",
+        "updated_at": "2026-10-22T00:00:00.000Z",
+        "source_is_current": true,
+        "machine_in_current_snapshot": true,
+        "overdue": false,
+        "waiting_verification": false
+      }
+    ],
+    "meta": {
+      "read_at": "2026-10-22T00:00:00.000Z",
+      "timezone": "UTC",
+      "limit": 25,
+      "has_more": false,
+      "next_cursor": null
+    }
+  },
+  "commands": [
+    {
+      "command": "ASSIGN",
+      "expected_revision": 1,
+      "assignee_user_id": "b0000000-0000-4000-8000-000000000001"
+    },
+    {
+      "command": "ACCEPT",
+      "expected_revision": 2
+    },
+    {
+      "command": "START",
+      "expected_revision": 3
+    },
+    {
+      "command": "BLOCK",
+      "expected_revision": 4,
+      "reason": "Reviewed execution situation"
+    },
+    {
+      "command": "RESUME",
+      "expected_revision": 5,
+      "reason": "Reviewed execution situation"
+    },
+    {
+      "command": "COMPLETE",
+      "expected_revision": 6,
+      "report": {
+        "outcome": "SUCCESS",
+        "work_performed": "Replaced tool and inspected machine",
+        "result": "Inspection passed"
+      }
+    },
+    {
+      "command": "CLOSE",
+      "expected_revision": 7,
+      "verification": {
+        "result": "VERIFIED",
+        "note": "Independent inspection passed"
+      }
+    },
+    {
+      "command": "REQUEST_REWORK",
+      "expected_revision": 8,
+      "reason": "Reviewed execution situation"
+    },
+    {
+      "command": "CANCEL",
+      "expected_revision": 9,
+      "reason": "Reviewed execution situation"
+    },
+    {
+      "command": "REASSIGN",
+      "expected_revision": 10,
+      "assignee_user_id": "b0000000-0000-4000-8000-000000000001",
+      "reason": "Reviewed execution situation"
+    }
+  ],
+  "error": {
+    "success": false,
+    "error": {
+      "code": "WORK_ORDER_REVISION_CONFLICT",
+      "message": "Work order revision changed"
+    },
+    "requestId": "request-example"
+  },
+  "recovery_commands": [
+    {
+      "command": "MANAGER_HOLD",
+      "expected_revision": 4,
+      "reason": "Assignee access revoked; supervisor reviewed execution before handover"
+    },
+    {
+      "command": "REASSIGN_FOR_REWORK",
+      "expected_revision": 8,
+      "assignee_user_id": "b0000000-0000-4000-8000-000000000002",
+      "reason": "Independent verification requires rework by an eligible replacement"
+    }
+  ]
+}

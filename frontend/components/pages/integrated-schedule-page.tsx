@@ -17,6 +17,9 @@ import {
   type OperationsContextData,
 } from "@/lib/operations-api";
 import { formatDateTime } from "@/lib/operations/format";
+import { operationsUiClient } from "@/lib/operations-ui";
+import { createRealRecommendationCenterDataSource, useRecommendationCenter } from "@/lib/recommendation-center";
+import { PublishedDecisionSchedule, publishedCandidate } from "@/components/operations/published-plan";
 
 function ContextValue({ label, value }: { label: string; value: string }) {
   return (
@@ -33,10 +36,11 @@ function ScheduleContext({ data }: { data: OperationsContextData }) {
 
   return (
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="Schedule context">
-      <ContextValue label="Snapshot ID" value={data.snapshotResponse.snapshot_id} />
+      <ContextValue label="Observation snapshot ID" value={data.snapshotResponse.snapshot_id} />
       <ContextValue label="Plan version" value={String(data.snapshotResponse.plan_version)} />
       <ContextValue label="Schedule ID" value={schedule?.schedule_id ?? "Not provided"} />
       <ContextValue label="Schedule revision" value={schedule ? String(schedule.revision) : "Not provided"} />
+      <ContextValue label="Published basis snapshot ID" value={data.scheduleResponse.basis_snapshot?.snapshot_id ?? "Not provided"} />
       <ContextValue
         label="Planning window"
         value={`${formatDateTime(planningWindow.start_at)} – ${formatDateTime(planningWindow.end_at)}`}
@@ -51,6 +55,11 @@ export function CurrentSchedule({ data }: { data: OperationsContextData }) {
   const snapshot = data.scheduleResponse.basis_snapshot;
   const schedule = data.scheduleResponse.schedule;
   const assignments = schedule?.assignments ?? [];
+  const commit = data.scheduleResponse.commit;
+  const mismatch = schedule && snapshot && (schedule.factory_id !== snapshot.factory_id
+    || snapshot.factory_id !== data.scheduleResponse.factory_id || snapshot.factory_id !== data.snapshotResponse.factory_id
+    || (commit && (commit.factory_id !== snapshot.factory_id || commit.snapshot_id !== snapshot.snapshot_id
+      || commit.schedule_id !== schedule.schedule_id || commit.schedule_revision !== schedule.revision || commit.plan_version !== data.scheduleResponse.plan_version)));
 
   return (
     <>
@@ -62,6 +71,8 @@ export function CurrentSchedule({ data }: { data: OperationsContextData }) {
           title="No current schedule"
           description="The snapshot is available, but the Current Schedule API returned no committed schedule."
         />
+      ) : mismatch ? (
+        <AsyncState kind="error" title="Published schedule context mismatch" description="The schedule, immutable basis and publication identities do not agree. No assignments are rendered." />
       ) : !snapshot ? (
         <AsyncState kind="error" title="Schedule basis unavailable" description="The data used to publish this schedule is unavailable. Refresh to try again." />
       ) : (
@@ -125,19 +136,50 @@ export function CurrentSchedule({ data }: { data: OperationsContextData }) {
   );
 }
 
-export function IntegratedSchedulePage({ api, factoryId, apiMode }: {
+export type PublishedSourceHint = { scheduleId: string; revision: string; assignmentId: string };
+function CasePublishedSchedule({ api, factoryId, caseId, mode, sourceHint }: { api: OperationsApiClient; factoryId?: string; caseId: string; mode: OperationsApiMode; sourceHint?: PublishedSourceHint }) {
+  // Existing case/artifact read endpoints recover the exact published plan.
+  // There is no historical-current-schedule endpoint or fabricated selector.
+  const source = useMemo(() => createRealRecommendationCenterDataSource(api), [api]);
+  const { state, refresh, refreshing } = useRecommendationCenter({ dataSource: source, caseId });
+  const data = state.kind === "ready" && state.data.source !== "mock" ? state.data : null;
+  const factoryMatches = data?.caseMeta?.factory_id && (!factoryId || data.caseMeta.factory_id === factoryId);
+  const candidate = data?.artifactState === "ready" ? publishedCandidate(data) : undefined;
+  const sourceMatches = !sourceHint || (candidate && candidate.schedule.schedule_id === sourceHint.scheduleId
+    && String(candidate.schedule.revision) === sourceHint.revision && candidate.schedule.assignments?.some(assignment => assignment.assignment_id === sourceHint.assignmentId));
+  return <OperationsShell title="Published case schedule" description="Immutable approved plan recovered from this case, not substituted with a later current factory head." factoryId={data?.caseMeta?.factory_id ?? factoryId} demo={mode === "mock"} dataSource={mode === "mock" ? "fixture" : "live"} dataSourceMessage={mode === "mock" ? "DEMO / PREVIEW · isolated mock publication, no backend writes." : "Live Operations API · exact immutable case publication; newer factory heads are not substituted."} actions={<button className="dss-secondary" disabled={state.kind === "loading" || refreshing} onClick={refresh}>Refresh publication</button>}>
+    {state.kind === "loading" ? <AsyncState kind="loading" title="Loading published case" /> : null}
+    {"message" in state ? <AsyncState kind="error" title="Published case could not be loaded" description={state.message} onRetry={refresh} /> : null}
+    {data && !factoryMatches ? <AsyncState kind="error" title="Case factory mismatch" description="The URL factory does not match the authoritative case. No plan is displayed." /> : null}
+    {data && factoryMatches && !sourceMatches ? <AsyncState kind="error" title="Historical source identity mismatch" description="This case artifact does not match the exact schedule revision and assignment in the link. No current-head or different assignment is substituted." /> : null}
+    {data && factoryMatches && sourceMatches && data.artifactState === "ready" && data.caseStatus.status === "COMMITTED" ? <PublishedDecisionSchedule data={mode === "mock" ? { ...data, source: "mock-workflow" } : data} assignmentId={sourceHint?.assignmentId} /> : null}
+    {data && factoryMatches && (data.artifactState !== "ready" || data.caseStatus.status !== "COMMITTED") ? <AsyncState kind="empty" title="Published artifact unavailable" description="This case does not provide a verified committed recommendation artifact. No current-head or fixture plan is substituted." onRetry={refresh} /> : null}
+  </OperationsShell>;
+}
+
+export function IntegratedSchedulePage({ api, factoryId, apiMode, caseId, sourceHint }: {
   api?: OperationsApiClient;
   factoryId?: string;
   apiMode?: OperationsApiMode;
+  caseId?: string;
+  sourceHint?: PublishedSourceHint;
 } = {}) {
-  const client = useMemo(() => api ?? getOperationsApiClient(), [api]);
+  const client = useMemo(() => api ?? (apiMode ? operationsUiClient(apiMode) : getOperationsApiClient()), [api, apiMode]);
   const selectedFactoryId = factoryId ?? getOperationsFactoryId();
   const selectedMode = apiMode ?? (api ? "mock" : getOperationsApiMode());
+  if (caseId) return <CasePublishedSchedule api={client} caseId={caseId} factoryId={factoryId} mode={selectedMode} sourceHint={sourceHint} />;
+  if (sourceHint) return <OperationsShell title="Published source required" factoryId={factoryId} dataSource="live" description="This historical source link requires its decision case identity."><AsyncState kind="error" title="Historical source identity incomplete" description="A case ID is required to recover the exact publication; the latest head will not be used instead." /></OperationsShell>;
+  return <CurrentSchedulePage api={client} factoryId={selectedFactoryId} mode={selectedMode} />;
+}
+
+function CurrentSchedulePage({ api: client, factoryId: selectedFactoryId, mode: selectedMode }: { api: OperationsApiClient; factoryId: string; mode: OperationsApiMode }) {
   const { state, retry } = useOperationsContext({ api: client, factoryId: selectedFactoryId });
 
   return (
     <OperationsShell
       title="Integrated Schedule / Gantt"
+      factoryId={selectedFactoryId}
+      demo={selectedMode === "mock"}
       description="The current committed schedule loaded with its synchronized factory snapshot through OperationsApiClient."
       dataSource={selectedMode === "real" ? "live" : "fixture"}
       actions={(

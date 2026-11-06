@@ -1,0 +1,105 @@
+{
+  "transport": "curl, real authenticated HTTP/PostgreSQL",
+  "http_status": 200,
+  "payload": {
+    "success": true,
+    "data": {
+      "context": {
+        "factory_id": "overview-cf5bdd3b-9188-4635-8b9a-09ea23a3139b",
+        "snapshot_id": "overview-next",
+        "plan_version": 1,
+        "head_revision": 3,
+        "captured_at": "2026-09-22T00:00:01Z",
+        "read_at": "2026-10-20T17:48:47.432Z",
+        "publication": {
+          "schedule_id": "overview-published-bbfb8529-6fb0-4ef7-835c-e2c51062e49f",
+          "schedule_revision": 1,
+          "basis_snapshot_id": "snapshot-demo-20260922-0800"
+        }
+      },
+      "machines": {
+        "total": 6,
+        "by_status": {
+          "IDLE": 5,
+          "RUNNING": 0,
+          "WARNING": 1,
+          "MAINTENANCE": 0,
+          "FAILED": 0,
+          "UNAVAILABLE": 0
+        }
+      },
+      "cases": {
+        "LIVE": {
+          "total": 2,
+          "by_status": {
+            "CREATED": 0,
+            "ANALYZING": 0,
+            "GENERATING": 0,
+            "VALIDATING": 0,
+            "EXPLAINING": 0,
+            "AWAITING_APPROVAL": 0,
+            "APPROVED": 0,
+            "MODIFIED": 0,
+            "REJECTED": 1,
+            "COMMITTED": 1,
+            "FAILED": 0,
+            "CANCELLED": 0
+          },
+          "by_processing": {
+            "PENDING": 0,
+            "RUNNING": 0,
+            "SUCCEEDED": 2,
+            "FAILED": 0
+          }
+        },
+        "SIMULATION_ONLY": {
+          "total": 1,
+          "by_status": {
+            "CREATED": 0,
+            "ANALYZING": 0,
+            "GENERATING": 0,
+            "VALIDATING": 0,
+            "EXPLAINING": 0,
+            "AWAITING_APPROVAL": 0,
+            "APPROVED": 0,
+            "MODIFIED": 0,
+            "REJECTED": 0,
+            "COMMITTED": 0,
+            "FAILED": 1,
+            "CANCELLED": 0
+          },
+          "by_processing": {
+            "PENDING": 0,
+            "RUNNING": 0,
+            "SUCCEEDED": 0,
+            "FAILED": 1
+          }
+        }
+      },
+      "review_preview": {
+        "items": [],
+        "limit": 6,
+        "has_more": false,
+        "filters": {
+          "factory_id": "overview-cf5bdd3b-9188-4635-8b9a-09ea23a3139b",
+          "mode": "LIVE",
+          "status": "AWAITING_APPROVAL"
+        }
+      },
+      "provenance": {
+        "machines": {
+          "source": "validated_current_snapshot",
+          "snapshot_id": "overview-next",
+          "observed_at": "2026-09-22T00:00:01Z",
+          "population": 6,
+          "covered": 6
+        },
+        "cases": {
+          "source": "decision_cases",
+          "scope": "all_factory_cases_including_stale_and_terminal",
+          "read_at": "2026-10-20T17:48:47.432Z"
+        }
+      }
+    }
+  }
+}

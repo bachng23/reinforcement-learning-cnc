@@ -1,5 +1,10 @@
 # Operations Context — Prisma design note
 
+> Historical design draft. Superseded for P0 integration by the
+> [frozen Operations contract](../../../contracts/v3/p0-contract.md) and
+> [implemented HTTP specification](../../openapi.yaml). Do not implement the
+> proposed DTOs, MODIFY flow or error envelope below as the current API.
+
 Status: DESIGN DRAFT, 2026-09-21. No schema, migration, generated client or runtime API is changed by this proposal.
 
 Related deliverables: [API draft](api-endpoint-spec.md), [transition table](state-machine.md).

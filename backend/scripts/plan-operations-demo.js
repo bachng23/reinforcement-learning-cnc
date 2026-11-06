@@ -14,7 +14,9 @@ async function main() {
   process.on('SIGINT', abort);
   process.on('SIGTERM', abort);
   try {
-    const recommendation = await planPersistedSnapshot(db, { id: 'operations-demo-cli', role: 'ADMIN' }, {
+    if (!process.env.OPERATIONS_ACTOR_USER_ID) throw new Error('Explicit active database OPERATIONS_ACTOR_USER_ID required');
+    const actor = await require('../src/services/factory-access.service').currentUser(db, { id: process.env.OPERATIONS_ACTOR_USER_ID }, ['ADMIN']);
+    const recommendation = await planPersistedSnapshot(db, actor, {
       factoryId: process.argv[2] || 'factory-demo-01',
       decisionCaseId: process.argv[3] || 'case-demo-planning',
     }, { client, signal: controller.signal, requestId: process.env.OPERATIONS_REQUEST_ID });
