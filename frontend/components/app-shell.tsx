@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { WorkspaceUserContext } from "@/lib/workspace-user";
 import { operationsHref } from "@/lib/operations-ui";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { getUserFromToken, logout, type TokenUser } from "@/lib/auth";
@@ -117,7 +118,7 @@ export function AppShell({
   const displayName = user.fullName || user.username || user.role;
 
   return (
-    <div
+    <WorkspaceUserContext.Provider value={user}><div
       className={`workspace-shell ${collapsed ? "sidebar-collapsed" : ""}`}
       data-density={density}
     >
@@ -204,6 +205,6 @@ export function AppShell({
           <ErrorBoundary>{children}</ErrorBoundary>
         </div>
       </div>
-    </div>
+    </div></WorkspaceUserContext.Provider>
   );
 }

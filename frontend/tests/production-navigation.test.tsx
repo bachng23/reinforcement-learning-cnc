@@ -1,15 +1,19 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { useWorkspaceUser } from "@/lib/workspace-user";
 import { AppShell } from "@/components/app-shell";
 import { operationsHref, productionMode } from "@/lib/operations-ui";
 const navigation = vi.hoisted(() => ({ pathname: "/operations/cases", router: { replace: vi.fn() } }));
 vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname, useRouter: () => navigation.router }));
 vi.mock("@/lib/auth", () => ({ getUserFromToken: async () => ({ id: "engineer", role: "ENGINEER" }), logout: vi.fn() }));
 
+function AccessProbe(){const user=useWorkspaceUser();return <p>{user?.role === "ENGINEER" ? "Engineer context available" : "No engineer context"}</p>;}
+
 describe("production navigation and explicit source scope", () => {
   it.each(["/operations/cases", "/operations/recommendations"])("marks Decision Center active for %s and keeps research secondary", async pathname => {
     navigation.pathname = pathname;
-    render(<AppShell factoryId="factory with / opaque chars" demo><p>Child</p></AppShell>);
+    render(<AppShell factoryId="factory with / opaque chars" demo><AccessProbe/></AppShell>);
+    expect(await screen.findByText("Engineer context available")).toBeInTheDocument();
     const nav = within(await screen.findByRole("navigation", { name: "Primary navigation" }));
     expect(nav.getByRole("link", { name: "Decision Center" })).toHaveAttribute("aria-current", "page");
     expect(nav.getByRole("link", { name: "Decision Center" })).toHaveAttribute("href", "/operations/cases?factory_id=factory+with+%2F+opaque+chars&demo=1");
