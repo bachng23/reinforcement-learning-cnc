@@ -18,7 +18,10 @@ export type AsyncStateProps = {
   compact?: boolean;
 };
 
-const DEFAULT_COPY: Record<AsyncStateKind, { title: string; description: string }> = {
+const DEFAULT_COPY: Record<
+  AsyncStateKind,
+  { title: string; description: string }
+> = {
   loading: {
     title: "Loading",
     description: "The latest data is being requested.",
@@ -37,7 +40,15 @@ function StateIcon({ kind }: { kind: AsyncStateKind }) {
   const sharedClassName = "h-5 w-5";
 
   if (kind === "loading") {
-    return <LoaderCircle className={cn(sharedClassName, "animate-spin motion-reduce:animate-none")} aria-hidden="true" />;
+    return (
+      <LoaderCircle
+        className={cn(
+          sharedClassName,
+          "animate-spin motion-reduce:animate-none",
+        )}
+        aria-hidden="true"
+      />
+    );
   }
 
   if (kind === "error") {
@@ -82,8 +93,12 @@ export function AsyncState({
         <StateIcon kind={kind} />
       </span>
 
-      <h2 className="mt-3 text-sm font-semibold text-[var(--color-slate-text)]">{title}</h2>
-      <p className="mt-1 max-w-md break-words text-sm text-[var(--color-ash-gray)]">{description}</p>
+      <h2 className="mt-3 text-sm font-semibold text-[var(--color-slate-text)]">
+        {title}
+      </h2>
+      <p className="mt-1 max-w-md break-words text-base text-[var(--color-ash-gray)]">
+        {description}
+      </p>
 
       {(onRetry || action) && kind !== "loading" ? (
         <div className="mt-5 flex max-w-full flex-wrap items-center justify-center gap-2">
@@ -109,7 +124,10 @@ export function AsyncState({
   );
 }
 
-export type LoadingStateProps = Omit<AsyncStateProps, "kind" | "onRetry" | "retryLabel">;
+export type LoadingStateProps = Omit<
+  AsyncStateProps,
+  "kind" | "onRetry" | "retryLabel"
+>;
 export type EmptyStateProps = Omit<AsyncStateProps, "kind">;
 export type ErrorStateProps = Omit<AsyncStateProps, "kind">;
 

@@ -1,0 +1,229 @@
+openapi: 3.1.0
+info:
+  title: JCST Research API
+  version: 1.0.0
+  description: Immutable evidence, included-trace replay and simulation-only branch review. No scientific campaign launcher.
+servers:
+  - url: /api/v1/research
+security:
+  - session: []
+paths:
+  /demo/sessions:
+    post:
+      summary: Create a persistent engineering simulation; ADMIN or ENGINEER
+      description: Continuous operation is the default. Learned releases use root 0 and 96k budget with rolling 48/16 observation features. Set continuous=false for finite H=48 and fixed-risk tail=16. Incident mode shares WAIT until the first simulator failure; policy mode starts both policies at tick 0. Scientific campaign evidence is not modified.
+      parameters: [ { $ref: '#/components/parameters/key' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                case: { type: string, enum: [base, generalist], default: base }
+                seed: { type: string, pattern: '^99[0-9]{7}$', default: '990000001' }
+                mode: { type: string, enum: [incident, policy], default: incident }
+                continuous: { type: boolean, default: true }
+                primary: { type: string, enum: [S, A, F, risk, corrective, threshold5, wait], default: S }
+                baseline: { type: string, enum: [S, A, F, risk, corrective, threshold5, wait], default: F }
+      responses:
+        '201': { description: Session id, revision, pinned source/checkpoints, config, primary/baseline states and traces. Identical creation retries return the same session. }
+        '409': { description: Idempotency key belongs to another scenario }
+        '422': { description: Registered checkpoint or runtime compatibility validation failed }
+  /demo/sessions/{id}:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    get:
+      summary: Read an owned simulation session; ADMIN can inspect all
+      responses: { '200': { description: Persisted session and revision }, '404': { description: Missing or outside owner scope } }
+  /demo/sessions/{id}/commands:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    post:
+      summary: Configure, advance, autoplay, approve or override a simulation session; ADMIN or ENGINEER
+      description: Revision is required. Autoplay explicitly confirms policy actions automatically, computes at most eight physical ticks per command and can stop at incident/review/dispatch/repair milestones. REVIEW otherwise freezes both lanes. Only WAIT is automatic when no alternative is legal. All transitions use the same physical seed. Exact retries of the latest command are replayed; stale commands are rejected. COMPLETE sessions cannot advance until configured for continuous operation. Configure validates two distinct policies, preserves physical state and active commitments, clears any uncommitted proposal, and records a new comparison origin when policies change. Continuous traces retain 256 recent intervals with cumulative counters.
+      parameters: [ { $ref: '#/components/parameters/key' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: false
+                  required: [revision, command, primary, baseline, continuous]
+                  properties:
+                    revision: { type: integer, minimum: 0 }
+                    command: { const: configure }
+                    primary: { type: string, enum: [S, A, F, risk, corrective, threshold5, wait] }
+                    baseline: { type: string, enum: [S, A, F, risk, corrective, threshold5, wait] }
+                    continuous: { const: true }
+                - type: object
+                  additionalProperties: false
+                  required: [revision, command]
+                  properties:
+                    revision: { type: integer, minimum: 0 }
+                    command: { const: advance }
+                    autoApprove: { type: boolean, default: false }
+                - type: object
+                  additionalProperties: false
+                  required: [revision, command, stopAt]
+                  properties:
+                    revision: { type: integer, minimum: 0 }
+                    command: { const: autoplay }
+                    stopAt: { type: string, enum: [incident, review, dispatch, repair, complete] }
+                    maxTicks: { type: integer, minimum: 1, maximum: 8, default: 8 }
+                - type: object
+                  additionalProperties: false
+                  required: [revision, command, reason]
+                  properties:
+                    revision: { type: integer, minimum: 0 }
+                    command: { const: approve }
+                    reason: { type: string, minLength: 1, maxLength: 1000 }
+                - type: object
+                  additionalProperties: false
+                  required: [revision, command, action, reason]
+                  properties:
+                    revision: { type: integer, minimum: 0 }
+                    command: { const: override }
+                    reason: { type: string, minLength: 1, maxLength: 1000 }
+                    action:
+                      type: array
+                      maxItems: 3
+                      items:
+                        type: array
+                        minItems: 3
+                        maxItems: 3
+                        items: { type: integer, minimum: 0 }
+      responses:
+        '200': { description: Updated session; completed sessions include independent physical replay audits for both lanes }
+        '409': { description: Stale revision, conflicting key, invalid phase or completed session }
+        '422': { description: Invalid matching or runtime validation failure; no state is published }
+  /capabilities:
+    get:
+      summary: Pinned source and installed controller capabilities
+      responses: { '200': { description: Runtime capabilities }, '503': { description: Runtime unavailable } }
+  /schema:
+    get:
+      summary: Canonical JCST wire JSON Schema catalog
+      responses: { '200': { description: JSON Schema 2020-12 } }
+  /campaigns:
+    get:
+      summary: Owner-scoped campaigns; ADMIN can inspect all
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses: { '200': { description: Data and pagination metadata } }
+  /campaigns/{id}:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    get:
+      summary: Campaign with study runs, original artifact indices and episode indices
+      responses: { '200': { description: Campaign data }, '404': { description: Not found or outside scope } }
+  /imports:
+    post:
+      summary: Queue immutable bundle import; ADMIN or ENGINEER, maximum 8 MB
+      parameters: [ { $ref: '#/components/parameters/key' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bundle]
+              additionalProperties: false
+              properties:
+                bundle: { $ref: './schema#/$defs/Bundle' }
+      responses: { '202': { description: Persisted job; Idempotency-Replayed on identical retry }, '409': { description: Idempotency conflict }, '413': { description: Bundle exceeds size limit } }
+  /episodes/{id}:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    get:
+      summary: Episode index including immutable basis content hash
+      responses: { '200': { description: Episode index }, '404': { description: Not found or outside scope } }
+  /episodes/{id}/records:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    get:
+      summary: Episode payload with bounded record page, limit at most 100
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses: { '200': { description: Episode data and total record count }, '409': { description: Missing or corrupt artifact } }
+  /artifacts/{id}:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    get:
+      summary: Original hash-checked UTF-8 artifact bytes
+      responses: { '200': { description: Original media type; X-Content-SHA256 header }, '404': { description: Not found or outside scope } }
+  /branches:
+    post:
+      summary: Queue matching override on a copied state; same physical seed, fixed-risk tail
+      parameters: [ { $ref: '#/components/parameters/key' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: './schema#/$defs/BranchRequest' }
+      responses: { '202': { description: Branch job }, '409': { description: Stale source hash } }
+  /inference:
+    post:
+      summary: Queue greedy S/F/A inference from a server-registered checkpoint
+      parameters: [ { $ref: '#/components/parameters/key' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [episode_id, tick, release_id]
+              additionalProperties: false
+              properties:
+                episode_id: { type: string, format: uuid }
+                tick: { type: integer, minimum: 0 }
+                release_id: { type: string }
+      responses: { '202': { description: Inference job; unavailable/mismatched releases fail explicitly } }
+  /jobs:
+    get:
+      summary: Owner-scoped jobs and immutable simulation reviews; bounded page/limit
+      responses: { '200': { description: Job list } }
+  /jobs/{id}:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    get:
+      summary: Frozen input, attempt history link, output and processing status
+      responses: { '200': { description: Job }, '404': { description: Not found or outside scope } }
+  /jobs/{id}/cancel:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    post:
+      summary: Cancel QUEUED/RUNNING job and fence late output
+      responses: { '200': { description: Cancelled job }, '409': { description: Already terminal } }
+  /jobs/{id}/retry:
+    parameters: [ { $ref: '#/components/parameters/id' }, { $ref: '#/components/parameters/key' } ]
+    post:
+      summary: New job from the same frozen input, linked by retryOf; preserves prior attempt
+      responses: { '202': { description: New job }, '409': { description: Only FAILED/CANCELLED can retry } }
+  /jobs/{id}/episode:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    get:
+      summary: Replay output of completed simulation branch
+      parameters:
+        - { name: variant, in: query, schema: { enum: [branch, baseline], default: branch } }
+      responses: { '200': { description: Branch episode }, '409': { description: Branch not ready } }
+  /jobs/{id}/review:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    post:
+      summary: Immutable management review of a simulation; never publishes operations state
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, reason, expected_output_hash]
+              additionalProperties: false
+              properties:
+                decision: { enum: [ACCEPT, REJECT] }
+                reason: { type: string, minLength: 1, maxLength: 1000 }
+                expected_output_hash: { type: string, pattern: '^[a-f0-9]{64}$' }
+      responses: { '201': { description: New review }, '200': { description: Identical review replay }, '409': { description: Stale output or conflicting review } }
+components:
+  securitySchemes:
+    session: { type: apiKey, in: cookie, name: pdm_token }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    key: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 1, maxLength: 128 } }

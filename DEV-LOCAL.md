@@ -355,6 +355,16 @@ rolls back data and trigger changes. Other sessions cannot observe disabled
 triggers. Truncate guards and foreign keys stay enabled. Current backend has
 no decision/event persistence; if such dependencies are added later, reset must
 be extended explicitly (unhandled foreign keys fail and roll back).
+# JCST research startup
+
+The default workspace is `/overview`, with Application first in navigation and Research available below it at `/research`. After the existing database/auth setup,
+also start `npm --prefix backend run research:worker`. Configure API and worker
+with the same absolute `RESEARCH_ARTIFACT_DIR`; the regular Python environment
+supports controls/replay, and `jcst_runtime` is optional for registered S/F/A.
+See [the research runbook](docs/research/runbook.md) for import, verification,
+Docker and rollback commands. Existing CNC/Operations instructions below remain
+compatibility workflows.
+
 
 ### Frozen P0 HTTP boundary
 

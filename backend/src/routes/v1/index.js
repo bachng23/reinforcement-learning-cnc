@@ -8,6 +8,8 @@ const userRoute = require('./user.route');
 
 const router = express.Router();
 
+router.use('/research', require('../../research/routes'));
+
 router.use('/auth', authRoute);
 router.use('/users', userRoute);
 router.use('/factories', require('./factory.route'));

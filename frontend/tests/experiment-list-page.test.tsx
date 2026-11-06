@@ -17,7 +17,9 @@ vi.mock("@/components/app-shell", () => ({
   ),
 }));
 
-function page(items: ExperimentListItem[]): PaginatedResponse<ExperimentListItem> {
+function page(
+  items: ExperimentListItem[],
+): PaginatedResponse<ExperimentListItem> {
   return {
     items,
     page: 1,
@@ -30,6 +32,49 @@ function page(items: ExperimentListItem[]): PaginatedResponse<ExperimentListItem
 }
 
 describe("ExperimentListPage states", () => {
+  it("searches and sorts the loaded page without implying a search of the whole register", async () => {
+    const user = userEvent.setup();
+    const items: ExperimentListItem[] = [
+      {
+        id: "b",
+        name: "Beta run",
+        status: "READY",
+        policy: { id: "p", name: "Baseline", version: "1" },
+        created_at: "2026-09-02T00:00:00Z",
+      },
+      {
+        id: "a",
+        name: "Alpha run",
+        status: "DRAFT",
+        policy: { id: "p", name: "Baseline", version: "1" },
+        created_at: "2026-09-01T00:00:00Z",
+      },
+    ];
+    const listExperiments = vi.fn(async () => page(items));
+    render(
+      <ExperimentListPage api={createProductApiStub({ listExperiments })} />,
+    );
+    await screen.findByText("Beta run");
+    await user.click(screen.getByRole("button", { name: "Experiment" }));
+    expect(screen.getAllByRole("row")[1]).toHaveTextContent("Alpha run");
+    await user.type(
+      screen.getByRole("searchbox", {
+        name: "Search experiments on this page",
+      }),
+      "Beta",
+    );
+    expect(screen.getAllByRole("row")).toHaveLength(2);
+    expect(screen.getByText("1 of 2 on this page")).toBeInTheDocument();
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Status" }),
+      "DRAFT",
+    );
+    expect(
+      screen.getByText(/No experiments on this page match/),
+    ).toBeInTheDocument();
+    expect(listExperiments).toHaveBeenCalledTimes(1);
+  });
+
   it("renders a stable loading state while the request is pending", () => {
     const pendingList = deferred<PaginatedResponse<ExperimentListItem>>();
     const listExperiments = vi.fn(() => pendingList.promise);
@@ -57,7 +102,9 @@ describe("ExperimentListPage states", () => {
       <ExperimentListPage api={createProductApiStub({ listExperiments })} />,
     );
 
-    expect(await screen.findByText("Experiments could not be loaded")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Experiments could not be loaded"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Product API is unavailable.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Try again" }));
@@ -84,7 +131,9 @@ describe("ExperimentListPage states", () => {
       <ExperimentListPage api={createProductApiStub({ listExperiments })} />,
     );
 
-    expect(await screen.findByText("Partially persisted experiment")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Partially persisted experiment"),
+    ).toBeInTheDocument();
     expect(screen.getByText("READY")).toBeInTheDocument();
     expect(screen.getByText("Episode counts unavailable")).toBeInTheDocument();
     expect(screen.getByText("Not available")).toBeInTheDocument();

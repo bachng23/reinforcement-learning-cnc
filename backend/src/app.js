@@ -38,6 +38,10 @@ app.use(cors(corsOptions));
 
 app.use(cookieParser());
 app.use(requestLogger);
+// Bounded bundles are authenticated before their larger body is parsed.
+app.use('/api/v1/research/imports', require('./middlewares/auth.middleware').requireAuth,
+  require('./middlewares/auth.middleware').requireRole(['ADMIN', 'ENGINEER']), express.json({ limit: '8mb' }));
+
 app.use((req, res, next) => {
   if (/^\/api\/v1\/(?:factories|work-orders|maintenance-analytics)(?:\/|$)/.test(req.path)) res.set('Cache-Control', 'no-store');
   next();

@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.use(requireAuth);
 router.get('/', experimentController.listExperiments);
-router.post('/', requireRole(RESEARCH_MUTATION_ROLES), experimentController.createExperiment);
+router.post('/', requireRole(RESEARCH_MUTATION_ROLES), require('../../research/legacy-mode').legacyWrite, experimentController.createExperiment);
 router.get(
   '/:experimentId',
   validateUuidParam('experimentId'),
@@ -19,6 +19,7 @@ router.post(
   '/:experimentId/run',
   validateUuidParam('experimentId'),
   requireRole(RESEARCH_MUTATION_ROLES),
+  require('../../research/legacy-mode').legacyWrite,
   experimentController.runExperiment,
 );
 router.get(

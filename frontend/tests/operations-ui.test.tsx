@@ -6,9 +6,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import { AgentTraceTimeline } from "@/components/operations/agent-trace-timeline";
 import { DecisionControls } from "@/components/operations/decision-controls";
-import { OperationsOverviewPage } from "@/components/pages/operations-overview-page";
+import { FactoryResourcesPage } from "@/components/pages/factory-resources-page";
 import { RecommendationCenterPage } from "@/components/pages/recommendation-center-page";
-import { WhatIfWorkspacePage } from "@/components/pages/what-if-workspace-page";
+import { WhatIfWorkspacePage } from "@/components/pages/operations-what-if-workspace-page";
 import { getOperationsFixture } from "@/lib/operations/fixtures";
 import {
   createMockRecommendationCenterDataSource,
@@ -27,7 +27,7 @@ vi.mock("next/navigation", () => ({
 
 describe("operations fixture UI", () => {
   it("renders canonical resources and authoritative health fields through the mock adapter", async () => {
-    render(<OperationsOverviewPage />);
+    render(<FactoryResourcesPage />);
 
     expect(await screen.findByRole("heading", { name: "Machine status grid" })).toBeInTheDocument();
     expect(screen.getByText("CNC M01")).toBeInTheDocument();

@@ -3,7 +3,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { OperationsOverviewPage } from "@/components/pages/operations-overview-page";
+import { FactoryResourcesPage } from "@/components/pages/factory-resources-page";
 import { RecommendationCenterPage } from "@/components/pages/recommendation-center-page";
 import { createOperationsApiClient, OperationsApiError, type OperationsDecisionCaseReadResponse, type OperationsDecisionCommand } from "@/lib/operations-api/client";
 import { createMockOperationsApiClient } from "@/lib/operations-api/mock";
@@ -79,7 +79,7 @@ describe("create, live approval and publication", () => {
     const user = userEvent.setup();
     const api = createMockOperationsApiClient();
     const create = vi.spyOn(api, "createDecisionCase");
-    render(<OperationsOverviewPage api={api} apiMode="real" factoryId={factoryId} />);
+    render(<FactoryResourcesPage api={api} apiMode="real" factoryId={factoryId} />);
     await screen.findByLabelText("Planning reason");
     await user.type(screen.getByLabelText("Planning reason"), "Review maintenance windows");
     await user.click(screen.getByRole("button", { name: "Create case" }));
@@ -94,7 +94,7 @@ describe("create, live approval and publication", () => {
     const user = userEvent.setup();
     const api = createMockOperationsApiClient();
     const create = vi.spyOn(api, "createDecisionCase").mockRejectedValue(new OperationsApiError(409, null));
-    render(<OperationsOverviewPage api={api} factoryId={factoryId} apiMode="real" />);
+    render(<FactoryResourcesPage api={api} factoryId={factoryId} apiMode="real" />);
     await screen.findByLabelText("Planning reason");
     await user.type(screen.getByLabelText("Planning reason"), "Review");
     await user.click(screen.getByRole("button", { name: "Create case" }));

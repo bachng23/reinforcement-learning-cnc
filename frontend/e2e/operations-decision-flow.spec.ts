@@ -314,7 +314,7 @@ test("real snapshot flows through browser, worker and FastAPI with safe negative
   await page.getByLabel("Username").fill("admin");
   await page.locator('input[autocomplete="current-password"]').fill(adminPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/overview(?:\?|$)/);
+  await expect(page).toHaveURL(/\/simulation(?:\?|$)/);
 
   await page.goto(`/overview?factory_id=${factoryId}`);
   await expect(page.getByRole("main").getByRole("heading", { name: "Factory Overview", exact: true })).toBeVisible();

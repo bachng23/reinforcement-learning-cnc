@@ -17,6 +17,7 @@ router.get('/:episodeId/summary', episodeController.getSummary);
 router.post(
   '/:episodeId/retry',
   requireRole(RESEARCH_MUTATION_ROLES),
+  require('../../research/legacy-mode').legacyWrite,
   episodeController.retryEpisode,
 );
 router.post(

@@ -1,0 +1,19 @@
+# Optional learned inference replaces the controls-only worker and reader runtime.
+services:
+  research_api:
+    build:
+      context: .
+      dockerfile: jcst_runtime/Dockerfile
+    command: ["node", "src/server.js"]
+    environment:
+      JCST_RELEASE_REGISTRY: /research-releases/registry.json
+    volumes:
+      - ./artifacts/research-releases:/research-releases:ro
+  research_worker:
+    build:
+      context: .
+      dockerfile: jcst_runtime/Dockerfile
+    environment:
+      JCST_RELEASE_REGISTRY: /research-releases/registry.json
+    volumes:
+      - ./artifacts/research-releases:/research-releases:ro

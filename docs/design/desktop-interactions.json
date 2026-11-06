@@ -1,0 +1,54 @@
+{
+  "checks": [
+    {
+      "name": "Compact reduces row padding",
+      "passed": true
+    },
+    {
+      "name": "Density persists across screens",
+      "passed": true
+    },
+    {
+      "name": "Search narrows to M07",
+      "passed": true
+    },
+    {
+      "name": "Case drill-down opens M07 source, without borrowing M03 samples",
+      "passed": true
+    },
+    {
+      "name": "Drill-down moves keyboard focus to evidence",
+      "passed": true
+    },
+    {
+      "name": "Trend drill-down opens matching machine",
+      "passed": true
+    },
+    {
+      "name": "Status filter shows only review cases",
+      "passed": true
+    },
+    {
+      "name": "Numeric risk is aligned right",
+      "passed": true
+    },
+    {
+      "name": "Status cells are centered",
+      "passed": true
+    },
+    {
+      "name": "Header and identity column stay sticky",
+      "passed": true
+    },
+    {
+      "name": "Collapsed navigation preserves desktop layout",
+      "passed": true
+    },
+    {
+      "name": "No browser exceptions during inspection",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "notes": "Read-only browser checks against mock product data; GET-only auth/users interception."
+}

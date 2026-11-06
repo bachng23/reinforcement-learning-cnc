@@ -1,9 +1,10 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Platform API for CNC tool replacement research",
+  "description": "Maintenance demand-capacity coordination research API",
   "main": "src/server.js",
   "scripts": {
+    "research:worker": "node src/research/worker.js",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "worker": "node src/worker/index.js",
