@@ -36,7 +36,8 @@ test('real authenticated evidence import, reload, replay, branch, review and leg
   await expect(page.getByText('SUCCEEDED',{exact:true})).toBeVisible({timeout:20000});
   await page.getByRole('link',{name:'Open imported campaign →'}).click();
   await expect(page.getByRole('heading',{name:'JCST engineering verification',exact:true})).toBeVisible();
-  await page.getByRole('link',{name:'Legacy CNC experiments'}).click();
+  await expect(page.getByRole('link',{name:'Legacy CNC experiments'})).toHaveCount(0);
+  await page.goto('/experiments');
   await expect(page).toHaveURL(/\/experiments$/);
 });
 
