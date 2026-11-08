@@ -8,13 +8,15 @@ import { researchRequest } from '@/lib/research-api/client';
 import type { Simulation } from '@/lib/simulation/types';
 import type { Episode } from '@/types/generated/jcst';
 import fixture from '../../contracts/jcst/v1/fixtures/engineering-bundle.json';
+import { healthAt, simulationAt } from './simulation-inspection-fixtures';
 vi.mock('@/components/app-shell',()=>({AppShell:({children}:{children:ReactNode})=><>{children}</>}));
 vi.mock('@/lib/research-api/client',()=>({researchRequest:vi.fn()}));
 vi.mock('@/components/simulation/factory-preview',()=>({
-  FactoryPreview: ({ selected, onSelect }: { selected: number | null; onSelect: (machine: number) => void }) =>
+  FactoryPreview: ({ selected, onSelect, onInspect }: { selected: number | null; onSelect: (machine: number) => void; onInspect:(machine:number)=>void }) =>
     <div aria-label="3D factory">
       <button onClick={() => onSelect(2)}>Select M3</button>
       {selected !== null && <p>Selected machine M{selected + 1}</p>}
+      {selected !== null && <button onClick={()=>onInspect(selected)}>Inspect selected machine</button>}
     </div>,
 }));
 const capabilities={learned_releases:[{arm:'S',case_id:'base',available:true},{arm:'F',case_id:'base',available:true}]};
@@ -217,5 +219,102 @@ describe('machine inspection',()=>{
     expect(screen.getByText('Line P1')).toBeInTheDocument();
     expect(screen.getByText('01 · SMT board assembly · Station 3')).toBeInTheDocument();
     await userEvent.keyboard('{Escape}');expect(screen.queryByRole('dialog')).not.toBeInTheDocument();expect(trigger).toHaveFocus();
+  });
+});
+
+describe('inspection to assignment review',()=>{
+  it('opens from 3D selection and restores the same highlight after review',async()=>{
+    const initial=simulationAt(5);
+    vi.mocked(researchRequest).mockImplementation(async path=>path==='/capabilities'?capabilities as never:path.endsWith('/commands')?simulationAt(6) as never:path.includes('/health?')?healthAt(5) as never:initial as never);
+    render(<DemoWorkspace initialId={initial.id}/>);
+    await userEvent.click(await screen.findByRole('button',{name:'3D'}));
+    await userEvent.click(screen.getByRole('button',{name:'Select M3'}));
+    await userEvent.click(screen.getByRole('button',{name:'Inspect selected machine'}));
+    await userEvent.click(screen.getByRole('button',{name:'View dispatch proposal'}));
+    await userEvent.click(await screen.findByRole('button',{name:'Approve & dispatch'}));
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Machine M3');
+    expect(screen.getByText('Selected machine M3')).toBeInTheDocument();
+    expect(screen.getByRole('button',{name:'3D'})).toHaveAttribute('aria-pressed','true');
+  });
+  it('retries the initial session read without a create or command request',async()=>{
+    const saved=simulationAt(5);let reads=0;
+    vi.mocked(researchRequest).mockImplementation(async path=>{if(path==='/capabilities')return capabilities as never;if(++reads===1)throw new Error('Network unavailable');return saved as never;});
+    render(<DemoWorkspace initialId={saved.id}/>);
+    await userEvent.click(await screen.findByRole('button',{name:'Reload session'}));
+    expect(await screen.findByRole('button',{name:'Inspect machine M3'})).toBeInTheDocument();
+    expect(vi.mocked(researchRequest).mock.calls.some(([path])=>path.endsWith('/commands')||path==='/demo/sessions')).toBe(false);
+  });
+  it('returns to M3 after approval, shows t6 work, and reviews against the current revision before t7 completion',async()=>{
+    let current=simulationAt(5);
+    vi.mocked(researchRequest).mockImplementation(async(path,options)=>{
+      if(path==='/capabilities')return capabilities as never;
+      if(path.includes('/health?'))return healthAt(current.primary.state.tick as 5|6|7) as never;
+      if(path.endsWith('/commands')){const body=options?.body as {revision:number};expect(body.revision).toBe(current.revision);current=simulationAt(current.primary.state.tick===5?6:7);return current as never;}
+      return current as never;
+    });
+    render(<DemoWorkspace initialId={current.id}/>);
+    await userEvent.click(await screen.findByRole('button',{name:'Inspect machine M3'}));
+    await screen.findByRole('heading',{name:'Component health'});
+    await userEvent.click(screen.getByRole('button',{name:'View dispatch proposal'}));
+    await userEvent.click(await screen.findByRole('button',{name:'Approve & dispatch'}));
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Machine M3');
+    expect(await screen.findByText('In progress',{selector:'span'})).toBeInTheDocument();
+    expect(screen.getByTestId('service-record')).toHaveTextContent('15 min');
+    await userEvent.click(screen.getByRole('button',{name:'View dispatch proposal'}));
+    await userEvent.click(await screen.findByRole('button',{name:'Approve & dispatch'}));
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Machine M3');
+    expect(await screen.findByText('Completed',{selector:'span'})).toBeInTheDocument();
+    expect(new URLSearchParams(window.location.search).get('machine')).toBe('2');
+    expect(screen.getByRole('button',{name:'Run simulator'})).toBeEnabled();
+  });
+  it('records a defer via the existing empty matching command, then restores the same machine',async()=>{
+    const initial=simulationAt(5);const deferred=structuredClone(initial);deferred.revision++;deferred.status='RUNNING';deferred.pending=null;
+    deferred.decisions=[{tick:5,actor:'operator',reason:'Await access',action:[],proposed_action:[[2,1,1]],override:true}];
+    vi.mocked(researchRequest).mockImplementation(async(path)=>path==='/capabilities'?capabilities as never:path.endsWith('/commands')?deferred as never:path.includes('/health?')?{...healthAt(5),revision:deferred.revision} as never:initial as never);
+    render(<DemoWorkspace initialId={initial.id}/>);
+    await userEvent.click(await screen.findByRole('button',{name:'Inspect machine M3'}));
+    await userEvent.click(screen.getByRole('button',{name:'View dispatch proposal'}));
+    await userEvent.clear(screen.getByLabelText('Decision reason'));await userEvent.type(screen.getByLabelText('Decision reason'),'Await access');
+    await userEvent.click(screen.getByRole('button',{name:'Defer new assignments'}));
+    await waitFor(()=>expect(researchRequest).toHaveBeenCalledWith(expect.stringContaining('/commands'),expect.objectContaining({body:{revision:initial.revision,command:'override',action:[],reason:'Await access'}})));
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Machine M3');
+    expect(screen.queryByTestId('service-record')).not.toBeInTheDocument();
+  });
+  it('blocks stale approval until a read-only reload and requires a fresh explicit decision',async()=>{
+    const initial=simulationAt(5);const newer={...initial,revision:initial.revision+2};let reads=0;
+    vi.mocked(researchRequest).mockImplementation(async(path)=>{
+      if(path==='/capabilities')return capabilities as never;
+      if(path.endsWith('/commands'))throw Object.assign(new Error('stale'),{status:409});
+      return (++reads===1?initial:newer) as never;
+    });
+    window.history.replaceState(null,'','/decisions');render(<DemoWorkspace view="decision" initialId={initial.id}/>);
+    await userEvent.click(await screen.findByRole('button',{name:'Approve & dispatch'}));
+    expect(await screen.findByRole('alert')).toHaveTextContent('revision changed');
+    expect(screen.getByRole('button',{name:'Approve & dispatch'})).toBeDisabled();
+    await userEvent.click(screen.getByRole('button',{name:'Reload session'}));
+    expect(await screen.findByRole('button',{name:'Approve & dispatch'})).toBeEnabled();
+    expect(vi.mocked(researchRequest).mock.calls.filter(([path])=>path.endsWith('/commands'))).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button',{name:'Approve & dispatch'}));
+    expect(vi.mocked(researchRequest).mock.calls.filter(([path])=>path.endsWith('/commands'))[1][1]?.body).toMatchObject({revision:newer.revision});
+  });
+  it('retries a lost response with the identical key/body and guards double submission',async()=>{
+    const initial=simulationAt(5);let attempts=0;
+    vi.mocked(researchRequest).mockImplementation(async(path)=>{
+      if(path==='/capabilities')return capabilities as never;
+      if(path.endsWith('/commands')){attempts++;if(attempts===1)throw new TypeError('Network response lost');return {...initial,status:'RUNNING',pending:null,revision:initial.revision+1} as never;}
+      return initial as never;
+    });
+    window.history.replaceState(null,'','/decisions');render(<DemoWorkspace view="decision" initialId={initial.id}/>);
+    await userEvent.click(await screen.findByRole('button',{name:'Approve & dispatch'}));
+    await screen.findByRole('alert');await userEvent.dblClick(screen.getByRole('button',{name:'Approve & dispatch'}));
+    const calls=vi.mocked(researchRequest).mock.calls.filter(([path])=>path.endsWith('/commands'));
+    expect(calls).toHaveLength(2);expect(calls[0][1]?.key).toBe(calls[1][1]?.key);expect(calls[0][1]?.body).toEqual(calls[1][1]?.body);
+  });
+  it('restores machine inspection from the URL after reload and never sends a command',async()=>{
+    const saved=simulationAt(7);window.history.replaceState(null,'',`/simulation?session=${saved.id}&machine=2&inspect=1`);
+    vi.mocked(researchRequest).mockImplementation(async path=>path==='/capabilities'?capabilities as never:path.includes('/health?')?healthAt(7) as never:saved as never);
+    render(<DemoWorkspace/>);expect(await screen.findByRole('dialog')).toHaveTextContent('Machine M3');
+    expect(await screen.findByText('Completed',{selector:'span'})).toBeInTheDocument();
+    expect(vi.mocked(researchRequest).mock.calls.filter(([path])=>path.endsWith('/commands'))).toHaveLength(0);
   });
 });

@@ -14,6 +14,7 @@ import { FactoryDashboard } from './factory-dashboard';
 import { factoryLayouts, getFactoryLayout, type LayoutId } from '@/lib/simulation/factory-layouts';
 import { ComparisonView } from './comparison-view';
 import { DecisionView } from './decision-view';
+import { SimulationActivity } from './simulation-activity';
 
 export type DemoView = 'overview' | 'decision' | 'agents' | 'compare' | 'dashboard';
 const labels: Record<DemoView,string> = {overview:'Simulation',dashboard:'Factory dashboard',decision:'Decision Center',agents:'Decision activity',compare:'Compare controllers'};
@@ -37,6 +38,8 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   const selectedLayout = getFactoryLayout(layoutId);
   const [session,setSession]=useState<Simulation>(); const current=useRef<Simulation | undefined>(undefined);
   const [busy,setBusy]=useState(false); const locked=useRef(false); const [loading,setLoading]=useState(true); const [error,setError]=useState('');
+  const [needsReviewSync, setNeedsReviewSync] = useState(false);
+  const [readAttempt, setReadAttempt] = useState(0);
   const [running,setRunning]=useState(false); const [automatic,setAutomatic]=useState(false); const [speed,setSpeed]=useState(2000);
   const [pauseOnIncident,setPauseOnIncident]=useState(true);
   const [selectedMachine,setSelectedMachine]=useState<number|null>(null);
@@ -80,6 +83,10 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
 
   function selectStation(machine: number | null) {
     setStation(machine);
+    const url = new URL(window.location.href);
+    if (machine === null) { url.searchParams.delete('machine'); url.searchParams.delete('inspect'); }
+    else url.searchParams.set('machine', String(machine));
+    window.history.replaceState(null, '', url);
     if (!session) return;
     try {
       if (machine === null) sessionStorage.removeItem(stationKey(session.id));
@@ -92,24 +99,40 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   }, []);
   const inspectMachine = useCallback((machine: number) => {
     setRunning(false);
+    setStation(machine);
     setSelectedMachine(machine);
+    const now = current.current;
+    if (!now) return;
+    try { sessionStorage.setItem(stationKey(now.id), String(machine)); } catch {}
+    const url = new URL(window.location.href);
+    url.searchParams.set('machine', String(machine));
+    url.searchParams.set('inspect', '1');
+    window.history.replaceState(null, '', url);
   }, []);
+  function closeMachine() {
+    setSelectedMachine(null);
+    const url = new URL(window.location.href); url.searchParams.delete('inspect');
+    window.history.replaceState(null, '', url);
+  }
   const pathname = usePathname();
   const [localView, setLocalView] = useState<DemoView>(view);
   const activeView = pathname === '/overview' ? 'overview' : (Object.keys(routes) as DemoView[]).find(key => routes[key] === pathname) ?? localView;
 
   function openView(nextView: DemoView, sessionId: string) {
     setLocalView(nextView);
-    const url = new URL(routes[nextView], window.location.origin);
+    const url = new URL(window.location.href);
+    url.pathname = routes[nextView];
     url.searchParams.set('session', sessionId);
     url.searchParams.set('workshop', layoutId);
     window.history.replaceState(null, '', url);
   }
 
   const mounted=useRef(true);
-  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
+  const commandAbort=useRef<AbortController | null>(null);
+  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;commandAbort.current?.abort();};},[]);
   const [primaryPolicy, setPrimaryPolicy] = useState('S');
-  const baselinePolicy = primaryPolicy === 'corrective' ? 'risk' : 'corrective';
+  const [baselineOverride, setBaselineOverride] = useState<string | null>(null);
+  const baselinePolicy = baselineOverride ?? (primaryPolicy === 'corrective' ? 'risk' : 'corrective');
   const [releases, setReleases] = useState<{arm:string;case_id:string;available:boolean}[]>([]);
   const [scenario,setScenario]=useState('base'); const [mode,setMode]=useState<'incident'|'policy'>('policy'); const [seed,setSeed]=useState('990000001');
   const [setup,setSetup]=useState(false); const [capabilityError,setCapabilityError]=useState('');
@@ -130,12 +153,18 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
         const saved = sessionStorage.getItem(stationKey(data.id));
         if (saved !== null) savedStation = Number(saved);
       } catch {}
+      const params = new URLSearchParams(window.location.search);
+      const machine = params.get('machine');
+      if (params.get('session') === data.id && machine !== null && /^\d+$/.test(machine)) savedStation = Number(machine);
+      setSelectedMachine(params.get('session') === data.id && params.get('inspect') === '1' && savedStation !== null &&
+        savedStation >= 0 && savedStation < data.primary.state.components.length ? savedStation : null);
       setStation(savedStation !== null && Number.isInteger(savedStation) &&
         savedStation >= 0 && savedStation < data.primary.state.components.length ? savedStation : null);
     }
-    current.current=data;setSession(data);setError('');
+    const changedSession=current.current?.id!==data.id;
+    current.current=data;setSession(data);setError('');setNeedsReviewSync(false);
     try{sessionStorage.setItem('mcc-demo-session',data.id);}catch{}
-    const url=new URL(window.location.href);url.searchParams.set('session',data.id);url.searchParams.set('workshop',layout);window.history.replaceState(null,'',url);
+    const url=new URL(window.location.href);if(changedSession&&url.searchParams.get('session')!==data.id){url.searchParams.delete('machine');url.searchParams.delete('inspect');}url.searchParams.set('session',data.id);url.searchParams.set('workshop',layout);window.history.replaceState(null,'',url);
   },[]);
   useEffect(()=>{
     const abort=new AbortController();
@@ -146,7 +175,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     if(id)researchRequest<Simulation>(`/demo/sessions/${encodeURIComponent(id)}`,{signal:abort.signal}).then(data=>{if(!abort.signal.aborted)accept(data);}).catch(e=>{if(!abort.signal.aborted)setError(e.message);}).finally(()=>{if(!abort.signal.aborted)setLoading(false);});
     else setLoading(false);
     return()=>abort.abort();
-  },[initialId,accept]);
+  },[initialId,accept,readAttempt]);
   useEffect(()=>{
     const abort=new AbortController();
     setAvailable(undefined);
@@ -181,28 +210,35 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   }
   async function refreshSession() {
     if (!current.current || locked.current) return;
-    locked.current=true;setBusy(true);
-    try { accept(await researchRequest<Simulation>(`/demo/sessions/${current.current.id}`)); }
-    catch(e) { setError((e as Error).message); }
-    finally { locked.current=false;setBusy(false); }
+    locked.current=true;setBusy(true);setRunning(false);
+    const before = current.current;
+    const abort=new AbortController();commandAbort.current=abort;
+    try { const next = await researchRequest<Simulation>(`/demo/sessions/${before.id}`,{signal:abort.signal}); if (!abort.signal.aborted && mounted.current && current.current?.id === before.id) accept(next); }
+    catch(e) { if(mounted.current&&!abort.signal.aborted)setError((e as Error).message); }
+    finally { locked.current=false;if(mounted.current)setBusy(false); }
   }
   async function command(body:Record<string,unknown>) {
-    const before=current.current;if(!before||locked.current)return;
+    const before=current.current;if(!before||locked.current||needsReviewSync)return;
     locked.current=true;setBusy(true);setError('');
     const inputBody={revision:before.revision,...body};const input=JSON.stringify(inputBody);
     if(commandIdentity.current?.input!==input)commandIdentity.current={input,key:crypto.randomUUID()};
+    const abort=new AbortController();commandAbort.current=abort;
     try{
-      const next=await researchRequest<Simulation>(`/demo/sessions/${before.id}/commands`,{body:inputBody,key:commandIdentity.current.key});if(!mounted.current)return;accept(next);commandIdentity.current=undefined;
+      const next=await researchRequest<Simulation>(`/demo/sessions/${before.id}/commands`,{body:inputBody,key:commandIdentity.current.key,signal:abort.signal});if(!mounted.current||abort.signal.aborted||current.current?.id!==before.id)return;accept(next);commandIdentity.current=undefined;
       if(next.status==='REVIEW'||next.status==='COMPLETE'||(pauseOnIncident&&hasNewFailure(before.primary.state.tick,next)))setRunning(false);
       return next;
-    }catch(e){setRunning(false);setError((e as Error).message);}finally{locked.current=false;setBusy(false);}
+    }catch(e){if(mounted.current){setRunning(false);const stale=(e as {status?:number}).status===409;setNeedsReviewSync(stale);setError(stale ? 'The simulator revision changed. Reload the session and review the current assignments before trying again.' : (e as Error).message);}}finally{locked.current=false;if(mounted.current)setBusy(false);}
   }
   const decide=async(action:Matching|null,reason:string)=>{
     const count=current.current?.primary.state.tick??0;
     const next=await command(action===null ? {command:'approve',reason} : {command:'override',action,reason});
     if(next){openView('overview', next.id);
       const hasFailure=hasNewFailure(count,next);
-      setRunning(next.status==='RUNNING'&&!(pauseOnIncident&&hasFailure));}
+      const params=new URLSearchParams(window.location.search);
+      const returnMachine=params.get('machine');
+      const restore=params.get('inspect')==='1'&&returnMachine!==null&&/^\d+$/.test(returnMachine)&&Number(returnMachine)<next.primary.state.components.length;
+      if(restore){setSelectedMachine(Number(returnMachine));setStation(Number(returnMachine));}
+      setRunning(!restore&&next.status==='RUNNING'&&!(pauseOnIncident&&hasFailure));}
   };
   async function inspectDecision(){
     if(locked.current)return;
@@ -219,10 +255,11 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   const tick=session?.primary.state.tick ?? 0;
   const clock = simulationTime(session ?? {}, tick);
   useEffect(() => {
-    if (!session) return;
-    setPrimaryPolicy(session.primary.controller);
-    setAutomatic(Boolean(session.continuous));
-    setPauseOnIncident(!session.continuous);
+    const loaded=current.current;
+    if (!loaded) return;
+    setPrimaryPolicy(loaded.primary.controller);
+    setAutomatic(Boolean(loaded.continuous));
+    setPauseOnIncident(!loaded.continuous);
   }, [session?.id]);
   async function applyPolicies() {
     setRunning(false);
@@ -251,7 +288,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   }
 
   const showSetup = setup || (!session && !loading);
-  const showFloor = activeView === 'overview' && factoryView === '3d' && Boolean(session) && !showSetup;
+  const showFloor = activeView === 'overview' && factoryView === '3d' && Boolean(session) && !showSetup && !loading;
   const status = session?.status === 'REVIEW' ? 'Awaiting decision'
     : session?.status === 'COMPLETE' ? 'Complete'
     : running ? 'Running' : 'Paused';
@@ -271,7 +308,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
         <RotateCcw size={14} aria-hidden="true" />{showSetup ? 'Cancel' : 'Change scenario'}
       </button>}
     </header>}
-    {error && <div role="alert" className="sim-error">{error}<button onClick={()=>{if(current.current){setLoading(true);researchRequest<Simulation>(`/demo/sessions/${current.current.id}`).then(accept).catch(e=>setError(e.message)).finally(()=>setLoading(false));}}}>Reload session</button></div>}
+    {error && <div role="alert" className="sim-error">{error}<button disabled={busy} onClick={()=>{if(current.current)void refreshSession();else setReadAttempt(value=>value+1);}}>Reload session</button></div>}
     {showSetup && <section className="sim-panel sim-setup">
       <div className="sim-panel-heading"><h2>{session ? 'Choose a scenario for a new session' : 'Start a simulation'}</h2></div>
       <div className="sim-setup-fields">
@@ -291,18 +328,19 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
       {policyFields}
       <details className="sim-compatibility">
         <summary>Advanced settings</summary>
+        <label className="sim-field">Comparison policy<select aria-label="Comparison policy" value={baselinePolicy} onChange={event=>setBaselineOverride(event.target.value)}>{Object.entries(policyNames).filter(([key])=>key!==primaryPolicy).map(([key,name])=><option key={key} value={key} disabled={!policyAvailable(key)}>{name}</option>)}</select></label>
         <label className="sim-field">Simulation seed
           <input value={seed} onChange={event => setSeed(event.target.value)} pattern="99[0-9]{7}" />
         </label>
         {!/^99\d{7}$/.test(seed) && <p className="sim-footnote">Enter a 9-digit number starting with 99.</p>}
       </details>
       {available === false && <p role="status" className="sim-error">Simulation is unavailable for this scenario. {capabilityError}</p>}
-      <button className="research-primary" disabled={busy || available !== true || !/^99\d{7}$/.test(seed)} onClick={() => void create(true)}>
+      <button className="research-primary" disabled={busy || available !== true || primaryPolicy===baselinePolicy || !policyAvailable(baselinePolicy) || !/^99\d{7}$/.test(seed)} onClick={() => void create(true)}>
         {busy ? 'Starting…' : 'Start simulation'}
       </button>
     </section>}
     {loading && <p role="status">Loading simulator session…</p>}
-    {session && !showSetup && <>
+    {session && !showSetup && !loading && <>
       {activeView !== 'dashboard' && <section className={showFloor ? 'sim-control-bar sim-floor-controls' : 'sim-control-bar'} aria-label="Simulation controls">
         {showFloor && <h2 className="sim-floor-eyebrow">Simulation</h2>}
         <div className="sim-clock">
@@ -310,7 +348,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
           <time dateTime={clock.iso}><strong>{clock.time}</strong><span>{clock.date}</span></time>
           <span>{status}</span>
         </div>
-        <p className="sim-clock-scale">Simulated time · 15 min / step</p>
+        <p className="sim-clock-scale">Simulated time · {(session.step_seconds ?? 900) / 60} min / step</p>
         {workshopField}
         {policyFields}
         {(primaryPolicy !== session.primary.controller || !session.continuous) && <button className="sim-button" disabled={busy || !policyAvailable(primaryPolicy)} onClick={()=>void applyPolicies()}>{!session.continuous ? 'Enable continuous operation' : 'Apply policy'}</button>}
@@ -354,7 +392,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
           </button>}
         </div>
       </section>}
-      {selectedMachine!==null&&<MachineDetail layout={selectedLayout} clockSession={session} machine={selectedMachine} lane={session.primary} config={session.config} proposal={session.pending?.action??[]} onClose={()=>setSelectedMachine(null)} decisionAction={session.status!=='COMPLETE'&&session.activated?<div><p className="sim-footnote">If there is no assignment to review, the simulation may advance one simulation step.</p><button className="research-primary" disabled={busy} onClick={()=>void inspectDecision()}>View dispatch proposal<ArrowRight size={14} aria-hidden="true"/></button></div>:undefined}/>}
+      {selectedMachine!==null&&activeView==='overview'&&<MachineDetail layout={selectedLayout} session={session} clockSession={session} machine={selectedMachine} lane={session.primary} config={session.config} proposal={session.pending?.action??[]} onClose={closeMachine} onSelectMachine={inspectMachine} onReload={()=>void refreshSession()} decisionAction={session.status!=='COMPLETE'&&session.activated?<div><p className="sim-footnote">Review uses the current simulator revision. If no proposal is ready, this may advance one simulation step.</p><button className="research-primary" disabled={busy} onClick={()=>void inspectDecision()}>View dispatch proposal<ArrowRight size={14} aria-hidden="true"/></button></div>:undefined}/>}
       {session.status === 'REVIEW' && activeView === 'overview' && factoryView === '2d' && <div className="sim-alert">
         <AlertTriangle size={18} aria-hidden="true" />
         <div><strong>Maintenance proposal ready</strong></div>
@@ -389,19 +427,19 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
           {factoryView === '3d'
             ? <FactoryPreview key={`${session.id}:${layoutId}`} layout={selectedLayout} lane={session.primary} config={session.config} clockSession={session} proposal={session.pending?.action} running={running}
                 selected={station} onSelect={selectStation} onInspect={inspectMachine} onUnavailable={showFleet} />
-            : <FleetView layout={selectedLayout} lane={session.primary} config={session.config} proposal={session.pending?.action} onInspect={inspectMachine} />}
+            : <FleetView clockSession={session} layout={selectedLayout} lane={session.primary} config={session.config} proposal={session.pending?.action} onInspect={inspectMachine} />}
         </section>
         {showFloor
-          ? <FactoryTimeline session={session} records={session.primary.records} selected={station} onSelect={selectStation} />
+          ? <FactoryTimeline session={session} records={session.primary.records} selected={station} onSelect={inspectMachine} />
           : <section className="sim-panel sim-notifications" aria-label="Incident notifications"><div className="sim-panel-heading"><h2>Incident notifications</h2></div>
-          <ul aria-live="polite" aria-relevant="additions">{notifications.slice(0,1).map(e=><li key={`${e.tick}-${e.type}-${e.machine}-${e.component}`}><button className={e.type==='failure'?'sim-notice-failure':'sim-notice-resolved'} onClick={()=>{setRunning(false);setSelectedMachine(e.machine);}}>{e.type==='failure'?<AlertTriangle size={16} aria-hidden="true"/>:<CheckCircle2 size={16} aria-hidden="true"/>}<span><strong>{e.type==='failure'?`M${e.machine+1} / C${e.component+1} failure detected`:`M${e.machine+1} / C${e.component+1} corrective service completed`}</strong><small>{simulationTime(session,e.tick).time}</small></span><ArrowRight size={14} aria-hidden="true"/></button></li>)}</ul>
-          {notifications.length>1&&<details className="sim-notification-history"><summary>Event history ({notifications.length-1} earlier events)</summary><ul>{notifications.slice(1).map(e=><li key={`${e.tick}-${e.type}-${e.machine}-${e.component}`}><button onClick={()=>{setRunning(false);setSelectedMachine(e.machine);}}>{simulationTime(session,e.tick).time} · M{e.machine+1}/C{e.component+1} · {e.type==='failure'?'Failure detected':'Corrective service completed'}<ArrowRight size={13} aria-hidden="true"/></button></li>)}</ul></details>}
+          <ul aria-live="polite" aria-relevant="additions">{notifications.slice(0,1).map(e=><li key={`${e.tick}-${e.type}-${e.machine}-${e.component}`}><button className={e.type==='failure'?'sim-notice-failure':'sim-notice-resolved'} onClick={()=>inspectMachine(e.machine)}>{e.type==='failure'?<AlertTriangle size={16} aria-hidden="true"/>:<CheckCircle2 size={16} aria-hidden="true"/>}<span><strong>{e.type==='failure'?`M${e.machine+1} / C${e.component+1} failure detected`:`M${e.machine+1} / C${e.component+1} corrective service completed`}</strong><small>{simulationTime(session,e.tick).time}</small></span><ArrowRight size={14} aria-hidden="true"/></button></li>)}</ul>
+          {notifications.length>1&&<details className="sim-notification-history"><summary>Event history ({notifications.length-1} earlier events)</summary><ul>{notifications.slice(1).map(e=><li key={`${e.tick}-${e.type}-${e.machine}-${e.component}`}><button onClick={()=>inspectMachine(e.machine)}>{simulationTime(session,e.tick).time} · M{e.machine+1}/C{e.component+1} · {e.type==='failure'?'Failure detected':'Corrective service completed'}<ArrowRight size={13} aria-hidden="true"/></button></li>)}</ul></details>}
           {!notifications.length&&<p className="sim-footnote">No incidents recorded.</p>}
         </section>}
       </>}
       {activeView === 'dashboard' && <><div className="sim-dashboard-toolbar">{workshopField}<p>{selectedLayout.description}</p><button className="sim-button" disabled={busy} onClick={()=>void refreshSession()}><RotateCcw size={14}/> Refresh data</button><button className="sim-button" onClick={()=>openView('overview',session.id)}>Open simulation <ArrowRight size={14}/></button></div><FactoryDashboard session={session} layout={selectedLayout} onSelectMachine={machine=>{selectStation(machine);openView('overview',session.id);}} /></>}
-      {activeView === 'decision' && <DecisionView session={session} busy={busy} onDecide={decide} />}
-      {activeView === 'agents' && <Workflow session={session} />}
+      {activeView === 'decision' && <DecisionView session={session} busy={busy} blocked={needsReviewSync} onDecide={decide} />}
+      {activeView === 'agents' && <SimulationActivity session={session} onInspect={machine=>{inspectMachine(machine);openView('overview',session.id);}} />}
       {activeView === 'compare' && <ComparisonView layout={selectedLayout} session={session} />}
     </>}
   </main></AppShell>;
@@ -452,8 +490,4 @@ function FactoryTimeline({ session, records, selected, onSelect }: {
       </li>;
     })}</ol> : <p className="sim-footnote">No machine or maintenance events yet.</p>}
   </section>;
-}
-
-function Workflow({session}:{session:Simulation}) {
-  return <section className="sim-panel sim-agent-workflow"><div className="sim-panel-heading"><div><h2>Activity log</h2></div></div>{!session.workflow.length?<p className="sim-footnote">No decisions recorded yet.</p>:<ol className="sim-workflow">{session.workflow.slice().reverse().map((e,i)=><li key={i}><span className="sim-workflow-tick">{simulationTime(session,e.tick).time}</span><div><strong>{e.stage.replaceAll('_',' ')}</strong><p>{e.message}</p></div><CheckCircle2 size={16} aria-hidden="true"/></li>)}</ol>}</section>;
 }

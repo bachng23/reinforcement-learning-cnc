@@ -21,6 +21,13 @@ export type Job = {
   reviews?: { decision: string; reason: string; createdAt: string }[];
 };
 
+export class ResearchApiError extends Error {
+  constructor(public readonly status: number, public readonly code: string, message: string) {
+    super(message);
+    this.name = 'ResearchApiError';
+  }
+}
+
 export async function researchRequest<T>(path: string, options: { signal?: AbortSignal; body?: unknown; key?: string } = {}): Promise<T> {
   const response = await authFetch(endpoint(`/api/v1/research${path}`), {
     method: options.body === undefined ? 'GET' : 'POST', signal: options.signal, cache: 'no-store',
@@ -28,8 +35,9 @@ export async function researchRequest<T>(path: string, options: { signal?: Abort
       ...(options.key ? { 'Idempotency-Key': options.key } : {}) },
     ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
   });
-  const payload = await response.json();
-  if (!response.ok || payload.success !== true) throw new Error(payload.error?.message || `Research API failed (${response.status})`);
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || payload?.success !== true) throw new ResearchApiError(response.status,
+    payload?.error?.code ?? 'RESEARCH_API_ERROR', payload?.error?.message || `Research API failed (${response.status})`);
   return payload.data as T;
 }
 
