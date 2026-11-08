@@ -9,7 +9,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgre_db:5432/${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET:-}
       CLIENT_URL: http://localhost:3000
-      RESEARCH_API_ENABLED: "true"
+      RESEARCH_API_ENABLED: "${RESEARCH_API_ENABLED:-true}"
       LEGACY_RESEARCH_WRITE_ENABLED: "false"
       RESEARCH_ARTIFACT_DIR: /research-artifacts
     volumes: [research_artifacts:/research-artifacts]
@@ -34,6 +34,8 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_RESEARCH_ENABLED: "${NEXT_PUBLIC_RESEARCH_ENABLED:-true}"
     ports: ["127.0.0.1:3000:3000"]
     depends_on: [research_api]
   ai_service:

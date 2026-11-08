@@ -214,7 +214,11 @@ def configure(session, primary, baseline, continuous=True):
     if changed:
         # Metrics before a policy switch cannot be attributed to the new policy.
         for lane in (session['primary'], session['baseline']):
-            lane['comparison_start'] = dict(tick=lane['state']['tick'], failures=lane['failures'], total_cost=lane['total_cost'], downtime=lane['unavailable_machine_ticks'])
+            lane['comparison_start'] = dict(
+                tick=lane['state']['tick'], failures=lane['failures'], total_cost=lane['total_cost'],
+                downtime=lane['unavailable_machine_ticks'], controlled_cost=lane['controlled_cost'],
+                technician_busy_ticks=lane['technician_busy_ticks'], overrides=lane['overrides'],
+            )
     note(session, 'CONFIGURE', f'Maintenance policies: {primary} versus {baseline}. Continuous operation enabled.')
     return session
 

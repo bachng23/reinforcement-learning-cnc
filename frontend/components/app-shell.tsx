@@ -34,6 +34,14 @@ const navigation = [
   { href: "/what-if", label: "Compare controllers", icon: SlidersHorizontal },
 ];
 
+const operationsNavigation = [
+  { href: "/operations", label: "Factory operations", icon: LayoutDashboard, activePaths: ["/overview"] },
+  { href: "/operations/cases", label: "Decision Center", icon: ClipboardCheck, activePaths: ["/operations/recommendations"] },
+  { href: "/operations/incidents", label: "Incident Center", icon: Activity },
+  { href: "/operations/work-orders", label: "Work Orders", icon: ClipboardCheck },
+  { href: "/operations/scenarios", label: "Scenario Planning", icon: SlidersHorizontal },
+];
+
 function NavItem({
   href,
   label,
@@ -51,7 +59,7 @@ function NavItem({
   const baseHref = href.split("?")[0];
   const active =
     pathname === baseHref ||
-    pathname.startsWith(`${baseHref}/`) ||
+    (baseHref !== "/operations" && pathname.startsWith(`${baseHref}/`)) ||
     activePaths.includes(pathname);
   return (
     <Link
@@ -116,6 +124,10 @@ export function AppShell({
       </div>
     );
   const displayName = user.fullName || user.username || user.role;
+  const researchEnabled = process.env.NEXT_PUBLIC_RESEARCH_ENABLED !== "false";
+  const factoryHref = (href: string) => operationsHref(href, factoryId, { demo });
+  const simulationHref = (href: string) => simulationId
+    ? `${href}?session=${simulationId}${workshopId ? `&workshop=${workshopId}` : ""}` : href;
 
   return (
     <WorkspaceUserContext.Provider value={user}><div
@@ -127,7 +139,7 @@ export function AppShell({
       </a>
       <aside className="workspace-sidebar" aria-label="Workspace sidebar">
         <Link
-          href={simulationId ? `/simulation?session=${simulationId}${workshopId ? `&workshop=${workshopId}` : ""}` : "/simulation"}
+          href={researchEnabled ? simulationHref("/simulation") : factoryHref("/operations")}
           className="workspace-brand"
           title="Maintenance Coordination Workspace"
         >
@@ -142,10 +154,12 @@ export function AppShell({
           <p className={collapsed ? "sr-only" : "nav-group-label"}>
             Application
           </p>
-          {navigation.map((item) => (
-            <NavItem key={item.href} {...item} href={factoryId && item.href === "/decisions" ? operationsHref("/operations/cases",factoryId,{demo}) : simulationId ? `${item.href}?session=${simulationId}${workshopId ? `&workshop=${workshopId}` : ""}` : item.href} collapsed={collapsed} />
+          {researchEnabled ? navigation.map((item) => (
+            <NavItem key={item.href} {...item} href={factoryId && item.href === "/decisions" ? factoryHref("/operations/cases") : simulationHref(item.href)} collapsed={collapsed} />
+          )) : operationsNavigation.map((item) => (
+            <NavItem key={item.href} {...item} href={factoryHref(item.href)} collapsed={collapsed} />
           ))}
-          {process.env.NEXT_PUBLIC_RESEARCH_ENABLED !== "false" && <>
+          {researchEnabled && <>
             <p className={collapsed ? "sr-only" : "nav-group-label nav-group-secondary"}>Research</p>
             <NavItem href="/research" label="Research workspace" icon={FlaskConical} collapsed={collapsed} />
           </>}
