@@ -83,6 +83,24 @@ test('pure read preserves the complete stored object', () => {
   expect(JSON.stringify(row)).toBe(before);
 });
 
+test.each(['healthy after transition', 'already failed before transition'])(
+  'failure event contradicting physical state is rejected: %s', contradiction => {
+    const row = clone(source.rows[5]);
+    if (contradiction === 'healthy after transition') {
+      // PR #64 report: valid event shape, indices and tick; after is healthy.
+      row.payloadJson.primary.records[0].events.push({ type: 'failure', tick: 1, machine: 2, component: 1 });
+      expect(row.payloadJson.primary.records[0].after.components[2][1].failed).toBe(false);
+    } else {
+      // Isolate this record so cross-record continuity cannot mask the check.
+      row.payloadJson.primary.records = [row.payloadJson.primary.records[4]];
+      row.payloadJson.primary.records[0].before.components[2][1].failed = true;
+    }
+    const before = JSON.stringify(row);
+    expect(() => projectHealth(row, 2)).toThrow(expect.objectContaining({ code: 'DEMO_TRACE_INVALID', statusCode: 500 }));
+    expect(JSON.stringify(row)).toBe(before);
+  },
+);
+
 test('stale revision and machine range are explicit domain errors', () => {
   expect(() => projectHealth(source.rows[7], 2, { expectedRevision: 0 })).toThrow(expect.objectContaining({ code: 'DEMO_STALE', statusCode: 409 }));
   expect(() => projectHealth(source.rows[7], 3)).toThrow(expect.objectContaining({ code: 'DEMO_MACHINE_NOT_FOUND', statusCode: 404 }));

@@ -126,3 +126,31 @@ claimed. M1 backend implementation and local verification are complete. M2
 requires a joint check with Backend 2 and the frontend: link all three milestones
 by eventId, verify current/repaired component state, reload and confirm the same
 session/tick provenance. Backend-only tests do not establish M2 acceptance.
+
+## PR #64 P2 regression fix — 8 November 2026
+
+Reproduced against delivery commit
+`4fa68ed65c20b732070ea2eaed8543372fd854af`: a correctly shaped failure event at
+tick 1 for M3/C2 was returned even though that transition's after state remained
+healthy. Added a check against the same record's before/after component state:
+failure evidence requires `failed:false` -> `failed:true`. Contradictory evidence
+now returns `500 DEMO_TRACE_INVALID` before projection can issue an eventId.
+The wire contract, identity algorithm and t5/t6/t7 fixture files are unchanged.
+
+Two new unit regressions failed before the fix (healthy after; already failed
+before), then passed with it. The full backend suite passed: **368 tests**,
+4 conditional skips, 40 passing suites and 2 skipped suites (48.45s).
+The original reproduction now reports `500 DEMO_TRACE_INVALID`.
+Existing milestone fixture equality tests confirm valid event IDs are unchanged.
+
+HTTP/PostgreSQL suite: **6 tests passed** (24.948s), including the exact injected
+failure repro, a response containing no data/eventId, and unchanged persisted
+session and audit count after that rejected read. All 21 migrations applied to
+fresh isolated schema `product_api_it_26260_5045a1907e98`; the harness dropped it
+successfully and the task-owned temporary PostgreSQL instance stopped in finally.
+An initial test setup attempt hit a Windows Prisma DLL lock while unit tests
+were running; rerunning sequentially after they finished passed without stopping
+any unrelated service. No production schema, simulator or fixture rewrite.
+
+Tested implementation SHA256 (`src/research/demo-health.js`):
+`cbb2f17b8c034c83c0a3a932e81e2440544c3352177fe82f067a564f017d3b9b`.

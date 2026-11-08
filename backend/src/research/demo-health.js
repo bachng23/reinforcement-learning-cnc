@@ -69,6 +69,10 @@ function validate(p) {
       if (!r.before.components[e.machine]?.[e.component]
         || e.tick !== r.tick + (['failure', 'completion'].includes(e.type) ? 1 : 0)
         || (e.technician != null && e.technician >= r.before.jobs.length)) throw invalid();
+      // A failure is physical evidence of a healthy -> failed transition, not
+      // merely a well-formed annotation. Reject it before assigning an eventId.
+      if (e.type === 'failure' && (r.before.components[e.machine][e.component].failed
+        || !r.after.components[e.machine][e.component].failed)) throw invalid();
     }
     previous = r;
   }

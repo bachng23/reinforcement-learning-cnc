@@ -129,6 +129,22 @@ test('legacy/new, retention, gaps, limit and corrupted stored evidence are truth
   expect(JSON.stringify(bad.body)).not.toContain('components');
 });
 
+test('contradictory failure evidence returns 500 without exposing an event or mutating persisted data', async () => {
+  const payload = structuredClone(source.rows[5].payloadJson);
+  payload.primary.records[0].events.push({ type: 'failure', tick: 1, machine: 2, component: 1 });
+  expect(payload.primary.records[0].after.components[2][1]).toEqual({ age: 1, failed: false });
+  const row = await saved(payload);
+  const audits = await db.auditLog.count({ where: { entityId: row.id } });
+  const result = await http(`/${row.id}/machines/2/health`);
+  expect(result.status).toBe(500);
+  expect(result.body.error.code).toBe('DEMO_TRACE_INVALID');
+  expect(result.cache).toBe('no-store');
+  expect(result.body).not.toHaveProperty('data');
+  expect(JSON.stringify(result.body)).not.toContain('eventId');
+  expect(await db.demoSession.findUnique({ where: { id: row.id } })).toEqual(row);
+  expect(await db.auditLog.count({ where: { entityId: row.id } })).toBe(audits);
+});
+
 test('actual 320-tick continuous session exposes the retained 256-interval window without a 64-tick ceiling', async () => {
   const { spawnSync } = require('node:child_process');
   const code = `import json,sys
