@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-30",
+  "timezone": "Asia/Taipei",
+  "feature": "Guided one-click Auto demo",
+  "checks": {
+    "frontend": {
+      "passed": 210,
+      "files": 33
+    },
+    "backend_unit": {
+      "passed": 250,
+      "skipped": 4
+    },
+    "demo_api_integration": {
+      "passed": 7,
+      "scope": "targeted isolated PostgreSQL suite"
+    },
+    "runtime": {
+      "passed": 8
+    },
+    "production_build": "PASS",
+    "typecheck": "PASS"
+  },
+  "browser": {
+    "method": "Computer Use / Brave",
+    "uninterrupted_session": "cfe36f90-4d37-4eae-a3c0-bc503f06ae18",
+    "measured_seconds": 22.997,
+    "commands": 12,
+    "physical_ticks": 64,
+    "automatic_decisions": 35,
+    "human_decisions": 0,
+    "pause_resume_verified": true,
+    "final_ui_session": "294bfd37-4659-49fc-a61f-4e6264785d7b",
+    "primary_cost": 751,
+    "baseline_cost": 764,
+    "primary_replay": "PASS",
+    "baseline_replay": "PASS"
+  },
+  "invariants": [
+    "Pinned physics and checkpoints unchanged",
+    "Every intermediate physical tick retained",
+    "Autoplay is bounded to at most 8 physical ticks per command",
+    "Presentation milestones are actual simulator events",
+    "Batch and single-tick trajectories match exactly",
+    "Automatic confirmation does not fabricate human approval",
+    "Reload does not automatically resume presentation"
+  ]
+}

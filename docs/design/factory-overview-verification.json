@@ -1,0 +1,132 @@
+{
+  "results": [
+    {
+      "width": 1280,
+      "text": "Factory overview12 monitored machines · Recorded demo snapshotInspect machines Machine statusOperating normally2At risk1Faulted0Under maintenance0Not reported9Mean reported load8h74.7%+15.3 pp vs first sample100%0%00:0008:00Simple mean · 3/12 machines with load history. Factory-wide load is not available.Decision workload3 cases in the attention queueNeeds review1AI analyzing1Monitoring1View attention queue Review and analysis states, separate from machine operating status.",
+      "statusTotal": 12,
+      "scope": "Mean reported load8h74.7%+15.3 pp vs first sample100%0%00:0008:00Simple mean · 3/12 machines with load history. Factory-wide load is not available.",
+      "overflow": 0,
+      "findings": [
+        {
+          "level": "WARN",
+          "id": "mixed-font-headline",
+          "width": 1280,
+          "message": "4 headline(s) switch typeface or to italic mid-line (the \"one italic serif word\" move).",
+          "fix": "Set the whole headline in one face. Emphasis comes from the words."
+        }
+      ],
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "text": "Factory overview12 monitored machines · Recorded demo snapshotInspect machines Machine statusOperating normally2At risk1Faulted0Under maintenance0Not reported9Mean reported load8h74.7%+15.3 pp vs first sample100%0%00:0008:00Simple mean · 3/12 machines with load history. Factory-wide load is not available.Decision workload3 cases in the attention queueNeeds review1AI analyzing1Monitoring1View attention queue Review and analysis states, separate from machine operating status.",
+      "statusTotal": 12,
+      "scope": "Mean reported load8h74.7%+15.3 pp vs first sample100%0%00:0008:00Simple mean · 3/12 machines with load history. Factory-wide load is not available.",
+      "overflow": 0,
+      "findings": [
+        {
+          "level": "WARN",
+          "id": "mixed-font-headline",
+          "width": 1440,
+          "message": "4 headline(s) switch typeface or to italic mid-line (the \"one italic serif word\" move).",
+          "fix": "Set the whole headline in one face. Emphasis comes from the words."
+        }
+      ],
+      "errors": []
+    },
+    {
+      "width": 1920,
+      "text": "Factory overview12 monitored machines · Recorded demo snapshotInspect machines Machine statusOperating normally2At risk1Faulted0Under maintenance0Not reported9Mean reported load8h74.7%+15.3 pp vs first sample100%0%00:0008:00Simple mean · 3/12 machines with load history. Factory-wide load is not available.Decision workload3 cases in the attention queueNeeds review1AI analyzing1Monitoring1View attention queue Review and analysis states, separate from machine operating status.",
+      "statusTotal": 12,
+      "scope": "Mean reported load8h74.7%+15.3 pp vs first sample100%0%00:0008:00Simple mean · 3/12 machines with load history. Factory-wide load is not available.",
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "width": 2560,
+      "text": "Factory overview12 monitored machines · Recorded demo snapshotInspect machines Machine statusOperating normally2At risk1Faulted0Under maintenance0Not reported9Mean reported load8h74.7%+15.3 pp vs first sample100%0%00:0008:00Simple mean · 3/12 machines with load history. Factory-wide load is not available.Decision workload3 cases in the attention queueNeeds review1AI analyzing1Monitoring1View attention queue Review and analysis states, separate from machine operating status.",
+      "statusTotal": 12,
+      "scope": "Mean reported load8h74.7%+15.3 pp vs first sample100%0%00:0008:00Simple mean · 3/12 machines with load history. Factory-wide load is not available.",
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "width": 3840,
+      "text": "Factory overview12 monitored machines · Recorded demo snapshotInspect machines Machine statusOperating normally2At risk1Faulted0Under maintenance0Not reported9Mean reported load8h74.7%+15.3 pp vs first sample100%0%00:0008:00Simple mean · 3/12 machines with load history. Factory-wide load is not available.Decision workload3 cases in the attention queueNeeds review1AI analyzing1Monitoring1View attention queue Review and analysis states, separate from machine operating status.",
+      "statusTotal": 12,
+      "scope": "Mean reported load8h74.7%+15.3 pp vs first sample100%0%00:0008:00Simple mean · 3/12 machines with load history. Factory-wide load is not available.",
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    }
+  ],
+  "checks": [
+    {
+      "name": "Factory summary fits 1280px desktop",
+      "passed": true
+    },
+    {
+      "name": "Factory summary contains no individual machine cards at 1280px",
+      "passed": true
+    },
+    {
+      "name": "Factory summary fits 1440px desktop",
+      "passed": true
+    },
+    {
+      "name": "Factory summary contains no individual machine cards at 1440px",
+      "passed": true
+    },
+    {
+      "name": "Status distribution accounts for all 12 machines",
+      "passed": true
+    },
+    {
+      "name": "Aggregate load is scoped to 3 of 12 reported machines",
+      "passed": true
+    },
+    {
+      "name": "Factory action opens machine evidence and moves focus",
+      "passed": true
+    },
+    {
+      "name": "Changing selected machine leaves factory aggregate unchanged",
+      "passed": true
+    },
+    {
+      "name": "Factory workload links to detailed attention queue",
+      "passed": true
+    },
+    {
+      "name": "Factory summary fits 1920px desktop",
+      "passed": true
+    },
+    {
+      "name": "Factory summary contains no individual machine cards at 1920px",
+      "passed": true
+    },
+    {
+      "name": "Factory summary fits 2560px desktop",
+      "passed": true
+    },
+    {
+      "name": "Factory summary contains no individual machine cards at 2560px",
+      "passed": true
+    },
+    {
+      "name": "Factory summary fits 3840px desktop",
+      "passed": true
+    },
+    {
+      "name": "Factory summary contains no individual machine cards at 3840px",
+      "passed": true
+    },
+    {
+      "name": "No runtime exceptions during factory overview review",
+      "passed": true
+    }
+  ],
+  "notes": "Local production build with mock product records and GET-only auth/users fixtures. No operational actions or data mutations."
+}

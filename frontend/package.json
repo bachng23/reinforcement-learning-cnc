@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test:research:e2e": "playwright test --config playwright.research.config.ts",
+    "contracts:jcst:generate": "node scripts/generate-jcst-types.mjs",
+    "contracts:jcst:check": "node scripts/generate-jcst-types.mjs --check",
     "contracts:generate": "node scripts/generate-operations-types.mjs && node scripts/generate-work-order-types.mjs && node scripts/generate-scenario-types.mjs",
     "contracts:check": "node scripts/generate-operations-types.mjs --check && node scripts/generate-work-order-types.mjs --check && node scripts/generate-scenario-types.mjs --check",
     "dev": "next dev",
@@ -13,19 +16,21 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:browser": "playwright test && playwright test --config playwright.scenarios.config.ts",
-    "test:scenarios:desktop": "playwright test --config playwright.scenarios.config.ts",
     "test:e2e": "playwright test --config playwright.e2e.config.ts",
-    "test:cases:live": "playwright test --config playwright.cases-live.config.ts"
+    "test:cases:live": "playwright test --config playwright.cases-live.config.ts",
+    "test:scenarios:desktop": "playwright test --config playwright.scenarios.config.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.0",
+    "@react-three/fiber": "9.6.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
     "next": "^15.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tailwind-merge": "^2.5.4"
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "tailwind-merge": "^2.5.4",
+    "three": "0.182.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.0",
@@ -36,6 +41,7 @@
     "@types/node": "^22.10.1",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",
+    "@types/three": "0.182.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.16.0",
     "eslint-config-next": "^15.0.0",

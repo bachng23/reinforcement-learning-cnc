@@ -1,4 +1,41 @@
 services:
+  research_api:
+    profiles: [research]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports: ["127.0.0.1:5000:5000"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgre_db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET:-}
+      CLIENT_URL: http://localhost:3000
+      RESEARCH_API_ENABLED: "true"
+      LEGACY_RESEARCH_WRITE_ENABLED: "false"
+      RESEARCH_ARTIFACT_DIR: /research-artifacts
+    volumes: [research_artifacts:/research-artifacts]
+    depends_on:
+      postgre_db: { condition: service_healthy }
+
+  research_worker:
+    profiles: [research]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["node", "src/research/worker.js"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgre_db:5432/${POSTGRES_DB}
+      RESEARCH_ARTIFACT_DIR: /research-artifacts
+    volumes: [research_artifacts:/research-artifacts]
+    depends_on:
+      postgre_db: { condition: service_healthy }
+
+  research_web:
+    profiles: [research]
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on: [research_api]
   ai_service:
     build:
       context: ./ai_services
@@ -66,4 +103,5 @@ services:
       start_period: 10s
 
 volumes:
+  research_artifacts:
   postgres_data:

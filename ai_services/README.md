@@ -1,4 +1,14 @@
-# CNC Research AI Service
+# Maintenance Coordination Research AI Service
+
+The current research domain is `domain/jcst`: strict JCST wire models, artifact
+validation, a bridge to immutable upstream physics and independent replay.
+`scripts/jcst_bridge.py` is the bounded process interface used by the research
+worker. Learned inference uses the separate locked `jcst_runtime` environment;
+the regular service does not need Torch to read/import evidence.
+
+See [research architecture](../docs/research/architecture.md) and
+[setup/runbook](../docs/research/runbook.md). The older families below retain
+their original semantics; their planner/workflow is not the JCST decision engine.
 
 This package owns two independent canonical contract families and a minimal FastAPI process:
 

@@ -1,0 +1,102 @@
+{
+  "results": [
+    {
+      "width": 1280,
+      "chartWidth": 576,
+      "chartHeight": 260,
+      "overflow": 0,
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "chartWidth": 736,
+      "chartHeight": 260,
+      "overflow": 0,
+      "errors": []
+    },
+    {
+      "width": 1920,
+      "chartWidth": 1168,
+      "chartHeight": 300,
+      "overflow": 0,
+      "errors": []
+    },
+    {
+      "width": 2560,
+      "chartWidth": 1328,
+      "chartHeight": 300,
+      "overflow": 0,
+      "errors": []
+    },
+    {
+      "width": 3840,
+      "chartWidth": 1328,
+      "chartHeight": 300,
+      "overflow": 0,
+      "errors": []
+    }
+  ],
+  "checks": [
+    {
+      "name": "Large chart fits 1280px desktop",
+      "passed": true
+    },
+    {
+      "name": "Large chart fits 1440px desktop",
+      "passed": true
+    },
+    {
+      "name": "Grouped picker opens and focuses search",
+      "passed": true
+    },
+    {
+      "name": "No faulted machine fabricated",
+      "passed": true
+    },
+    {
+      "name": "Escape closes selector and restores trigger focus",
+      "passed": true
+    },
+    {
+      "name": "Picker selects matching machine and focuses evidence",
+      "passed": true
+    },
+    {
+      "name": "Chart sample shows source values for selected machine",
+      "passed": true
+    },
+    {
+      "name": "Search filters directory",
+      "passed": true
+    },
+    {
+      "name": "Case-only machine shows source absence instead of another chart",
+      "passed": true
+    },
+    {
+      "name": "Replay moves M03 into maintenance group",
+      "passed": true
+    },
+    {
+      "name": "Outside click dismisses picker",
+      "passed": true
+    },
+    {
+      "name": "Large chart fits 1920px desktop",
+      "passed": true
+    },
+    {
+      "name": "Large chart fits 2560px desktop",
+      "passed": true
+    },
+    {
+      "name": "Large chart fits 3840px desktop",
+      "passed": true
+    },
+    {
+      "name": "No runtime exceptions across desktop inspection",
+      "passed": true
+    }
+  ],
+  "notes": "Local production build, mock product data, GET-only auth/users interception. No review, account or machine mutations."
+}

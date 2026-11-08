@@ -1,4 +1,13 @@
-# CNC Research Platform Backend
+# Maintenance Coordination Research Backend
+
+The default research namespace is `/api/v1/research`; run its worker separately
+with `npm run research:worker`. Evidence imports, physical replay, registered
+checkpoint inference, simulation branches and immutable reviews use additive
+research tables. Research OpenAPI is in `research-openapi.yaml`.
+
+API and worker must share `DATABASE_URL` and the same absolute
+`RESEARCH_ARTIFACT_DIR`. See [the research runbook](../docs/research/runbook.md).
+The sections below document compatibility CNC v2 and Operations v3 modules.
 
 ## Decision Case planning worker
 

@@ -1,3 +1,5 @@
+> Historical direction: future RA-QMIX/FIFO/production-planning priorities in this document are superseded by [the JCST research migration plan](research-alignment-migration-plan-2026-10-30.md) and [the implemented architecture](research/architecture.md). Existing evidence and legacy contracts retain their original meaning.
+
 # Đặc tả sản phẩm: Multi-Agent Decision Support Platform for Predictive Maintenance and Production Scheduling
 
 > **Tên làm việc:** MA-PdM Planner

@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-30",
+  "timezone": "Asia/Taipei",
+  "scope": "JCST application migration; no scientific training or TEST opening",
+  "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+  "checks": {
+    "python_regression": {
+      "passed": 112,
+      "skipped": 1
+    },
+    "backend_regression": {
+      "passed": 250,
+      "skipped": 4
+    },
+    "postgres_integration": {
+      "passed": 122,
+      "suites": 11
+    },
+    "frontend_regression": {
+      "passed": 203,
+      "files": 31
+    },
+    "inference_parity": {
+      "passed": 7
+    },
+    "browser_e2e": {
+      "passed": 2
+    },
+    "cross_platform_inference": {
+      "matching_states": 24,
+      "registered_checkpoints": 6
+    },
+    "schema_source_types": "PASS",
+    "frontend_production_build": "PASS",
+    "docker_backend_build": "PASS",
+    "docker_frontend_build": "PASS",
+    "docker_cpu_inference_build": "PASS",
+    "controls_container_stack": "PASS",
+    "cpu_inference_container_stack": "PASS"
+  },
+  "local_evidence_scope": {
+    "se1_curve_rows": 480,
+    "se1_contrasts": 6,
+    "included_physical_traces": 6,
+    "statistics": "source-reported audit, not rerun"
+  },
+  "content_hashes": {
+    "ai_services/vendor/jcst/manifest.json": "644f9b16272d3207b995b504eeb5428838416f362a727b27d215091798429337",
+    "contracts/jcst/v1/jcst.schema.json": "f1ba6c118f8abb2bd3d16496d544b70e3b21022ee0544398cac63ea7d660e067",
+    "contracts/jcst/v1/fixtures/engineering-bundle.json": "f5ed541b4dca4cef6f0c2924d4b299e354f60717ab976e41a5dea78b869602f3",
+    "backend/prisma/migrations/20261030000000_jcst_research/migration.sql": "cc4d0269468fa05ca14ccf9f50c45b8483ea3e9231c2062fef8301e77fbc5bdf",
+    "docs/research/screenshots/se1-results-generalist.png": "b46f8e43748501d8cc8ac18eca44baa695e2998e756ba2722ccf9c0c8a28fdce",
+    "docs/research/screenshots/engineering-replay.png": "8cc48e2f9cbe1886efbad00818768a2ea7132187b4b046af270fad37b56fd35d"
+  }
+}

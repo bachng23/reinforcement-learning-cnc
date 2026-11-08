@@ -1,0 +1,44 @@
+name: JCST research integration
+on: [pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: research_test, POSTGRES_PASSWORD: research_test, POSTGRES_DB: research_test }
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://research_test:research_test@127.0.0.1:5432/research_test
+      JWT_SECRET: research-ci-only-secret-at-least-32-characters
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Upgrade tests materialize migrations from exact historical commits.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - uses: astral-sh/setup-uv@v6
+        with: { version: '0.10.11' }
+      - run: uv sync --frozen --project ai_services --python 3.12
+      - run: npm ci --prefix backend && npm ci --prefix frontend
+      - run: echo "OPERATIONS_PYTHON=$PWD/ai_services/.venv/bin/python" >> "$GITHUB_ENV"
+      - run: node backend/node_modules/prisma/build/index.js generate --schema backend/prisma/schema.prisma
+      - run: ai_services/.venv/bin/python scripts/check-jcst-contracts.py
+      - run: ai_services/.venv/bin/python -m pytest ai_services/tests -q
+      - run: uv sync --frozen --project jcst_runtime --python 3.12
+      - run: jcst_runtime/.venv/bin/python -m pytest ai_services/tests/test_jcst_inference.py -q
+      - run: npm --prefix backend test -- --runInBand
+      - run: npm --prefix backend run test:integration
+      - run: npm --prefix frontend test
+      - run: npm --prefix frontend run build
+      - run: node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium
+      - run: npm --prefix frontend run test:research:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: jcst-browser-evidence, path: frontend/test-results, if-no-files-found: ignore }

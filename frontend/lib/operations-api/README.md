@@ -26,14 +26,14 @@ backend HistoryEvent envelope, retain sequence metadata and never repeat an
 event on receipt replay. `listDecisionCases` uses the same backend list DTO,
 factory/status/mode AND filters and scoped opaque keyset cursors. Both reads
 are side-effect free; only the existing mock worker status read advances a case.
-Missing preview cases return 404. `/operations`
-selects this adapter by default through `NEXT_PUBLIC_OPERATIONS_API_MODE=mock`.
+Missing preview cases return 404. The Factory resources detail page (`/operations`),
+opened from the single Overview dashboard, selects this adapter by default through `NEXT_PUBLIC_OPERATIONS_API_MODE=mock`.
 Set that variable to `real` and configure `NEXT_PUBLIC_OPERATIONS_FACTORY_ID`
 to run the same page against the authenticated backend endpoints.
 
 Initial plan version is one with a schedule, zero when absent, matching the
 backend seed adapter independently of schedule revision. Initial commit metadata
-is null. Cases created from Overview use the backend create/decision DTOs and
+is null. Cases created from Factory resources use the backend create/decision DTOs and
 generated canonical candidates from the shared demo scenario. The simulated
 worker advances CREATED to AWAITING_APPROVAL on subsequent reads. APPROVE/REJECT
 only record a decision; COMMIT separately publishes the exact approved schedule.

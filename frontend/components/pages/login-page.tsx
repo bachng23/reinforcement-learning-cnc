@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff, FlaskConical, LogIn } from "lucide-react";
+import { Eye, EyeOff, LogIn } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 type LoginState = "idle" | "loading" | "error";
@@ -34,76 +34,67 @@ export function LoginPage({
   }
 
   return (
-    <div className="w-full max-w-sm">
-      <div className="mb-6 flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-md bg-[var(--color-slate-text)] text-white">
-          <FlaskConical className="h-5 w-5" aria-hidden="true" />
-        </span>
-        <div>
-          <p className="text-base font-semibold text-[var(--color-slate-text)]">CNC Research Console</p>
-          <p className="text-xs text-[var(--color-ash-gray)]">Tool replacement experiments</p>
-        </div>
-      </div>
-
-      <div className="rounded-md border bg-white p-6 shadow-sm" style={{ borderColor: "var(--color-stone-border)" }}>
-        <h1 className="text-lg font-semibold text-[var(--color-slate-text)]">Sign in</h1>
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-          {state === "error" && (
-            <p role="alert" className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-              {error}
-            </p>
-          )}
-
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-[var(--color-slate-text)]">Username</span>
-            <input
-              autoComplete="username"
-              value={username}
-              onChange={(event) => {
-                setUsername(event.target.value);
-                if (state === "error") setState("idle");
-              }}
-              className="h-10 w-full rounded-md border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-sky-200"
-              style={{ borderColor: "var(--color-platinum-outline)" }}
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-[var(--color-slate-text)]">Password</span>
-            <span className="relative block">
-              <input
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  if (state === "error") setState("idle");
-                }}
-                className="h-10 w-full rounded-md border bg-white px-3 pr-10 text-sm outline-none focus:ring-2 focus:ring-sky-200"
-                style={{ borderColor: "var(--color-platinum-outline)" }}
-              />
-              <button
-                type="button"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                title={showPassword ? "Hide password" : "Show password"}
-                onClick={() => setShowPassword((visible) => !visible)}
-                className="absolute right-1 top-1 grid h-8 w-8 place-items-center rounded-md text-[var(--color-ash-gray)]"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </span>
-          </label>
-
+    <div className="login-form">
+      <h2>Sign in to your workspace</h2>
+      <p>Use the credentials provided by your administrator.</p>
+      <form onSubmit={handleSubmit}>
+        {state === "error" && (
+          <p role="alert" className="login-error">
+            {error}
+          </p>
+        )}
+        <label htmlFor="login-username">Username</label>
+        <input
+          id="login-username"
+          autoComplete="username"
+          required
+          autoFocus
+          value={username}
+          onChange={(event) => {
+            setUsername(event.target.value);
+            if (state === "error") setState("idle");
+          }}
+          className="dss-input"
+        />
+        <label htmlFor="login-password">Password</label>
+        <div className="password-field">
+          <input
+            id="login-password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              if (state === "error") setState("idle");
+            }}
+            className="dss-input"
+          />
           <button
-            type="submit"
-            disabled={state === "loading"}
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[var(--color-slate-text)] px-4 text-sm font-medium text-white disabled:opacity-60"
+            type="button"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            title={showPassword ? "Hide password" : "Show password"}
+            onClick={() => setShowPassword((value) => !value)}
           >
-            <LogIn className="h-4 w-4" aria-hidden="true" />
-            {state === "loading" ? "Signing in..." : "Sign in"}
+            {showPassword ? (
+              <EyeOff size={18} aria-hidden="true" />
+            ) : (
+              <Eye size={18} aria-hidden="true" />
+            )}
           </button>
-        </form>
-      </div>
+        </div>
+        <button
+          type="submit"
+          disabled={state === "loading"}
+          className="primary-action"
+        >
+          <LogIn size={17} aria-hidden="true" />
+          {state === "loading" ? "Signing in…" : "Sign in"}
+        </button>
+      </form>
+      <p className="login-help">
+        Need access? Contact your workspace administrator.
+      </p>
     </div>
   );
 }

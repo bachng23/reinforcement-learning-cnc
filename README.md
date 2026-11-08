@@ -1,12 +1,65 @@
-# Multi-Agent Predictive Maintenance and Production Planning Platform
+# Maintenance Demand–Capacity Coordination Research Platform
 
-Production-oriented foundation for health-aware CNC production scheduling,
-predictive maintenance, heterogeneous-technician dispatch, and auditable
-multi-agent decision support.
+Research evidence, learning-curve comparison, component-level replay and copied-state
+decision support for [maintenance-capacity-coordination](https://github.com/AIVIETNAM-AIO-BachNguyen/maintenance-capacity-coordination).
+The default workspace is `/overview`, with Application first in navigation and Research available below it at `/research`. JCST/1.1 is the physical contract; S/A/F are
+centralized PPO actors. The older CNC v2 and Operations v3 modules retain their own
+contracts and historical records.
 
-## Current scope
+## Interactive web demo
 
-The repository is intentionally at a contract-first platform baseline:
+Open `/overview` and press **Auto demo** for a one-click presentation of a real
+JCST session: failure, AI workflow, matching proposal, automatic confirmation,
+technician service, repair and S/F comparison. Pause/Resume and manual control
+remain available. The default local demo took about 23 seconds in verification. Agent Control Room shows actual orchestration events;
+Compare controllers runs S/F against the same seed/configuration and displays
+actual costs and fleet states. Session state and decisions survive page reloads.
+See [demo setup and walkthrough](docs/research/live-demo.md). This engineering
+workflow is separate from the scientific results in the Research workspace.
+
+## Research workflow
+
+1. Start PostgreSQL and apply the additive migrations with the commands below.
+2. Start the backend API and `npm --prefix backend run research:worker` separately.
+3. Start the frontend and sign in as an administrator or engineer.
+4. Export a bounded bundle, then upload it at `/research/import`.
+
+```bash
+uv sync --frozen --project ai_services
+ai_services/.venv/bin/python ai_services/scripts/export_jcst_bundle.py --output /tmp/jcst-engineering.json
+```
+
+The engineering exporter runs a bounded reference-control episode and independent
+physical replay. It does not train a policy or estimate scientific performance.
+The SE1 exporter instead reads existing, explicitly supplied campaign artifacts.
+
+Set `RESEARCH_ARTIFACT_DIR` to the same absolute persistent directory for API and
+worker. For learned inference, install the separate `jcst_runtime` environment,
+register verified checkpoints and configure `JCST_PYTHON` and
+`JCST_RELEASE_REGISTRY`. See [research setup and operations](docs/research/runbook.md).
+
+The [architecture and capability inventory](docs/research/architecture.md),
+[migration plan](docs/research-alignment-migration-plan-2026-10-30.md) and
+[verification report](docs/research/implementation-report-2026-10-30.md) describe
+the implemented boundary and remaining optional integrations.
+
+## Verification of the research domain
+
+```bash
+ai_services/.venv/bin/python scripts/check-jcst-contracts.py
+ai_services/.venv/bin/python -m pytest ai_services/tests -q
+npm --prefix backend test -- --runInBand
+npm --prefix frontend test
+npm --prefix frontend run build
+```
+
+PostgreSQL integration and real browser tests require an explicit dedicated
+`TEST_DATABASE_URL`; both use disposable schemas. They never fall back to the
+development database. See the runbook for the exact commands.
+
+## Compatibility modules
+
+The following older modules remain available during migration:
 
 - `contracts/v2`: canonical CNC tool-replacement research contract.
 - `contracts/v3`: canonical operations and multi-agent decision-support contract.
@@ -15,10 +68,11 @@ The repository is intentionally at a contract-first platform baseline:
 - `frontend`: authenticated research console and user administration.
 - PostgreSQL 16 is the only infrastructure dependency.
 
-Experiment execution, maintenance review, and decision-center workflows already
-exist in the Product API. Integrated production scheduling, multi-agent execution,
-and their product visualizations are not implemented yet. Contract v3 defines the
-shared service boundary for that next stage before implementation begins.
+Their payloads are not JCST observations or scientific JCST results. Legacy CNC
+creation/execution is read-only by default in production; set
+`LEGACY_RESEARCH_WRITE_ENABLED=true` explicitly to enable it. Legacy history stays
+readable. The Operations planner uses a separate simplified model and does not
+supply metrics for JCST research.
 
 ## Local development
 

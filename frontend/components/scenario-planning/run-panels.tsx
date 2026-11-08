@@ -853,7 +853,8 @@ export function LiveHandoffReview({
       </p>
       <button
         className="dss-secondary"
-        disabled={!allowed || !fresh || !eligible}
+        // Opening the review is read-only. Gate confirmation on fresh context.
+        disabled={!allowed || !eligible}
         aria-expanded={reviewing}
         onClick={() => setReviewing((value) => !value)}
       >

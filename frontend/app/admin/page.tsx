@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/app-shell";
 import { AdminPage } from "@/components/pages/admin-page";
 
-export const metadata = { title: "Users | CNC Research Console" };
+export const metadata = { title: "Users | Maintenance AI" };
 
 export default function Page() {
   return (

@@ -16,6 +16,7 @@ COPY backend/scripts ./scripts
 COPY backend/scripts/validate-operations.py ./scripts/validate-operations.py
 COPY backend/src ./src
 COPY backend/openapi.yaml ./openapi.yaml
+COPY backend/research-openapi.yaml ./research-openapi.yaml
 COPY ai_services /ai_services
 COPY contracts /contracts
 COPY scripts/demo-seed-plan.py /scripts/demo-seed-plan.py
@@ -29,6 +30,7 @@ RUN .venv-operations/bin/python -c "import sys; sys.path.insert(0, '/ai_services
 
 ENV NODE_ENV=production
 ENV PORT=5000
+ENV JCST_PYTHON=/app/.venv-operations/bin/python
 
 EXPOSE 5000
 

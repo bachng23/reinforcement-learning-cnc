@@ -334,21 +334,22 @@ describe("explicit run and LIVE commands", () => {
     };
     const write = vi.spyOn(api, "evaluateLive").mockResolvedValue(created);
     const verify = vi.spyOn(api, "verifyLiveCase").mockResolvedValue(created);
-    render(
-      <LiveHandoffReview
-        api={api}
-        actor={scenarioActor}
-        workspace={workspace}
-        source={engineJob(true)}
-        fresh
-      />,
-    );
+    const props = {
+      api,
+      actor: scenarioActor,
+      workspace,
+      source: engineJob(true),
+    };
+    const view = render(<LiveHandoffReview {...props} />);
     await user.click(
       screen.getByRole("button", { name: "Review LIVE handoff" }),
     );
-    await user.click(
-      await screen.findByRole("button", { name: "Evaluate LIVE" }),
-    );
+    await screen.findByText("Current LIVE context");
+    const evaluate = screen.getByRole("button", { name: "Evaluate LIVE" });
+    expect(evaluate).toBeDisabled();
+    view.rerender(<LiveHandoffReview {...props} fresh />);
+    await waitFor(() => expect(evaluate).toBeEnabled());
+    await user.click(evaluate);
     expect(write).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Create LIVE case" }));
     await waitFor(() => expect(verify).toHaveBeenCalledTimes(1));

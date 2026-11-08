@@ -1,0 +1,917 @@
+{
+  "allowances": [
+    "few-pictures",
+    "focal-point",
+    "no-footage",
+    "still-page",
+    "card-rows",
+    "eyebrow",
+    "hairline",
+    "outlined-box",
+    "icon-cards",
+    "mono",
+    "body-size"
+  ],
+  "notes": "Dub reference adapted to the desktop DSS. Mock Product API, GET-only auth/users fixtures; no production mutations. Five widths, 14 screen/state captures per width.",
+  "results": [
+    {
+      "name": "overview",
+      "width": 1280,
+      "url": "http://localhost:3001/overview",
+      "headings": [
+        {
+          "text": "Operations overview",
+          "lines": 1
+        },
+        {
+          "text": "1 case needs a decision",
+          "lines": 2
+        },
+        {
+          "text": "12 in the factory snapshot",
+          "lines": 2
+        },
+        {
+          "text": "2 gathering evidence",
+          "lines": 2
+        },
+        {
+          "text": "4 upcoming in the snapshot",
+          "lines": 2
+        }
+      ],
+      "overflow": 0,
+      "findings": [
+        {
+          "level": "WARN",
+          "id": "mixed-font-headline",
+          "width": 1280,
+          "message": "4 headline(s) switch typeface or to italic mid-line (the \"one italic serif word\" move).",
+          "fix": "Set the whole headline in one face. Emphasis comes from the words."
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "decisions",
+      "width": 1280,
+      "url": "http://localhost:3001/decisions",
+      "headings": [
+        {
+          "text": "Decision Center",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "decision-dialog",
+      "width": 1280,
+      "url": "http://localhost:3001/decisions",
+      "headings": [
+        {
+          "text": "Decision Center",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "agents",
+      "width": 1280,
+      "url": "http://localhost:3001/agents",
+      "headings": [
+        {
+          "text": "Agent Control Room",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "scenarios",
+      "width": 1280,
+      "url": "http://localhost:3001/what-if",
+      "headings": [
+        {
+          "text": "What-if Workspace",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [
+        {
+          "level": "WARN",
+          "id": "grey-body",
+          "width": 1280,
+          "message": "The running text is a soft grey on its ground (6.9:1).",
+          "fix": "Set body copy in the full ink (7:1 or more). Keep the muted ink for secondary notes; pages read thin and unfinished when everything is grey."
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "scenario-empty",
+      "width": 1280,
+      "url": "http://localhost:3001/what-if",
+      "headings": [
+        {
+          "text": "What-if Workspace",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "experiments",
+      "width": 1280,
+      "url": "http://localhost:3001/experiments",
+      "headings": [
+        {
+          "text": "Experiments",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "new-experiment",
+      "width": 1280,
+      "url": "http://localhost:3001/experiments/new",
+      "headings": [
+        {
+          "text": "Create experiment",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "experiment-detail",
+      "width": 1280,
+      "url": "http://localhost:3001/experiments/experiment-week1-001",
+      "headings": [
+        {
+          "text": "Risk-aware fleet demonstration",
+          "lines": 1
+        },
+        {
+          "text": "4",
+          "lines": 1
+        },
+        {
+          "text": "1",
+          "lines": 1
+        },
+        {
+          "text": "1",
+          "lines": 1
+        },
+        {
+          "text": "1",
+          "lines": 1
+        },
+        {
+          "text": "1",
+          "lines": 1
+        },
+        {
+          "text": "0",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "episode-detail",
+      "width": 1280,
+      "url": "http://localhost:3001/episodes/episode-week1-001",
+      "headings": [
+        {
+          "text": "week1.seed-4100",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "admin",
+      "width": 1280,
+      "url": "http://localhost:3001/admin",
+      "headings": [
+        {
+          "text": "User management",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "admin-edit",
+      "width": 1280,
+      "url": "http://localhost:3001/admin",
+      "headings": [
+        {
+          "text": "User management",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "login",
+      "width": 1280,
+      "url": "http://localhost:3001/login",
+      "headings": [
+        {
+          "text": "Sign in to your workspace",
+          "lines": 1
+        },
+        {
+          "text": "Clarity for every maintenance decision.",
+          "lines": 2
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "not-found",
+      "width": 1280,
+      "url": "http://localhost:3001/missing-page",
+      "headings": [
+        {
+          "text": "Page not found",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "overview",
+      "width": 1440,
+      "url": "http://localhost:3001/overview",
+      "headings": [
+        {
+          "text": "Operations overview",
+          "lines": 1
+        },
+        {
+          "text": "1 case needs a decision",
+          "lines": 2
+        },
+        {
+          "text": "12 in the factory snapshot",
+          "lines": 2
+        },
+        {
+          "text": "2 gathering evidence",
+          "lines": 2
+        },
+        {
+          "text": "4 upcoming in the snapshot",
+          "lines": 2
+        }
+      ],
+      "overflow": 0,
+      "findings": [
+        {
+          "level": "WARN",
+          "id": "mixed-font-headline",
+          "width": 1440,
+          "message": "4 headline(s) switch typeface or to italic mid-line (the \"one italic serif word\" move).",
+          "fix": "Set the whole headline in one face. Emphasis comes from the words."
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "decisions",
+      "width": 1440,
+      "url": "http://localhost:3001/decisions",
+      "headings": [
+        {
+          "text": "Decision Center",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "decision-dialog",
+      "width": 1440,
+      "url": "http://localhost:3001/decisions",
+      "headings": [
+        {
+          "text": "Decision Center",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "agents",
+      "width": 1440,
+      "url": "http://localhost:3001/agents",
+      "headings": [
+        {
+          "text": "Agent Control Room",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "scenarios",
+      "width": 1440,
+      "url": "http://localhost:3001/what-if",
+      "headings": [
+        {
+          "text": "What-if Workspace",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [
+        {
+          "level": "WARN",
+          "id": "grey-body",
+          "width": 1440,
+          "message": "The running text is a soft grey on its ground (6.9:1).",
+          "fix": "Set body copy in the full ink (7:1 or more). Keep the muted ink for secondary notes; pages read thin and unfinished when everything is grey."
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "scenario-empty",
+      "width": 1440,
+      "url": "http://localhost:3001/what-if",
+      "headings": [
+        {
+          "text": "What-if Workspace",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "experiments",
+      "width": 1440,
+      "url": "http://localhost:3001/experiments",
+      "headings": [
+        {
+          "text": "Experiments",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "new-experiment",
+      "width": 1440,
+      "url": "http://localhost:3001/experiments/new",
+      "headings": [
+        {
+          "text": "Create experiment",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "experiment-detail",
+      "width": 1440,
+      "url": "http://localhost:3001/experiments/experiment-week1-001",
+      "headings": [
+        {
+          "text": "Risk-aware fleet demonstration",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "episode-detail",
+      "width": 1440,
+      "url": "http://localhost:3001/episodes/episode-week1-001",
+      "headings": [
+        {
+          "text": "week1.seed-4100",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "admin",
+      "width": 1440,
+      "url": "http://localhost:3001/admin",
+      "headings": [
+        {
+          "text": "User management",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "admin-edit",
+      "width": 1440,
+      "url": "http://localhost:3001/admin",
+      "headings": [
+        {
+          "text": "User management",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "login",
+      "width": 1440,
+      "url": "http://localhost:3001/login",
+      "headings": [
+        {
+          "text": "Clarity for every maintenance decision.",
+          "lines": 2
+        },
+        {
+          "text": "Sign in to your workspace",
+          "lines": 1
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "not-found",
+      "width": 1440,
+      "url": "http://localhost:3001/missing-page",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "overview",
+      "width": 1920,
+      "url": "http://localhost:3001/overview",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "decisions",
+      "width": 1920,
+      "url": "http://localhost:3001/decisions",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "decision-dialog",
+      "width": 1920,
+      "url": "http://localhost:3001/decisions",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "agents",
+      "width": 1920,
+      "url": "http://localhost:3001/agents",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "scenarios",
+      "width": 1920,
+      "url": "http://localhost:3001/what-if",
+      "headings": [],
+      "overflow": 0,
+      "findings": [
+        {
+          "level": "WARN",
+          "id": "grey-body",
+          "width": 1920,
+          "message": "The running text is a soft grey on its ground (6.9:1).",
+          "fix": "Set body copy in the full ink (7:1 or more). Keep the muted ink for secondary notes; pages read thin and unfinished when everything is grey."
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "scenario-empty",
+      "width": 1920,
+      "url": "http://localhost:3001/what-if",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "experiments",
+      "width": 1920,
+      "url": "http://localhost:3001/experiments",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "new-experiment",
+      "width": 1920,
+      "url": "http://localhost:3001/experiments/new",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "experiment-detail",
+      "width": 1920,
+      "url": "http://localhost:3001/experiments/experiment-week1-001",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "episode-detail",
+      "width": 1920,
+      "url": "http://localhost:3001/episodes/episode-week1-001",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "admin",
+      "width": 1920,
+      "url": "http://localhost:3001/admin",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "admin-edit",
+      "width": 1920,
+      "url": "http://localhost:3001/admin",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "login",
+      "width": 1920,
+      "url": "http://localhost:3001/login",
+      "headings": [
+        {
+          "text": "Clarity for every maintenance decision.",
+          "lines": 2
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "not-found",
+      "width": 1920,
+      "url": "http://localhost:3001/missing-page",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "overview",
+      "width": 2560,
+      "url": "http://localhost:3001/overview",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "decisions",
+      "width": 2560,
+      "url": "http://localhost:3001/decisions",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "decision-dialog",
+      "width": 2560,
+      "url": "http://localhost:3001/decisions",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "agents",
+      "width": 2560,
+      "url": "http://localhost:3001/agents",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "scenarios",
+      "width": 2560,
+      "url": "http://localhost:3001/what-if",
+      "headings": [],
+      "overflow": 0,
+      "findings": [
+        {
+          "level": "WARN",
+          "id": "grey-body",
+          "width": 2560,
+          "message": "The running text is a soft grey on its ground (6.9:1).",
+          "fix": "Set body copy in the full ink (7:1 or more). Keep the muted ink for secondary notes; pages read thin and unfinished when everything is grey."
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "scenario-empty",
+      "width": 2560,
+      "url": "http://localhost:3001/what-if",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "experiments",
+      "width": 2560,
+      "url": "http://localhost:3001/experiments",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "new-experiment",
+      "width": 2560,
+      "url": "http://localhost:3001/experiments/new",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "experiment-detail",
+      "width": 2560,
+      "url": "http://localhost:3001/experiments/experiment-week1-001",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "episode-detail",
+      "width": 2560,
+      "url": "http://localhost:3001/episodes/episode-week1-001",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "admin",
+      "width": 2560,
+      "url": "http://localhost:3001/admin",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "admin-edit",
+      "width": 2560,
+      "url": "http://localhost:3001/admin",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "login",
+      "width": 2560,
+      "url": "http://localhost:3001/login",
+      "headings": [
+        {
+          "text": "Clarity for every maintenance decision.",
+          "lines": 2
+        }
+      ],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "not-found",
+      "width": 2560,
+      "url": "http://localhost:3001/missing-page",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "overview",
+      "width": 3840,
+      "url": "http://localhost:3001/overview",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "decisions",
+      "width": 3840,
+      "url": "http://localhost:3001/decisions",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "decision-dialog",
+      "width": 3840,
+      "url": "http://localhost:3001/decisions",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "agents",
+      "width": 3840,
+      "url": "http://localhost:3001/agents",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "scenarios",
+      "width": 3840,
+      "url": "http://localhost:3001/what-if",
+      "headings": [],
+      "overflow": 0,
+      "findings": [
+        {
+          "level": "WARN",
+          "id": "grey-body",
+          "width": 3840,
+          "message": "The running text is a soft grey on its ground (6.9:1).",
+          "fix": "Set body copy in the full ink (7:1 or more). Keep the muted ink for secondary notes; pages read thin and unfinished when everything is grey."
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "scenario-empty",
+      "width": 3840,
+      "url": "http://localhost:3001/what-if",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "experiments",
+      "width": 3840,
+      "url": "http://localhost:3001/experiments",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "new-experiment",
+      "width": 3840,
+      "url": "http://localhost:3001/experiments/new",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "experiment-detail",
+      "width": 3840,
+      "url": "http://localhost:3001/experiments/experiment-week1-001",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "episode-detail",
+      "width": 3840,
+      "url": "http://localhost:3001/episodes/episode-week1-001",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "admin",
+      "width": 3840,
+      "url": "http://localhost:3001/admin",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "admin-edit",
+      "width": 3840,
+      "url": "http://localhost:3001/admin",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "login",
+      "width": 3840,
+      "url": "http://localhost:3001/login",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    },
+    {
+      "name": "not-found",
+      "width": 3840,
+      "url": "http://localhost:3001/missing-page",
+      "headings": [],
+      "overflow": 0,
+      "findings": [],
+      "errors": []
+    }
+  ],
+  "expected_warnings": {
+    "mixed-font-headline": "Numeric metrics intentionally use monospace; their explanatory captions use sans serif.",
+    "grey-body": "Caution copy uses semantic amber ink with a measured 6.9:1 contrast in this preview."
+  }
+}

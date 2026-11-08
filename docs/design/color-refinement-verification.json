@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-15",
+  "branch": "frontend-redesign",
+  "scope": "Color, contrast and hierarchy refinement; existing data and workflows retained",
+  "desktop_checks": [
+    {
+      "width": 1280,
+      "height": 1000,
+      "horizontal_overflow": false,
+      "machine_chart_height": 260
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false,
+      "machine_chart_height": 260
+    },
+    {
+      "width": 1920,
+      "height": 1000,
+      "horizontal_overflow": false,
+      "machine_chart_height": 300
+    }
+  ],
+  "browser_checks": [
+    "Overview rendered with navy sidebar, cool canvas, blue action and tinted review priority",
+    "Machine picker selected M01 and M03 with correct evidence",
+    "M01 health series green; load series blue and dashed",
+    "Sidebar collapse retained 76px width without page overflow",
+    "Merged Operations screen rendered in explicitly labelled fixture mode"
+  ],
+  "verification": {
+    "frontend_tests": 199,
+    "test_files": 30,
+    "typecheck": "passed (incremental disabled after Next dev type regeneration)",
+    "production_build": "passed"
+  },
+  "preview": "previews/overview-color-refinement.jpg"
+}

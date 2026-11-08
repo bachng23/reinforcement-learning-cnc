@@ -1,0 +1,1064 @@
+{
+  "$defs": {
+    "Artifact": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "application/json",
+            "text/csv",
+            "text/markdown"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "content": {
+          "maxLength": 6000000,
+          "title": "Content",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "media_type",
+        "sha256",
+        "content"
+      ],
+      "title": "Artifact",
+      "type": "object"
+    },
+    "BranchRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "episode_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Episode Id",
+          "type": "string"
+        },
+        "tick": {
+          "minimum": 0,
+          "title": "Tick",
+          "type": "integer"
+        },
+        "action": {
+          "items": {
+            "maxItems": 3,
+            "minItems": 3,
+            "prefixItems": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Action",
+          "type": "array"
+        },
+        "reason": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "expected_episode_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Expected Episode Hash",
+          "type": "string"
+        },
+        "controller": {
+          "default": "risk",
+          "enum": [
+            "threshold5",
+            "risk",
+            "corrective",
+            "wait"
+          ],
+          "title": "Controller",
+          "type": "string"
+        }
+      },
+      "required": [
+        "episode_id",
+        "tick",
+        "action",
+        "reason",
+        "expected_episode_hash"
+      ],
+      "title": "BranchRequest",
+      "type": "object"
+    },
+    "Breakdown": {
+      "additionalProperties": false,
+      "properties": {
+        "preventive": {
+          "minimum": 0,
+          "title": "Preventive",
+          "type": "number"
+        },
+        "corrective": {
+          "minimum": 0,
+          "title": "Corrective",
+          "type": "number"
+        },
+        "unavailable": {
+          "minimum": 0,
+          "title": "Unavailable",
+          "type": "number"
+        },
+        "failure": {
+          "minimum": 0,
+          "title": "Failure",
+          "type": "number"
+        }
+      },
+      "required": [
+        "preventive",
+        "corrective",
+        "unavailable",
+        "failure"
+      ],
+      "title": "Breakdown",
+      "type": "object"
+    },
+    "Bundle": {
+      "additionalProperties": false,
+      "properties": {
+        "wire_schema_version": {
+          "const": "jcst-research/1.0",
+          "default": "jcst-research/1.0",
+          "title": "Wire Schema Version",
+          "type": "string"
+        },
+        "campaign_key": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Campaign Key",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "objective": {
+          "maxLength": 3000,
+          "minLength": 1,
+          "title": "Objective",
+          "type": "string"
+        },
+        "study_key": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Study Key",
+          "type": "string"
+        },
+        "run_key": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Run Key",
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "engineering",
+            "research"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "claims": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Claims",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Limitations",
+          "type": "array"
+        },
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/Artifact"
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "analysis_artifact_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Analysis Artifact Id"
+        },
+        "curves": {
+          "items": {
+            "$ref": "#/$defs/CurvePoint"
+          },
+          "maxItems": 2000,
+          "title": "Curves",
+          "type": "array"
+        },
+        "contrasts": {
+          "items": {
+            "$ref": "#/$defs/Contrast"
+          },
+          "maxItems": 50,
+          "title": "Contrasts",
+          "type": "array"
+        },
+        "source_audits": {
+          "items": {
+            "$ref": "#/$defs/SourceAudit"
+          },
+          "maxItems": 10,
+          "title": "Source Audits",
+          "type": "array"
+        },
+        "episodes": {
+          "items": {
+            "$ref": "#/$defs/Episode"
+          },
+          "maxItems": 12,
+          "title": "Episodes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "campaign_key",
+        "title",
+        "objective",
+        "study_key",
+        "run_key",
+        "origin",
+        "provenance",
+        "artifacts"
+      ],
+      "title": "Bundle",
+      "type": "object"
+    },
+    "ComponentConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "scale": {
+          "exclusiveMinimum": 0,
+          "title": "Scale",
+          "type": "number"
+        },
+        "shape": {
+          "exclusiveMinimum": 0,
+          "title": "Shape",
+          "type": "number"
+        }
+      },
+      "required": [
+        "scale",
+        "shape"
+      ],
+      "title": "ComponentConfig",
+      "type": "object"
+    },
+    "ComponentState": {
+      "additionalProperties": false,
+      "properties": {
+        "age": {
+          "minimum": 0,
+          "title": "Age",
+          "type": "integer"
+        },
+        "failed": {
+          "title": "Failed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "age",
+        "failed"
+      ],
+      "title": "ComponentState",
+      "type": "object"
+    },
+    "Config": {
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": "JCST/1.1",
+          "default": "JCST/1.1",
+          "title": "Version",
+          "type": "string"
+        },
+        "components": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/ComponentConfig"
+            },
+            "type": "array"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Components",
+          "type": "array"
+        },
+        "duration": {
+          "items": {
+            "items": {
+              "items": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "title": "Duration",
+          "type": "array"
+        },
+        "preventive_cost": {
+          "minimum": 0,
+          "title": "Preventive Cost",
+          "type": "number"
+        },
+        "corrective_cost": {
+          "minimum": 0,
+          "title": "Corrective Cost",
+          "type": "number"
+        },
+        "unavailable_cost": {
+          "minimum": 0,
+          "title": "Unavailable Cost",
+          "type": "number"
+        },
+        "failure_cost": {
+          "minimum": 0,
+          "title": "Failure Cost",
+          "type": "number"
+        }
+      },
+      "required": [
+        "components",
+        "duration",
+        "preventive_cost",
+        "corrective_cost",
+        "unavailable_cost",
+        "failure_cost"
+      ],
+      "title": "Config",
+      "type": "object"
+    },
+    "Contrast": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "contrast": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Contrast",
+          "type": "string"
+        },
+        "estimand": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Estimand",
+          "type": "string"
+        },
+        "difference": {
+          "title": "Difference",
+          "type": "number"
+        },
+        "interval": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Interval",
+          "type": "array"
+        },
+        "interval_method": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Interval Method",
+          "type": "string"
+        },
+        "gate": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_ASSESSED"
+          ],
+          "title": "Gate",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "contrast",
+        "estimand",
+        "difference",
+        "interval",
+        "interval_method",
+        "gate"
+      ],
+      "title": "Contrast",
+      "type": "object"
+    },
+    "CurvePoint": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "arm": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Arm",
+          "type": "string"
+        },
+        "training_root": {
+          "title": "Training Root",
+          "type": "string"
+        },
+        "samples": {
+          "exclusiveMinimum": 0,
+          "title": "Samples",
+          "type": "integer"
+        },
+        "mode": {
+          "default": "greedy",
+          "enum": [
+            "greedy",
+            "stochastic"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "mean_total_cost": {
+          "minimum": 0,
+          "title": "Mean Total Cost",
+          "type": "number"
+        },
+        "mean_h_cost": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean H Cost"
+        },
+        "mean_tail_cost": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Tail Cost"
+        },
+        "training_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Seconds"
+        }
+      },
+      "required": [
+        "case_id",
+        "arm",
+        "training_root",
+        "samples",
+        "mean_total_cost"
+      ],
+      "title": "CurvePoint",
+      "type": "object"
+    },
+    "Episode": {
+      "additionalProperties": false,
+      "properties": {
+        "episode_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Episode Id",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "controller": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Controller",
+          "type": "string"
+        },
+        "physical_seed": {
+          "pattern": "^(0|[1-9][0-9]{0,77})$",
+          "title": "Physical Seed",
+          "type": "string"
+        },
+        "seed_role": {
+          "enum": [
+            "engineering",
+            "evaluation",
+            "confirmation"
+          ],
+          "title": "Seed Role",
+          "type": "string"
+        },
+        "mode": {
+          "default": "greedy",
+          "enum": [
+            "greedy",
+            "stochastic"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "training_root": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Root"
+        },
+        "checkpoint_samples": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checkpoint Samples"
+        },
+        "action_repetition": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Action Repetition",
+          "type": "integer"
+        },
+        "horizon": {
+          "exclusiveMinimum": 0,
+          "maximum": 96,
+          "title": "Horizon",
+          "type": "integer"
+        },
+        "tail": {
+          "maximum": 32,
+          "minimum": 0,
+          "title": "Tail",
+          "type": "integer"
+        },
+        "config": {
+          "$ref": "#/$defs/Config"
+        },
+        "records": {
+          "items": {
+            "$ref": "#/$defs/Record"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Records",
+          "type": "array"
+        },
+        "controlled_cost": {
+          "minimum": 0,
+          "title": "Controlled Cost",
+          "type": "number"
+        },
+        "tail_cost": {
+          "minimum": 0,
+          "title": "Tail Cost",
+          "type": "number"
+        },
+        "total_cost": {
+          "minimum": 0,
+          "title": "Total Cost",
+          "type": "number"
+        }
+      },
+      "required": [
+        "episode_id",
+        "case_id",
+        "controller",
+        "physical_seed",
+        "seed_role",
+        "horizon",
+        "tail",
+        "config",
+        "records",
+        "controlled_cost",
+        "tail_cost",
+        "total_cost"
+      ],
+      "title": "Episode",
+      "type": "object"
+    },
+    "Event": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "start",
+            "failure",
+            "occupancy",
+            "completion"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "tick": {
+          "minimum": 0,
+          "title": "Tick",
+          "type": "integer"
+        },
+        "machine": {
+          "minimum": 0,
+          "title": "Machine",
+          "type": "integer"
+        },
+        "component": {
+          "minimum": 0,
+          "title": "Component",
+          "type": "integer"
+        },
+        "technician": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Technician"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "PM",
+                "CM"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kind"
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration"
+        },
+        "remaining": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Remaining"
+        },
+        "uniform": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uniform"
+        }
+      },
+      "required": [
+        "type",
+        "tick",
+        "machine",
+        "component"
+      ],
+      "title": "Event",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "const": "https://github.com/AIVIETNAM-AIO-BachNguyen/maintenance-capacity-coordination",
+          "title": "Repository",
+          "type": "string"
+        },
+        "commit": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Commit",
+          "type": "string"
+        },
+        "source_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Source Hash",
+          "type": "string"
+        },
+        "protocol_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Protocol Id",
+          "type": "string"
+        },
+        "protocol_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Protocol Hash",
+          "type": "string"
+        },
+        "simulator_version": {
+          "const": "JCST/1.1",
+          "default": "JCST/1.1",
+          "title": "Simulator Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "commit",
+        "source_hash",
+        "protocol_id",
+        "protocol_hash"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "Record": {
+      "additionalProperties": false,
+      "properties": {
+        "phase": {
+          "enum": [
+            "H",
+            "tail"
+          ],
+          "title": "Phase",
+          "type": "string"
+        },
+        "tick": {
+          "minimum": 0,
+          "title": "Tick",
+          "type": "integer"
+        },
+        "before": {
+          "$ref": "#/$defs/State"
+        },
+        "action": {
+          "items": {
+            "maxItems": 3,
+            "minItems": 3,
+            "prefixItems": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Action",
+          "type": "array"
+        },
+        "catalogue": {
+          "items": {
+            "items": {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "title": "Catalogue",
+          "type": "array"
+        },
+        "after": {
+          "$ref": "#/$defs/State"
+        },
+        "cost": {
+          "minimum": 0,
+          "title": "Cost",
+          "type": "number"
+        },
+        "breakdown": {
+          "$ref": "#/$defs/Breakdown"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/Event"
+          },
+          "title": "Events",
+          "type": "array"
+        }
+      },
+      "required": [
+        "phase",
+        "tick",
+        "before",
+        "action",
+        "catalogue",
+        "after",
+        "cost",
+        "breakdown",
+        "events"
+      ],
+      "title": "Record",
+      "type": "object"
+    },
+    "ServiceJob": {
+      "additionalProperties": false,
+      "properties": {
+        "machine": {
+          "minimum": 0,
+          "title": "Machine",
+          "type": "integer"
+        },
+        "component": {
+          "minimum": 0,
+          "title": "Component",
+          "type": "integer"
+        },
+        "technician": {
+          "minimum": 0,
+          "title": "Technician",
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "PM",
+            "CM"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "remaining": {
+          "exclusiveMinimum": 0,
+          "title": "Remaining",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "machine",
+        "component",
+        "technician",
+        "kind",
+        "remaining"
+      ],
+      "title": "ServiceJob",
+      "type": "object"
+    },
+    "SourceAudit": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "physical",
+            "statistical"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_AVAILABLE"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "artifact_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "scope": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "status",
+        "artifact_id",
+        "scope"
+      ],
+      "title": "SourceAudit",
+      "type": "object"
+    },
+    "State": {
+      "additionalProperties": false,
+      "properties": {
+        "tick": {
+          "minimum": 0,
+          "title": "Tick",
+          "type": "integer"
+        },
+        "components": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/ComponentState"
+            },
+            "type": "array"
+          },
+          "title": "Components",
+          "type": "array"
+        },
+        "jobs": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ServiceJob"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Jobs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "tick",
+        "components",
+        "jobs"
+      ],
+      "title": "State",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "bundle": {
+      "$ref": "#/$defs/Bundle"
+    },
+    "branch_request": {
+      "$ref": "#/$defs/BranchRequest"
+    },
+    "state": {
+      "$ref": "#/$defs/State"
+    },
+    "config": {
+      "$ref": "#/$defs/Config"
+    }
+  },
+  "required": [
+    "bundle",
+    "branch_request",
+    "state",
+    "config"
+  ],
+  "title": "JCST Research Contract Catalog v1",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

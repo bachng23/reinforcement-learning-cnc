@@ -453,6 +453,10 @@ model StepResult {
 }
 
 model User {
+  demoSessions DemoSession[]
+  researchCampaigns ResearchCampaign[]
+  researchJobs ResearchJob[]
+  researchReviews ResearchReview[]
   scenarioLiveEvaluations ScenarioLiveEvaluation[]
   scenario_command_receipts     ScenarioCommandReceipt[]
   scenario_draft_revisions      ScenarioDraftRevision[]
@@ -901,4 +905,116 @@ model ScenarioLiveEvaluation {
   actor User @relation(fields: [actorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   @@index([factoryId, workspaceId, runId, createdAt, caseId], map: "scenario_live_evaluations_run_idx")
   @@map("scenario_live_evaluations")
+}
+
+model ResearchCampaign {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId String @map("owner_id") @db.Uuid
+  campaignKey String @map("campaign_key")
+  title String
+  objective String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  runs ResearchRun[]
+  @@unique([ownerId, campaignKey])
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@map("research_campaigns")
+}
+
+model ResearchRun {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId String @map("campaign_id") @db.Uuid
+  studyKey String @map("study_key")
+  runKey String @map("run_key")
+  origin String
+  bundleHash String @map("bundle_hash") @db.Char(64)
+  metadataJson Json @map("metadata_json") @db.JsonB
+  physicalReplayJson Json @map("physical_replay_json") @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  campaign ResearchCampaign @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  artifacts ResearchArtifact[]
+  episodes ResearchEpisode[]
+  @@unique([campaignId, studyKey, runKey])
+  @@map("research_runs")
+}
+
+model ResearchArtifact {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  runId String @map("run_id") @db.Uuid
+  artifactKey String @map("artifact_key")
+  contentHash String @map("content_hash") @db.Char(64)
+  mediaType String @map("media_type")
+  byteLength Int @map("byte_length")
+  run ResearchRun @relation(fields: [runId], references: [id], onDelete: Restrict)
+  @@unique([runId, artifactKey])
+  @@map("research_artifacts")
+}
+
+model ResearchEpisode {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  runId String @map("run_id") @db.Uuid
+  episodeKey String @map("episode_key")
+  caseId String @map("case_id")
+  controller String
+  physicalSeed String @map("physical_seed")
+  horizon Int
+  tail Int
+  controlledCost Float @map("controlled_cost")
+  tailCost Float @map("tail_cost")
+  totalCost Float @map("total_cost")
+  contentHash String @map("content_hash") @db.Char(64)
+  run ResearchRun @relation(fields: [runId], references: [id], onDelete: Restrict)
+  @@unique([runId, episodeKey])
+  @@map("research_episodes")
+}
+
+model ResearchJob {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId String @map("owner_id") @db.Uuid
+  kind String
+  status String @default("QUEUED")
+  idempotencyKey String @map("idempotency_key")
+  inputHash String @map("input_hash") @db.Char(64)
+  inputJson Json @map("input_json") @db.JsonB
+  outputJson Json? @map("output_json") @db.JsonB
+  errorCode String? @map("error_code")
+  attempt Int @default(1)
+  leaseToken String? @map("lease_token") @db.Uuid
+  leaseExpiresAt DateTime? @map("lease_expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  reviews ResearchReview[]
+  @@unique([ownerId, idempotencyKey])
+  @@index([status, createdAt])
+  @@map("research_jobs")
+}
+
+model ResearchReview {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId String @unique @map("job_id") @db.Uuid
+  actorId String @map("actor_id") @db.Uuid
+  decision String
+  reason String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  job ResearchJob @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  @@map("research_reviews")
+}
+
+model DemoSession {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId String @map("owner_id") @db.Uuid
+  requestKey String @map("request_key")
+  requestHash String @map("request_hash") @db.Char(64)
+  revision Int @default(0)
+  payloadJson Json @map("payload_json") @db.JsonB
+  lastCommandKey String? @map("last_command_key")
+  lastCommandHash String? @map("last_command_hash") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  @@unique([ownerId, requestKey])
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@map("demo_sessions")
 }

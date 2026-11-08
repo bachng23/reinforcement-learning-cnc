@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { DashboardPage } from "@/components/pages/dashboard-page";
+import { DashboardPage } from "@/components/pages/production-dashboard-page";
 import { OperationsApiError } from "@/lib/operations-api/client";
 import { createMockOperationsApiClient } from "@/lib/operations-api/mock";
 import { WorkspaceUserContext } from "@/lib/workspace-user";

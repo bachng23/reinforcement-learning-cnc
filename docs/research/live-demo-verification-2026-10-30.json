@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-30",
+  "timezone": "Asia/Taipei",
+  "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+  "checks": {
+    "frontend": {
+      "passed": 207,
+      "files": 32
+    },
+    "backend_unit": {
+      "passed": 250,
+      "skipped": 4
+    },
+    "backend_integration": {
+      "passed": 128,
+      "suites": 12
+    },
+    "demo_runtime": {
+      "passed": 6
+    },
+    "production_build": "PASS",
+    "typecheck": "PASS",
+    "diff_check": "PASS"
+  },
+  "browser": {
+    "method": "Computer Use / Brave",
+    "verified": [
+      "create session",
+      "run to failure at boundary 5",
+      "reload pending review",
+      "approve PM/CM dispatch",
+      "service completions at boundary 7",
+      "automatic S/F comparison to boundary 64",
+      "reload completed results"
+    ],
+    "completed_session_id": "92f9d164-7bc8-4467-9ddf-48dc93b721a9",
+    "fresh_session_id": "4dffb7f1-ad9b-4fe4-bab7-4c83faa390db"
+  },
+  "engineering_example": {
+    "case": "base",
+    "mode": "incident",
+    "seed": "990000001",
+    "primary": "S",
+    "baseline": "F",
+    "root": "0",
+    "checkpoint_samples": 96000,
+    "primary_total_cost": 751,
+    "baseline_total_cost": 764,
+    "difference": -13,
+    "primary_physical_replay": "PASS",
+    "baseline_physical_replay": "PASS",
+    "statistical_claim": false
+  },
+  "precision_regression": "Exact decimal strings for demo failure-event uniforms; JSONB end-to-end final replay test passes. Scientific artifact records and pinned physics unchanged."
+}

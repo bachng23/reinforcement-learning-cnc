@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { OperationsOverviewPage } from "@/components/pages/operations-overview-page";
+import { FactoryResourcesPage } from "@/components/pages/factory-resources-page";
 import { createOperationsApiClient, OperationsApiError, type OperationsCurrentScheduleResponse, type OperationsSnapshotResponse } from "@/lib/operations-api/client";
 import { createOperationsDemoFixtures } from "@/lib/operations-api/fixtures";
 import { createMockOperationsApiClient } from "@/lib/operations-api/mock";
@@ -21,13 +21,13 @@ vi.mock("next/navigation", () => ({
 
 const factoryId = createOperationsDemoFixtures().request.factory_snapshot.factory_id;
 
-describe("OperationsOverviewPage API integration", () => {
+describe("FactoryResourcesPage API integration", () => {
   it("loads canonical 6-machine, 12-job and 3-technician data through both mock reads", async () => {
     const api = createMockOperationsApiClient();
     const getSnapshot = vi.spyOn(api, "getOperationsSnapshot");
     const getSchedule = vi.spyOn(api, "getCurrentSchedule");
 
-    render(<OperationsOverviewPage api={api} factoryId={factoryId} apiMode="mock" />);
+    render(<FactoryResourcesPage api={api} factoryId={factoryId} apiMode="mock" />);
 
     expect(screen.getByRole("heading", { name: "Loading operations snapshot" })).toBeInTheDocument();
     expect(await screen.findByLabelText("6 machines")).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe("OperationsOverviewPage API integration", () => {
     });
     const api = createOperationsApiClient({ fetcher, baseUrl: "https://example.test/api/v1" });
 
-    render(<OperationsOverviewPage api={api} factoryId={factoryId} apiMode="real" />);
+    render(<FactoryResourcesPage api={api} factoryId={factoryId} apiMode="real" />);
 
     expect(await screen.findByLabelText("12 jobs")).toBeInTheDocument();
     expect(screen.getByRole("note")).toHaveTextContent("Live Operations API mode");
@@ -68,7 +68,7 @@ describe("OperationsOverviewPage API integration", () => {
     vi.spyOn(api, "getOperationsSnapshot").mockReturnValue(snapshot.promise);
     vi.spyOn(api, "getCurrentSchedule").mockReturnValue(schedule.promise);
 
-    render(<OperationsOverviewPage api={api} factoryId={factoryId} />);
+    render(<FactoryResourcesPage api={api} factoryId={factoryId} />);
     expect(screen.getByRole("heading", { name: "Loading operations snapshot" })).toBeInTheDocument();
 
     const success = createMockOperationsApiClient();
@@ -93,19 +93,19 @@ describe("OperationsOverviewPage API integration", () => {
       },
     });
     vi.spyOn(emptyApi, "getCurrentSchedule").mockResolvedValue(schedule);
-    const emptyView = render(<OperationsOverviewPage api={emptyApi} factoryId={factoryId} />);
+    const emptyView = render(<FactoryResourcesPage api={emptyApi} factoryId={factoryId} />);
 
     expect(await screen.findByRole("heading", { name: "No operations resources" })).toBeInTheDocument();
     expect(screen.queryByText("CNC M01")).not.toBeInTheDocument();
     emptyView.unmount();
 
-    render(<OperationsOverviewPage api={source} factoryId={factoryId} />);
+    render(<FactoryResourcesPage api={source} factoryId={factoryId} />);
     expect(await screen.findByRole("heading", { name: "No current schedule" })).toBeInTheDocument();
     expect(screen.getByLabelText("6 machines")).toBeInTheDocument();
   });
 
   it("shows an unauthorized state without falling back to fixture rows", async () => {
-    render(<OperationsOverviewPage api={createMockOperationsApiClient({ mode: "unauthorized" })} factoryId={factoryId} apiMode="real" />);
+    render(<FactoryResourcesPage api={createMockOperationsApiClient({ mode: "unauthorized" })} factoryId={factoryId} apiMode="real" />);
 
     expect(await screen.findByRole("heading", { name: "Operations access required" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
@@ -129,7 +129,7 @@ describe("OperationsOverviewPage API integration", () => {
       .mockImplementation(originalSnapshot);
     const getSchedule = vi.spyOn(api, "getCurrentSchedule");
 
-    render(<OperationsOverviewPage api={api} factoryId={factoryId} />);
+    render(<FactoryResourcesPage api={api} factoryId={factoryId} />);
     expect(await screen.findByRole("heading", { name: "Operations snapshot unavailable" })).toBeInTheDocument();
     expect(screen.queryByText("CNC M01")).not.toBeInTheDocument();
 
@@ -143,7 +143,7 @@ describe("OperationsOverviewPage API integration", () => {
     const api = createMockOperationsApiClient();
     vi.spyOn(api, "getOperationsSnapshot").mockRejectedValue(new TypeError("Failed to fetch"));
 
-    render(<OperationsOverviewPage api={api} factoryId={factoryId} apiMode="real" />);
+    render(<FactoryResourcesPage api={api} factoryId={factoryId} apiMode="real" />);
 
     expect(await screen.findByRole("heading", { name: "Operations data could not be loaded" })).toBeInTheDocument();
     expect(screen.getByText("Network error: Failed to fetch")).toBeInTheDocument();

@@ -1,4 +1,5 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ?? "";
+const AUTH_BYPASSED = process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_SKIP_AUTH === "true";
 
 /** Signals that authFetch already started a login redirect. */
 export class AuthRedirectError extends Error {
@@ -13,6 +14,17 @@ export type TokenUser = {
   role: string;
   username?: string;
   fullName?: string;
+};
+
+export function isAuthBypassed(): boolean {
+  return AUTH_BYPASSED;
+}
+
+const DEV_USER: TokenUser = {
+  id: "local-dev-user",
+  role: "ADMIN",
+  username: "local.dev",
+  fullName: "Local development",
 };
 
 export function endpoint(path: string) {
@@ -30,6 +42,7 @@ export function setToken(_token: string): void {}
 export function clearToken(): void {}
 
 export async function hasToken(): Promise<boolean> {
+  if (AUTH_BYPASSED) return true;
   try {
     const res = await fetch(endpoint("/api/v1/auth/me"), {
       credentials: "include",
@@ -42,6 +55,7 @@ export async function hasToken(): Promise<boolean> {
 }
 
 export async function getUserFromToken(): Promise<TokenUser | null> {
+  if (AUTH_BYPASSED) return DEV_USER;
   try {
     const res = await fetch(endpoint("/api/v1/auth/me"), {
       credentials: "include",
@@ -77,7 +91,7 @@ export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}
 
   // A 403 is an authorization failure, not an expired session. Let callers
   // surface the API's forbidden response without sending the user to login.
-  if (response.status === 401) {
+  if (response.status === 401 && !AUTH_BYPASSED) {
     redirectToLogin();
     // Stop callers from parsing a response while the redirect is in flight.
     throw new AuthRedirectError();
@@ -98,6 +112,7 @@ function getErrorMessage(payload: unknown, fallback: string) {
 }
 
 export async function login(username: string, password: string): Promise<TokenUser> {
+  if (AUTH_BYPASSED) return DEV_USER;
   const response = await fetch(endpoint("/api/v1/auth/login"), {
     method: "POST",
     credentials: "include",
@@ -129,6 +144,7 @@ export async function login(username: string, password: string): Promise<TokenUs
 }
 
 export async function logout(): Promise<void> {
+  if (AUTH_BYPASSED) return;
   try {
     await fetch(endpoint("/api/v1/auth/logout"), {
       method: "POST",
