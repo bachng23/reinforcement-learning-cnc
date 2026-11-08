@@ -1,0 +1,3 @@
+
+> cnc-research-console@0.1.0 contracts:check
+> node scripts/generate-operations-types.mjs --check && node scripts/generate-work-order-types.mjs --check && node scripts/generate-scenario-types.mjs --check && node scripts/generate-simulation-health-types.mjs --check

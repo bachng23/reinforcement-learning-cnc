@@ -1,0 +1,196 @@
+{
+  "task": "Simulation incident workflow",
+  "date": "2026-11-09",
+  "status": "M1_FRONTEND_READY_M2_INTEGRATION_PENDING",
+  "branch": "frontend/simulation-incident-workflow",
+  "frontendBaseGitSha": "ddf7a05a2ee3b6f3276241eac698fa3150796203",
+  "frontendChangesCommitted": true,
+  "frontendWorkingTreeSha256": "a14a9887e7b44e2094cf2d64046b814a440f999420ca2cd24130d4cb085687bd",
+  "machineHealthProducerGitSha": "eff27fef2fec4c770c4a252b9c3dc0200d819466",
+  "checks": {
+    "contracts": {
+      "exitCode": 0
+    },
+    "typecheck": {
+      "exitCode": 0
+    },
+    "lint": {
+      "exitCode": 0
+    },
+    "unit": {
+      "exitCode": 0,
+      "files": 55,
+      "tests": 467
+    },
+    "productionBuild": {
+      "exitCode": 0
+    },
+    "componentBrowser": {
+      "exitCode": 0,
+      "tests": 4,
+      "desktop": "1440x900",
+      "narrow": "390x844",
+      "browser": "Installed Microsoft Edge",
+      "interceptedApi": true
+    }
+  },
+  "realIntegratedAcceptance": false,
+  "blockers": [
+    "Health endpoint PR #64 is not merged into the frontend base.",
+    "Backend 2 session/machine work/service history contract and API not supplied.",
+    "Windows Application Control blocks the local JCST Python runtime; no policy bypass used."
+  ],
+  "backendOrFlexImplementationChanged": false,
+  "dataCleanup": "Browser fixtures are in-memory; no database or production service writes. Playwright manages the test-only Next server.",
+  "logs": "artifacts/simulation-inspection/2026-11-09/",
+  "files": [
+    {
+      "file": "frontend/app/simulation.css",
+      "sha256": "4b8220a6ae4413217ba06f45bf853f72bc6c369def08b61a2e3218098cc8c292"
+    },
+    {
+      "file": "frontend/components/simulation/component-health.tsx",
+      "sha256": "64800555bcc5a609a7da23a423d992fcd9d6a0d45d2cc1ab77a921eebec4e2ba"
+    },
+    {
+      "file": "frontend/components/simulation/decision-view.tsx",
+      "sha256": "13be3845435926d8589d685e1e50c42e73a91ae15c28abe08c01c6f8fe4c030b"
+    },
+    {
+      "file": "frontend/components/simulation/demo-workspace.tsx",
+      "sha256": "94930c440290286eaed0da38542a6f41763b55c19965f4653fecf05d6d192617"
+    },
+    {
+      "file": "frontend/components/simulation/fleet-view.tsx",
+      "sha256": "58ca45783667668eba7d362272bd8da8555c705160c1a4de8e78694926500e27"
+    },
+    {
+      "file": "frontend/components/simulation/machine-detail.tsx",
+      "sha256": "5bd180783f01da34539793d640891399293f7c6b9b237d185ae9b6f7ac5b5a67"
+    },
+    {
+      "file": "frontend/components/simulation/machine-services.tsx",
+      "sha256": "ac7f83e159f362133a5e7ddade5313889f5b16f2ddfefa60179bc1a7ee7c1efb"
+    },
+    {
+      "file": "frontend/components/simulation/simulation-activity.tsx",
+      "sha256": "906abd3447ccc042f0aa2f1d9b8558d5c1745f203dec7d75b6be119308e2bcb0"
+    },
+    {
+      "file": "frontend/contracts/simulation-machine-health.schema.json",
+      "sha256": "6a94b952389be70f209e892c08ccad235c673a570ccf835527c686274ae58766"
+    },
+    {
+      "file": "frontend/lib/research-api/client.ts",
+      "sha256": "0c7f62d9a6a6bd5c6cf1087e1b6297b0ddb3201d18fa57cbad0fee9b103e8ac9"
+    },
+    {
+      "file": "frontend/lib/simulation/machine-health.ts",
+      "sha256": "384950c46009ab5fe93b460f7cb758557f1522b687c5f84579b98d273ad0fa96"
+    },
+    {
+      "file": "frontend/lib/simulation/service-records.ts",
+      "sha256": "d5e017c42e825e02fc6c247737b67096e0a9874005a63967c62cde253f58c742"
+    },
+    {
+      "file": "frontend/lib/simulation/use-machine-inspection.ts",
+      "sha256": "d1b45795ce8e3edcc73a4898f44af6a99653fec27e0d789e10c6f446ff5aa03f"
+    },
+    {
+      "file": "frontend/package.json",
+      "sha256": "3e193b98009915e11006c35e1eb322bb493e8172c5c94a52ff36044a40f10451"
+    },
+    {
+      "file": "frontend/playwright.simulation-inspection.config.ts",
+      "sha256": "5d391262b380b255567bbfc9750f8c6d59c23649dbf72cfd32a062cf1f317ce9"
+    },
+    {
+      "file": "frontend/scripts/generate-simulation-health-types.mjs",
+      "sha256": "0f250287c8f9609b4693df29316e8c7c17e06219e526a1d56bb6b143f67db9e3"
+    },
+    {
+      "file": "frontend/tests/fixtures/simulation/source.json",
+      "sha256": "ccc46328ddabe9479b91ab48bb49f32dd3a380b059a00d62a11d0ddc22f1031b"
+    },
+    {
+      "file": "frontend/tests/fixtures/simulation/t5.json",
+      "sha256": "90436ee7e9aaea0a7ae59cd4445d161d6c536b9d4d79869be1952d6774ed1d5e"
+    },
+    {
+      "file": "frontend/tests/fixtures/simulation/t6.json",
+      "sha256": "d31fa6ec4e3e6a9846c75e54409b8e058245d8a58b9f7915413dee2c5524640e"
+    },
+    {
+      "file": "frontend/tests/fixtures/simulation/t7.json",
+      "sha256": "40583f5e92f99d526cbfad1fbb7eca6e4460e221efeaae608315835087039b4d"
+    },
+    {
+      "file": "frontend/tests/simulation-browser/inspection.spec.ts",
+      "sha256": "e21bcc7f1f3c1581a90cbcf4007c758cd7c2bc5230ec6504f32012b711b320dd"
+    },
+    {
+      "file": "frontend/tests/simulation-health-client.test.ts",
+      "sha256": "75b3f6dd410f72d4c5cf5805cf7f4b1d789a9683059ee36f60e4d0a3434ce729"
+    },
+    {
+      "file": "frontend/tests/simulation-inspection-fixtures.ts",
+      "sha256": "416ba35c480016f9d57f1e15a3e23058c8707c5d31d4201fcfb386800d97bc78"
+    },
+    {
+      "file": "frontend/tests/simulation-inspection.test.tsx",
+      "sha256": "7831997623b03b394f9a85a252f7d6d9551ded6a21e4901c379a71f3e59f8506"
+    },
+    {
+      "file": "frontend/tests/simulation-workspace.test.tsx",
+      "sha256": "e2c687a3d3eec541096659e2066336083f0bfbfa35f5f2836d575f5adf9d941f"
+    },
+    {
+      "file": "frontend/types/generated/simulation-machine-health.ts",
+      "sha256": "d4261234068cea36f8b4ad4666f025f847689a911f97f991bbf0cd1d6e853816"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "docs/design/screenshots/simulation-inspection/component-only-error-desktop.png",
+      "sha256": "734b30f61a0a419f28b9f13378e3eba0b36e024f0b0098c9da1466e416807ce0"
+    },
+    {
+      "file": "docs/design/screenshots/simulation-inspection/component-only-error-narrow.png",
+      "sha256": "0d427a336fdc74c52e2f6c3fa115bdfad4a4c3e317b22b2e9b8319a77e390f88"
+    },
+    {
+      "file": "docs/design/screenshots/simulation-inspection/component-only-t5-desktop.png",
+      "sha256": "f2b43ab6d5e275ca5e9e2aabc9e13c495cfc339b393e19af8552f7c85ce8cf35"
+    },
+    {
+      "file": "docs/design/screenshots/simulation-inspection/component-only-t5-narrow.png",
+      "sha256": "7f67f4f9453fa99f8efc2685a39d84ae3293831cf3faac373b04ed24f9ae2627"
+    },
+    {
+      "file": "docs/design/screenshots/simulation-inspection/component-only-t6-desktop.png",
+      "sha256": "fb2e998bd0cf5617416f09d5beaceec744f98416536bff41ca732dc6f2857076"
+    },
+    {
+      "file": "docs/design/screenshots/simulation-inspection/component-only-t6-narrow.png",
+      "sha256": "3a94d9c420f869f92760d0adf3f96f74962b3d09c19d692cb3cf566e30eecbca"
+    },
+    {
+      "file": "docs/design/screenshots/simulation-inspection/component-only-t7-desktop.png",
+      "sha256": "d7b9b79ad8c0b4b58876bfb2841035ca4aee24ec8ddca6157c842237606d55e3"
+    },
+    {
+      "file": "docs/design/screenshots/simulation-inspection/component-only-t7-health-desktop.png",
+      "sha256": "30694919838c2646add6f450115ea8451cb470af136aec36d63cd5437111c986"
+    },
+    {
+      "file": "docs/design/screenshots/simulation-inspection/component-only-t7-health-narrow.png",
+      "sha256": "cf9e5d4ff6facfa3f6b2c1b9600b403bdfa08b044738dc94741ac84fdecb8ef3"
+    },
+    {
+      "file": "docs/design/screenshots/simulation-inspection/component-only-t7-narrow.png",
+      "sha256": "f24ec8ac8690dc94837a7ffb91d8ba4564d19d2a7083ca093728ce823d84ab14"
+    }
+  ],
+  "testedFrontendGitSha": "a67bcf6cd909f4a472759df11f94a4871d858421",
+  "committedLogs": "docs/test-evidence/simulation-inspection/"
+}

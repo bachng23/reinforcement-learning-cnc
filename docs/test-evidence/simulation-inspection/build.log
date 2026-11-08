@@ -1,0 +1,79 @@
+
+> cnc-research-console@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.24
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+npm.cmd : Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+At line:4 char:1
++ & '..\..\.tools\node-v24.20.0-win-x64\npm.cmd' run build 2>&1 | Tee-O ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Browserslist: b...ld. Please run::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ Compiled successfully in 17.7s
+   Linting and checking validity of types ...
+
+   We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+   The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+       - include was updated to add '.next-inspection-production/types/**/*.ts'
+
+   Collecting page data ...
+   Generating static pages (0/31) ...
+   Generating static pages (7/31)
+   Generating static pages (15/31)
+   Generating static pages (23/31)
+ ✓ Generating static pages (31/31)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                      141 B         103 kB
+├ ○ /_not-found                            141 B         103 kB
+├ ○ /admin                               5.91 kB         134 kB
+├ ƒ /agents                                140 B         153 kB
+├ ƒ /api/health                            141 B         103 kB
+├ ƒ /dashboard                             140 B         153 kB
+├ ƒ /decisions                           2.54 kB         176 kB
+├ ƒ /episodes/[episodeId]                8.87 kB         148 kB
+├ ○ /experiments                          3.9 kB         143 kB
+├ ƒ /experiments/[experimentId]          5.93 kB         145 kB
+├ ○ /experiments/new                     5.31 kB         145 kB
+├ ○ /legacy/agents                       6.43 kB         146 kB
+├ ○ /legacy/decisions                    1.26 kB         152 kB
+├ ○ /legacy/overview                     11.1 kB         139 kB
+├ ○ /legacy/what-if                        177 B         145 kB
+├ ○ /login                                3.1 kB         106 kB
+├ ƒ /operations                          6.64 kB         140 kB
+├ ○ /operations/agents                   4.91 kB         133 kB
+├ ƒ /operations/cases                    8.29 kB         137 kB
+├ ƒ /operations/incidents                3.09 kB         142 kB
+├ ƒ /operations/incidents/[id]           3.47 kB         142 kB
+├ ƒ /operations/recommendations          10.1 kB         169 kB
+├ ƒ /operations/scenarios                  198 B         153 kB
+├ ƒ /operations/scenarios/[workspaceId]  18.9 kB         174 kB
+├ ƒ /operations/schedule                 6.38 kB         160 kB
+├ ƒ /operations/what-if                  1.65 kB         146 kB
+├ ƒ /operations/work-orders               5.7 kB         142 kB
+├ ƒ /operations/work-orders/[id]         11.6 kB         148 kB
+├ ƒ /overview                            11.6 kB         168 kB
+├ ○ /research                            3.52 kB         132 kB
+├ ƒ /research/campaigns/[id]             5.64 kB         134 kB
+├ ƒ /research/episodes/[id]                173 B         133 kB
+├ ○ /research/import                     2.82 kB         131 kB
+├ ○ /research/jobs                       2.38 kB         136 kB
+├ ƒ /simulation                            140 B         153 kB
+└ ƒ /what-if                               140 B         153 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/1255-fc6c00ab2f765339.js      46.4 kB
+  ├ chunks/4bd1b696-f785427dddbba9fb.js  54.2 kB
+  └ other shared chunks (total)          2.14 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

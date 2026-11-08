@@ -1,0 +1,26 @@
+node.exe : [WebServer] (node:9928) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+At line:4 char:1
++ & '..\..\.tools\node-v24.20.0-win-x64\node.exe' node_modules/@playwri ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([WebServer] (no... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:15644) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+[WebServer]   npx update-browserslist-db@latest
+[WebServer]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+Running 4 tests using 1 worker
+
+(node:3592) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop] › tests\simulation-browser\inspection.spec.ts:26:5 › fixture browser evidence: inspect → approve → t6 → t7 → reload; desktop/narrow (12.9s)
+  ok 2 [desktop] › tests\simulation-browser\inspection.spec.ts:54:5 › fixture browser evidence: unavailable, retry and no cross-machine fallback (3.2s)
+(node:15720) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [narrow] › tests\simulation-browser\inspection.spec.ts:26:5 › fixture browser evidence: inspect → approve → t6 → t7 → reload; desktop/narrow (4.2s)
+  ok 4 [narrow] › tests\simulation-browser\inspection.spec.ts:54:5 › fixture browser evidence: unavailable, retry and no cross-machine fallback (2.0s)
+
+  4 passed (43.0s)
