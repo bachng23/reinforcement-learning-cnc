@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DemoWorkspace } from '@/components/simulation/demo-workspace';
@@ -124,6 +124,26 @@ describe('live simulation workflow',()=>{
     expect(screen.getByRole('columnheader',{name:'S + human override'})).toBeInTheDocument();
     expect(screen.getByText('In progress')).toBeInTheDocument();
     expect(screen.queryByText(/shared WAIT prelude/i)).not.toBeInTheDocument();
+  });
+  it.each(['saved counters', 'legacy history', 'expired legacy history'])('uses the policy window for %s', (source) => {
+    const s = session();
+    s.continuous = true;
+    const origin = { tick: 32, failures: 1, total_cost: 495, downtime: 5 };
+    s.primary = { ...s.primary, controller: 'risk', state: { ...s.primary.state, tick: 33 },
+      total_cost: 501, controlled_cost: 501, technician_busy_ticks: 46, overrides: 1, comparison_start: origin };
+    if (source === 'saved counters') {
+      s.primary.comparison_start = { ...origin, controlled_cost: 495, technician_busy_ticks: 45, overrides: 1 };
+    } else if (source === 'legacy history') {
+      const record = fixture.episodes[0].records[0] as unknown as Simulation['primary']['records'][number];
+      s.primary.records = [{ ...record, tick: 32, cost: 6, events: [
+        { type: 'occupancy', tick: 32, machine: 0, component: 0, technician: 0, remaining: 1 },
+      ] }];
+    }
+    render(<ComparisonView session={s} />);
+    expect(screen.getByRole('columnheader', { name: 'risk' })).toBeInTheDocument();
+    const technicianTime = screen.getByRole('row', { name: /Technician time/ });
+    expect(within(technicianTime).getAllByRole('cell')[0]).toHaveTextContent(source === 'expired legacy history' ? 'Unavailable' : '0.3');
+    expect(screen.getByText('Cost during controller operation: 6 / 0 points')).toBeInTheDocument();
   });
   it('paces real intervals, pauses on failure and opens its machine without changing view',async()=>{
     vi.useFakeTimers();const user={click:async(element:HTMLElement)=>{await act(async()=>{fireEvent.click(element);});}};

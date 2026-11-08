@@ -1,13 +1,16 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { useWorkspaceUser } from "@/lib/workspace-user";
+import Home from "@/app/page";
 import { AppShell } from "@/components/app-shell";
 import { operationsHref, productionMode } from "@/lib/operations-ui";
-const navigation = vi.hoisted(() => ({ pathname: "/operations/cases", router: { replace: vi.fn() } }));
-vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname, useRouter: () => navigation.router }));
+const navigation = vi.hoisted(() => ({ pathname: "/operations/cases", router: { replace: vi.fn() }, redirect: vi.fn() }));
+vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname, useRouter: () => navigation.router, redirect: navigation.redirect }));
 vi.mock("@/lib/auth", () => ({ getUserFromToken: async () => ({ id: "engineer", role: "ENGINEER" }), logout: vi.fn() }));
 
 function AccessProbe(){const user=useWorkspaceUser();return <p>{user?.role === "ENGINEER" ? "Engineer context available" : "No engineer context"}</p>;}
+
+afterEach(() => vi.unstubAllEnvs());
 
 describe("production navigation and explicit source scope", () => {
   it.each(["/operations/cases", "/operations/recommendations"])("marks Decision Center active for %s and keeps research secondary", async pathname => {
@@ -21,6 +24,26 @@ describe("production navigation and explicit source scope", () => {
     expect(nav.queryByRole("link", {name:"Overview"})).not.toBeInTheDocument();
     expect(nav.queryByRole("link", { name: "Factory operations" })).not.toBeInTheDocument();
     expect(nav.getByRole("link", { name: "Research workspace" })).toHaveAttribute("href", "/research");
+  });
+
+  it("opens scoped Operations navigation when Research is disabled", async () => {
+    vi.stubEnv("NEXT_PUBLIC_RESEARCH_ENABLED", "false");
+    navigation.pathname = "/operations/work-orders";
+    Home();
+    expect(navigation.redirect).toHaveBeenLastCalledWith("/operations");
+    render(<AppShell factoryId="factory 2"><AccessProbe /></AppShell>);
+    const nav = within(await screen.findByRole("navigation", { name: "Primary navigation" }));
+    expect(nav.getByRole("link", { name: "Work Orders" })).toHaveAttribute("href", "/operations/work-orders?factory_id=factory+2");
+    expect(nav.getByRole("link", { name: "Work Orders" })).toHaveAttribute("aria-current", "page");
+    expect(nav.getByRole("link", { name: "Factory operations" })).not.toHaveAttribute("aria-current");
+    expect(nav.queryByRole("link", { name: "Simulation" })).not.toBeInTheDocument();
+    expect(nav.queryByRole("link", { name: "Research workspace" })).not.toBeInTheDocument();
+  });
+
+  it("opens Simulation by default", () => {
+    vi.stubEnv("NEXT_PUBLIC_RESEARCH_ENABLED", undefined);
+    Home();
+    expect(navigation.redirect).toHaveBeenLastCalledWith("/simulation");
   });
 
   it("never implicitly selects demo and preserves URL query/hash while encoding case/factory identity", () => {

@@ -2,6 +2,26 @@ const crypto = require('node:crypto');
 const jwt = require('jsonwebtoken');
 const prisma = require('../../src/config/prisma');
 const app = require('../../src/app');
+const demo = require('../../src/research/demo-service');
+
+ test('concurrent duplicate commands replay a single saved revision without learned checkpoints', async () => {
+  const user = await prisma.user.create({ data: { username: `demo-retry-${crypto.randomUUID()}`, passwordHash: 'unused-test-hash', role: 'ENGINEER' } });
+  const session = await demo.create(user, { mode: 'incident', primary: 'risk', baseline: 'wait', continuous: true }, crypto.randomUUID());
+  const key = crypto.randomUUID();
+  const command = { command: 'advance', revision: session.revision, autoApprove: false };
+  const [first, retry] = await Promise.all([
+    demo.command(user, session.id, command, key),
+    demo.command(user, session.id, command, key),
+  ]);
+  expect(first.revision).toBe(session.revision + 1);
+  expect(retry).toEqual(first);
+  expect(await prisma.auditLog.count({ where: { entityId: session.id, action: 'DEMO_ADVANCE' } })).toBe(1);
+  await expect(demo.command(user, session.id, { ...command, autoApprove: true }, key)).rejects.toMatchObject({ code: 'DEMO_KEY_CONFLICT' });
+  await expect(demo.command(user, session.id, command, crypto.randomUUID())).rejects.toMatchObject({ code: 'DEMO_STALE' });
+});
+
+afterAll(async () => { await prisma.$disconnect(); });
+
 const enabled = Boolean(process.env.JCST_RELEASE_REGISTRY);
 (enabled ? describe : describe.skip)('persistent JCST demo with registered policies', () => {
   let server,base,owner,other,viewer,session;
@@ -19,7 +39,7 @@ const enabled = Boolean(process.env.JCST_RELEASE_REGISTRY);
     }
     server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base=`http://127.0.0.1:${server.address().port}`;
   });
-  afterAll(async()=>{if(server)await new Promise(r=>server.close(r));await prisma.$disconnect();});
+  afterAll(async()=>{if(server)await new Promise(r=>server.close(r));});
   test('auth, mutation roles, seeds and unknown fields are enforced',async()=>{
     expect((await req('',{user:null,body:{}})).status).toBe(401);
     expect((await req('',{user:viewer,body:{}})).status).toBe(403);

@@ -38,10 +38,12 @@ async function create(user, input, key) {
 async function command(user, id, input, key) {
   const row = await read(user, id);
   const hash = sha(canonical(input));
-  if (row.lastCommandKey === key) {
-    if (row.lastCommandHash !== hash) throw new ApiError(409, 'DEMO_KEY_CONFLICT', 'Command key belongs to another action');
-    return present(row);
-  }
+  const replay = saved => {
+    if (saved?.lastCommandKey !== key) return undefined;
+    if (saved.lastCommandHash !== hash) throw new ApiError(409, 'DEMO_KEY_CONFLICT', 'Command key belongs to another action');
+    return saved;
+  };
+  if (replay(row)) return present(row);
   if (row.revision !== input.revision) throw new ApiError(409, 'DEMO_STALE', 'Session changed; reload before deciding');
   if (row.payloadJson.status === 'COMPLETE' && input.command !== 'configure') throw new ApiError(409, 'DEMO_COMPLETE', 'Simulation has completed');
   let payloadJson;
@@ -64,7 +66,11 @@ async function command(user, id, input, key) {
     const updated = await tx.demoSession.updateMany({ where: { id: row.id, revision: row.revision }, data: {
       payloadJson, revision: { increment: 1 }, lastCommandKey: key, lastCommandHash: hash,
     } });
-    if (!updated.count) throw new ApiError(409, 'DEMO_STALE', 'Another command advanced the session; reload');
+    if (!updated.count) {
+      const saved = replay(await tx.demoSession.findUnique({ where: { id: row.id } }));
+      if (saved) return saved;
+      throw new ApiError(409, 'DEMO_STALE', 'Another command advanced the session; reload');
+    }
     await tx.auditLog.create({ data: { entityType: 'SYSTEM', entityId: id, action: `DEMO_${input.command.toUpperCase()}`, actorUserId: user.id,
       payloadJson: { revision: row.revision, tick: row.payloadJson.primary.state.tick, command: input.command, stopAt: input.stopAt, advancedTicks: payloadJson.primary.state.tick - row.payloadJson.primary.state.tick, reason: input.reason, domain: 'ENGINEERING_SIMULATION' } } });
     return tx.demoSession.findUnique({ where: { id } });

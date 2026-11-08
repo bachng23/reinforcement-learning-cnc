@@ -157,7 +157,9 @@ may remain after failure and is not published as a completed run. Cancellation
 prevents late output publication and terminates owned child computation.
 
 To roll back presentation, set `NEXT_PUBLIC_RESEARCH_ENABLED=false` and rebuild
-the frontend. Set `RESEARCH_API_ENABLED=false` to stop the new API and stop the
-research worker gracefully. Production legacy writes require the explicit
+and redeploy the frontend. The home page and sidebar then open Operations.
+For Compose, set this variable before rebuilding `research_web`. Set
+`RESEARCH_API_ENABLED=false`, recreate `research_api` with that setting and
+stop the research worker gracefully. Production legacy writes require the explicit
 `LEGACY_RESEARCH_WRITE_ENABLED=true` flag; reads are preserved. Keep additive
 schema/data/artifact files. Do not drop research tables to roll back routing.
