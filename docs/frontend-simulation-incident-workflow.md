@@ -107,7 +107,7 @@ npx playwright test --config playwright.research.config.ts simulation-work-order
 The test uses the existing research browser harness to create a disposable
 schema. It signs in, prepares the corrective/wait scenario at t5 and verifies
 that M3/C2 has no work order before approval. At t6 it checks T2's active CM,
-manual source and one remaining interval. The next step completes the same
-order at t7. The test also checks reload without a command, machine switching,
+manual source and one remaining interval. Approving the next M1/C1 proposal
+completes the same M3 order at t7. The test also checks reload without a command, machine switching,
 and defer without creating a work order. It runs when the #67 migration is
 present in the checkout.

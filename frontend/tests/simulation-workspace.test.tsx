@@ -268,6 +268,25 @@ describe('inspection to assignment review',()=>{
     expect(new URLSearchParams(window.location.search).get('machine')).toBe('2');
     expect(screen.getByRole('button',{name:'Run simulator'})).toBeEnabled();
   });
+  it('keeps the machine open when advancing a step produces no dispatch proposal', async () => {
+    let current = { ...simulationAt(6), status: 'RUNNING' as const, pending: null };
+    window.history.replaceState(null, '', `/simulation?session=${current.id}&machine=2&inspect=1`);
+    vi.mocked(researchRequest).mockImplementation(async (path, options) => {
+      if (path === '/capabilities') return capabilities as never;
+      if (path.endsWith('/commands')) {
+        expect(options?.body).toMatchObject({ command: 'advance', autoApprove: false, revision: current.revision });
+        current = { ...simulationAt(7), status: 'RUNNING', pending: null };
+      }
+      const tick = current.primary.state.tick as 6 | 7;
+      if (path.includes('/health?')) return healthAt(tick) as never;
+      if (path.includes('/work-orders?')) return workOrdersAt(tick) as never;
+      return current as never;
+    });
+    render(<DemoWorkspace />);
+    await userEvent.click(await screen.findByRole('button', { name: 'View dispatch proposal' }));
+    expect(await screen.findByText('Completed', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toHaveTextContent('Machine M3');
+  });
   it('records a defer via the existing empty matching command, then restores the same machine',async()=>{
     const initial=simulationAt(5);const deferred=structuredClone(initial);deferred.revision++;deferred.status='RUNNING';deferred.pending=null;
     deferred.decisions=[{tick:5,actor:'operator',reason:'Await access',action:[],proposed_action:[[2,1,1]],override:true}];

@@ -62,7 +62,9 @@ test('authenticated simulator dispatch persists a work order through completion,
   expect(workOrderId).toMatch(/^wo:je1_/);
 
   await review.click();
-  await expect(card).toContainText('Completed');
+  await expect(page.getByRole('row', { name: /T1 M1 \/ C1 Corrective/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Approve & dispatch' }).click();
+  await expect(card.locator('header').getByText('Completed', { exact: true })).toBeVisible();
   await expect(card).toContainText('t7');
   await expect(card).toHaveAttribute('data-work-order-id', workOrderId!);
   const ordersResponse = await page.request.get(`${sessions}/${session.id}/work-orders?machineIndex=2`);
@@ -75,10 +77,11 @@ test('authenticated simulator dispatch persists a work order through completion,
   expect(commands).toEqual([
     expect.objectContaining({ command: 'approve', revision: session.revision }),
     expect.objectContaining({ command: 'advance', revision: session.revision + 1 }),
+    expect.objectContaining({ command: 'approve', revision: session.revision + 2 }),
   ]);
   await dialog.getByRole('combobox', { name: 'Inspect machine', exact: true }).selectOption('0');
-  await expect(card).toHaveCount(0);
-  await expect(dialog.getByText(/No maintenance work recorded/)).toBeVisible();
+  await expect(card).toContainText('T1 · C1 · CM');
+  await expect(card).not.toHaveAttribute('data-work-order-id', workOrderId!);
 
   const deferred = await readyForRepair(page);
   await openMachine(deferred);
