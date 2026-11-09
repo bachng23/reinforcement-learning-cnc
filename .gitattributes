@@ -1,0 +1,2 @@
+# JCST validates the exact upstream bytes; Windows CRLF conversion breaks replay.
+ai_services/vendor/jcst/** -text

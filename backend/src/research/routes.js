@@ -30,6 +30,14 @@ router.post('/demo/sessions', write, async (req, res) => {
   ok(res, await demo.create(req.user, input, key(req)), 201);
 });
 router.get('/demo/sessions/:id', async (req,res) => ok(res, demo.present(await demo.read(req.user, parse(id,req.params.id)))));
+router.get('/demo/sessions/:id/work-orders', async (req, res) => {
+  const query = parse(z.object({ machineIndex: z.coerce.number().int().nonnegative().optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(20) }).strict(), req.query);
+  const row = await demo.read(req.user, parse(id, req.params.id));
+  if (query.machineIndex !== undefined && query.machineIndex >= row.payloadJson.config.components.length)
+    throw new ApiError(400, 'INVALID_MACHINE_INDEX', 'Machine index is outside the session configuration');
+  ok(res, require('./demo-work-orders').present(row, query));
+});
 router.post('/demo/sessions/:id/commands', write, async (req,res) => {
   const shared = { revision: integer };
   const input = parse(z.discriminatedUnion('command', [

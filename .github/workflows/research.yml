@@ -32,6 +32,7 @@ jobs:
       - run: ai_services/.venv/bin/python scripts/check-jcst-contracts.py
       - run: ai_services/.venv/bin/python -m pytest ai_services/tests -q
       - run: uv sync --frozen --project jcst_runtime --python 3.12
+      - run: echo "JCST_PYTHON=$PWD/jcst_runtime/.venv/bin/python" >> "$GITHUB_ENV"
       - run: jcst_runtime/.venv/bin/python -m pytest ai_services/tests/test_jcst_inference.py -q
       - run: npm --prefix backend test -- --runInBand
       - run: npm --prefix backend run test:integration
