@@ -1,29 +1,17 @@
 # Simulation incident workflow — frontend handoff
 
-Status: **M1 frontend implemented; M2 joint acceptance pending**. No Backend or Flex
-implementation is changed by this branch. Component/browser fixture evidence is
-not real API or joint acceptance evidence.
+Machine inspection reads machine health from #64 and durable simulator work
+orders from #67. The component fixture captures describe the earlier fixture
+flow. The authenticated acceptance test below exercises both live endpoints.
 
-## M0 integration basis and producer gaps
+## Integration basis
 
-- Frontend base: main `ddf7a05a2ee3b6f3276241eac698fa3150796203` (PR #65).
-- Machine health producer: PR #64, `feat/jcst-machine-health`, pinned at
-  `eff27fef2fec4c770c4a252b9c3dc0200d819466`. It is **not on the base main**.
-  Consumer schemas are extracted from that producer's OpenAPI, with local JSON
-  Schema reference paths; t5/t6/t7/source fixtures are copied from the producer.
-  Generated TypeScript is checked locally.
-- Backend 2 session-scoped work/service history API: **not supplied/implemented**,
-  confirmed by the task owner. No speculative endpoint, durable work-order ID,
-  status enum, or database write is invented. Joint contract freeze is pending.
-- Current work is read from `Simulation.primary.state.jobs`. Historical service
-  evidence is grouped from health API `start/completion` events. The UI calls
-  these **physical service records**, not durable Operations Work Orders.
-  The start `eventId` identifies the evidence card, never a made-up work-order ID.
-  A current job without a retained start has an explicit presentation-only key
-  and “Not retained” timestamps. It is not a history receipt.
-- Once Backend 2 supplies its DTO, join by the producer's stable event IDs,
-  session, primary lane, machine and matching revision. Do not join unrelated
-  Operations work orders or change the command/recovery path.
+- Machine health #64 is on main at `8887d5b`. The local consumer schema and
+  t5/t6/t7 fixtures use the pinned producer contract.
+- Work-order history comes from #67's `jcst-work-orders/v1` DTO. Work-order IDs,
+  lifecycle status and assignment source come from the API. Active job context
+  comes from the session snapshot.
+- Merge #67 before #66 so both read endpoints are available on main.
 
 ## API / UI mapping
 
@@ -32,7 +20,7 @@ not real API or joint acceptance evidence.
 | `GET /api/v1/research/demo/sessions/{sessionId}` | Owned session snapshot, revision, primary tick/components/jobs, decisions; reload is read-only |
 | `GET /api/v1/research/demo/sessions/{sessionId}/machines/{machineIndex}/health?limit=256&expectedRevision={revision}` | PR #64: risk probabilities, applicability, retained history, stable event IDs; no physics in React |
 | `POST .../sessions/{sessionId}/commands` | Existing approve or override (empty legal matching for defer); **current simulator revision**, key/body preserved on retry |
-| Backend 2 work/service read | Producer gap; no call until route/DTO is supplied |
+| `GET /api/v1/research/demo/sessions/{sessionId}/work-orders?machineIndex={machineIndex}` | #67: durable simulator history, coverage, total, lifecycle status and assignment source |
 
 `revision` is a concurrency fence, **not** `tick`. A REVIEW preparation can
 increment revision at the same tick. `stepSeconds` / session `step_seconds` is a
@@ -45,8 +33,8 @@ is accepted. The last consistent pair can remain visible **for the same session
 and machine only**, with an updating label. Abort cleanup and a result fence
 discard obsolete requests even if transport cancellation is ignored. A 180ms
 revision debounce coalesces playback bursts; animation frames never fetch.
-401/403 hide retained history. 404/503/network errors offer retry; 409/mismatched
-reads require session synchronization. There is no fixture fallback.
+A failed or unauthorized read clears the prior pair. 404/503/network errors
+offer retry. A 409 or mismatched response requires session synchronization.
 
 Commands on a stale revision are disabled until a read-only reload. Reload never
 re-submits a decision. A retry after a lost response uses the same body/key.
@@ -84,9 +72,9 @@ clear the old inspection. Component choice survives same-machine revision refres
 Risk is formatted from the API probability (0..1) to percent only. No hazard,
 risk level, KPI, score or confidence is computed. Null values and history gaps
 break the plotted line. Zero remains valid; tiny nonzero values show `<0.01%`.
-Service grouping does not pair events across a reported gap. Unknown starts,
-outcomes and waiting times stay unknown. Machine status always uses machine
-snapshot components/jobs, never “a service completed, therefore working”.
+Work-order cards use the producer’s history coverage and stable workOrderId.
+Missing times display as unavailable. Machine status uses the machine snapshot
+components and jobs.
 
 ## Verification and reproduction
 
@@ -109,23 +97,17 @@ Screenshots/traces are under `frontend/test-results/simulation-inspection` and
 selected review images are under `docs/design/screenshots/simulation-inspection`.
 They are **component evidence only**.
 
-For M2, integrate the pinned health backend and the still-missing Backend 2 DTO
-without changing them to accommodate frontend tests. Use authenticated API,
-PostgreSQL and real JCST engine, not intercepted responses:
+With both producers checked out, run the authenticated browser acceptance on a
+dedicated PostgreSQL test database ending in `_test` or `_ci`:
 
-1. Create `{case:'base',seed:'990000001',mode:'policy',primary:'corrective',baseline:'wait',continuous:true}`.
-   The existing advanced Comparison policy field permits the `wait` baseline.
-2. Turn off auto-approve and pause on failure; step explicitly to t5. Select M3
-   from 3D/Activity. C2 has failure at t5; there is no new service yet.
-3. Approve T2/M3/C2 at current revision. Return to M3 at t6: CM, in progress,
-   one interval left. Approve the M1/C1 review at t6 if needed to reach t7.
-4. At t7, verify the same service evidence is completed, start t5/completion t7,
-   with the completion marker. Reload and verify same session/history without POST.
-5. Inspect M1/M2 separately; defer without a service; change machines quickly;
-   test retained/partial legacy histories, VIEWER/cross-owner reads and stale commands.
-6. Record all three producer/consumer SHAs, auth/HTTP/browser logs, actual
-   screenshots and test-owned data cleanup before claiming M2 verified.
+```sh
+npx playwright test --config playwright.research.config.ts simulation-work-orders.spec.ts
+```
 
-Local real-engine verification is additionally blocked by Windows Application
-Control rejecting `.tools/ai-venv/Scripts/python.exe`. No policy bypass or synthetic
-runtime is used. This task does not claim an integrated browser run.
+The test uses the existing research browser harness to create a disposable
+schema. It signs in, prepares the corrective/wait scenario at t5 and verifies
+that M3/C2 has no work order before approval. At t6 it checks T2's active CM,
+manual source and one remaining interval. The next step completes the same
+order at t7. The test also checks reload without a command, machine switching,
+and defer without creating a work order. It runs when the #67 migration is
+present in the checkout.
