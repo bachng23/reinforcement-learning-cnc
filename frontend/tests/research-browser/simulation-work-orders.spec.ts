@@ -34,7 +34,7 @@ test('authenticated simulator dispatch persists a work order through completion,
   await page.getByLabel('Password', { exact: true }).fill('jcst-browser-test-password');
   const login = page.waitForResponse(response => response.url().endsWith('/api/v1/auth/login'));
   await page.getByRole('button', { name: /sign in/i }).click();
-  await expect(await login).toBeOK();
+  expect((await login).ok()).toBe(true);
   await expect(page).not.toHaveURL(/\/login$/);
 
   const openMachine = (session: Simulation) => page.goto(`/simulation?session=${session.id}&machine=2&inspect=1`);
