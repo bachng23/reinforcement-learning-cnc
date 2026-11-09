@@ -5,6 +5,7 @@ const { requireAuth, requireRole } = require('../middlewares/auth.middleware');
 const { ApiError, fromZodError } = require('../lib/api-error');
 const s = require('./service');
 const demo = require('./demo-service');
+const health = require('./demo-health');
 const { bridge } = require('./bridge');
 const { canonical, sha } = require('./artifact-store');
 const router = express.Router();
@@ -22,6 +23,7 @@ const key = req => parse(identifier, req.get('Idempotency-Key'));
 const ok = (res, data, status = 200) => res.status(status).json({ success: true, data });
 const queued = (res, result) => { if (result.replayed) res.set('Idempotency-Replayed', 'true'); return ok(res, result.job, 202); };
 
+router.use('/demo/sessions/:id/machines/:machineIndex/health', (_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
 router.use((req, _res, next) => { if (process.env.RESEARCH_API_ENABLED === 'false') return next(new ApiError(404, 'RESEARCH_DISABLED', 'Research API is disabled')); next(); });
 router.use(requireAuth);
 // Engineering simulation is isolated from immutable scientific campaign evidence.
@@ -30,6 +32,13 @@ router.post('/demo/sessions', write, async (req, res) => {
   ok(res, await demo.create(req.user, input, key(req)), 201);
 });
 router.get('/demo/sessions/:id', async (req,res) => ok(res, demo.present(await demo.read(req.user, parse(id,req.params.id)))));
+router.get('/demo/sessions/:id/machines/:machineIndex/health', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const query = parse(health.querySchema, req.query);
+  const machineIndex = parse(health.machineIndexSchema, req.params.machineIndex);
+  const row = await demo.read(req.user, parse(id, req.params.id));
+  ok(res, health.projectHealth(row, machineIndex, query));
+});
 router.get('/demo/sessions/:id/work-orders', async (req, res) => {
   const query = parse(z.object({ machineIndex: z.coerce.number().int().nonnegative().optional(),
     limit: z.coerce.number().int().min(1).max(100).default(20) }).strict(), req.query);

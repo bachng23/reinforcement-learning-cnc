@@ -1,0 +1,204 @@
+{
+  "success": true,
+  "data": {
+    "sessionId": "d549829e-27cc-4f33-855e-100000000001",
+    "revision": 12,
+    "tick": 6,
+    "stepSeconds": 900,
+    "lane": "primary",
+    "source": "JCST_SIMULATION",
+    "machineIndex": 2,
+    "machineStatus": "IN_SERVICE",
+    "components": [
+      {
+        "componentIndex": 0,
+        "ageTicks": 5,
+        "failed": false,
+        "failureRisk": null,
+        "riskUnavailableReason": "IN_SERVICE"
+      },
+      {
+        "componentIndex": 1,
+        "ageTicks": 5,
+        "failed": true,
+        "failureRisk": null,
+        "riskUnavailableReason": "IN_SERVICE"
+      }
+    ],
+    "history": {
+      "fromTick": 0,
+      "toTick": 6,
+      "availableFromTick": 0,
+      "limit": 64,
+      "returnedIntervals": 6,
+      "truncated": false,
+      "gaps": [],
+      "samples": [
+        {
+          "componentIndex": 0,
+          "ageTicks": 0,
+          "failed": false,
+          "failureRisk": 0.0001285925543138825,
+          "riskUnavailableReason": null,
+          "tick": 0,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "WORKING"
+        },
+        {
+          "componentIndex": 1,
+          "ageTicks": 0,
+          "failed": false,
+          "failureRisk": 0.00003051711246844961,
+          "riskUnavailableReason": null,
+          "tick": 0,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "WORKING"
+        },
+        {
+          "componentIndex": 0,
+          "ageTicks": 1,
+          "failed": false,
+          "failureRisk": 0.003978689472419048,
+          "riskUnavailableReason": null,
+          "tick": 1,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "WORKING"
+        },
+        {
+          "componentIndex": 1,
+          "ageTicks": 1,
+          "failed": false,
+          "failureRisk": 0.0009455975624630518,
+          "riskUnavailableReason": null,
+          "tick": 1,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "WORKING"
+        },
+        {
+          "componentIndex": 0,
+          "ageTicks": 2,
+          "failed": false,
+          "failureRisk": 0.026769933095528532,
+          "riskUnavailableReason": null,
+          "tick": 2,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "WORKING"
+        },
+        {
+          "componentIndex": 1,
+          "ageTicks": 2,
+          "failed": false,
+          "failureRisk": 0.0064185217052572015,
+          "riskUnavailableReason": null,
+          "tick": 2,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "WORKING"
+        },
+        {
+          "componentIndex": 0,
+          "ageTicks": 3,
+          "failed": false,
+          "failureRisk": 0.0955581291273817,
+          "riskUnavailableReason": null,
+          "tick": 3,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "WORKING"
+        },
+        {
+          "componentIndex": 1,
+          "ageTicks": 3,
+          "failed": false,
+          "failureRisk": 0.02355243649581278,
+          "riskUnavailableReason": null,
+          "tick": 3,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "WORKING"
+        },
+        {
+          "componentIndex": 0,
+          "ageTicks": 4,
+          "failed": false,
+          "failureRisk": 0.23676578525950842,
+          "riskUnavailableReason": null,
+          "tick": 4,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "WORKING"
+        },
+        {
+          "componentIndex": 1,
+          "ageTicks": 4,
+          "failed": false,
+          "failureRisk": 0.06210514546789933,
+          "riskUnavailableReason": null,
+          "tick": 4,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "WORKING"
+        },
+        {
+          "componentIndex": 0,
+          "ageTicks": 5,
+          "failed": false,
+          "failureRisk": null,
+          "riskUnavailableReason": "IN_SERVICE",
+          "tick": 5,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "IN_SERVICE"
+        },
+        {
+          "componentIndex": 1,
+          "ageTicks": 5,
+          "failed": true,
+          "failureRisk": null,
+          "riskUnavailableReason": "IN_SERVICE",
+          "tick": 5,
+          "sampleKind": "INTERVAL",
+          "machineStatus": "IN_SERVICE"
+        },
+        {
+          "componentIndex": 0,
+          "ageTicks": 5,
+          "failed": false,
+          "failureRisk": null,
+          "riskUnavailableReason": "IN_SERVICE",
+          "tick": 6,
+          "sampleKind": "CURRENT",
+          "machineStatus": "IN_SERVICE"
+        },
+        {
+          "componentIndex": 1,
+          "ageTicks": 5,
+          "failed": true,
+          "failureRisk": null,
+          "riskUnavailableReason": "IN_SERVICE",
+          "tick": 6,
+          "sampleKind": "CURRENT",
+          "machineStatus": "IN_SERVICE"
+        }
+      ],
+      "events": [
+        {
+          "eventId": "je1_WyJkNTQ5ODI5ZS0yN2NjLTRmMzMtODU1ZS0xMDAwMDAwMDAwMDEiLCJwcmltYXJ5Iiw0LDBd",
+          "type": "failure",
+          "tick": 5,
+          "recordTick": 4,
+          "eventIndex": 0,
+          "machineIndex": 2,
+          "componentIndex": 1,
+          "technicianIndex": null,
+          "kind": null
+        },
+        {
+          "eventId": "je1_WyJkNTQ5ODI5ZS0yN2NjLTRmMzMtODU1ZS0xMDAwMDAwMDAwMDEiLCJwcmltYXJ5Iiw1LDBd",
+          "type": "start",
+          "tick": 5,
+          "recordTick": 5,
+          "eventIndex": 0,
+          "machineIndex": 2,
+          "componentIndex": 1,
+          "technicianIndex": 1,
+          "kind": "CM"
+        }
+      ]
+    }
+  }
+}
