@@ -1009,6 +1009,7 @@ model DemoSession {
   requestHash String @map("request_hash") @db.Char(64)
   revision Int @default(0)
   payloadJson Json @map("payload_json") @db.JsonB
+  workOrdersJson Json? @map("work_orders_json") @db.JsonB
   lastCommandKey String? @map("last_command_key")
   lastCommandHash String? @map("last_command_hash") @db.Char(64)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)

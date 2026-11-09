@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-09",
+  "status": "BACKEND_VERIFIED_FRONTEND_M2_PENDING",
+  "implementationSha": "0995d3067d70efbeee01ba1d4bc491c138a7ae5f",
+  "baseSha": "ddf7a05a2ee3b6f3276241eac698fa3150796203",
+  "backend1Sha": "eff27fef2fec4c770c4a252b9c3dc0200d819466",
+  "checks": {
+    "backendUnit": { "passed": 359, "skipped": 4, "failed": 0 },
+    "postgresRealSimulator": { "passed": 5, "skipped": 0, "failed": 0 },
+    "eventParity": { "status": "PASS", "snapshots": 3, "matchedReferences": 7 },
+    "migrationHistory": "PASS",
+    "freshMigration": "PASS",
+    "upgradeFromBase": "PASS",
+    "schemaCleanup": { "remainingSchemas": 0 },
+    "ownedContainerRemoved": true,
+    "frontendJointBrowser": "NOT_RUN",
+    "remoteCi": "NOT_RUN"
+  }
+}

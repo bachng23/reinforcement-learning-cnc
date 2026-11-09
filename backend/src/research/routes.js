@@ -6,6 +6,11 @@ const { ApiError, fromZodError } = require('../lib/api-error');
 const s = require('./service');
 const demo = require('./demo-service');
 const health = require('./demo-health');
+const workOrders = require('./demo-work-orders');
+const workOrderQuery = z.object({
+  machineIndex: health.unsignedDecimal.optional(),
+  limit: health.unsignedDecimal.pipe(z.number().min(1).max(100)).default(20),
+}).strict();
 const { bridge } = require('./bridge');
 const { canonical, sha } = require('./artifact-store');
 const router = express.Router();
@@ -38,6 +43,14 @@ router.get('/demo/sessions/:id/machines/:machineIndex/health', async (req, res) 
   const machineIndex = parse(health.machineIndexSchema, req.params.machineIndex);
   const row = await demo.read(req.user, parse(id, req.params.id));
   ok(res, health.projectHealth(row, machineIndex, query));
+});
+router.get('/demo/sessions/:id/work-orders', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const query = parse(workOrderQuery, req.query);
+  const row = await demo.read(req.user, parse(id, req.params.id));
+  if (query.machineIndex !== undefined && query.machineIndex >= row.payloadJson.config.components.length)
+    throw new ApiError(400, 'INVALID_MACHINE_INDEX', 'Machine index is outside the session configuration');
+  ok(res, workOrders.present(row, query));
 });
 router.post('/demo/sessions/:id/commands', write, async (req,res) => {
   const shared = { revision: integer };

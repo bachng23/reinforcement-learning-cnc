@@ -89,6 +89,30 @@ paths:
         '409': { description: DEMO_STALE — expectedRevision differs from the authorized snapshot }
         '500': { description: DEMO_TRACE_INVALID — stored physical state or evidence is inconsistent; no raw trace is disclosed }
         '503': { description: DB_UNAVAILABLE — no fallback data }
+  /demo/sessions/{id}/work-orders:
+    parameters: [ { $ref: '#/components/parameters/id' } ]
+    get:
+      summary: Read primary simulator maintenance execution history
+      description: Owner or ADMIN access. Read-only, including legacy reconstruction. Only starts create orders; baseline, pending review and defer are excluded. Newest startedTick first with descending startEventId tie-break. PARTIAL means retained legacy evidence is incomplete. Index labels add one for display; all times are simulation ticks. Query values must be canonical unsigned decimals; unknown or repeated parameters are rejected.
+      parameters:
+        - { name: machineIndex, in: query, schema: { type: integer, minimum: 0 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: Snapshot-consistent work orders; GET never writes
+          headers: { Cache-Control: { schema: { type: string, const: no-store } } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                additionalProperties: false
+                properties:
+                  success: { const: true }
+                  data: { $ref: '#/components/schemas/DemoWorkOrders' }
+        '400': { description: Invalid query or machine index }
+        '401': { description: Authentication required }
+        '404': { description: Session missing or outside owner scope }
   /demo/sessions/{id}/commands:
     parameters: [ { $ref: '#/components/parameters/id' } ]
     post:
@@ -363,6 +387,45 @@ components:
             events:
               type: array
               items: { $ref: '#/components/schemas/MachineHealthEvent' }
+    DemoWorkOrders:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, sessionId, revision, tick, stepSeconds, lane, source, historyCoverage, total, items]
+      properties:
+        contractVersion: { const: jcst-work-orders/v1 }
+        sessionId: { type: string, format: uuid }
+        revision: { type: integer, minimum: 0 }
+        tick: { type: integer, minimum: 0 }
+        stepSeconds: { type: integer, minimum: 1 }
+        lane: { const: primary }
+        source: { const: JCST_SIMULATION }
+        historyCoverage: { enum: [COMPLETE, PARTIAL] }
+        total: { type: integer, minimum: 0 }
+        items: { type: array, items: { $ref: '#/components/schemas/DemoWorkOrder' } }
+    DemoWorkOrder:
+      type: object
+      additionalProperties: false
+      required: [workOrderId, machineIndex, componentIndex, technicianIndex, kind, status, startedTick, completedTick, plannedDurationTicks, remainingTicks, waitTicks, startEventId, completionEventId, failureEventId, decisionTick, assignmentSource]
+      properties:
+        workOrderId: { type: string }
+        machineIndex: { type: integer, minimum: 0 }
+        componentIndex: { type: integer, minimum: 0 }
+        technicianIndex: { type: integer, minimum: 0 }
+        kind: { enum: [PM, CM] }
+        status: { enum: [IN_PROGRESS, COMPLETED] }
+        startedTick: { type: integer, minimum: 0 }
+        completedTick: { type: [integer, 'null'], minimum: 0 }
+        plannedDurationTicks: { type: integer, minimum: 1 }
+        remainingTicks: { type: [integer, 'null'], minimum: 0 }
+        waitTicks: { type: [integer, 'null'], minimum: 0 }
+        startEventId:
+          type: string
+          pattern: '^je1_[A-Za-z0-9_-]+$'
+          description: 'Shared machine-health identity: je1_ plus unpadded base64url of compact UTF-8 JSON [sessionId,"primary",recordTick,eventOrdinal]. Ordinal includes occupancy events.'
+        completionEventId: { type: [string, 'null'] }
+        failureEventId: { type: [string, 'null'] }
+        decisionTick: { type: [integer, 'null'], minimum: 0 }
+        assignmentSource: { enum: [AUTOMATIC, MANUAL_APPROVAL, OVERRIDE, UNKNOWN] }
   securitySchemes:
     session: { type: apiKey, in: cookie, name: pdm_token }
   parameters:

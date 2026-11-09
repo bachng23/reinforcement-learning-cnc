@@ -2,6 +2,7 @@ const prisma = require('../config/prisma');
 const { bridge } = require('./bridge');
 const { ApiError } = require('../lib/api-error');
 const { canonical, sha } = require('./artifact-store');
+const workOrders = require('./demo-work-orders');
 const scope = user => user.role === 'ADMIN' ? {} : { ownerId: user.id };
 const present = row => ({ id: row.id, revision: row.revision, createdAt: row.createdAt, simulation_start: row.createdAt.toISOString(), step_seconds: 900, ...row.payloadJson });
 
@@ -23,6 +24,7 @@ async function create(user, input, key) {
   try {
     const row = await prisma.$transaction(async tx => {
       const created = await tx.demoSession.create({ data: { ownerId: user.id, requestKey: key, requestHash: hash, payloadJson } });
+      await tx.demoSession.update({ where: { id: created.id }, data: { workOrdersJson: workOrders.project(created.id, payloadJson) } });
       await tx.auditLog.create({ data: { entityType: 'SYSTEM', entityId: created.id, action: 'DEMO_CREATED', actorUserId: user.id, payloadJson: { ...input, sourceCommit: payloadJson.source_commit, domain: 'ENGINEERING_SIMULATION' } } });
       return created;
     });
@@ -62,9 +64,12 @@ async function command(user, id, input, key) {
     const action = input.command === 'approve' ? row.payloadJson.pending.action : input.action;
     payloadJson = await bridge({ operation: 'demo_commit', session: row.payloadJson, action, actor: user.id, reason: input.reason });
   }
+  const previousProjection = row.workOrdersJson ?? workOrders.project(row.id, row.payloadJson);
+  const workOrdersJson = workOrders.project(row.id, payloadJson, previousProjection,
+    { name: input.command, fromTick: row.payloadJson.primary.state.tick });
   const result = await prisma.$transaction(async tx => {
     const updated = await tx.demoSession.updateMany({ where: { id: row.id, revision: row.revision }, data: {
-      payloadJson, revision: { increment: 1 }, lastCommandKey: key, lastCommandHash: hash,
+      payloadJson, workOrdersJson, revision: { increment: 1 }, lastCommandKey: key, lastCommandHash: hash,
     } });
     if (!updated.count) {
       const saved = replay(await tx.demoSession.findUnique({ where: { id: row.id } }));
