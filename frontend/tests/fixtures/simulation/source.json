@@ -1,0 +1,2602 @@
+{
+  "sourceCommit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+  "simulatorVersion": "JCST/1.1",
+  "scenario": {
+    "case": "base",
+    "seed": "990000001",
+    "mode": "policy",
+    "primary": "corrective",
+    "baseline": "wait",
+    "continuous": true
+  },
+  "rows": {
+    "0": {
+      "id": "d549829e-27cc-4f33-855e-100000000001",
+      "revision": 0,
+      "payloadJson": {
+        "step_seconds": 900,
+        "config": {
+          "components": [
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ],
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ],
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ]
+          ],
+          "duration": [
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ],
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ],
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ]
+          ],
+          "preventive_cost": 1.0,
+          "corrective_cost": 2.0,
+          "unavailable_cost": 6.0,
+          "failure_cost": 15.0,
+          "version": "JCST/1.1"
+        },
+        "primary": {
+          "state": {
+            "tick": 0,
+            "components": [
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": false
+                }
+              ]
+            ],
+            "jobs": [
+              null,
+              null
+            ]
+          },
+          "records": []
+        }
+      }
+    },
+    "5": {
+      "id": "d549829e-27cc-4f33-855e-100000000001",
+      "revision": 10,
+      "payloadJson": {
+        "step_seconds": 900,
+        "config": {
+          "components": [
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ],
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ],
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ]
+          ],
+          "duration": [
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ],
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ],
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ]
+          ],
+          "preventive_cost": 1.0,
+          "corrective_cost": 2.0,
+          "unavailable_cost": 6.0,
+          "failure_cost": 15.0,
+          "version": "JCST/1.1"
+        },
+        "primary": {
+          "state": {
+            "tick": 5,
+            "components": [
+              [
+                {
+                  "age": 5,
+                  "failed": false
+                },
+                {
+                  "age": 5,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 5,
+                  "failed": false
+                },
+                {
+                  "age": 5,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 5,
+                  "failed": false
+                },
+                {
+                  "age": 5,
+                  "failed": true
+                }
+              ]
+            ],
+            "jobs": [
+              null,
+              null
+            ]
+          },
+          "records": [
+            {
+              "tick": 0,
+              "before": {
+                "tick": 0,
+                "components": [
+                  [
+                    {
+                      "age": 0,
+                      "failed": false
+                    },
+                    {
+                      "age": 0,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 0,
+                      "failed": false
+                    },
+                    {
+                      "age": 0,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 0,
+                      "failed": false
+                    },
+                    {
+                      "age": 0,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 1,
+                "components": [
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 1,
+              "before": {
+                "tick": 1,
+                "components": [
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 2,
+                "components": [
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 2,
+              "before": {
+                "tick": 2,
+                "components": [
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 3,
+                "components": [
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 3,
+              "before": {
+                "tick": 3,
+                "components": [
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 4,
+                "components": [
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 4,
+              "before": {
+                "tick": 4,
+                "components": [
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 5,
+                "components": [
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": true
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": [
+                {
+                  "type": "failure",
+                  "tick": 5,
+                  "machine": 2,
+                  "component": 1,
+                  "uniform": 0.0522729622364276
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "6": {
+      "id": "d549829e-27cc-4f33-855e-100000000001",
+      "revision": 12,
+      "payloadJson": {
+        "step_seconds": 900,
+        "config": {
+          "components": [
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ],
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ],
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ]
+          ],
+          "duration": [
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ],
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ],
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ]
+          ],
+          "preventive_cost": 1.0,
+          "corrective_cost": 2.0,
+          "unavailable_cost": 6.0,
+          "failure_cost": 15.0,
+          "version": "JCST/1.1"
+        },
+        "primary": {
+          "state": {
+            "tick": 6,
+            "components": [
+              [
+                {
+                  "age": 6,
+                  "failed": true
+                },
+                {
+                  "age": 6,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 6,
+                  "failed": false
+                },
+                {
+                  "age": 6,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 5,
+                  "failed": false
+                },
+                {
+                  "age": 5,
+                  "failed": true
+                }
+              ]
+            ],
+            "jobs": [
+              null,
+              {
+                "machine": 2,
+                "component": 1,
+                "technician": 1,
+                "kind": "CM",
+                "remaining": 1
+              }
+            ]
+          },
+          "records": [
+            {
+              "tick": 0,
+              "before": {
+                "tick": 0,
+                "components": [
+                  [
+                    {
+                      "age": 0,
+                      "failed": false
+                    },
+                    {
+                      "age": 0,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 0,
+                      "failed": false
+                    },
+                    {
+                      "age": 0,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 0,
+                      "failed": false
+                    },
+                    {
+                      "age": 0,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 1,
+                "components": [
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 1,
+              "before": {
+                "tick": 1,
+                "components": [
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 2,
+                "components": [
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 2,
+              "before": {
+                "tick": 2,
+                "components": [
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 3,
+                "components": [
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 3,
+              "before": {
+                "tick": 3,
+                "components": [
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 4,
+                "components": [
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 4,
+              "before": {
+                "tick": 4,
+                "components": [
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 5,
+                "components": [
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": true
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": [
+                {
+                  "type": "failure",
+                  "tick": 5,
+                  "machine": 2,
+                  "component": 1,
+                  "uniform": 0.0522729622364276
+                }
+              ]
+            },
+            {
+              "tick": 5,
+              "before": {
+                "tick": 5,
+                "components": [
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": true
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 6,
+                "components": [
+                  [
+                    {
+                      "age": 6,
+                      "failed": true
+                    },
+                    {
+                      "age": 6,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 6,
+                      "failed": false
+                    },
+                    {
+                      "age": 6,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": true
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  {
+                    "machine": 2,
+                    "component": 1,
+                    "technician": 1,
+                    "kind": "CM",
+                    "remaining": 1
+                  }
+                ]
+              },
+              "events": [
+                {
+                  "type": "start",
+                  "tick": 5,
+                  "machine": 2,
+                  "component": 1,
+                  "technician": 1,
+                  "kind": "CM",
+                  "duration": 2
+                },
+                {
+                  "type": "failure",
+                  "tick": 6,
+                  "machine": 0,
+                  "component": 0,
+                  "uniform": 0.0738181877897132
+                },
+                {
+                  "type": "occupancy",
+                  "tick": 5,
+                  "machine": 2,
+                  "component": 1,
+                  "technician": 1,
+                  "remaining": 2
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "7": {
+      "id": "d549829e-27cc-4f33-855e-100000000001",
+      "revision": 14,
+      "payloadJson": {
+        "step_seconds": 900,
+        "config": {
+          "components": [
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ],
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ],
+            [
+              {
+                "scale": 6,
+                "shape": 5
+              },
+              {
+                "scale": 8,
+                "shape": 5
+              }
+            ]
+          ],
+          "duration": [
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ],
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ],
+            [
+              [
+                2,
+                8
+              ],
+              [
+                8,
+                2
+              ]
+            ]
+          ],
+          "preventive_cost": 1.0,
+          "corrective_cost": 2.0,
+          "unavailable_cost": 6.0,
+          "failure_cost": 15.0,
+          "version": "JCST/1.1"
+        },
+        "primary": {
+          "state": {
+            "tick": 7,
+            "components": [
+              [
+                {
+                  "age": 6,
+                  "failed": true
+                },
+                {
+                  "age": 6,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 7,
+                  "failed": false
+                },
+                {
+                  "age": 7,
+                  "failed": true
+                }
+              ],
+              [
+                {
+                  "age": 5,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": false
+                }
+              ]
+            ],
+            "jobs": [
+              {
+                "machine": 0,
+                "component": 0,
+                "technician": 0,
+                "kind": "CM",
+                "remaining": 1
+              },
+              null
+            ]
+          },
+          "records": [
+            {
+              "tick": 0,
+              "before": {
+                "tick": 0,
+                "components": [
+                  [
+                    {
+                      "age": 0,
+                      "failed": false
+                    },
+                    {
+                      "age": 0,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 0,
+                      "failed": false
+                    },
+                    {
+                      "age": 0,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 0,
+                      "failed": false
+                    },
+                    {
+                      "age": 0,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 1,
+                "components": [
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 1,
+              "before": {
+                "tick": 1,
+                "components": [
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 1,
+                      "failed": false
+                    },
+                    {
+                      "age": 1,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 2,
+                "components": [
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 2,
+              "before": {
+                "tick": 2,
+                "components": [
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 2,
+                      "failed": false
+                    },
+                    {
+                      "age": 2,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 3,
+                "components": [
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 3,
+              "before": {
+                "tick": 3,
+                "components": [
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 3,
+                      "failed": false
+                    },
+                    {
+                      "age": 3,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 4,
+                "components": [
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": []
+            },
+            {
+              "tick": 4,
+              "before": {
+                "tick": 4,
+                "components": [
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 4,
+                      "failed": false
+                    },
+                    {
+                      "age": 4,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 5,
+                "components": [
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": true
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "events": [
+                {
+                  "type": "failure",
+                  "tick": 5,
+                  "machine": 2,
+                  "component": 1,
+                  "uniform": 0.0522729622364276
+                }
+              ]
+            },
+            {
+              "tick": 5,
+              "before": {
+                "tick": 5,
+                "components": [
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": true
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  null
+                ]
+              },
+              "after": {
+                "tick": 6,
+                "components": [
+                  [
+                    {
+                      "age": 6,
+                      "failed": true
+                    },
+                    {
+                      "age": 6,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 6,
+                      "failed": false
+                    },
+                    {
+                      "age": 6,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": true
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  {
+                    "machine": 2,
+                    "component": 1,
+                    "technician": 1,
+                    "kind": "CM",
+                    "remaining": 1
+                  }
+                ]
+              },
+              "events": [
+                {
+                  "type": "start",
+                  "tick": 5,
+                  "machine": 2,
+                  "component": 1,
+                  "technician": 1,
+                  "kind": "CM",
+                  "duration": 2
+                },
+                {
+                  "type": "failure",
+                  "tick": 6,
+                  "machine": 0,
+                  "component": 0,
+                  "uniform": 0.0738181877897132
+                },
+                {
+                  "type": "occupancy",
+                  "tick": 5,
+                  "machine": 2,
+                  "component": 1,
+                  "technician": 1,
+                  "remaining": 2
+                }
+              ]
+            },
+            {
+              "tick": 6,
+              "before": {
+                "tick": 6,
+                "components": [
+                  [
+                    {
+                      "age": 6,
+                      "failed": true
+                    },
+                    {
+                      "age": 6,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 6,
+                      "failed": false
+                    },
+                    {
+                      "age": 6,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 5,
+                      "failed": true
+                    }
+                  ]
+                ],
+                "jobs": [
+                  null,
+                  {
+                    "machine": 2,
+                    "component": 1,
+                    "technician": 1,
+                    "kind": "CM",
+                    "remaining": 1
+                  }
+                ]
+              },
+              "after": {
+                "tick": 7,
+                "components": [
+                  [
+                    {
+                      "age": 6,
+                      "failed": true
+                    },
+                    {
+                      "age": 6,
+                      "failed": false
+                    }
+                  ],
+                  [
+                    {
+                      "age": 7,
+                      "failed": false
+                    },
+                    {
+                      "age": 7,
+                      "failed": true
+                    }
+                  ],
+                  [
+                    {
+                      "age": 5,
+                      "failed": false
+                    },
+                    {
+                      "age": 0,
+                      "failed": false
+                    }
+                  ]
+                ],
+                "jobs": [
+                  {
+                    "machine": 0,
+                    "component": 0,
+                    "technician": 0,
+                    "kind": "CM",
+                    "remaining": 1
+                  },
+                  null
+                ]
+              },
+              "events": [
+                {
+                  "type": "start",
+                  "tick": 6,
+                  "machine": 0,
+                  "component": 0,
+                  "technician": 0,
+                  "kind": "CM",
+                  "duration": 2
+                },
+                {
+                  "type": "failure",
+                  "tick": 7,
+                  "machine": 1,
+                  "component": 1,
+                  "uniform": 0.18301931893990475
+                },
+                {
+                  "type": "occupancy",
+                  "tick": 6,
+                  "machine": 0,
+                  "component": 0,
+                  "technician": 0,
+                  "remaining": 2
+                },
+                {
+                  "type": "occupancy",
+                  "tick": 6,
+                  "machine": 2,
+                  "component": 1,
+                  "technician": 1,
+                  "remaining": 1
+                },
+                {
+                  "type": "completion",
+                  "tick": 7,
+                  "machine": 2,
+                  "component": 1,
+                  "technician": 1,
+                  "kind": "CM"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "pm": {
+    "id": "d549829e-27cc-4f33-855e-100000000001",
+    "revision": 4,
+    "payloadJson": {
+      "step_seconds": 900,
+      "config": {
+        "components": [
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ]
+        ],
+        "duration": [
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        ],
+        "preventive_cost": 1.0,
+        "corrective_cost": 2.0,
+        "unavailable_cost": 6.0,
+        "failure_cost": 15.0,
+        "version": "JCST/1.1"
+      },
+      "primary": {
+        "state": {
+          "tick": 2,
+          "components": [
+            [
+              {
+                "age": 2,
+                "failed": false
+              },
+              {
+                "age": 2,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 2,
+                "failed": false
+              },
+              {
+                "age": 2,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [
+          {
+            "tick": 0,
+            "before": {
+              "tick": 0,
+              "components": [
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "after": {
+              "tick": 1,
+              "components": [
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                {
+                  "machine": 2,
+                  "component": 1,
+                  "technician": 1,
+                  "kind": "PM",
+                  "remaining": 1
+                }
+              ]
+            },
+            "events": [
+              {
+                "type": "start",
+                "tick": 0,
+                "machine": 2,
+                "component": 1,
+                "technician": 1,
+                "kind": "PM",
+                "duration": 2
+              },
+              {
+                "type": "occupancy",
+                "tick": 0,
+                "machine": 2,
+                "component": 1,
+                "technician": 1,
+                "remaining": 2
+              }
+            ]
+          },
+          {
+            "tick": 1,
+            "before": {
+              "tick": 1,
+              "components": [
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                {
+                  "machine": 2,
+                  "component": 1,
+                  "technician": 1,
+                  "kind": "PM",
+                  "remaining": 1
+                }
+              ]
+            },
+            "after": {
+              "tick": 2,
+              "components": [
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "events": [
+              {
+                "type": "occupancy",
+                "tick": 1,
+                "machine": 2,
+                "component": 1,
+                "technician": 1,
+                "remaining": 1
+              },
+              {
+                "type": "completion",
+                "tick": 2,
+                "machine": 2,
+                "component": 1,
+                "technician": 1,
+                "kind": "PM"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "hazardOracle": [
+    {
+      "spec": {
+        "scale": 6,
+        "shape": 5
+      },
+      "age": 0,
+      "risk": 0.00012859255431388252
+    },
+    {
+      "spec": {
+        "scale": 6,
+        "shape": 5
+      },
+      "age": 4,
+      "risk": 0.2367657852595084
+    },
+    {
+      "spec": {
+        "scale": 6,
+        "shape": 5
+      },
+      "age": 17,
+      "risk": 1.0
+    },
+    {
+      "spec": {
+        "scale": 8,
+        "shape": 5
+      },
+      "age": 0,
+      "risk": 3.0517112468449605e-05
+    },
+    {
+      "spec": {
+        "scale": 8,
+        "shape": 5
+      },
+      "age": 4,
+      "risk": 0.06210514546789933
+    },
+    {
+      "spec": {
+        "scale": 8,
+        "shape": 5
+      },
+      "age": 17,
+      "risk": 0.9999994048439154
+    },
+    {
+      "spec": {
+        "scale": 6,
+        "shape": 5
+      },
+      "age": 0,
+      "risk": 0.00012859255431388252
+    },
+    {
+      "spec": {
+        "scale": 6,
+        "shape": 5
+      },
+      "age": 4,
+      "risk": 0.2367657852595084
+    },
+    {
+      "spec": {
+        "scale": 6,
+        "shape": 5
+      },
+      "age": 17,
+      "risk": 1.0
+    },
+    {
+      "spec": {
+        "scale": 8,
+        "shape": 5
+      },
+      "age": 0,
+      "risk": 3.0517112468449605e-05
+    },
+    {
+      "spec": {
+        "scale": 8,
+        "shape": 5
+      },
+      "age": 4,
+      "risk": 0.06210514546789933
+    },
+    {
+      "spec": {
+        "scale": 8,
+        "shape": 5
+      },
+      "age": 17,
+      "risk": 0.9999994048439154
+    },
+    {
+      "spec": {
+        "scale": 6,
+        "shape": 5
+      },
+      "age": 0,
+      "risk": 0.00012859255431388252
+    },
+    {
+      "spec": {
+        "scale": 6,
+        "shape": 5
+      },
+      "age": 4,
+      "risk": 0.2367657852595084
+    },
+    {
+      "spec": {
+        "scale": 6,
+        "shape": 5
+      },
+      "age": 17,
+      "risk": 1.0
+    },
+    {
+      "spec": {
+        "scale": 8,
+        "shape": 5
+      },
+      "age": 0,
+      "risk": 3.0517112468449605e-05
+    },
+    {
+      "spec": {
+        "scale": 8,
+        "shape": 5
+      },
+      "age": 4,
+      "risk": 0.06210514546789933
+    },
+    {
+      "spec": {
+        "scale": 8,
+        "shape": 5
+      },
+      "age": 17,
+      "risk": 0.9999994048439154
+    }
+  ]
+}

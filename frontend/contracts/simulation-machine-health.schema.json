@@ -1,0 +1,323 @@
+{
+  "title": "SimulationMachineHealthContract",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "health": {
+      "$ref": "#/definitions/MachineHealth"
+    }
+  },
+  "required": [
+    "health"
+  ],
+  "definitions": {
+    "MachineHealthComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "componentIndex",
+        "ageTicks",
+        "failed",
+        "failureRisk",
+        "riskUnavailableReason"
+      ],
+      "properties": {
+        "componentIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ageTicks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "boolean",
+          "description": "Component condition",
+          "independent of machine operating mode": null
+        },
+        "failureRisk": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "riskUnavailableReason": {
+          "enum": [
+            null,
+            "BREAKDOWN",
+            "IN_SERVICE"
+          ]
+        }
+      }
+    },
+    "MachineHealthSample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tick",
+        "sampleKind",
+        "machineStatus",
+        "componentIndex",
+        "ageTicks",
+        "failed",
+        "failureRisk",
+        "riskUnavailableReason"
+      ],
+      "properties": {
+        "tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sampleKind": {
+          "enum": [
+            "INTERVAL",
+            "CURRENT"
+          ]
+        },
+        "machineStatus": {
+          "enum": [
+            "WORKING",
+            "BREAKDOWN",
+            "IN_SERVICE"
+          ]
+        },
+        "componentIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ageTicks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "boolean"
+        },
+        "failureRisk": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "riskUnavailableReason": {
+          "enum": [
+            null,
+            "BREAKDOWN",
+            "IN_SERVICE"
+          ]
+        }
+      }
+    },
+    "MachineHealthEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "eventId",
+        "type",
+        "tick",
+        "recordTick",
+        "eventIndex",
+        "machineIndex",
+        "componentIndex",
+        "technicianIndex",
+        "kind"
+      ],
+      "description": "Sorted by tick,recordTick,eventIndex. eventId = je1_ + base64url(UTF-8 compact JSON [sessionId,\"primary\",recordTick,eventIndex]), without padding. Shared Backend 2 physical event identity. eventIndex is ordinal in the full original events array including occupancy. Never derive identity from retained array position or revision. failure/completion tick is recordTick+1; start tick is recordTick. Only failure/start/completion for this machine.",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "pattern": "^je1_[A-Za-z0-9_-]+$"
+        },
+        "type": {
+          "enum": [
+            "failure",
+            "start",
+            "completion"
+          ]
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recordTick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "eventIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "machineIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "componentIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "technicianIndex": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "kind": {
+          "enum": [
+            null,
+            "PM",
+            "CM"
+          ]
+        }
+      }
+    },
+    "MachineHealth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sessionId",
+        "revision",
+        "tick",
+        "stepSeconds",
+        "lane",
+        "source",
+        "machineIndex",
+        "machineStatus",
+        "components",
+        "history"
+      ],
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stepSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Legacy default 900"
+        },
+        "lane": {
+          "const": "primary"
+        },
+        "source": {
+          "const": "JCST_SIMULATION"
+        },
+        "machineIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "machineStatus": {
+          "enum": [
+            "WORKING",
+            "BREAKDOWN",
+            "IN_SERVICE"
+          ]
+        },
+        "components": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/MachineHealthComponent"
+          }
+        },
+        "history": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fromTick",
+            "toTick",
+            "availableFromTick",
+            "limit",
+            "returnedIntervals",
+            "truncated",
+            "gaps",
+            "samples",
+            "events"
+          ],
+          "properties": {
+            "fromTick": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "First selected interval tick or current tick if empty"
+            },
+            "toTick": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Current tick; interval window is half-open",
+              "CURRENT sample is at this boundary": null
+            },
+            "availableFromTick": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "description": "Earliest retained interval",
+              "null if none": null
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 256
+            },
+            "returnedIntervals": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 256
+            },
+            "truncated": {
+              "type": "boolean",
+              "description": "Any elapsed intervals omitted by retention",
+              "limit or missing data": null
+            },
+            "gaps": {
+              "type": "array",
+              "description": "Missing half-open intervals inside the returned window; render breaks, never interpolate",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "fromTick",
+                  "toTick"
+                ],
+                "properties": {
+                  "fromTick": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "toTick": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            },
+            "samples": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MachineHealthSample"
+              }
+            },
+            "events": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MachineHealthEvent"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

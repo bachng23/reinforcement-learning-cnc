@@ -7,7 +7,7 @@
     "contracts:jcst:generate": "node scripts/generate-jcst-types.mjs",
     "contracts:jcst:check": "node scripts/generate-jcst-types.mjs --check",
     "contracts:generate": "node scripts/generate-operations-types.mjs && node scripts/generate-work-order-types.mjs && node scripts/generate-scenario-types.mjs",
-    "contracts:check": "node scripts/generate-operations-types.mjs --check && node scripts/generate-work-order-types.mjs --check && node scripts/generate-scenario-types.mjs --check",
+    "contracts:check": "node scripts/generate-operations-types.mjs --check && node scripts/generate-work-order-types.mjs --check && node scripts/generate-scenario-types.mjs --check && node scripts/generate-simulation-health-types.mjs --check",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -18,7 +18,8 @@
     "test:browser": "playwright test && playwright test --config playwright.scenarios.config.ts",
     "test:e2e": "playwright test --config playwright.e2e.config.ts",
     "test:cases:live": "playwright test --config playwright.cases-live.config.ts",
-    "test:scenarios:desktop": "playwright test --config playwright.scenarios.config.ts"
+    "test:scenarios:desktop": "playwright test --config playwright.scenarios.config.ts",
+    "test:simulation:inspection": "playwright test --config playwright.simulation-inspection.config.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.0",

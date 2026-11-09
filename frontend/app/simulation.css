@@ -363,3 +363,58 @@
   .workspace-sidebar .sidebar-footer { padding-inline: 0; }
 }
 .fd-condition-map [data-condition='watch'] { background: #fbf5e9; border-color: #e9dab5; }.fd-condition-map [data-condition='watch'] b { color: #987230; }
+
+/* Inspection extends the existing Simulation console; colors and surfaces use its tokens. */
+.review-dialog:has(.sim-machine-detail) { width: min(940px, calc(100vw - 32px)); max-width: none; padding: 24px; }
+.sim-machine-detail { padding-right: 8px; overscroll-behavior: contain; scroll-padding-top: 90px; }
+.sim-machine-detail > header { position: sticky; top: 0; background: var(--color-cloud-white); z-index: 1; padding-bottom: 10px; }
+.sim-machine-detail > header > button { flex-shrink: 0; align-self: flex-start; }
+.sim-machine-detail > header .research-eyebrow { overflow-wrap: anywhere; }
+.sim-inspect-picker { max-width: 420px; margin-bottom: 12px; }
+.sim-component-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.sim-component-chips > span { padding: 5px 9px; border: 1px solid var(--color-stone-border); border-radius: 6px; background: #f0f7f4; color: #417d6c; font-size: 11px; }
+.sim-component-chips > [data-failed='true'] { background: #fcf0f2; color: #aa5362; border-color: #eccfd4; }
+.sim-inspection-note { padding: 10px 12px; margin-block: 10px; border: 1px solid var(--color-stone-border); border-radius: 6px; background: var(--color-canvas-fog); color: var(--color-ash-gray); font-size: 12px; line-height: 1.6; }
+.sim-machine-detail > .sim-footnote { overflow-wrap: anywhere; }
+.sim-inspection-retry { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.sim-machine-detail .sim-inspection-retry button { margin: 0; }
+.sim-health-section { border-top: 1px solid var(--color-stone-border); margin-top: 20px; padding-top: 4px; }
+.sim-health-section .sim-panel-heading { margin-bottom: 8px; align-items: center; }
+.sim-health-section .sim-panel-heading h3 { margin: 0; }
+.sim-health-section h4 { font-size: 12px; font-weight: 600; margin-block: 16px 10px; }
+.sim-health-section .sim-field { min-width: 100px; }
+.sim-health-summary { display: flex; gap: 8px 14px; flex-wrap: wrap; align-items: baseline; margin-block: 12px; font-size: 11px; color: var(--color-ash-gray); }
+.sim-health-summary > strong { font-size: 24px; color: var(--color-slate-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sim-health-chart { margin-block: 16px 10px; overflow-x: auto; min-width: 0; }
+.sim-health-chart svg { width: 100%; display: block; min-height: 180px; }
+.sim-health-chart text { fill: var(--color-ash-gray); font-size: 10px; }
+.sim-chart-grid { stroke: var(--color-stone-border); stroke-dasharray: 3 4; }
+.sim-risk-line { stroke: #4d7a9f; stroke-width: 2; fill: none; }
+.sim-risk-point { fill: #4d7a9f; }
+.sim-health-marker { color: #297cc2; }.sim-health-marker[data-event='failure'] { color: #b94450; }.sim-health-marker[data-event='completion'] { color: #168665; }
+.sim-health-marker line { stroke: currentColor; stroke-dasharray: 3 4; opacity: .65; }.sim-health-marker circle { fill: currentColor; }
+.sim-health-chart figcaption { font-size: 11px; line-height: 1.6; color: var(--color-ash-gray); }
+.sim-health-milestones { display: flex; gap: 10px; flex-wrap: wrap; }
+.sim-health-milestones li { flex: 1 1 160px; padding: 10px; border: 1px solid var(--color-stone-border); border-left: 3px solid #297cc2; border-radius: 6px; font-size: 11px; }
+.sim-health-milestones [data-event='failure'] { border-left-color: #b94450; }.sim-health-milestones [data-event='completion'] { border-left-color: #168665; }
+.sim-health-milestones strong,.sim-health-milestones span { display: block; }.sim-health-milestones span { margin-top: 5px; color: var(--color-ash-gray); }
+.sim-service-list { display: grid; gap: 10px; margin-top: 14px; }
+.sim-current-service { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 10px 12px; margin-block: 12px; background: #edf3fa; border: 1px solid #d0dfed; border-radius: 6px; font-size: 12px; }
+.sim-current-service span { color: #4b78a5; }
+.sim-service-card { padding: 14px; border: 1px solid var(--color-stone-border); border-radius: 8px; }
+.sim-service-card header { display: flex; gap: 10px; justify-content: space-between; flex-wrap: wrap; align-items: center; font-size: 12px; }
+.sim-service-card dl { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px 20px; margin-top: 14px; font-size: 11px; }
+.sim-service-card dt { color: var(--color-ash-gray); margin-bottom: 4px; }.sim-service-card dd { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.sim-twin-status[data-status='Unknown'] { color: var(--color-ash-gray); background: var(--color-canvas-fog); }
+.sim-decision-history .sim-button { margin: 8px 6px 0 0; }
+.sim-decision-actions { flex-wrap: wrap; }
+.sim-health-milestones li:focus-visible,.sim-machine-detail :is(button,select,summary,[tabindex='0']):focus-visible { outline: 2px solid var(--color-chartwell-blue); outline-offset: 3px; }
+@media(max-width:600px) {
+  .review-dialog:has(.sim-machine-detail) { width: calc(100vw - 16px); padding: 14px; }
+  .sim-machine-detail { max-height: 88dvh; padding-right: 3px; }
+  .sim-machine-detail h2 { font-size: 18px; }
+  .sim-machine-facts,.sim-service-card dl { grid-template-columns: minmax(0,1fr); }
+  .sim-health-chart svg { min-width: 628px; }
+  .sim-health-milestones li { flex-basis: 100%; }
+  .sim-machine-detail .sim-error button { display: inline-block; margin: 8px 10px 0 0; }
+}
