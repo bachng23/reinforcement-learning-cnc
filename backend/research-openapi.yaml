@@ -36,6 +36,59 @@ paths:
     get:
       summary: Read an owned simulation session; ADMIN can inspect all
       responses: { '200': { description: Persisted session and revision }, '404': { description: Missing or outside owner scope } }
+  /demo/sessions/{id}/machines/{machineIndex}/health:
+    parameters:
+      - { $ref: '#/components/parameters/id' }
+      - name: machineIndex
+        in: path
+        required: true
+        description: Canonical unsigned decimal, zero based; checked against the requested session. M3 is index 2.
+        schema: { type: integer, minimum: 0, maximum: 9007199254740991 }
+    get:
+      operationId: getDemoMachineHealth
+      summary: Read primary-lane machine health and bounded physical history
+      description: >-
+        Existing owner/ADMIN session scope. Strict query (unknown or repeated parameters rejected).
+        Reads one persisted snapshot; never advances, infers, inserts audit or updates revision.
+        Revision identifies the snapshot; tick is simulation time and may differ.
+        Latest limit retained intervals plus a CURRENT sample, sorted by tick then componentIndex.
+        INTERVAL samples use the beginning-of-interval age; occupancy/start suppress risk even
+        if the machine was healthy before dispatch. CURRENT uses current state only.
+        Risk is JCST/1.1 conditional probability of failure during the next operating interval,
+        not a cumulative probability or RL score. Missing data is never interpolated or zero-filled.
+        Display M/C/T labels are indices plus one. All responses include Cache-Control no-store.
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 256, default: 64 }
+          description: Maximum retained transition intervals, not number of component samples. Canonical unsigned decimal only.
+        - name: expectedRevision
+          in: query
+          schema: { type: integer, minimum: 0, maximum: 9007199254740991 }
+          description: Optional snapshot fence; mismatch returns DEMO_STALE, not historical data.
+      responses:
+        '200':
+          description: MachineHealth success envelope; fixtures at tests/fixtures/machine-health/t5.json, t6.json and t7.json
+          headers: { Cache-Control: { schema: { type: string, const: no-store } } }
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [success, data]
+                properties:
+                  success: { const: true }
+                  data: { $ref: '#/components/schemas/MachineHealth' }
+              examples:
+                t5: { summary: 'M3/C2 failed at tick 5; current risk null, BREAKDOWN', externalValue: './tests/fixtures/machine-health/t5.json' }
+                t6: { summary: 'T2 servicing M3/C2; CM start event keeps original tick 5', externalValue: './tests/fixtures/machine-health/t6.json' }
+                t7: { summary: 'CM completed at tick 7; C2 age reset, risk available', externalValue: './tests/fixtures/machine-health/t7.json' }
+        '400': { description: VALIDATION_ERROR — invalid session UUID, machine index, limit, repeated or unknown query }
+        '401': { description: UNAUTHORIZED — invalid token or inactive user }
+        '404': { description: DEMO_NOT_FOUND for absent/inaccessible session; DEMO_MACHINE_NOT_FOUND for absent machine in an accessible session }
+        '409': { description: DEMO_STALE — expectedRevision differs from the authorized snapshot }
+        '500': { description: DEMO_TRACE_INVALID — stored physical state or evidence is inconsistent; no raw trace is disclosed }
+        '503': { description: DB_UNAVAILABLE — no fallback data }
   /demo/sessions/{id}/commands:
     parameters: [ { $ref: '#/components/parameters/id' } ]
     post:
@@ -222,6 +275,94 @@ paths:
                 expected_output_hash: { type: string, pattern: '^[a-f0-9]{64}$' }
       responses: { '201': { description: New review }, '200': { description: Identical review replay }, '409': { description: Stale output or conflicting review } }
 components:
+  schemas:
+    MachineHealthComponent:
+      type: object
+      additionalProperties: false
+      required: [componentIndex, ageTicks, failed, failureRisk, riskUnavailableReason]
+      properties:
+        componentIndex: { type: integer, minimum: 0 }
+        ageTicks: { type: integer, minimum: 0 }
+        failed: { type: boolean, description: Component condition, independent of machine operating mode }
+        failureRisk: { type: [number, 'null'], minimum: 0, maximum: 1 }
+        riskUnavailableReason: { enum: [null, BREAKDOWN, IN_SERVICE] }
+    MachineHealthSample:
+      type: object
+      additionalProperties: false
+      required: [tick, sampleKind, machineStatus, componentIndex, ageTicks, failed, failureRisk, riskUnavailableReason]
+      properties:
+        tick: { type: integer, minimum: 0 }
+        sampleKind: { enum: [INTERVAL, CURRENT] }
+        machineStatus: { enum: [WORKING, BREAKDOWN, IN_SERVICE] }
+        componentIndex: { type: integer, minimum: 0 }
+        ageTicks: { type: integer, minimum: 0 }
+        failed: { type: boolean }
+        failureRisk: { type: [number, 'null'], minimum: 0, maximum: 1 }
+        riskUnavailableReason: { enum: [null, BREAKDOWN, IN_SERVICE] }
+    MachineHealthEvent:
+      type: object
+      additionalProperties: false
+      required: [eventId, type, tick, recordTick, eventIndex, machineIndex, componentIndex, technicianIndex, kind]
+      description: >-
+        Sorted by tick,recordTick,eventIndex. eventId = je1_ + base64url(UTF-8 compact JSON
+        [sessionId,"primary",recordTick,eventIndex]), without padding. Shared Backend 2 physical
+        event identity. eventIndex is ordinal in the full original events array including occupancy.
+        Never derive identity from retained array position or revision. failure/completion tick is
+        recordTick+1; start tick is recordTick. Only failure/start/completion for this machine.
+      properties:
+        eventId: { type: string, pattern: '^je1_[A-Za-z0-9_-]+$' }
+        type: { enum: [failure, start, completion] }
+        tick: { type: integer, minimum: 0 }
+        recordTick: { type: integer, minimum: 0 }
+        eventIndex: { type: integer, minimum: 0 }
+        machineIndex: { type: integer, minimum: 0 }
+        componentIndex: { type: integer, minimum: 0 }
+        technicianIndex: { type: [integer, 'null'], minimum: 0 }
+        kind: { enum: [null, PM, CM] }
+    MachineHealth:
+      type: object
+      additionalProperties: false
+      required: [sessionId, revision, tick, stepSeconds, lane, source, machineIndex, machineStatus, components, history]
+      properties:
+        sessionId: { type: string, format: uuid }
+        revision: { type: integer, minimum: 0 }
+        tick: { type: integer, minimum: 0 }
+        stepSeconds: { type: number, exclusiveMinimum: 0, description: Legacy default 900 }
+        lane: { const: primary }
+        source: { const: JCST_SIMULATION }
+        machineIndex: { type: integer, minimum: 0 }
+        machineStatus: { enum: [WORKING, BREAKDOWN, IN_SERVICE] }
+        components:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/MachineHealthComponent' }
+        history:
+          type: object
+          additionalProperties: false
+          required: [fromTick, toTick, availableFromTick, limit, returnedIntervals, truncated, gaps, samples, events]
+          properties:
+            fromTick: { type: integer, minimum: 0, description: First selected interval tick or current tick if empty }
+            toTick: { type: integer, minimum: 0, description: Current tick; interval window is half-open, CURRENT sample is at this boundary }
+            availableFromTick: { type: [integer, 'null'], minimum: 0, description: Earliest retained interval, null if none }
+            limit: { type: integer, minimum: 1, maximum: 256 }
+            returnedIntervals: { type: integer, minimum: 0, maximum: 256 }
+            truncated: { type: boolean, description: Any elapsed intervals omitted by retention, limit or missing data }
+            gaps:
+              type: array
+              description: Missing half-open intervals inside the returned window; render breaks, never interpolate
+              items:
+                type: object
+                additionalProperties: false
+                required: [fromTick, toTick]
+                properties:
+                  fromTick: { type: integer, minimum: 0 }
+                  toTick: { type: integer, minimum: 0 }
+            samples:
+              type: array
+              items: { $ref: '#/components/schemas/MachineHealthSample' }
+            events:
+              type: array
+              items: { $ref: '#/components/schemas/MachineHealthEvent' }
   securitySchemes:
     session: { type: apiKey, in: cookie, name: pdm_token }
   parameters:
