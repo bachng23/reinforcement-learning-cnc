@@ -1,3 +1,5 @@
+import workOrders from './fixtures/simulation/work-orders.json';
+import type { DemoWorkOrders } from '@/types/simulation-work-orders';
 import source from './fixtures/simulation/source.json';
 import t5 from './fixtures/simulation/t5.json';
 import t6 from './fixtures/simulation/t6.json';
@@ -20,4 +22,18 @@ export function simulationAt(tick: 5 | 6 | 7): Simulation {
       ? {tick:5,action:[[2,1,1]],baseline_action:[],catalogue:[[],[[2,1,1]]]}
       : tick === 6 ? {tick:6,action:[[0,0,0]],baseline_action:[],catalogue:[[],[[0,0,0]]]} : null,
     decisions: [], workflow: [] } as unknown as Simulation;
+}
+
+export function workOrdersAt(tick: 5 | 6 | 7): DemoWorkOrders {
+  const data = structuredClone(({5:workOrders.beforeApproval,6:workOrders.inProgress,7:workOrders.completed})[tick].data) as DemoWorkOrders;
+  const health = healthAt(tick);
+  const eventId = (type: MachineHealth['history']['events'][number]['type']) =>
+    health.history.events.find(event => event.type === type)?.eventId ?? null;
+  return { ...data, sessionId: health.sessionId, revision: health.revision,
+    items: data.items.map(order => {
+      const startEventId = eventId('start')!;
+      return { ...order, workOrderId: `wo:${startEventId}`, startEventId,
+        completionEventId: eventId('completion'), failureEventId: eventId('failure') };
+    }),
+  };
 }

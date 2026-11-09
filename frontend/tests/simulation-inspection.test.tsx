@@ -9,65 +9,107 @@ import { DecisionView } from '@/components/simulation/decision-view';
 import { WorkspaceUserContext } from '@/lib/workspace-user';
 import { useMachineInspection } from '@/lib/simulation/use-machine-inspection';
 import { researchRequest } from '@/lib/research-api/client';
-import { healthAt, simulationAt } from './simulation-inspection-fixtures';
+import { healthAt, simulationAt, workOrdersAt } from './simulation-inspection-fixtures';
 import type { MachineHealth } from '@/types/generated/simulation-machine-health';
+import type { DemoWorkOrders } from '@/types/simulation-work-orders';
 
 vi.mock('@/lib/research-api/client', () => ({ researchRequest: vi.fn() }));
 beforeEach(() => { vi.clearAllMocks(); });
 afterEach(() => { vi.useRealTimers(); });
+const inspectionFixture = (path: string, tick: 5 | 6 | 7) =>
+  (path.includes('/work-orders?') ? workOrdersAt(tick) : healthAt(tick)) as never;
 const flush = async () => { await act(async () => { await vi.advanceTimersByTimeAsync(200); }); };
 
 describe('snapshot-scoped machine reads', () => {
   it('renders the canonical t5/t6/t7 lifecycle and preserves the start evidence identity', async () => {
     vi.useFakeTimers();
-    vi.mocked(researchRequest).mockImplementation(async path => {
-      const revision = Number(new URL(path, 'http://test').searchParams.get('expectedRevision'));
-      return [healthAt(5),healthAt(6),healthAt(7)].find(item => item.revision === revision) as never;
-    });
+    let tick: 5 | 6 | 7 = 5;
+    vi.mocked(researchRequest).mockImplementation(async path => inspectionFixture(path, tick));
     const { result, rerender } = renderHook(({ snapshot }) => useMachineInspection(snapshot, 2), { initialProps: { snapshot: simulationAt(5) } });
     await flush();
     expect(result.current.context?.health.machineStatus).toBe('BREAKDOWN');
     expect(result.current.context?.health.history.events.map(item => item.type)).toEqual(['failure']);
-    rerender({ snapshot: simulationAt(6) });
+    tick = 6; rerender({ snapshot: simulationAt(6) });
     expect(result.current.loading).toBe(true);
     expect(result.current.context?.snapshot.revision).toBe(simulationAt(5).revision);
     await flush();
     const start = result.current.context!.health.history.events.find(item => item.type === 'start')!.eventId;
-    rerender({ snapshot: simulationAt(7) }); await flush();
+    const orderId = result.current.context?.workOrders.items[0].workOrderId;
+    tick = 7; rerender({ snapshot: simulationAt(7) }); await flush();
     expect(result.current.context?.health.history.events.find(item => item.type === 'start')?.eventId).toBe(start);
     expect(result.current.context?.health.history.events.at(-1)?.tick).toBe(7);
+    expect(result.current.context?.workOrders.items[0]).toMatchObject({ workOrderId: orderId, status: 'COMPLETED' });
   });
   it('aborts old machine/session requests, ignores late responses and never flashes the previous machine', async () => {
     vi.useFakeTimers();
-    const resolvers: ((data: MachineHealth) => void)[] = [];
+    const resolvers: ((data: MachineHealth | DemoWorkOrders) => void)[] = [];
     const signals: AbortSignal[] = [];
     vi.mocked(researchRequest).mockImplementation((_path, options) => new Promise(resolve => {
-      resolvers.push(resolve as (data: MachineHealth) => void); signals.push(options!.signal!);
+      resolvers.push(resolve as (data: MachineHealth | DemoWorkOrders) => void); signals.push(options!.signal!);
     }));
     const first = simulationAt(5);
     const { result, rerender, unmount } = renderHook(({ snapshot, machine }) => useMachineInspection(snapshot, machine), { initialProps: { snapshot: first, machine: 2 } });
     await flush(); rerender({ snapshot: first, machine: 0 });
     expect(signals[0].aborted).toBe(true); expect(result.current.context).toBeUndefined();
-    await act(async () => resolvers[0](healthAt(5))); expect(result.current.context).toBeUndefined();
+    await act(async () => { resolvers[0](healthAt(5)); resolvers[1](workOrdersAt(5)); }); expect(result.current.context).toBeUndefined();
     await flush(); rerender({ snapshot: {...first,id:'another-session'}, machine: 0 });
-    expect(signals[1].aborted).toBe(true); await flush(); unmount(); expect(signals[2].aborted).toBe(true);
+    expect(signals.slice(0, 4).every(signal => signal.aborted)).toBe(true);
+    await flush(); unmount(); expect(signals.every(signal => signal.aborted)).toBe(true);
   });
   it('coalesces fast playback updates and only reads the most recent revision', async () => {
-    vi.useFakeTimers(); vi.mocked(researchRequest).mockResolvedValue(healthAt(7) as never);
+    vi.useFakeTimers(); vi.mocked(researchRequest).mockImplementation(async path => inspectionFixture(path, 7));
     const { rerender } = renderHook(({ snapshot }) => useMachineInspection(snapshot, 2), { initialProps: { snapshot: simulationAt(5) } });
     rerender({ snapshot: simulationAt(6) }); rerender({ snapshot: simulationAt(7) }); await flush();
-    expect(researchRequest).toHaveBeenCalledTimes(1);
+    expect(researchRequest).toHaveBeenCalledTimes(2);
+    expect(researchRequest).toHaveBeenCalledWith(expect.stringContaining('/work-orders?machineIndex=2'), expect.anything());
     expect(researchRequest).toHaveBeenCalledWith(expect.stringContaining(`expectedRevision=${simulationAt(7).revision}`), expect.anything());
   });
   it.each(['revision','sessionId','tick','machineIndex','stepSeconds'] as const)('fails closed for mismatched %s', async field => {
     vi.useFakeTimers(); const health = healthAt(5);
     Object.assign(health, { [field]: field === 'sessionId' ? 'wrong-session' : 999 });
-    vi.mocked(researchRequest).mockResolvedValue(health as never);
+    vi.mocked(researchRequest).mockImplementation(async path => path.includes('/work-orders?') ? workOrdersAt(5) as never : health as never);
     const { result } = renderHook(() => useMachineInspection(simulationAt(5),2)); await flush();
     expect(result.current.context).toBeUndefined(); expect(result.current.error).toMatch(/does not match/);
   });
+  it('rejects work orders from another revision or machine even if health matches', async () => {
+    vi.useFakeTimers();
+    const orders = workOrdersAt(6);
+    orders.revision++;
+    vi.mocked(researchRequest).mockImplementation(async path => path.includes('/work-orders?') ? orders as never : healthAt(6) as never);
+    const { result } = renderHook(() => useMachineInspection(simulationAt(6), 2));
+    await flush();
+    expect(result.current.context).toBeUndefined();
+    expect(result.current.error).toMatch(/does not match/);
+    orders.revision--;
+    orders.items[0].machineIndex = 0;
+    act(() => result.current.retry());
+    await flush();
+    expect(result.current.context).toBeUndefined();
+    expect(result.current.error).toMatch(/does not match/);
+  });
+  it('clears the prior snapshot when work-order access fails and recovers through a read-only retry', async () => {
+    vi.useFakeTimers();
+    let tick: 6 | 7 = 6;
+    let unavailable = false;
+    vi.mocked(researchRequest).mockImplementation(async path => {
+      if (unavailable && path.includes('/work-orders?')) throw Object.assign(new Error(), { status: 404 });
+      return inspectionFixture(path, tick);
+    });
+    const { result, rerender } = renderHook(({ snapshot }) => useMachineInspection(snapshot, 2), { initialProps: { snapshot: simulationAt(6) } });
+    await flush();
+    expect(result.current.context?.workOrders.items).toHaveLength(1);
+    tick = 7; unavailable = true;
+    rerender({ snapshot: simulationAt(7) });
+    await flush();
+    expect(result.current.context).toBeUndefined();
+    expect(result.current.error).toMatch(/not available/);
+    unavailable = false;
+    act(() => result.current.retry()); await flush();
+    expect(result.current.context?.workOrders.items[0].status).toBe('COMPLETED');
+  });
   it.each([[401,/Sign in/],[403,/permission/],[404,/not available/],[409,/revision changed/],[503,/unavailable/],[0,/connection/]])('handles %s and recovers on explicit retry', async (status, message) => {
-    vi.useFakeTimers(); vi.mocked(researchRequest).mockRejectedValueOnce(Object.assign(new Error('unsafe server detail'), { status })).mockResolvedValue(healthAt(5) as never);
+    vi.useFakeTimers(); vi.mocked(researchRequest).mockRejectedValueOnce(Object.assign(new Error('unsafe server detail'), { status }))
+      .mockImplementation(async path => inspectionFixture(path, 5));
     const { result } = renderHook(() => useMachineInspection(simulationAt(5),2)); await flush();
     expect(result.current.error).toMatch(message); expect(result.current.context).toBeUndefined();
     act(() => result.current.retry()); await flush(); expect(result.current.context?.health.tick).toBe(5);
@@ -99,25 +141,26 @@ describe('component health and service evidence', () => {
     expect(screen.getByText('Missing intervals: t2–t3.')).toBeInTheDocument();
   });
   it('shows no work at t5, T2 CM remaining one interval at t6 and the same completed service at t7', () => {
-    const { rerender } = render(<MachineServices health={healthAt(5)} session={simulationAt(5)} />);
+    const { rerender } = render(<MachineServices workOrders={workOrdersAt(5)} session={simulationAt(5)} />);
     expect(screen.queryByTestId('service-record')).not.toBeInTheDocument();
-    rerender(<MachineServices health={healthAt(6)} session={simulationAt(6)} />);
-    const card=screen.getByTestId('service-record'); const id=card.dataset.evidenceId;
+    rerender(<MachineServices workOrders={workOrdersAt(6)} session={simulationAt(6)} />);
+    const card=screen.getByTestId('service-record'); const id=card.dataset.workOrderId;
     expect(card).toHaveTextContent('T2 · C2 · CM'); expect(card).toHaveTextContent('In progress');
-    expect(card).toHaveTextContent('15 min'); expect(card).toHaveTextContent('0 min');
-    rerender(<MachineServices health={healthAt(7)} session={simulationAt(7)} />);
-    expect(screen.getByTestId('service-record')).toHaveAttribute('data-evidence-id',id);
+    expect(card).toHaveTextContent('15 min'); expect(card).toHaveTextContent('Manually approved'); expect(card).toHaveTextContent('0 min');
+    rerender(<MachineServices workOrders={workOrdersAt(7)} session={simulationAt(7)} />);
+    expect(screen.getByTestId('service-record')).toHaveAttribute('data-work-order-id',id);
     expect(screen.getByTestId('service-record')).toHaveTextContent('Completed');
     expect(screen.getByTestId('service-record')).toHaveTextContent('t5'); expect(screen.getByTestId('service-record')).toHaveTextContent('t7');
   });
-  it('retains immediate start/completion and reports missing legacy starts instead of guessing', () => {
-    const health = healthAt(7); health.history.events = health.history.events.map(item => item.type==='completion'?{...item,tick:5}:item);
-    const {rerender}=render(<MachineServices health={health} session={simulationAt(7)} />);
-    expect(screen.getByTestId('service-record')).toHaveTextContent('Completed');
-    health.history.events = health.history.events.filter(item=>item.type==='completion'); health.history.truncated=true;
-    rerender(<MachineServices health={health} session={simulationAt(7)} />);
-    expect(screen.getByTestId('service-record')).toHaveTextContent('Not retained');
-    expect(screen.getByText(/Partial history/)).toBeInTheDocument();
+  it('shows partial durable history, unavailable values and the limited result count', () => {
+    const workOrders = workOrdersAt(7);
+    workOrders.historyCoverage = 'PARTIAL';
+    workOrders.total = 22;
+    workOrders.items[0].waitTicks = null;
+    render(<MachineServices workOrders={workOrders} session={simulationAt(7)} />);
+    expect(screen.getByTestId('service-record')).toHaveTextContent('Unavailable');
+    expect(screen.getByText(/Partial work-order history/)).toBeInTheDocument();
+    expect(screen.getByText('Showing the latest 1 of 22 work orders.')).toBeInTheDocument();
   });
   it('machine status stays Breakdown when another component remains failed after completion', async () => {
     const session=simulationAt(7); session.primary.state.components[2][0].failed=true;
@@ -144,9 +187,9 @@ describe('component health and service evidence', () => {
     const {unmount}=render(<ComponentHealth health={health} session={simulationAt(5)}/>);
     expect(screen.queryByTestId('risk-segment')).not.toBeInTheDocument();
     expect(screen.getByText(/No recorded milestones/)).toBeInTheDocument();unmount();
-    render(<MachineServices health={health} session={simulationAt(5)}/>);
+    render(<MachineServices workOrders={{...workOrdersAt(5),historyCoverage:'PARTIAL'}} session={simulationAt(5)}/>);
     expect(screen.queryByTestId('service-record')).not.toBeInTheDocument();
-    expect(screen.getByText(/Partial history/)).toBeInTheDocument();
+    expect(screen.getByText(/Partial work-order history/)).toBeInTheDocument();
   });
   it('disables all decision commands for VIEWER without preventing inspection', () => {
     const decide=vi.fn();render(<WorkspaceUserContext.Provider value={{id:'viewer',role:'VIEWER'}}><DecisionView session={simulationAt(5)} busy={false} onDecide={decide}/></WorkspaceUserContext.Provider>);

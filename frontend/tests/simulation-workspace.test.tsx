@@ -8,7 +8,7 @@ import { researchRequest } from '@/lib/research-api/client';
 import type { Simulation } from '@/lib/simulation/types';
 import type { Episode } from '@/types/generated/jcst';
 import fixture from '../../contracts/jcst/v1/fixtures/engineering-bundle.json';
-import { healthAt, simulationAt } from './simulation-inspection-fixtures';
+import { healthAt, simulationAt, workOrdersAt } from './simulation-inspection-fixtures';
 vi.mock('@/components/app-shell',()=>({AppShell:({children}:{children:ReactNode})=><>{children}</>}));
 vi.mock('@/lib/research-api/client',()=>({researchRequest:vi.fn()}));
 vi.mock('@/components/simulation/factory-preview',()=>({
@@ -249,6 +249,7 @@ describe('inspection to assignment review',()=>{
     vi.mocked(researchRequest).mockImplementation(async(path,options)=>{
       if(path==='/capabilities')return capabilities as never;
       if(path.includes('/health?'))return healthAt(current.primary.state.tick as 5|6|7) as never;
+      if(path.includes('/work-orders?'))return workOrdersAt(current.primary.state.tick as 5|6|7) as never;
       if(path.endsWith('/commands')){const body=options?.body as {revision:number};expect(body.revision).toBe(current.revision);current=simulationAt(current.primary.state.tick===5?6:7);return current as never;}
       return current as never;
     });
@@ -312,7 +313,7 @@ describe('inspection to assignment review',()=>{
   });
   it('restores machine inspection from the URL after reload and never sends a command',async()=>{
     const saved=simulationAt(7);window.history.replaceState(null,'',`/simulation?session=${saved.id}&machine=2&inspect=1`);
-    vi.mocked(researchRequest).mockImplementation(async path=>path==='/capabilities'?capabilities as never:path.includes('/health?')?healthAt(7) as never:saved as never);
+    vi.mocked(researchRequest).mockImplementation(async path=>path==='/capabilities'?capabilities as never:path.includes('/health?')?healthAt(7) as never:path.includes('/work-orders?')?workOrdersAt(7) as never:saved as never);
     render(<DemoWorkspace/>);expect(await screen.findByRole('dialog')).toHaveTextContent('Machine M3');
     expect(await screen.findByText('Completed',{selector:'span'})).toBeInTheDocument();
     expect(vi.mocked(researchRequest).mock.calls.filter(([path])=>path.endsWith('/commands'))).toHaveLength(0);

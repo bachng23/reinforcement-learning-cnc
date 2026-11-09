@@ -36,7 +36,7 @@ export function inspectionError(error: unknown) {
   if (data?.status === 401 || data?.name === 'AuthRedirectError') return 'Sign in to read machine history.';
   if (data?.status === 403) return 'You do not have permission to read this session.';
   if (data?.status === 404) return 'Machine history is not available for this session or API version.';
-  if (error instanceof InspectionMismatch) return 'Machine history does not match the simulator snapshot. Reload the session and review again.';
+  if (error instanceof InspectionMismatch) return 'Machine health or work-order history does not match the simulator snapshot. Reload the session and review again.';
   if (data?.status === 409) return 'The session revision changed. Reload the session and review again.';
   if (data?.status === 503) return 'Machine history service is unavailable. Try again.';
   return 'Could not read machine history. Check your connection and try again.';

@@ -8,6 +8,7 @@ import type { Config } from '@/types/generated/jcst';
 import { serviceDuration, simulationTime } from '@/lib/simulation/clock';
 import type { Simulation, Lane, Matching } from '@/lib/simulation/types';
 import { useMachineInspection } from '@/lib/simulation/use-machine-inspection';
+import { useWorkspaceUser } from '@/lib/workspace-user';
 import { ComponentHealth } from './component-health';
 import { MachineServices } from './machine-services';
 
@@ -24,6 +25,7 @@ export function MachineDetail({ machine, lane, config, proposal, onClose, decisi
   onClose: () => void; decisionAction?: ReactNode; onSelectMachine?: (machine: number) => void; onReload?: () => void;
 }) {
   const read = useMachineInspection(session, machine);
+  const user = useWorkspaceUser();
   const context = read.context;
   const shownLane = context?.snapshot.primary ?? lane;
   const clock = context?.snapshot ?? clockSession ?? {};
@@ -39,13 +41,13 @@ export function MachineDetail({ machine, lane, config, proposal, onClose, decisi
     {onSelectMachine && <label className="sim-field sim-inspect-picker">Inspect machine<select value={machine} onChange={event => onSelectMachine(Number(event.target.value))}>{lane.state.components.map((_, index) => <option key={index} value={index}>M{index + 1} · {layout?.stations[index]?.name ?? demoMachines[index]?.name ?? 'Machine'}</option>)}</select></label>}
     <div className="sim-component-chips" aria-label="Current components">{components.map((item, index) => <span key={index} data-failed={item.failed}>C{index + 1} · {item.failed ? 'FAILED' : 'Healthy'}</span>)}</div>
     {session && <p className="sim-footnote">Session {session.id} · revision {context?.snapshot.revision ?? session.revision} · t{shownLane.state.tick}</p>}
-    {job && <p className="sim-current-service"><strong>T{job.technician + 1} · C{job.component + 1} · {job.kind}</strong><span>In progress · {serviceDuration(job.remaining, clockSession?.step_seconds)} remaining</span></p>}
+    {job && <p className="sim-current-service"><strong>T{job.technician + 1} · C{job.component + 1} · {job.kind}</strong><span>In progress · {serviceDuration(job.remaining, clock.step_seconds)} remaining</span></p>}
     {read.loading && <p role="status" className="sim-inspection-note">{context ? `Updating history to revision ${session?.revision}. Showing the last consistent snapshot.` : 'Loading machine health and maintenance history…'}</p>}
     {read.error && <div role="alert" className="sim-error"><p>{read.error}</p><div className="sim-inspection-retry"><button onClick={read.retry}>Retry machine history</button>{onReload && <button onClick={onReload}>Reload session</button>}</div></div>}
-    {decisionAction && <div className="sim-machine-decision">{decisionAction}</div>}
-    {context && <><ComponentHealth key={`${context.health.sessionId}:${machine}`} health={context.health} session={context.snapshot} /><MachineServices health={context.health} session={context.snapshot} /></>}
+    {decisionAction && user?.role !== 'VIEWER' && <div className="sim-machine-decision">{decisionAction}</div>}
+    {context && <><ComponentHealth key={`${context.health.sessionId}:${machine}`} health={context.health} session={context.snapshot} /><MachineServices workOrders={context.workOrders} session={context.snapshot} /></>}
     {!session && <p className="sim-footnote">Open a persisted simulator session to read component risk and maintenance history.</p>}
-    <details className="sim-compatibility"><summary>Production context</summary><dl className="sim-machine-facts"><div><dt>Production line</dt><dd>{info ? 'Line P1' : 'Not configured'}</dd></div><div><dt>Operation</dt><dd>{info?.operation ?? 'Not configured'}</dd></div><div><dt>Assigned batch</dt><dd>{info?.batch ?? 'Not configured'}</dd></div><div><dt>Product</dt><dd>{info?.product ?? 'Not configured'}</dd></div><div><dt>Factory location</dt><dd>{info?.position ?? 'Not configured'}</dd></div><div><dt>Current service</dt><dd>{job ? `T${job.technician + 1} · ${job.kind} · ${serviceDuration(job.remaining, clockSession?.step_seconds)} left` : next ? `Proposed T${next[2] + 1} → C${next[1] + 1}` : 'No technician assigned'}</dd></div></dl></details>
+    <details className="sim-compatibility"><summary>Production context</summary><dl className="sim-machine-facts"><div><dt>Production line</dt><dd>{info ? 'Line P1' : 'Not configured'}</dd></div><div><dt>Operation</dt><dd>{info?.operation ?? 'Not configured'}</dd></div><div><dt>Assigned batch</dt><dd>{info?.batch ?? 'Not configured'}</dd></div><div><dt>Product</dt><dd>{info?.product ?? 'Not configured'}</dd></div><div><dt>Factory location</dt><dd>{info?.position ?? 'Not configured'}</dd></div><div><dt>Current service</dt><dd>{job ? `T${job.technician + 1} · ${job.kind} · ${serviceDuration(job.remaining, clock.step_seconds)} left` : next ? `Proposed T${next[2] + 1} → C${next[1] + 1}` : 'No technician assigned'}</dd></div></dl></details>
     <details className="sim-compatibility"><summary>Component ages and technician qualifications</summary><div className="sim-table-scroll"><table className="sim-metrics-table"><thead><tr><th>Component</th><th>Condition</th><th>Age</th><th>Service time by technician</th></tr></thead><tbody>{components.map((item, index) => <tr key={index}><th>C{index + 1}</th><td>{item.failed ? 'FAILED' : 'Healthy'}</td><td>{serviceDuration(item.age, clockSession?.step_seconds)}</td><td>{config.duration[machine]?.[index]?.map((duration, technician) => `T${technician + 1}: ${duration ? serviceDuration(duration, clockSession?.step_seconds) : 'not qualified'}`).join(' · ')}</td></tr>)}</tbody></table></div></details>
   </div></ReviewDialog>;
 }

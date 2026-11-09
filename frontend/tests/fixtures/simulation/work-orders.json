@@ -1,0 +1,85 @@
+{
+  "beforeApproval": {
+    "success": true,
+    "data": {
+      "contractVersion": "jcst-work-orders/v1",
+      "sessionId": "00000000-0000-4000-8000-000000000001",
+      "revision": 0,
+      "tick": 5,
+      "stepSeconds": 900,
+      "lane": "primary",
+      "source": "JCST_SIMULATION",
+      "historyCoverage": "COMPLETE",
+      "total": 0,
+      "items": []
+    }
+  },
+  "inProgress": {
+    "success": true,
+    "data": {
+      "contractVersion": "jcst-work-orders/v1",
+      "sessionId": "00000000-0000-4000-8000-000000000001",
+      "revision": 1,
+      "tick": 6,
+      "stepSeconds": 900,
+      "lane": "primary",
+      "source": "JCST_SIMULATION",
+      "historyCoverage": "COMPLETE",
+      "total": 1,
+      "items": [
+        {
+          "workOrderId": "wo:je1_WyIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJwcmltYXJ5Iiw1LDBd",
+          "machineIndex": 2,
+          "componentIndex": 1,
+          "technicianIndex": 1,
+          "kind": "CM",
+          "status": "IN_PROGRESS",
+          "startedTick": 5,
+          "completedTick": null,
+          "plannedDurationTicks": 2,
+          "remainingTicks": 1,
+          "waitTicks": 0,
+          "startEventId": "je1_WyIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJwcmltYXJ5Iiw1LDBd",
+          "completionEventId": null,
+          "failureEventId": "je1_WyIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJwcmltYXJ5Iiw0LDBd",
+          "decisionTick": 5,
+          "assignmentSource": "MANUAL_APPROVAL"
+        }
+      ]
+    }
+  },
+  "completed": {
+    "success": true,
+    "data": {
+      "contractVersion": "jcst-work-orders/v1",
+      "sessionId": "00000000-0000-4000-8000-000000000001",
+      "revision": 2,
+      "tick": 7,
+      "stepSeconds": 900,
+      "lane": "primary",
+      "source": "JCST_SIMULATION",
+      "historyCoverage": "COMPLETE",
+      "total": 1,
+      "items": [
+        {
+          "workOrderId": "wo:je1_WyIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJwcmltYXJ5Iiw1LDBd",
+          "machineIndex": 2,
+          "componentIndex": 1,
+          "technicianIndex": 1,
+          "kind": "CM",
+          "status": "COMPLETED",
+          "startedTick": 5,
+          "completedTick": 7,
+          "plannedDurationTicks": 2,
+          "remainingTicks": 0,
+          "waitTicks": 0,
+          "startEventId": "je1_WyIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJwcmltYXJ5Iiw1LDBd",
+          "completionEventId": "je1_WyIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJwcmltYXJ5Iiw2LDRd",
+          "failureEventId": "je1_WyIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJwcmltYXJ5Iiw0LDBd",
+          "decisionTick": 5,
+          "assignmentSource": "MANUAL_APPROVAL"
+        }
+      ]
+    }
+  }
+}

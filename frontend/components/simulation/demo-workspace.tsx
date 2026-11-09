@@ -132,7 +132,9 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;commandAbort.current?.abort();};},[]);
   const [primaryPolicy, setPrimaryPolicy] = useState('S');
   const [baselineOverride, setBaselineOverride] = useState<string | null>(null);
-  const baselinePolicy = baselineOverride ?? (primaryPolicy === 'corrective' ? 'risk' : 'corrective');
+  const baselinePolicy = baselineOverride && baselineOverride !== primaryPolicy
+    ? baselineOverride
+    : (primaryPolicy === 'corrective' ? 'risk' : 'corrective');
   const [releases, setReleases] = useState<{arm:string;case_id:string;available:boolean}[]>([]);
   const [scenario,setScenario]=useState('base'); const [mode,setMode]=useState<'incident'|'policy'>('policy'); const [seed,setSeed]=useState('990000001');
   const [setup,setSetup]=useState(false); const [capabilityError,setCapabilityError]=useState('');
@@ -243,7 +245,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   async function inspectDecision(){
     if(locked.current)return;
     const next=current.current?.status==='RUNNING'?await command({command:'advance',autoApprove:false}):current.current;
-    if(next){setRunning(false);setSelectedMachine(null);openView('decision', next.id);}
+    if(next?.status==='REVIEW'){setRunning(false);setSelectedMachine(null);openView('decision', next.id);}
   }
   useEffect(()=>{
     if(!running||busy||!session||session.status!=='RUNNING')return;

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { healthAt, simulationAt } from '../simulation-inspection-fixtures';
+import { healthAt, simulationAt, workOrdersAt } from '../simulation-inspection-fixtures';
 
 async function componentApi(page:Page) {
   let snapshot=simulationAt(5);let readError=0;const commands:unknown[]=[];
@@ -14,6 +14,9 @@ async function componentApi(page:Page) {
       if(readError)return fulfill({success:false,error:{code:'DB_UNAVAILABLE',message:'Unavailable'}},readError);
       if(url.pathname.includes('/machines/0/'))return fulfill({success:false,error:{code:'DEMO_MACHINE_NOT_FOUND',message:'No fixture for M1'}},404);
       return fulfill({success:true,data:healthAt(snapshot.primary.state.tick as 5|6|7)});
+    }
+    if(url.pathname.endsWith('/work-orders')) {
+      return fulfill({success:true,data:workOrdersAt(snapshot.primary.state.tick as 5|6|7)});
     }
     if(url.pathname.endsWith('/commands')) {
       commands.push(request.postDataJSON());snapshot=simulationAt(snapshot.primary.state.tick===5?6:7);
@@ -39,12 +42,12 @@ test('fixture browser evidence: inspect → approve → t6 → t7 → reload; de
   await dialog.getByRole('button',{name:'View dispatch proposal'}).click();
   await page.getByRole('button',{name:'Approve & dispatch'}).click();
   await expect(dialog.getByTestId('service-record').locator('header').getByText('Completed',{exact:true})).toBeVisible();
-  const identity=await dialog.getByTestId('service-record').getAttribute('data-evidence-id');
+  const identity=await dialog.getByTestId('service-record').getAttribute('data-work-order-id');
   await page.screenshot({path:info.outputPath('component-only-t7-health.png'),fullPage:false});
   await dialog.getByRole('heading',{name:'Maintenance work and history'}).scrollIntoViewIfNeeded();
   await page.screenshot({path:info.outputPath('component-only-t7.png'),fullPage:false});
   expect(api.commands).toHaveLength(2); await page.reload();
-  await expect(page.getByTestId('service-record')).toHaveAttribute('data-evidence-id',identity!);
+  await expect(page.getByTestId('service-record')).toHaveAttribute('data-work-order-id',identity!);
   expect(api.commands).toHaveLength(2);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.getByRole('button',{name:'Close machine details'}).focus();await page.keyboard.press('Escape');
