@@ -10,7 +10,7 @@ async function request(path, user = owner, body, key = randomUUID()) {
       ...(user ? { Authorization: 'Bearer ' + jwt.sign({ id: user.id }, process.env.JWT_SECRET) } : {}),
       'Idempotency-Key': key }, body: body === undefined ? undefined : JSON.stringify(body),
   });
-  return { status: r.status, body: await r.json() };
+  return { status: r.status, cacheControl: r.headers.get('Cache-Control'), body: await r.json() };
 }
 async function create() {
   const r = await request('', owner, { case: 'base', seed: '990000001', mode: 'policy', primary: 'corrective', baseline: 'wait', continuous: true });
@@ -65,8 +65,13 @@ test('session read permissions, strict queries, and pure legacy fallback', async
   expect((await request(`/${s.id}/work-orders`, null)).status).toBe(401);
   expect((await request(`/${s.id}/work-orders`, other)).status).toBe(404);
   expect((await request(`/${s.id}/work-orders`, admin)).status).toBe(200);
-  for (const q of ['limit=0', 'machineIndex=-1', 'machineIndex=99', 'unexpected=true'])
+  for (const q of ['limit=0', 'machineIndex=-1', 'machineIndex=99', 'unexpected=true',
+    'machineIndex=', 'machineIndex=%20', 'machineIndex=0x2', 'limit=1e2',
+    'limit=2&limit=2', 'machineIndex=0&machineIndex=0', 'limit=9007199254740992']) {
     expect((await request(`/${s.id}/work-orders?${q}`)).status).toBe(400);
+  }
+  expect((await request(`/${s.id}/work-orders?machineIndex=0&limit=100`)))
+    .toMatchObject({ status: 200, cacheControl: 'no-store' });
   const legacy = structuredClone(s);
   legacy.primary.records = legacy.primary.records.slice(-2);
   await prisma.demoSession.update({ where: { id: s.id }, data: { payloadJson: legacy, workOrdersJson: require('@prisma/client').Prisma.DbNull, ownerId: other.id } });

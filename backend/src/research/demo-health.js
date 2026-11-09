@@ -133,4 +133,4 @@ function projectHealth(row, machineIndex, { limit = 64, expectedRevision } = {})
   };
 }
 
-module.exports = { projectHealth, eventId, hazard, querySchema, machineIndexSchema };
+module.exports = { projectHealth, eventId, hazard, querySchema, machineIndexSchema, unsignedDecimal: decimal };

@@ -1,7 +1,5 @@
 // Primary-lane evidence projection. Never writes or mutates the simulator payload.
-// Backend 1 machine-health identity: full original event ordinal, not filtered index.
-const eventId = (sessionId, recordTick, ordinal) => 'je1_' +
-  Buffer.from(JSON.stringify([sessionId, 'primary', recordTick, ordinal])).toString('base64url');
+const { eventId } = require('./demo-health');
 const tuple = e => `${e.machine}:${e.component}:${e.technician}:${e.kind}`;
 const component = e => `${e.machine}:${e.component}`;
 const matches = (action, e) => action?.some(a => a[0] === e.machine && a[1] === e.component && a[2] === e.technician);

@@ -93,13 +93,14 @@ paths:
     parameters: [ { $ref: '#/components/parameters/id' } ]
     get:
       summary: Read primary simulator maintenance execution history
-      description: Owner or ADMIN access. Read-only, including legacy reconstruction. Only starts create orders; baseline, pending review and defer are excluded. Newest startedTick first with descending startEventId tie-break. PARTIAL means retained legacy evidence is incomplete. Index labels add one for display; all times are simulation ticks.
+      description: Owner or ADMIN access. Read-only, including legacy reconstruction. Only starts create orders; baseline, pending review and defer are excluded. Newest startedTick first with descending startEventId tie-break. PARTIAL means retained legacy evidence is incomplete. Index labels add one for display; all times are simulation ticks. Query values must be canonical unsigned decimals; unknown or repeated parameters are rejected.
       parameters:
         - { name: machineIndex, in: query, schema: { type: integer, minimum: 0 } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
       responses:
         '200':
           description: Snapshot-consistent work orders; GET never writes
+          headers: { Cache-Control: { schema: { type: string, const: no-store } } }
           content:
             application/json:
               schema:
