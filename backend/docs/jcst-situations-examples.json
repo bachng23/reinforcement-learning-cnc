@@ -1,0 +1,173 @@
+{
+  "evidence": "CONTRACT_EXAMPLES_NOT_RUNTIME_ACCEPTANCE",
+  "saveRequest": {
+    "revision": 14,
+    "name": "Maintenance exercise",
+    "description": "Training situation",
+    "layoutId": "smt-board-assembly"
+  },
+  "healthySnapshot": {
+    "success": true,
+    "data": {
+      "snapshotId": "10000000-0000-4000-8000-000000000002",
+      "schemaVersion": "jcst-demo-snapshot/1",
+      "sourceSessionId": "10000000-0000-4000-8000-000000000001",
+      "sourceRevision": 14,
+      "sourceTick": 7,
+      "sourceCommit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+      "snapshotHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "name": "Maintenance exercise",
+      "description": "Training situation",
+      "layoutId": "smt-board-assembly",
+      "createdAt": "2026-11-16T00:00:00.000Z",
+      "sessionId": "10000000-0000-4000-8000-000000000001",
+      "revision": 14,
+      "tick": 7,
+      "summary": {
+        "caseId": "base",
+        "seed": "990000001",
+        "status": "RUNNING",
+        "primary": "corrective",
+        "baseline": "wait",
+        "machineCount": 3,
+        "technicianCount": 2
+      }
+    }
+  },
+  "inServiceSnapshot": {
+    "success": true,
+    "data": {
+      "snapshotId": "10000000-0000-4000-8000-000000000002",
+      "schemaVersion": "jcst-demo-snapshot/1",
+      "sourceSessionId": "10000000-0000-4000-8000-000000000001",
+      "sourceRevision": 12,
+      "sourceTick": 6,
+      "sourceCommit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+      "snapshotHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "name": "Maintenance exercise",
+      "description": "Training situation",
+      "layoutId": "smt-board-assembly",
+      "createdAt": "2026-11-16T00:00:00.000Z",
+      "sessionId": "10000000-0000-4000-8000-000000000001",
+      "revision": 12,
+      "tick": 6,
+      "summary": {
+        "caseId": "base",
+        "seed": "990000001",
+        "status": "RUNNING",
+        "primary": "corrective",
+        "baseline": "wait",
+        "machineCount": 3,
+        "technicianCount": 2
+      }
+    }
+  },
+  "reviewSnapshot": {
+    "success": true,
+    "data": {
+      "snapshotId": "10000000-0000-4000-8000-000000000002",
+      "schemaVersion": "jcst-demo-snapshot/1",
+      "sourceSessionId": "10000000-0000-4000-8000-000000000001",
+      "sourceRevision": 10,
+      "sourceTick": 5,
+      "sourceCommit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+      "snapshotHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "name": "Maintenance exercise",
+      "description": "Training situation",
+      "layoutId": "smt-board-assembly",
+      "createdAt": "2026-11-16T00:00:00.000Z",
+      "sessionId": "10000000-0000-4000-8000-000000000001",
+      "revision": 10,
+      "tick": 5,
+      "summary": {
+        "caseId": "base",
+        "seed": "990000001",
+        "status": "REVIEW",
+        "primary": "corrective",
+        "baseline": "wait",
+        "machineCount": 3,
+        "technicianCount": 2
+      }
+    }
+  },
+  "openRequest": {
+    "revision": 14
+  },
+  "incidentRequest": {
+    "revision": 0,
+    "machineIndex": 2,
+    "componentIndex": 1,
+    "scheduledTick": 7,
+    "reason": "Controlled training failure"
+  },
+  "appliedIncidents": {
+    "success": true,
+    "data": {
+      "sessionId": "10000000-0000-4000-8000-000000000001",
+      "revision": 1,
+      "tick": 7,
+      "source": "JCST_SIMULATION",
+      "events": [
+        {
+          "eventId": "10000000-0000-4000-8000-000000000004",
+          "machineIndex": 2,
+          "componentIndex": 1,
+          "scheduledTick": 7,
+          "status": "APPLIED",
+          "appliedTick": 7,
+          "reason": null,
+          "requestedReason": "Controlled training failure",
+          "createdBy": "10000000-0000-4000-8000-000000000003",
+          "createdAt": "2026-11-16T00:00:00.000Z"
+        }
+      ]
+    }
+  },
+  "skippedIncidents": {
+    "success": true,
+    "data": {
+      "sessionId": "10000000-0000-4000-8000-000000000001",
+      "revision": 2,
+      "tick": 7,
+      "source": "JCST_SIMULATION",
+      "events": [
+        {
+          "eventId": "10000000-0000-4000-8000-000000000005",
+          "machineIndex": 2,
+          "componentIndex": 0,
+          "scheduledTick": 7,
+          "status": "SKIPPED",
+          "appliedTick": 7,
+          "reason": "COMPONENT_ALREADY_FAILED",
+          "requestedReason": "Controlled training failure",
+          "createdBy": "10000000-0000-4000-8000-000000000003",
+          "createdAt": "2026-11-16T00:00:00.000Z"
+        }
+      ]
+    }
+  },
+  "list": {
+    "success": true,
+    "data": {
+      "items": [
+        {
+          "snapshotId": "10000000-0000-4000-8000-000000000002",
+          "schemaVersion": "jcst-demo-snapshot/1",
+          "sourceSessionId": "10000000-0000-4000-8000-000000000001",
+          "sourceRevision": 14,
+          "sourceTick": 7,
+          "sourceCommit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+          "snapshotHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "name": "Maintenance exercise",
+          "description": "Training situation",
+          "layoutId": "smt-board-assembly",
+          "createdAt": "2026-11-16T00:00:00.000Z",
+          "sessionId": "10000000-0000-4000-8000-000000000001",
+          "revision": 14,
+          "tick": 7
+        }
+      ],
+      "nextCursor": null
+    }
+  }
+}
