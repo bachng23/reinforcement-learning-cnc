@@ -453,6 +453,8 @@ model StepResult {
 }
 
 model User {
+  demoSnapshots DemoSnapshot[]
+  demoWriteReceipts DemoWriteReceipt[]
   demoSessions DemoSession[]
   researchCampaigns ResearchCampaign[]
   researchJobs ResearchJob[]
@@ -1010,6 +1012,9 @@ model DemoSession {
   revision Int @default(0)
   payloadJson Json @map("payload_json") @db.JsonB
   workOrdersJson Json? @map("work_orders_json") @db.JsonB
+  sourceSnapshotId String? @map("source_snapshot_id") @db.Uuid
+  sourceSnapshot DemoSnapshot? @relation("SnapshotBranches", fields: [sourceSnapshotId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  savedSnapshots DemoSnapshot[] @relation("SnapshotSource")
   lastCommandKey String? @map("last_command_key")
   lastCommandHash String? @map("last_command_hash") @db.Char(64)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -1018,4 +1023,38 @@ model DemoSession {
   @@unique([ownerId, requestKey])
   @@index([ownerId, createdAt(sort: Desc)])
   @@map("demo_sessions")
+}
+
+model DemoSnapshot {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId String @map("owner_id") @db.Uuid
+  sourceSessionId String @map("source_session_id") @db.Uuid
+  sourceRevision Int @map("source_revision")
+  sourceTick Int @map("source_tick")
+  sourceCommit String @map("source_commit")
+  schemaVersion String @map("schema_version")
+  snapshotHash String @map("snapshot_hash") @db.Char(64)
+  name String @db.VarChar(120)
+  description String @default("") @db.VarChar(2000)
+  layoutId String @map("layout_id") @db.VarChar(128)
+  payloadJson Json @map("payload_json") @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  source DemoSession @relation("SnapshotSource", fields: [sourceSessionId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  branches DemoSession[] @relation("SnapshotBranches")
+  @@index([ownerId, createdAt(sort: Desc), id(sort: Desc)], map: "demo_snapshots_owner_page_idx")
+  @@index([createdAt(sort: Desc), id(sort: Desc)], map: "demo_snapshots_page_idx")
+  @@map("demo_snapshots")
+}
+
+model DemoWriteReceipt {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId String @map("actor_id") @db.Uuid
+  key String @map("idempotency_key") @db.VarChar(128)
+  requestHash String @map("request_hash") @db.Char(64)
+  responseBody Json @map("response_body") @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([actorId, key])
+  @@map("demo_write_receipts")
 }
