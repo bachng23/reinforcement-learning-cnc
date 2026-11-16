@@ -364,6 +364,46 @@
 }
 .fd-condition-map [data-condition='watch'] { background: #fbf5e9; border-color: #e9dab5; }.fd-condition-map [data-condition='watch'] b { color: #987230; }
 
+/* Saved situations extend the existing AIMS Simulation surfaces and controls. */
+.sim-situation-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.sim-floor-controls .sim-situation-buttons { display: grid; }
+.review-dialog:has(.sim-situation-panel) { width: min(760px, calc(100vw - 32px)); max-width: none; padding: 24px; }
+.sim-situation-panel { max-height: 82dvh; overflow-y: auto; overscroll-behavior: contain; padding-right: 6px; }
+.sim-situation-panel > header { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.sim-situation-panel > header button { align-self: flex-start; flex-shrink: 0; }
+.sim-situation-panel h2 { font-size: 22px; font-weight: 600; margin-top: 5px; }
+.sim-situation-panel h3,.sim-injected-incidents h3 { font-size: 12px; font-weight: 600; margin-block: 14px 10px; }
+.sim-situation-panel form,.sim-incident-form form { display: grid; gap: 14px; margin-top: 16px; }
+.sim-situation-panel input,.sim-situation-panel textarea,.sim-incident-form :is(input,textarea,select) { min-width: 0; width: 100%; }
+.sim-situation-panel textarea,.sim-incident-form textarea { min-height: 80px; resize: vertical; }
+.sim-situation-panel form > button,.sim-incident-form form > button { justify-self: start; }
+.sim-situation-context { padding: 14px; margin-block: 14px; border: 1px solid var(--color-stone-border); border-radius: 8px; background: var(--color-canvas-fog); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.sim-situation-context > strong { font-weight: 600; }.sim-situation-context p { color: var(--color-ash-gray); }
+.sim-situation-context details { margin-block: 10px; font-size: 11px; }.sim-situation-context button { margin-top: 10px; }
+.sim-situation-success { margin-top: 16px; padding: 14px; border-radius: 8px; border: 1px solid #d5e4df; background: #f0f7f4; font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.sim-situation-success strong { color: #417d6c; }.sim-situation-success button { margin-top: 10px; }
+.sim-saved-list { display: grid; gap: 8px; margin-block: 14px; max-height: 280px; overflow-y: auto; }
+.sim-saved-list button { width: 100%; display: grid; gap: 5px; text-align: left; padding: 12px; border: 1px solid var(--color-stone-border); border-radius: 7px; background: var(--color-cloud-white); font-size: 12px; overflow-wrap: anywhere; }
+.sim-saved-list strong { font-weight: 600; }.sim-saved-list span { color: var(--color-ash-gray); font-size: 11px; }
+.sim-saved-list button[aria-pressed='true'] { border-color: #c9daf8; background: var(--color-sky-tint); }
+.sim-injected-incidents { border-top: 1px solid var(--color-stone-border); padding-top: 4px; margin-top: 14px; }
+.sim-injected-incidents ul { max-height: 240px; overflow-y: auto; }
+.sim-injected-incidents li { padding: 10px 8px; border-left: 3px solid #4d7a9f; margin-block: 8px; background: var(--color-canvas-fog); font-size: 11px; line-height: 1.7; border-radius: 5px; overflow-wrap: anywhere; }
+.sim-injected-incidents li[data-status='APPLIED'] { border-left-color: #b94450; }.sim-injected-incidents li[data-status='SKIPPED'] { border-left-color: #987230; }
+.sim-injected-incidents .sim-incident-target { display: flex; justify-content: space-between; width: 100%; gap: 10px; flex-wrap: wrap; text-align: left; padding: 0; font-size: 11px; }
+.sim-injected-incidents li > p { color: var(--color-ash-gray); }.sim-injected-incidents li > p:first-of-type { color: var(--color-slate-text); }
+.sim-floor-workspace .sim-factory-timeline:has(.sim-injected-incidents) { max-height: 300px; overflow-y: auto; }
+.sim-floor-workspace .sim-situation-notice { position: absolute; z-index: 3; left: 220px; right: 280px; top: 16px; font-size: 11px; }
+.sim-situation-panel .sim-error button,.sim-incident-form .sim-error button { display: inline-block; margin: 8px 12px 0 0; }
+.sim-situation-panel :is(button,input,textarea,summary):focus-visible,.sim-incident-form :is(button,input,textarea,select):focus-visible { outline: 2px solid var(--color-chartwell-blue); outline-offset: 3px; }
+@media(max-width:600px) {
+  .review-dialog:has(.sim-situation-panel) { width: calc(100vw - 16px); padding: 16px; }
+  .sim-situation-panel { max-height: 88dvh; }.sim-situation-panel h2 { font-size: 19px; }
+  .sim-saved-list { max-height: 220px; }.sim-situation-panel form > button,.sim-incident-form form > button { max-width: 100%; }
+  .sim-injected-incidents .sim-incident-target { display: grid; gap: 2px; }
+  .sim-floor-workspace .sim-situation-notice { left: 16px; right: 16px; top: auto; bottom: 60px; }
+}
+
 /* Inspection extends the existing Simulation console; colors and surfaces use its tokens. */
 .review-dialog:has(.sim-machine-detail) { width: min(940px, calc(100vw - 32px)); max-width: none; padding: 24px; }
 .sim-machine-detail { padding-right: 8px; overscroll-behavior: contain; scroll-padding-top: 90px; }

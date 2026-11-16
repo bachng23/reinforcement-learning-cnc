@@ -15,6 +15,10 @@ import { factoryLayouts, getFactoryLayout, type LayoutId } from '@/lib/simulatio
 import { ComparisonView } from './comparison-view';
 import { DecisionView } from './decision-view';
 import { SimulationActivity } from './simulation-activity';
+import { SituationButtons, SituationPanels, type OpenSituation } from './situation-panels';
+import { sendSituationCommand, situationLayout, validateSituationSession, SituationDataError, type SituationExecutor } from '@/lib/simulation/situations';
+import { useSessionIncidents, type IncidentRead } from '@/lib/simulation/use-session-incidents';
+import { InjectedIncidents } from './injected-incidents';
 
 export type DemoView = 'overview' | 'decision' | 'agents' | 'compare' | 'dashboard';
 const labels: Record<DemoView,string> = {overview:'Simulation',dashboard:'Factory dashboard',decision:'Decision Center',agents:'Decision activity',compare:'Compare controllers'};
@@ -40,7 +44,11 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   const [busy,setBusy]=useState(false); const locked=useRef(false); const [loading,setLoading]=useState(true); const [error,setError]=useState('');
   const [needsReviewSync, setNeedsReviewSync] = useState(false);
   const [readAttempt, setReadAttempt] = useState(0);
-  const [running,setRunning]=useState(false); const [automatic,setAutomatic]=useState(false); const [speed,setSpeed]=useState(2000);
+  const [situationPanel,setSituationPanel]=useState<'save'|'library'|null>(null);
+  const [situationNotice,setSituationNotice]=useState('');
+  const [running,updateRunning]=useState(false); const playback=useRef(false);
+  const setRunning=useCallback((value:boolean|((previous:boolean)=>boolean))=>{const next=typeof value==='function'?value(playback.current):value;playback.current=next;if(next)setSituationNotice('');updateRunning(next);},[]);
+  const [automatic,setAutomatic]=useState(false); const [speed,setSpeed]=useState(2000);
   const [pauseOnIncident,setPauseOnIncident]=useState(true);
   const [selectedMachine,setSelectedMachine]=useState<number|null>(null);
   const [factoryView, setFactoryView] = useState<'2d' | '3d'>('2d');
@@ -82,6 +90,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   }
 
   function selectStation(machine: number | null) {
+    setSituationNotice('');
     setStation(machine);
     const url = new URL(window.location.href);
     if (machine === null) { url.searchParams.delete('machine'); url.searchParams.delete('inspect'); }
@@ -98,6 +107,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     setPreviewUnavailable(true);
   }, []);
   const inspectMachine = useCallback((machine: number) => {
+    setSituationNotice('');
     setRunning(false);
     setStation(machine);
     setSelectedMachine(machine);
@@ -108,7 +118,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     url.searchParams.set('machine', String(machine));
     url.searchParams.set('inspect', '1');
     window.history.replaceState(null, '', url);
-  }, []);
+  }, [setRunning]);
   function closeMachine() {
     setSelectedMachine(null);
     const url = new URL(window.location.href); url.searchParams.delete('inspect');
@@ -118,17 +128,18 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   const [localView, setLocalView] = useState<DemoView>(view);
   const activeView = pathname === '/overview' ? 'overview' : (Object.keys(routes) as DemoView[]).find(key => routes[key] === pathname) ?? localView;
 
-  function openView(nextView: DemoView, sessionId: string) {
+  function openView(nextView: DemoView, sessionId: string, workshop=layoutId) {
     setLocalView(nextView);
     const url = new URL(window.location.href);
     url.pathname = routes[nextView];
     url.searchParams.set('session', sessionId);
-    url.searchParams.set('workshop', layoutId);
+    url.searchParams.set('workshop', workshop);
     window.history.replaceState(null, '', url);
   }
 
   const mounted=useRef(true);
   const commandAbort=useRef<AbortController | null>(null);
+  const inFlight=useRef<Promise<Simulation|undefined>|null>(null);
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;commandAbort.current?.abort();};},[]);
   const [primaryPolicy, setPrimaryPolicy] = useState('S');
   const [baselineOverride, setBaselineOverride] = useState<string | null>(null);
@@ -142,9 +153,11 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   const createIdentity=useRef<{input:string;key:string} | undefined>(undefined);
   const commandIdentity=useRef<{input:string;key:string} | undefined>(undefined);
   const accept = useCallback((data:Simulation, workshop?: LayoutId)=>{
-    let layout = getFactoryLayout(workshop ?? new URLSearchParams(window.location.search).get('workshop') ?? undefined).id;
+    const frozenLayout=data.branch&&data.context?.layoutId?situationLayout(data.context.layoutId):undefined;
+    if(data.branch&&!frozenLayout)throw new SituationDataError();
+    let layout = frozenLayout ?? getFactoryLayout(workshop ?? new URLSearchParams(window.location.search).get('workshop') ?? undefined).id;
     try {
-      layout = workshop ?? getFactoryLayout(window.localStorage.getItem(`mcc-workshop:${data.id}`) ?? new URLSearchParams(window.location.search).get('workshop') ?? undefined).id;
+      layout = frozenLayout ?? workshop ?? getFactoryLayout(window.localStorage.getItem(`mcc-workshop:${data.id}`) ?? new URLSearchParams(window.location.search).get('workshop') ?? undefined).id;
       window.localStorage.setItem(`mcc-workshop:${data.id}`,layout);
       window.localStorage.setItem(`mcc-workshop-session:${layout}`,data.id);
     } catch {}
@@ -219,7 +232,48 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     catch(e) { if(mounted.current&&!abort.signal.aborted)setError((e as Error).message); }
     finally { locked.current=false;if(mounted.current)setBusy(false); }
   }
-  async function command(body:Record<string,unknown>) {
+  const prepareSituation=useCallback(async(signal:AbortSignal)=>{
+    setRunning(false);const id=current.current?.id;
+    if(!id)throw new SituationDataError();
+    await inFlight.current;
+    if(signal.aborted||!mounted.current||current.current?.id!==id)throw new DOMException('Context changed','AbortError');
+    if(locked.current)throw new Error('Another session operation is still running');
+    locked.current=true;setBusy(true);
+    try{const fresh=await researchRequest<Simulation>(`/demo/sessions/${encodeURIComponent(id)}`,{signal});
+      if(signal.aborted||!mounted.current||current.current?.id!==id)throw new DOMException('Context changed','AbortError');
+      if(fresh.id!==id)throw new SituationDataError();accept(fresh);return fresh;
+    }finally{locked.current=false;if(mounted.current)setBusy(false);}
+  },[accept,setRunning]);
+  const executeSituation=useCallback<SituationExecutor>(async(operation,key,signal)=>{
+    setRunning(false);const origin=current.current?.id;await inFlight.current;
+    if(signal.aborted||!mounted.current||current.current?.id!==origin)throw new DOMException('Context changed','AbortError');
+    if(locked.current)throw new Error('Another session operation is still running');
+    if(operation.kind!=='open'&&operation.sessionId!==origin)throw new SituationDataError();
+    locked.current=true;setBusy(true);
+    try{
+      const result=await sendSituationCommand(operation,key,signal);
+      if(signal.aborted||!mounted.current||current.current?.id!==origin)throw new DOMException('Context changed','AbortError');
+      if(result.kind==='open'||result.kind==='incident'){
+        // A recovered receipt can contain the original response even after later commands.
+        const latest=await researchRequest<typeof result.session>(`/demo/sessions/${encodeURIComponent(result.session.id)}`,{signal});
+        if(signal.aborted||!mounted.current||current.current?.id!==origin)throw new DOMException('Context changed','AbortError');
+        if(latest.id!==result.session.id||latest.sessionId!==latest.id||latest.revision<result.session.revision||latest.tick!==latest.primary?.state.tick)throw new SituationDataError();
+        if(result.kind==='open')return {...result,session:validateSituationSession(latest,result.snapshot,false)};
+        accept(latest);return {...result,session:latest};
+      }
+      return result;
+    }finally{locked.current=false;if(mounted.current)setBusy(false);}
+  },[accept,setRunning]);
+  const openedSituation:OpenSituation=(opened,snapshot)=>{
+    const layout=situationLayout(snapshot.layoutId);if(!layout)return;
+    setRunning(false);accept(opened,layout);setSetup(false);setStation(null);setSelectedMachine(null);setSituationPanel(null);
+    openView('overview',opened.id,layout);setSituationNotice(`Opened “${snapshot.name}” as an independent session at t${opened.primary.state.tick}. Playback is paused.`);
+  };
+  function showSituations(mode:'save'|'library'){setRunning(false);setSituationNotice('');setSituationPanel(mode);}
+  async function reviewIncidentProposal(){
+    const abort=new AbortController();try{const fresh=await prepareSituation(abort.signal);if(fresh.status==='REVIEW'){setSelectedMachine(null);openView('decision',fresh.id);}}catch(e){if(mounted.current)setError((e as Error).message);}
+  }
+  async function performCommand(body:Record<string,unknown>) {
     const before=current.current;if(!before||locked.current||needsReviewSync)return;
     locked.current=true;setBusy(true);setError('');
     const inputBody={revision:before.revision,...body};const input=JSON.stringify(inputBody);
@@ -230,6 +284,12 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
       if(next.status==='REVIEW'||next.status==='COMPLETE'||(pauseOnIncident&&hasNewFailure(before.primary.state.tick,next)))setRunning(false);
       return next;
     }catch(e){if(mounted.current){setRunning(false);const stale=(e as {status?:number}).status===409;setNeedsReviewSync(stale);setError(stale ? 'The simulator revision changed. Reload the session and review the current assignments before trying again.' : (e as Error).message);}}finally{locked.current=false;if(mounted.current)setBusy(false);}
+  }
+  function command(body:Record<string,unknown>):Promise<Simulation|undefined>{
+    if(locked.current||situationPanel)return Promise.resolve(undefined);
+    setSituationNotice('');
+    const request=performCommand(body);inFlight.current=request;
+    void request.finally(()=>{if(inFlight.current===request)inFlight.current=null;});return request;
   }
   const decide=async(action:Matching|null,reason:string)=>{
     const count=current.current?.primary.state.tick??0;
@@ -249,7 +309,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   }
   useEffect(()=>{
     if(!running||busy||!session||session.status!=='RUNNING')return;
-    const timer=setTimeout(()=>void command({command:'advance',autoApprove:automatic}),speed);
+    const timer=setTimeout(()=>{if(playback.current)void command({command:'advance',autoApprove:automatic});},speed);
     return()=>clearTimeout(timer);
     // A single command at a time, scheduled only after the previous response.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -280,6 +340,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     </select></label>
   </div>;
   const notifications=incidentNotifications(session?.primary.records??[]);
+  const incidentRead=useSessionIncidents(session);
   function openScenarioSetup() {
     if (!session) return;
     setRunning(false);
@@ -295,6 +356,8 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     : session?.status === 'COMPLETE' ? 'Complete'
     : running ? 'Running' : 'Paused';
   return <AppShell title={labels[activeView]} simulationId={session?.id} workshopId={layoutId}><main ref={workspace} className={showFloor ? "simulation-workspace sim-floor-workspace" : "simulation-workspace"}>
+    {situationPanel&&<SituationPanels key={`${situationPanel}:${session?.id??'none'}`} mode={situationPanel} session={session} layoutId={layoutId} prepare={prepareSituation} execute={executeSituation} onOpened={openedSituation} onClose={()=>setSituationPanel(null)}/>}
+    {situationNotice&&<p role="status" className="sim-inspection-note sim-situation-notice">{situationNotice}</p>}
     {showFloor ? <h1 className="sr-only">{labels[activeView]}</h1> : <header className="sim-page-heading">
       <div>
         <p className="research-eyebrow"><Activity size={14} aria-hidden="true" /> Factory simulation</p>
@@ -342,6 +405,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
       </button>
     </section>}
     {loading && <p role="status">Loading simulator session…</p>}
+    {activeView==='overview'&&showSetup&&<SituationButtons session={session} onSave={()=>showSituations('save')} onLibrary={()=>showSituations('library')}/>}
     {session && !showSetup && !loading && <>
       {activeView !== 'dashboard' && <section className={showFloor ? 'sim-control-bar sim-floor-controls' : 'sim-control-bar'} aria-label="Simulation controls">
         {showFloor && <h2 className="sim-floor-eyebrow">Simulation</h2>}
@@ -355,6 +419,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
         {policyFields}
         {(primaryPolicy !== session.primary.controller || !session.continuous) && <button className="sim-button" disabled={busy || !policyAvailable(primaryPolicy)} onClick={()=>void applyPolicies()}>{!session.continuous ? 'Enable continuous operation' : 'Apply policy'}</button>}
         <div className="sim-control-actions">
+          {activeView==='overview'&&<SituationButtons session={session} onSave={()=>showSituations('save')} onLibrary={()=>showSituations('library')}/>}
           <label className="sim-auto">
             <input type="checkbox" checked={pauseOnIncident} disabled={busy}
               onChange={event => setPauseOnIncident(event.target.checked)} />
@@ -394,7 +459,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
           </button>}
         </div>
       </section>}
-      {selectedMachine!==null&&activeView==='overview'&&<MachineDetail layout={selectedLayout} session={session} clockSession={session} machine={selectedMachine} lane={session.primary} config={session.config} proposal={session.pending?.action??[]} onClose={closeMachine} onSelectMachine={inspectMachine} onReload={()=>void refreshSession()} decisionAction={session.status!=='COMPLETE'&&session.activated?<div><p className="sim-footnote">Review uses the current simulator revision. If no proposal is ready, this may advance one simulation step.</p><button className="research-primary" disabled={busy} onClick={()=>void inspectDecision()}>View dispatch proposal<ArrowRight size={14} aria-hidden="true"/></button></div>:undefined}/>}
+      {selectedMachine!==null&&activeView==='overview'&&<MachineDetail layout={selectedLayout} session={session} clockSession={session} machine={selectedMachine} lane={session.primary} config={session.config} proposal={session.pending?.action??[]} onClose={closeMachine} onSelectMachine={inspectMachine} onReload={()=>void refreshSession()} situationActions={{prepare:prepareSituation,execute:executeSituation,onReview:()=>void reviewIncidentProposal()}} incidents={incidentRead} decisionAction={session.status!=='COMPLETE'&&session.activated?<div><p className="sim-footnote">Review uses the current simulator revision. If no proposal is ready, this may advance one simulation step.</p><button className="research-primary" disabled={busy} onClick={()=>void inspectDecision()}>View dispatch proposal<ArrowRight size={14} aria-hidden="true"/></button></div>:undefined}/>}
       {session.status === 'REVIEW' && activeView === 'overview' && factoryView === '2d' && <div className="sim-alert">
         <AlertTriangle size={18} aria-hidden="true" />
         <div><strong>Maintenance proposal ready</strong></div>
@@ -427,21 +492,22 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
           {showFloor && expandError && <p className="sim-footnote" role="status">Full screen is unavailable in this browser.</p>}
           {previewUnavailable && <p className="sim-footnote" role="status">3D could not load. Select 3D to try again.</p>}
           {factoryView === '3d'
-            ? <FactoryPreview key={`${session.id}:${layoutId}`} layout={selectedLayout} lane={session.primary} config={session.config} clockSession={session} proposal={session.pending?.action} running={running}
+            ? <FactoryPreview key={`${session.id}:${layoutId}`} layout={selectedLayout} lane={session.primary} config={session.config} clockSession={session} proposal={session.pending?.action} running={running} injected={incidentRead.data?.events}
                 selected={station} onSelect={selectStation} onInspect={inspectMachine} onUnavailable={showFleet} />
             : <FleetView clockSession={session} layout={selectedLayout} lane={session.primary} config={session.config} proposal={session.pending?.action} onInspect={inspectMachine} />}
         </section>
         {showFloor
-          ? <FactoryTimeline session={session} records={session.primary.records} selected={station} onSelect={inspectMachine} />
+          ? <FactoryTimeline session={session} records={session.primary.records} selected={station} onSelect={inspectMachine} incidents={incidentRead}/>
           : <section className="sim-panel sim-notifications" aria-label="Incident notifications"><div className="sim-panel-heading"><h2>Incident notifications</h2></div>
           <ul aria-live="polite" aria-relevant="additions">{notifications.slice(0,1).map(e=><li key={`${e.tick}-${e.type}-${e.machine}-${e.component}`}><button className={e.type==='failure'?'sim-notice-failure':'sim-notice-resolved'} onClick={()=>inspectMachine(e.machine)}>{e.type==='failure'?<AlertTriangle size={16} aria-hidden="true"/>:<CheckCircle2 size={16} aria-hidden="true"/>}<span><strong>{e.type==='failure'?`M${e.machine+1} / C${e.component+1} failure detected`:`M${e.machine+1} / C${e.component+1} corrective service completed`}</strong><small>{simulationTime(session,e.tick).time}</small></span><ArrowRight size={14} aria-hidden="true"/></button></li>)}</ul>
           {notifications.length>1&&<details className="sim-notification-history"><summary>Event history ({notifications.length-1} earlier events)</summary><ul>{notifications.slice(1).map(e=><li key={`${e.tick}-${e.type}-${e.machine}-${e.component}`}><button onClick={()=>inspectMachine(e.machine)}>{simulationTime(session,e.tick).time} · M{e.machine+1}/C{e.component+1} · {e.type==='failure'?'Failure detected':'Corrective service completed'}<ArrowRight size={13} aria-hidden="true"/></button></li>)}</ul></details>}
           {!notifications.length&&<p className="sim-footnote">No incidents recorded.</p>}
+          <InjectedIncidents session={session} read={incidentRead} onInspect={inspectMachine}/>
         </section>}
       </>}
       {activeView === 'dashboard' && <><div className="sim-dashboard-toolbar">{workshopField}<p>{selectedLayout.description}</p><button className="sim-button" disabled={busy} onClick={()=>void refreshSession()}><RotateCcw size={14}/> Refresh data</button><button className="sim-button" onClick={()=>openView('overview',session.id)}>Open simulation <ArrowRight size={14}/></button></div><FactoryDashboard session={session} layout={selectedLayout} onSelectMachine={machine=>{selectStation(machine);openView('overview',session.id);}} /></>}
       {activeView === 'decision' && <DecisionView session={session} busy={busy} blocked={needsReviewSync} onDecide={decide} />}
-      {activeView === 'agents' && <SimulationActivity session={session} onInspect={machine=>{inspectMachine(machine);openView('overview',session.id);}} />}
+      {activeView === 'agents' && <SimulationActivity session={session} incidents={incidentRead} onInspect={machine=>{inspectMachine(machine);openView('overview',session.id);}} />}
       {activeView === 'compare' && <ComparisonView layout={selectedLayout} session={session} />}
     </>}
   </main></AppShell>;
@@ -465,8 +531,9 @@ function FactoryStatus({ lane }: { lane: Lane }) {
   </aside>;
 }
 
-function FactoryTimeline({ session, records, selected, onSelect }: {
+function FactoryTimeline({ session, records, selected, onSelect, incidents }: {
   session: Simulation; records: SimulationRecord[]; selected: number | null; onSelect: (machine: number) => void;
+  incidents:IncidentRead;
 }) {
   const events = records.flatMap(record => record.events)
     .filter(event => event.type === 'failure' || event.type === 'start' || event.type === 'completion')
@@ -491,5 +558,6 @@ function FactoryTimeline({ session, records, selected, onSelect }: {
         </button>
       </li>;
     })}</ol> : <p className="sim-footnote">No machine or maintenance events yet.</p>}
+    <InjectedIncidents session={session} read={incidents} onInspect={onSelect}/>
   </section>;
 }

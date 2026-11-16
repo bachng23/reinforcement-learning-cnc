@@ -1,4 +1,5 @@
 import type { Config, State, Record as TickRecord } from '@/types/generated/jcst';
+import type { DemoSituationSession } from '@/types/generated/simulation-situations';
 export type Matching = number[][];
 export type SimulationRecord = Omit<TickRecord, 'events'> & { events: (Omit<TickRecord['events'][number], 'uniform'> & { uniform?: number | string | null })[] };
 export type Lane = {
@@ -22,5 +23,7 @@ export type Simulation = {
   workflow: { tick: number; stage: string; message: string }[];
   audits?: Record<string,{status:string;records:number;scope:string}>;
   decisions: { tick: number; actor: string; reason: string; action: Matching; proposed_action: Matching; override: boolean }[];
+} & Partial<Pick<DemoSituationSession, 'sessionId' | 'tick' | 'branch' | 'incidents' | 'playbackPaused'>> & {
+  context?: { layoutId?: string };
 };
 export const matchingLabel = (action: Matching) => action.length ? action.map(([m,c,j]) => `T${j+1} → M${m+1}/C${c+1}`).join(' · ') : 'WAIT — keep current commitments';

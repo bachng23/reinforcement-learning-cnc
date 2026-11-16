@@ -3,7 +3,7 @@ import {compile} from 'json-schema-to-typescript';
 const schema=JSON.parse(await readFile(new URL('../contracts/simulation-machine-health.schema.json',import.meta.url),'utf8'));
 const target=new URL('../types/generated/simulation-machine-health.ts',import.meta.url);
 const result=await compile(schema,'SimulationMachineHealthContract',{
-  bannerComment:'/* Generated from the Backend PR #64 OpenAPI snapshot (eff27fe). Do not edit. */',
+  bannerComment:'/* Generated from Backend situation health OpenAPI (be8b299), including controlled incident provenance. Do not edit. */',
 });
 if(process.argv.includes('--check')){
   const saved=await readFile(target,'utf8');

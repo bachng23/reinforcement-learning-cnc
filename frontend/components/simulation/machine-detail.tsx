@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import {useState,type ReactNode} from 'react';
 import { X } from 'lucide-react';
 import { ReviewDialog } from '@/components/research/review-dialog';
 import { factoryLayouts, type FactoryLayout } from '@/lib/simulation/factory-layouts';
@@ -11,6 +11,11 @@ import { useMachineInspection } from '@/lib/simulation/use-machine-inspection';
 import { useWorkspaceUser } from '@/lib/workspace-user';
 import { ComponentHealth } from './component-health';
 import { MachineServices } from './machine-services';
+import {CreateIncidentPanel} from './create-incident';
+import type {PrepareSituation} from './situation-panels';
+import type {SituationExecutor} from '@/lib/simulation/situations';
+import type {IncidentRead} from '@/lib/simulation/use-session-incidents';
+import {InjectedIncidents} from './injected-incidents';
 
 // Presentation labels never enter JCST policy observations.
 export const demoMachines = factoryLayouts[0].stations.map((station, index) => ({
@@ -19,11 +24,13 @@ export const demoMachines = factoryLayouts[0].stations.map((station, index) => (
 }));
 
 export function MachineDetail({ machine, lane, config, proposal, onClose, decisionAction, clockSession, layout,
-  session, onSelectMachine, onReload }: {
+  session, onSelectMachine, onReload, situationActions, incidents }: {
   layout?: FactoryLayout; clockSession?: Pick<Simulation, 'simulation_start' | 'step_seconds'>;
   session?: Simulation; machine: number; lane: Lane; config: Config; proposal: Matching;
   onClose: () => void; decisionAction?: ReactNode; onSelectMachine?: (machine: number) => void; onReload?: () => void;
+  situationActions?:{prepare:PrepareSituation;execute:SituationExecutor;onReview:()=>void};incidents?:IncidentRead;
 }) {
+  const [incidentBusy,setIncidentBusy]=useState(false);
   const read = useMachineInspection(session, machine);
   const user = useWorkspaceUser();
   const context = read.context;
@@ -36,15 +43,17 @@ export function MachineDetail({ machine, lane, config, proposal, onClose, decisi
   const next = proposal.find(item => item[0] === machine);
   const status = job ? 'In service' : components.some(item => item.failed) ? 'Breakdown' : 'Working';
   const title = `machine-detail-${machine}`;
-  return <ReviewDialog labelledBy={title} busy={false} onClose={onClose}><div className="sim-machine-detail">
-    <header><div><p className="research-eyebrow">Machine M{machine + 1} · {status} · {simulationTime(clock, shownLane.state.tick).time}</p><h2 id={title}>{info?.name ?? `Machine M${machine + 1}`}</h2></div><button className="sim-button" aria-label="Close machine details" onClick={onClose}><X size={17} aria-hidden="true" /></button></header>
-    {onSelectMachine && <label className="sim-field sim-inspect-picker">Inspect machine<select value={machine} onChange={event => onSelectMachine(Number(event.target.value))}>{lane.state.components.map((_, index) => <option key={index} value={index}>M{index + 1} · {layout?.stations[index]?.name ?? demoMachines[index]?.name ?? 'Machine'}</option>)}</select></label>}
+  return <ReviewDialog labelledBy={title} busy={incidentBusy} onClose={onClose}><div className="sim-machine-detail">
+    <header><div><p className="research-eyebrow">Machine M{machine + 1} · {status} · {simulationTime(clock, shownLane.state.tick).time}</p><h2 id={title}>{info?.name ?? `Machine M${machine + 1}`}</h2></div><button className="sim-button" disabled={incidentBusy} aria-label="Close machine details" onClick={onClose}><X size={17} aria-hidden="true" /></button></header>
+    {onSelectMachine && <label className="sim-field sim-inspect-picker">Inspect machine<select value={machine} disabled={incidentBusy} onChange={event => onSelectMachine(Number(event.target.value))}>{lane.state.components.map((_, index) => <option key={index} value={index}>M{index + 1} · {layout?.stations[index]?.name ?? demoMachines[index]?.name ?? 'Machine'}</option>)}</select></label>}
     <div className="sim-component-chips" aria-label="Current components">{components.map((item, index) => <span key={index} data-failed={item.failed}>C{index + 1} · {item.failed ? 'FAILED' : 'Healthy'}</span>)}</div>
     {session && <p className="sim-footnote">Session {session.id} · revision {context?.snapshot.revision ?? session.revision} · t{shownLane.state.tick}</p>}
     {job && <p className="sim-current-service"><strong>T{job.technician + 1} · C{job.component + 1} · {job.kind}</strong><span>In progress · {serviceDuration(job.remaining, clock.step_seconds)} remaining</span></p>}
     {read.loading && <p role="status" className="sim-inspection-note">{context ? `Updating history to revision ${session?.revision}. Showing the last consistent snapshot.` : 'Loading machine health and maintenance history…'}</p>}
     {read.error && <div role="alert" className="sim-error"><p>{read.error}</p><div className="sim-inspection-retry"><button onClick={read.retry}>Retry machine history</button>{onReload && <button onClick={onReload}>Reload session</button>}</div></div>}
     {decisionAction && user?.role !== 'VIEWER' && <div className="sim-machine-decision">{decisionAction}</div>}
+    {session&&situationActions&&<CreateIncidentPanel key={`${session.id}:${machine}`} session={session} machine={machine} {...situationActions} onBusy={setIncidentBusy}/>}
+    {session&&incidents&&<InjectedIncidents session={session} read={incidents} machine={machine} onInspect={next=>{if(!incidentBusy)onSelectMachine?.(next);}}/>}
     {context && <><ComponentHealth key={`${context.health.sessionId}:${machine}`} health={context.health} session={context.snapshot} /><MachineServices workOrders={context.workOrders} session={context.snapshot} /></>}
     {!session && <p className="sim-footnote">Open a persisted simulator session to read component risk and maintenance history.</p>}
     <details className="sim-compatibility"><summary>Production context</summary><dl className="sim-machine-facts"><div><dt>Production line</dt><dd>{info ? 'Line P1' : 'Not configured'}</dd></div><div><dt>Operation</dt><dd>{info?.operation ?? 'Not configured'}</dd></div><div><dt>Assigned batch</dt><dd>{info?.batch ?? 'Not configured'}</dd></div><div><dt>Product</dt><dd>{info?.product ?? 'Not configured'}</dd></div><div><dt>Factory location</dt><dd>{info?.position ?? 'Not configured'}</dd></div><div><dt>Current service</dt><dd>{job ? `T${job.technician + 1} · ${job.kind} · ${serviceDuration(job.remaining, clock.step_seconds)} left` : next ? `Proposed T${next[2] + 1} → C${next[1] + 1}` : 'No technician assigned'}</dd></div></dl></details>
