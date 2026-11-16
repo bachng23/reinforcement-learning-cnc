@@ -1,0 +1,28 @@
+node.exe : [WebServer] (node:11992) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+At line:4 char:1
++ & '..\..\.tools\node-v24.20.0-win-x64\node.exe' node_modules/@playwri ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([WebServer] (no... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:15540) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+[WebServer]   npx update-browserslist-db@latest
+[WebServer]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+Running 6 tests using 1 worker
+
+(node:13384) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop] › tests\situations-browser\situations.spec.ts:83:5 › component evidence: save repair snapshot, advance source, open independently paused (12.1s)
+  ok 2 [desktop] › tests\situations-browser\situations.spec.ts:98:5 › component evidence: open healthy situation, inject now, reload without reposting (6.7s)
+  ok 3 [desktop] › tests\situations-browser\situations.spec.ts:112:5 › component evidence: schedule after two steps, display server outcome and runtime unavailable (5.9s)
+(node:24336) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 4 [mobile] › tests\situations-browser\situations.spec.ts:83:5 › component evidence: save repair snapshot, advance source, open independently paused (3.7s)
+  ok 5 [mobile] › tests\situations-browser\situations.spec.ts:98:5 › component evidence: open healthy situation, inject now, reload without reposting (5.1s)
+  ok 6 [mobile] › tests\situations-browser\situations.spec.ts:112:5 › component evidence: schedule after two steps, display server outcome and runtime unavailable (3.9s)
+
+  6 passed (47.8s)
