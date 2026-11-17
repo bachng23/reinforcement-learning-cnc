@@ -127,6 +127,13 @@ describe('live simulation workflow',()=>{
     expect(screen.getByText('In progress')).toBeInTheDocument();
     expect(screen.queryByText(/shared WAIT prelude/i)).not.toBeInTheDocument();
   });
+  it('withholds the policy ranking after an incident changes the primary lane', () => {
+    const s = session();
+    s.incidents = [{ status: 'APPLIED' } as NonNullable<Simulation['incidents']>[number]];
+    render(<ComparisonView session={s} />);
+    expect(screen.getByRole('heading', { name: 'Policy comparison unavailable' })).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
   it.each(['saved counters', 'legacy history', 'expired legacy history'])('uses the policy window for %s', (source) => {
     const s = session();
     s.continuous = true;

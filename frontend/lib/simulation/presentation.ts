@@ -1,8 +1,11 @@
 import type { Simulation, SimulationRecord } from './types';
 
-/** Compare physical transition times (also works after live history retention) so an old incident cannot pause every new step. */
+/** Detect failures introduced by the command, including controlled failures at the arriving boundary. */
 export function hasNewFailure(before: number, next: Simulation): boolean {
-  return next.primary.records.some((record, index) => (record.tick ?? index) >= before && record.events.some(event => event.type === 'failure'));
+  return next.primary.records.some((record, index) =>
+    (record.tick ?? index) >= before && record.events.some(event => event.type === 'failure')) ||
+    (next.incidents ?? []).some(event =>
+      event.status === 'APPLIED' && event.appliedTick !== null && event.appliedTick > before);
 }
 
 /** Notifications are evidence from the primary lane, retained across reloads. */

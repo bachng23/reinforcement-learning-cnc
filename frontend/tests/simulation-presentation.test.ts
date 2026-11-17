@@ -10,6 +10,15 @@ describe('live simulator event presentation',()=>{
     primary.records.push(record([{type:'failure'}]),record([]));
     expect(hasNewFailure(2,s)).toBe(true);
   });
+  it('pauses when a scheduled incident first applies, then allows playback to continue', () => {
+    const s = { primary: { records: [] }, incidents: [
+      { status: 'APPLIED', appliedTick: 5 },
+      { status: 'SKIPPED', appliedTick: 6 },
+      { status: 'SCHEDULED', appliedTick: null },
+    ] } as Simulation;
+    expect(hasNewFailure(4, s)).toBe(true);
+    expect(hasNewFailure(5, s)).toBe(false);
+  });
   it('shows chronological evidence newest first, excludes PM and does not mutate the trace',()=>{
     const records=[record([{type:'failure',tick:5},{type:'occupancy',tick:5}]),record([{type:'completion',kind:'PM',tick:7},{type:'failure',tick:7},{type:'completion',kind:'CM',tick:7}])];
     expect(incidentNotifications(records)).toEqual([{type:'failure',tick:7},{type:'completion',kind:'CM',tick:7},{type:'failure',tick:5}]);
