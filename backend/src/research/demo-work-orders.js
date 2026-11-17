@@ -19,6 +19,10 @@ function project(sessionId, payload, previous = null, command = null) {
       p.historyCoverage = 'PARTIAL';
       p.failures = {}; // Missing intervals can contain consumption or a new failure.
     }
+    for (const event of payload.incidents ?? []) {
+      if (event.status === 'APPLIED' && event.appliedTick === record.tick)
+        p.failures[`${event.machineIndex}:${event.componentIndex}`] = { id: event.eventId, tick: event.appliedTick };
+    }
     record.events.forEach((e, ordinal) => {
       const id = eventId(sessionId, record.tick, ordinal);
       if (e.type === 'failure') p.failures[component(e)] = { id, tick: e.tick };

@@ -30,7 +30,8 @@ afterAll(async () => {
   engine?.close();
   await db.auditLog.deleteMany({ where: { entityId: { in: sessions } } });
   await db.demoSession.deleteMany({ where: { id: { in: sessions } } });
-  await db.user.deleteMany({ where: { id: { in: Object.values(users).map(u => u.id) } } });
+  // Command receipts now retain immutable actor provenance. The integration
+  // runner drops this owned schema; never remove receipt actors in-place.
   await db.$disconnect();
 });
 async function http(suffix, { user = users.owner, body } = {}) {

@@ -1,0 +1,35 @@
+{
+  "sha": "4ad2b37570a4e52be2a86f61b1a2c10e13bc2976",
+  "schema": "product_api_it_situations_55ce270a7fe56237",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "healthy snapshot exact replay through real API and PostgreSQL",
+      "status": "PASS"
+    },
+    {
+      "name": "immediate injection, health event, REVIEW conflict, repair snapshot and completion",
+      "status": "PASS"
+    },
+    {
+      "name": "scheduled incident single-step/autoplay parity and reload",
+      "status": "PASS"
+    },
+    {
+      "name": "immutable snapshot and read-only GET",
+      "status": "PASS"
+    },
+    {
+      "name": "real Chromium: authenticated save/open paused, immediate incident and reload",
+      "status": "PASS"
+    }
+  ],
+  "interceptedApi": false,
+  "cleanup": {
+    "schema": "DROPPED",
+    "services": "STOPPED",
+    "ports": "CLOSED"
+  },
+  "apiPort": 62935,
+  "frontendPort": 62927
+}

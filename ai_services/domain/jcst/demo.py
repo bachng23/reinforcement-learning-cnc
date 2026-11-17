@@ -88,6 +88,8 @@ def choose(session, lane):
 def prepare(session):
     if session['status'] != 'RUNNING':
         raise ValueError('Session is not ready for a new decision')
+    from .situations import apply_due
+    apply_due(session)
     physics, _ = modules()
     cfg = raw_config(Config.model_validate(session['config']))
     state = raw_state(cfg, State.model_validate(session['primary']['state']))
@@ -110,6 +112,10 @@ def prepare(session):
 def commit(session, action, actor, reason):
     if session['pending'] is None or session['status'] == 'COMPLETE':
         raise ValueError('No pending decision')
+    from .situations import apply_due, SituationError
+    apply_due(session)
+    if session.get('incidents') and not session.get('continuous') and session['primary']['state']['tick'] >= 63:
+        raise SituationError('DEMO_INTERVENTION_REPLAY_UNSUPPORTED')
     physics, _ = modules()
     cfg = raw_config(Config.model_validate(session['config']))
     # Demo-session v1 used JSON numbers for keyed uniforms. Some JSONB/client
@@ -172,6 +178,7 @@ def commit(session, action, actor, reason):
             note(session, 'COMPLETE_SERVICE', f"T{e['technician']+1} completed {e['kind']} at M{e['machine']+1}/C{e['component']+1}.")
     session['pending'] = None
     session['status'] = 'COMPLETE' if not session.get('continuous') and session['primary']['state']['tick'] >= 64 else 'RUNNING'
+    apply_due(session)
     if session['status'] == 'COMPLETE':
         from .contracts import Episode
         from .runtime import audit_episode
@@ -235,6 +242,7 @@ def autoplay(session, stop_at='complete', max_ticks=8):
     while session['status'] != 'COMPLETE' and session['primary']['state']['tick'] - start < max_ticks:
         previous_tick = session['primary']['state']['tick']
         previous_incident = session['first_incident_tick']
+        previous_injected = sum(e['status'] == 'APPLIED' for e in session.get('incidents', []))
         if session['status'] == 'REVIEW':
             if stop_at == 'review':
                 break
@@ -243,7 +251,8 @@ def autoplay(session, stop_at='complete', max_ticks=8):
             prepare(session)
         if stop_at == 'review' and session['status'] == 'REVIEW':
             break
-        if stop_at == 'incident' and previous_incident is None and session['first_incident_tick'] is not None:
+        if stop_at == 'incident' and ((previous_incident is None and session['first_incident_tick'] is not None)
+                or sum(e['status'] == 'APPLIED' for e in session.get('incidents', [])) > previous_injected):
             break
         if stop_at == 'dispatch' and session['primary']['state']['tick'] != previous_tick:
             if any(e['type'] == 'start' for e in session['primary']['records'][-1]['events']):

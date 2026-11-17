@@ -3,8 +3,11 @@ const { bridge } = require('./bridge');
 const { ApiError } = require('../lib/api-error');
 const { canonical, sha } = require('./artifact-store');
 const workOrders = require('./demo-work-orders');
+const writes = require('./demo-write');
+const situations = require('./demo-situation-runtime');
 const scope = user => user.role === 'ADMIN' ? {} : { ownerId: user.id };
-const present = row => ({ id: row.id, revision: row.revision, createdAt: row.createdAt, simulation_start: row.createdAt.toISOString(), step_seconds: 900, ...row.payloadJson });
+const present = row => ({ simulation_start: row.createdAt.toISOString(), step_seconds: 900, ...row.payloadJson,
+  id: row.id, sessionId: row.id, revision: row.revision, tick: row.payloadJson.primary.state.tick, createdAt: row.createdAt });
 
 async function read(user, id) {
   const row = await prisma.demoSession.findFirst({ where: { id, ...scope(user) } });
@@ -38,18 +41,22 @@ async function create(user, input, key) {
   }
 }
 async function command(user, id, input, key) {
-  const row = await read(user, id);
+  return writes.write(user, key, `session.command:${id}`, input,
+    (tx, actor) => writes.session(tx, actor, id),
+    async (row, actor) => {
   const hash = sha(canonical(input));
   const replay = saved => {
     if (saved?.lastCommandKey !== key) return undefined;
     if (saved.lastCommandHash !== hash) throw new ApiError(409, 'DEMO_KEY_CONFLICT', 'Command key belongs to another action');
     return saved;
   };
-  if (replay(row)) return present(row);
+  if (replay(row)) return { legacy: true, value: present(row) };
   if (row.revision !== input.revision) throw new ApiError(409, 'DEMO_STALE', 'Session changed; reload before deciding');
   if (row.payloadJson.status === 'COMPLETE' && input.command !== 'configure') throw new ApiError(409, 'DEMO_COMPLETE', 'Simulation has completed');
   let payloadJson;
-  if (input.command === 'configure') {
+  if (row.sourceSnapshotId || row.payloadJson.branch || row.payloadJson.incidents?.length) {
+    payloadJson = await situations.command(row.payloadJson, input, actor.id);
+  } else if (input.command === 'configure') {
     payloadJson = await bridge({ operation: 'demo_configure', session: row.payloadJson, primary: input.primary, baseline: input.baseline, continuous: true });
   } else if (input.command === 'autoplay') {
     payloadJson = await bridge({ operation: 'demo_autoplay', session: row.payloadJson, stop_at: input.stopAt, max_ticks: input.maxTicks });
@@ -62,24 +69,37 @@ async function command(user, id, input, key) {
   } else {
     if (row.payloadJson.status !== 'REVIEW') throw new ApiError(409, 'DEMO_NOT_PENDING', 'No decision is awaiting review');
     const action = input.command === 'approve' ? row.payloadJson.pending.action : input.action;
-    payloadJson = await bridge({ operation: 'demo_commit', session: row.payloadJson, action, actor: user.id, reason: input.reason });
+    payloadJson = await bridge({ operation: 'demo_commit', session: row.payloadJson, action, actor: actor.id, reason: input.reason });
   }
   const previousProjection = row.workOrdersJson ?? workOrders.project(row.id, row.payloadJson);
   const workOrdersJson = workOrders.project(row.id, payloadJson, previousProjection,
     { name: input.command, fromTick: row.payloadJson.primary.state.tick });
-  const result = await prisma.$transaction(async tx => {
+  return { payloadJson, workOrdersJson };
+    }, async (tx, actor, row, prepared) => {
+    if (prepared.legacy) {
+      if (row.lastCommandKey !== key || row.lastCommandHash !== sha(canonical(input)))
+        throw new ApiError(409, 'DEMO_STALE', 'Session changed during legacy replay');
+      return prepared.value;
+    }
+    writes.revision(row, input.revision);
+    const { payloadJson, workOrdersJson } = prepared;
+    const hash = sha(canonical(input));
+    const before = new Map((row.payloadJson.incidents ?? []).map(e => [e.eventId, e.status]));
+    if (payloadJson.branch && (payloadJson.incidents ?? []).some(e => before.get(e.eventId) === 'SCHEDULED' && e.status !== 'SCHEDULED'))
+      payloadJson.branch.interventionRevision = row.revision + 1;
     const updated = await tx.demoSession.updateMany({ where: { id: row.id, revision: row.revision }, data: {
       payloadJson, workOrdersJson, revision: { increment: 1 }, lastCommandKey: key, lastCommandHash: hash,
     } });
     if (!updated.count) {
-      const saved = replay(await tx.demoSession.findUnique({ where: { id: row.id } }));
-      if (saved) return saved;
       throw new ApiError(409, 'DEMO_STALE', 'Another command advanced the session; reload');
     }
-    await tx.auditLog.create({ data: { entityType: 'SYSTEM', entityId: id, action: `DEMO_${input.command.toUpperCase()}`, actorUserId: user.id,
+    await tx.auditLog.create({ data: { entityType: 'SYSTEM', entityId: id, action: `DEMO_${input.command.toUpperCase()}`, actorUserId: actor.id,
       payloadJson: { revision: row.revision, tick: row.payloadJson.primary.state.tick, command: input.command, stopAt: input.stopAt, advancedTicks: payloadJson.primary.state.tick - row.payloadJson.primary.state.tick, reason: input.reason, domain: 'ENGINEERING_SIMULATION' } } });
-    return tx.demoSession.findUnique({ where: { id } });
+    for (const event of payloadJson.incidents ?? []) {
+      if (before.get(event.eventId) === 'SCHEDULED' && event.status !== 'SCHEDULED')
+        await writes.audit(tx, actor, id, 'DEMO_INCIDENT_RESOLVED', { ...event, revision: row.revision + 1 });
+    }
+    return present(await tx.demoSession.findUnique({ where: { id } }));
   });
-  return present(result);
 }
 module.exports = { read, create, command, present, scope };
