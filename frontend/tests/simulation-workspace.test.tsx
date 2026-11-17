@@ -9,6 +9,7 @@ import type { Simulation } from '@/lib/simulation/types';
 import type { Episode } from '@/types/generated/jcst';
 import fixture from '../../contracts/jcst/v1/fixtures/engineering-bundle.json';
 import { healthAt, simulationAt, workOrdersAt } from './simulation-inspection-fixtures';
+import { injected } from './situation-fixtures';
 vi.mock('@/components/app-shell',()=>({AppShell:({children}:{children:ReactNode})=><>{children}</>}));
 vi.mock('@/lib/research-api/client',()=>({researchRequest:vi.fn()}));
 vi.mock('@/components/simulation/factory-preview',()=>({
@@ -126,6 +127,13 @@ describe('live simulation workflow',()=>{
     expect(screen.getByRole('columnheader',{name:'S + human override'})).toBeInTheDocument();
     expect(screen.getByText('In progress')).toBeInTheDocument();
     expect(screen.queryByText(/shared WAIT prelude/i)).not.toBeInTheDocument();
+  });
+  it('withholds the policy ranking after an incident changes the primary lane', () => {
+    const s = session();
+    s.incidents = [injected()];
+    render(<ComparisonView session={s} />);
+    expect(screen.getByRole('heading', { name: 'Policy comparison unavailable' })).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
   it.each(['saved counters', 'legacy history', 'expired legacy history'])('uses the policy window for %s', (source) => {
     const s = session();

@@ -4,6 +4,12 @@ import type { Simulation } from '@/lib/simulation/types';
 import { FleetView } from './fleet-view';
 
 export function ComparisonView({ session, layout }: { session: Simulation; layout?:FactoryLayout }) {
+  if (session.incidents?.some(event => event.status === 'APPLIED')) {
+    return <section className="sim-panel">
+      <div className="sim-panel-heading"><h2>Policy comparison unavailable</h2></div>
+      <p className="sim-footnote">A controlled incident changed the primary lane only. A policy comparison requires both lanes to experience the same intervention.</p>
+    </section>;
+  }
   const values = [session.primary, session.baseline].map(lane => {
     const origin = lane.comparison_start;
     if (!origin) return lane;

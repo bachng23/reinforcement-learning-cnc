@@ -1,0 +1,229 @@
+{
+  "task": "Saved situations and controlled incidents",
+  "date": "2026-11-16",
+  "status": "M1_FRONTEND_READY_M2_INTEGRATION_PENDING",
+  "branch": "frontend/simulation-situations-incidents",
+  "frontendBaseGitSha": "30a27f820e511567f7fad8199f123f75646cd9f3",
+  "frontendChangesCommitted": true,
+  "frontendWorkingTreeSha256": "f1fdc8699b2c77016b700a35f0134394efd1add1e80ac7876b58af94199fa88c",
+  "producerGitSha": "be8b299c4169eeb8e2d7bb8c6c2d13a24b43607e",
+  "producerContractStatus": "BACKEND_M0_PROPOSAL_NOT_JOINT_FLEX_ACCEPTANCE",
+  "checks": {
+    "contracts": {
+      "exitCode": 0
+    },
+    "typecheck": {
+      "exitCode": 0
+    },
+    "lint": {
+      "exitCode": 0
+    },
+    "unit": {
+      "exitCode": 0,
+      "files": 59,
+      "tests": 506,
+      "maxWorkers": 3
+    },
+    "productionBuild": {
+      "exitCode": 0
+    },
+    "componentBrowser": {
+      "exitCode": 0,
+      "tests": 6,
+      "desktop": "1440x900",
+      "mobile": "390x844",
+      "browser": "Installed Microsoft Edge",
+      "interceptedApi": true
+    }
+  },
+  "realIntegratedAcceptance": false,
+  "backendOrFlexImplementationChanged": false,
+  "gaps": [
+    "Producer routes are not merged into the main base.",
+    "Flex situation restore/incident/command protocol operations are not implemented by the integrated runtime.",
+    "Snapshot metadata does not include immutable per-machine condition/active-work details or per-technician remaining time; library marks these unavailable."
+  ],
+  "cleanup": "No database, source session or production services were modified by browser mocks. Playwright manages the test-only Next process.",
+  "committedLogs": "docs/test-evidence/saved-situations/",
+  "files": [
+    {
+      "file": "frontend/app/simulation.css",
+      "sha256": "b5664cd85f05ad7fadb60cde52485b93e61480f6ccbfe9ab3aaf530303f19609"
+    },
+    {
+      "file": "frontend/components/simulation/component-health.tsx",
+      "sha256": "37426cf9aa516d2cc330d800c5ea504a3f61ce7947a5a0822f44900ae19999f8"
+    },
+    {
+      "file": "frontend/components/simulation/create-incident.tsx",
+      "sha256": "a99ac05aa1f21ee9201926da9bd255318bfde2283f319ec14374566d0d1df768"
+    },
+    {
+      "file": "frontend/components/simulation/demo-workspace.tsx",
+      "sha256": "03bdde3cb8cdc9403624dc7d37f9cb8450b9cc83b2dcd185bad7600c489c7e6e"
+    },
+    {
+      "file": "frontend/components/simulation/factory-preview.tsx",
+      "sha256": "b0f5e93f8009071b57f8453c5f7aca9c66855b662f1db8a38a33ddb70532ccb6"
+    },
+    {
+      "file": "frontend/components/simulation/injected-incidents.tsx",
+      "sha256": "70a34c38af2da6fde2fb0790766570614ac135162b5b2e23fe686f4bffb50a97"
+    },
+    {
+      "file": "frontend/components/simulation/machine-detail.tsx",
+      "sha256": "778b4ebd65c06bdb2ca383ae5734fe165ffbb72633016e5a1f43d199ba3358c1"
+    },
+    {
+      "file": "frontend/components/simulation/simulation-activity.tsx",
+      "sha256": "333c3de22e393520e784ddf99e5cb12889f8520341759130afef40919d5b66c9"
+    },
+    {
+      "file": "frontend/components/simulation/situation-panels.tsx",
+      "sha256": "b628ef94a6981eb165bc9b9b55d863fa7b28ce25c27b53efa65db50098e40717"
+    },
+    {
+      "file": "frontend/contracts/jcst-situations/manifest.json",
+      "sha256": "dd63d3787790c860d5fe7ec9b37ad611aba10f52b303cceb299bd12fe1c5101a"
+    },
+    {
+      "file": "frontend/contracts/jcst-situations/openapi.yaml",
+      "sha256": "e0d0cf217519a17783d70e1e7ccc2f960d7e38aeb600e3a1e9c4f5e2cd644119"
+    },
+    {
+      "file": "frontend/contracts/jcst-situations/producer.d.ts",
+      "sha256": "2179ba141a371d66476961aef70d8df3d93f4a6c37c968c054bb04f478e4e5c8"
+    },
+    {
+      "file": "frontend/contracts/simulation-machine-health.schema.json",
+      "sha256": "e700d17d126a709081226030ad0d804212203714d03cb80c978dbde7155b2155"
+    },
+    {
+      "file": "frontend/lib/simulation/situations.ts",
+      "sha256": "85660ab3a10f8cd4c5ab0552f42efb0b8389b6099a18998dff391685e745d1f8"
+    },
+    {
+      "file": "frontend/lib/simulation/types.ts",
+      "sha256": "f11dbe2a8321c2331b6fa1b5776785b3c6805480bfc637d14cbcba9c05015244"
+    },
+    {
+      "file": "frontend/lib/simulation/use-session-incidents.ts",
+      "sha256": "6f5148992679d978ac60e64c5ee6efb884f2b66f068894e4a1f68fb5bd1355f3"
+    },
+    {
+      "file": "frontend/lib/simulation/use-situation-write.ts",
+      "sha256": "0071dde7f4893623b6317ed01be646b6ce494d7f622353f97af084e6774a9068"
+    },
+    {
+      "file": "frontend/package.json",
+      "sha256": "e9e467f35c449cb88e2607c81ee94abd228b10da4569c574e33a578a399a82da"
+    },
+    {
+      "file": "frontend/playwright.situations.config.ts",
+      "sha256": "cc36daf2529d5cb8991c5a6f70b02500d13a1043323eca9bd2aa70889f2f26e5"
+    },
+    {
+      "file": "frontend/scripts/generate-simulation-health-types.mjs",
+      "sha256": "ece5e10fa332ac640ee55f6a730b29e7e78891f13821189cc5f62fc334121ffd"
+    },
+    {
+      "file": "frontend/scripts/generate-situation-types.mjs",
+      "sha256": "746bc1fe3ec54769fee95d9018a3d74fa34b496ef4731fa034dd652bbdc7bfe2"
+    },
+    {
+      "file": "frontend/tests/fixtures/situations/producer-examples.json",
+      "sha256": "b0a369539d04eef761c6ef2c8e030be2fd861cde797900c23f64c6a198436277"
+    },
+    {
+      "file": "frontend/tests/session-incidents.test.ts",
+      "sha256": "b7d8f7173a0d8df1910f788375da4ae1c29919fe4cc3f3994149bcd062c64cca"
+    },
+    {
+      "file": "frontend/tests/simulation-situations.test.tsx",
+      "sha256": "5961627687421fbb7ca602e27f6395a267f1db27af308c1d0e4542e2649d9c55"
+    },
+    {
+      "file": "frontend/tests/situation-fixtures.ts",
+      "sha256": "8052029edf8a3cb632d6aa8daf7c649eba54cd20bbdd970bcbefdd7bf089fd86"
+    },
+    {
+      "file": "frontend/tests/situation-write.test.ts",
+      "sha256": "1a6aac80d582636619cefe847c0b1233fd8fe75b30dd712380ba95f2645eabb3"
+    },
+    {
+      "file": "frontend/tests/situations-browser/situations.spec.ts",
+      "sha256": "34e20545e8f3b3849bde8a92a1464f40591d1f428d0aa65c08717d0c137236b0"
+    },
+    {
+      "file": "frontend/tests/situations-client.test.ts",
+      "sha256": "8943dd096dae44e4793446de502e3c4617ad02775eef2bf2e7bd0d76d7fa509b"
+    },
+    {
+      "file": "frontend/types/generated/simulation-machine-health.ts",
+      "sha256": "16d064ef22ea2f489f3bebde5fb2d25ebeeb42ba608f06170fb42429b1f645fc"
+    },
+    {
+      "file": "frontend/types/generated/simulation-situations.ts",
+      "sha256": "61f9e62c1f87650a1bec3acc703c7d71d7db255fe2320b5b2fe015851d31700d"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "docs/design/screenshots/saved-situations/component-incident-applied-desktop.png",
+      "sha256": "16321acc293741e824f099555222be9e29bc6315471cf59b750b02962dcee380"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-incident-applied-mobile.png",
+      "sha256": "71a827d9cb5a9845f4cc1b3619c100689204ae98e3831ae30944016d512b6b2d"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-incident-review-desktop.png",
+      "sha256": "cb4da439305a16f2808be81e7751ed6980ddf7f952bc8c5638dd5b77d72926bc"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-incident-review-mobile.png",
+      "sha256": "65ac4080e95520b1250924733c986d3d6bdd9065a1b2b7c52f502887e6b53a73"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-library-desktop.png",
+      "sha256": "54c5005ee29f119815ca780b43b6148658a461664f58ca76f94acfa2494c8ca4"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-library-mobile.png",
+      "sha256": "571e01331a951296a496245878de1abe1a3c86800c199931895ee83a237a1707"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-restored-paused-desktop.png",
+      "sha256": "9065548498d72b52643f9741de9eb9520c2aab27d8f5d96cd99d312ff354213e"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-restored-paused-mobile.png",
+      "sha256": "f3b9a9a6e2c8c6cde5cb4bb13236b3862e3f9b43a82b6b520ca2b3b43fe0ee80"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-runtime-unavailable-desktop.png",
+      "sha256": "f3571e8dc5ba6eea4b13e7b0ab998f47ad06565a508dc9fe8f7ffe1a8643fb2e"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-runtime-unavailable-mobile.png",
+      "sha256": "b3c84e3437375347c4f1a36a3fbea3e44538a994904c3b30d5e14291d1089ca1"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-save-repair-desktop.png",
+      "sha256": "547d8f7868c8a5bf86b4bbeecd7ae9a03934516e050eb203cfdff261f908576c"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-save-repair-mobile.png",
+      "sha256": "3ed2db4832e643503444c7b8fdde13eba5d8022448af3823850a9b6a4e5a9c97"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-scheduled-desktop.png",
+      "sha256": "c92034ac436e7c5209e971ac0695a8ad65db1626e662de8e2ed61dfb66f39e95"
+    },
+    {
+      "file": "docs/design/screenshots/saved-situations/component-scheduled-mobile.png",
+      "sha256": "54cf49b03485e9d8a0ed0aef34a28da350661111a599c2e1083557280cdbce58"
+    }
+  ],
+  "testedFrontendGitSha": "733855d222ba51fbc89c8d4b2033abefaeba12c2"
+}

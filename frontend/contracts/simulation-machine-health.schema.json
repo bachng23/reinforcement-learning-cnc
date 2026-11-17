@@ -174,6 +174,60 @@
         }
       }
     },
+    "ControlledMachineHealthEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A zero-time controlled incident, not a natural simulator transition. Uses the incident UUID shared with GET incidents/work orders. recordTick is its boundary tick; eventIndex=-1 explicitly denotes no ordinal in a transition record.",
+      "required": [
+        "eventId",
+        "type",
+        "tick",
+        "recordTick",
+        "eventIndex",
+        "machineIndex",
+        "componentIndex",
+        "technicianIndex",
+        "kind",
+        "provenance"
+      ],
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "type": {
+          "const": "failure"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recordTick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "eventIndex": {
+          "const": -1
+        },
+        "machineIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "componentIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "technicianIndex": {
+          "type": "null"
+        },
+        "kind": {
+          "type": "null"
+        },
+        "provenance": {
+          "const": "CONTROLLED_INCIDENT"
+        }
+      }
+    },
     "MachineHealth": {
       "type": "object",
       "additionalProperties": false,
@@ -312,10 +366,188 @@
             "events": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/MachineHealthEvent"
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/MachineHealthEvent"
+                  },
+                  {
+                    "$ref": "#/definitions/ControlledMachineHealthEvent"
+                  }
+                ]
               }
             }
           }
+        }
+      }
+    },
+    "DemoWorkOrders": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractVersion",
+        "sessionId",
+        "revision",
+        "tick",
+        "stepSeconds",
+        "lane",
+        "source",
+        "historyCoverage",
+        "total",
+        "items"
+      ],
+      "properties": {
+        "contractVersion": {
+          "const": "jcst-work-orders/v1"
+        },
+        "sessionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stepSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "lane": {
+          "const": "primary"
+        },
+        "source": {
+          "const": "JCST_SIMULATION"
+        },
+        "historyCoverage": {
+          "enum": [
+            "COMPLETE",
+            "PARTIAL"
+          ]
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DemoWorkOrder"
+          }
+        }
+      }
+    },
+    "DemoWorkOrder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workOrderId",
+        "machineIndex",
+        "componentIndex",
+        "technicianIndex",
+        "kind",
+        "status",
+        "startedTick",
+        "completedTick",
+        "plannedDurationTicks",
+        "remainingTicks",
+        "waitTicks",
+        "startEventId",
+        "completionEventId",
+        "failureEventId",
+        "decisionTick",
+        "assignmentSource"
+      ],
+      "properties": {
+        "workOrderId": {
+          "type": "string"
+        },
+        "machineIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "componentIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "technicianIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "kind": {
+          "enum": [
+            "PM",
+            "CM"
+          ]
+        },
+        "status": {
+          "enum": [
+            "IN_PROGRESS",
+            "COMPLETED"
+          ]
+        },
+        "startedTick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "completedTick": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "plannedDurationTicks": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "remainingTicks": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "waitTicks": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "startEventId": {
+          "type": "string",
+          "pattern": "^je1_[A-Za-z0-9_-]+$",
+          "description": "Shared machine-health identity: je1_ plus unpadded base64url of compact UTF-8 JSON [sessionId,\"primary\",recordTick,eventOrdinal]. Ordinal includes occupancy events."
+        },
+        "completionEventId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "failureEventId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "decisionTick": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "assignmentSource": {
+          "enum": [
+            "AUTOMATIC",
+            "MANUAL_APPROVAL",
+            "OVERRIDE",
+            "UNKNOWN"
+          ]
         }
       }
     }

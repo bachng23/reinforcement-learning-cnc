@@ -1,4 +1,4 @@
-/* Generated from the Backend PR #64 OpenAPI snapshot (eff27fe). Do not edit. */
+/* Generated from Backend situation health OpenAPI (be8b299), including controlled incident provenance. Do not edit. */
 
 export interface SimulationMachineHealthContract {
   health: MachineHealth;
@@ -46,7 +46,7 @@ export interface MachineHealth {
       toTick: number;
     }[];
     samples: MachineHealthSample[];
-    events: MachineHealthEvent[];
+    events: (MachineHealthEvent | ControlledMachineHealthEvent)[];
   };
 }
 export interface MachineHealthComponent {
@@ -82,4 +82,19 @@ export interface MachineHealthEvent {
   componentIndex: number;
   technicianIndex: number | null;
   kind: null | "PM" | "CM";
+}
+/**
+ * A zero-time controlled incident, not a natural simulator transition. Uses the incident UUID shared with GET incidents/work orders. recordTick is its boundary tick; eventIndex=-1 explicitly denotes no ordinal in a transition record.
+ */
+export interface ControlledMachineHealthEvent {
+  eventId: string;
+  type: "failure";
+  tick: number;
+  recordTick: number;
+  eventIndex: -1;
+  machineIndex: number;
+  componentIndex: number;
+  technicianIndex: null;
+  kind: null;
+  provenance: "CONTROLLED_INCIDENT";
 }

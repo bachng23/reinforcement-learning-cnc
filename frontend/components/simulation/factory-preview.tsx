@@ -10,13 +10,14 @@ import { serviceDuration, simulationTime } from '@/lib/simulation/clock';
 import type { FactoryLayout } from '@/lib/simulation/factory-layouts';
 import { demoMachines } from './machine-detail';
 import type { PreviewStatus } from './factory-preview-scene';
+import type {Incident} from '@/types/generated/simulation-situations';
 
 const Scene = dynamic(() => import('./factory-preview-scene'), {
   ssr: false,
   loading: () => <p className="sim-twin-fallback" role="status">Loading 3D view…</p>,
 });
 
-export function FactoryPreview({ layout, lane, config, proposal, running, clockSession, selected, onSelect, onInspect, onUnavailable }: {
+export function FactoryPreview({ layout, lane, config, proposal, running, clockSession, selected, onSelect, onInspect, onUnavailable, injected=[] }: {
   layout?: FactoryLayout;
   lane: Lane;
   clockSession?: Pick<Simulation, 'simulation_start' | 'step_seconds'>;
@@ -27,6 +28,7 @@ export function FactoryPreview({ layout, lane, config, proposal, running, clockS
   onSelect: (machine: number | null) => void;
   onInspect: (machine: number) => void;
   onUnavailable: () => void;
+  injected?:Incident[];
 }) {
   const [selectedTechnician, setSelectedTechnician] = useState<number | null>(null);
   useEffect(() => {
@@ -72,7 +74,10 @@ export function FactoryPreview({ layout, lane, config, proposal, running, clockS
     const failed = components.flatMap((component, index) => component.failed ? [`C${index + 1}`] : []);
     const status: PreviewStatus = job ? 'In service' : failed.length ? 'Breakdown' : 'Working';
     const assignment = proposal?.find(([destination]) => destination === machine);
-    const latestFailure = events.findLast(event => event.type === 'failure' && event.machine === machine);
+    const naturalFailure = events.findLast(event => event.type === 'failure' && event.machine === machine);
+    const controlledFailure = injected.filter(event=>event.machineIndex===machine&&event.status==='APPLIED').sort((a,b)=>(b.appliedTick??0)-(a.appliedTick??0))[0];
+    const latestFailure = controlledFailure?.appliedTick!=null&&controlledFailure.appliedTick>=(naturalFailure?.tick??-1)
+      ? {tick:controlledFailure.appliedTick,injected:true}:naturalFailure?{tick:naturalFailure.tick,injected:false}:undefined;
     return { status, failed, job, assignment, latestFailure };
   });
   const station = selected === null ? null : stations[selected];
@@ -105,7 +110,7 @@ export function FactoryPreview({ layout, lane, config, proposal, running, clockS
         <span className="sim-twin-status" data-status={station.status}>{station.status}</span>
         <dl>
           <div><dt>Components</dt><dd>{station.failed.length ? `${station.failed.join(', ')} failed` : 'All healthy'}</dd></div>
-          {station.failed.length > 0 && station.latestFailure && <div><dt>Latest failure</dt><dd>{simulationTime(clockSession ?? {},station.latestFailure.tick).time}</dd></div>}
+          {station.failed.length > 0 && station.latestFailure && <div><dt>{station.latestFailure.injected?'Injected incident':'Latest engine failure'}</dt><dd>{simulationTime(clockSession ?? {},station.latestFailure.tick).time}</dd></div>}
           <div><dt>Technician</dt><dd>{station.job ? `T${station.job.technician + 1}` : station.assignment ? `T${station.assignment[2] + 1} proposed` : 'Unassigned'}</dd></div>
           {station.job && <div><dt>Time remaining</dt><dd>{serviceDuration(station.job.remaining,clockSession?.step_seconds)}</dd></div>}
         </dl>

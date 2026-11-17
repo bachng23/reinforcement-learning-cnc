@@ -1,9 +1,12 @@
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { simulationTime } from '@/lib/simulation/clock';
 import { matchingLabel, type Simulation } from '@/lib/simulation/types';
+import {InjectedIncidents} from './injected-incidents';
+import type {IncidentRead} from '@/lib/simulation/use-session-incidents';
 
-export function SimulationActivity({ session, onInspect }: { session: Simulation; onInspect: (machine: number) => void }) {
+export function SimulationActivity({ session, onInspect, incidents }: { session: Simulation; onInspect: (machine: number) => void;incidents?:IncidentRead }) {
   return <section className="sim-panel sim-agent-workflow" aria-label="Simulation activity"><div className="sim-panel-heading"><h2>Activity log</h2></div>
+    {incidents&&<InjectedIncidents session={session} read={incidents} onInspect={onInspect}/>}
     {!!session.decisions.length && <><h3>Recorded decisions</h3><ol className="sim-decision-history">{session.decisions.slice().reverse().map((decision, index) => {
       const machines = [...new Set((decision.action.length ? decision.action : decision.proposed_action).map(([machine]) => machine))];
       return <li key={`${decision.tick}:${index}`}><strong>{simulationTime(session, decision.tick).time} · {decision.action.length ? decision.override ? 'Assignments overridden' : 'Assignments approved' : 'Maintenance deferred — no new service dispatched'}</strong>
