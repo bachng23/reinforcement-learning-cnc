@@ -23,6 +23,7 @@ const payload = z.object({
     scale: z.number().finite().positive(), shape: z.number().finite().positive(),
   })).min(1)).min(1) }),
   primary: z.object({ state, records: z.array(record).max(256) }),
+  incidents: z.array(require('./demo-situation-runtime').incidentSchema).optional(),
 });
 const decimal = z.string().regex(/^(0|[1-9][0-9]*)$/).transform(Number).pipe(uint);
 const querySchema = z.object({
@@ -59,12 +60,24 @@ function validate(p) {
     });
   };
   validState(p.primary.state);
+  // Controlled failures happen at a boundary without rewriting the preceding
+  // immutable transition. Reconcile only the exact healthy->failed changes.
+  const boundaryState = s => {
+    const next = structuredClone(s);
+    for (const e of p.incidents ?? []) {
+      if (e.status !== 'APPLIED' || e.appliedTick !== s.tick) continue;
+      const component = next.components[e.machineIndex]?.[e.componentIndex];
+      if (!component) throw invalid();
+      component.failed = true;
+    }
+    return next;
+  };
   let previous;
   for (const r of p.primary.records) {
     validState(r.before); validState(r.after);
     if (r.before.tick !== r.tick || r.after.tick !== r.tick + 1 || r.after.tick > p.primary.state.tick
       || (previous && r.tick <= previous.tick)) throw invalid();
-    if (previous?.after.tick === r.tick && canonical(previous.after) !== canonical(r.before)) throw invalid();
+    if (previous?.after.tick === r.tick && canonical(boundaryState(previous.after)) !== canonical(r.before)) throw invalid();
     for (const e of r.events) {
       if (!r.before.components[e.machine]?.[e.component]
         || e.tick !== r.tick + (['failure', 'completion'].includes(e.type) ? 1 : 0)
@@ -76,7 +89,7 @@ function validate(p) {
     }
     previous = r;
   }
-  if (previous?.after.tick === p.primary.state.tick && canonical(previous.after) !== canonical(p.primary.state)) throw invalid();
+  if (previous?.after.tick === p.primary.state.tick && canonical(boundaryState(previous.after)) !== canonical(p.primary.state)) throw invalid();
 }
 
 function machineStatus(s, machine, events = []) {
@@ -121,6 +134,13 @@ function projectHealth(row, machineIndex, { limit = 64, expectedRevision } = {})
   }
   if (nextTick < current.tick) gaps.push({ fromTick: nextTick, toTick: current.tick });
   const components = componentsAt(current, status);
+  for (const event of p.incidents ?? []) {
+    if (event.machineIndex !== machineIndex || event.status !== 'APPLIED'
+      || event.appliedTick < (records[0]?.tick ?? current.tick) || event.appliedTick > current.tick) continue;
+    events.push({ eventId: event.eventId, type: 'failure', tick: event.appliedTick,
+      recordTick: event.appliedTick, eventIndex: -1, machineIndex,
+      componentIndex: event.componentIndex, technicianIndex: null, kind: null, provenance: 'CONTROLLED_INCIDENT' });
+  }
   samples.push(...components.map(c => ({ ...c, tick: current.tick, sampleKind: 'CURRENT', machineStatus: status })));
   events.sort((a, b) => a.tick - b.tick || a.recordTick - b.recordTick || a.eventIndex - b.eventIndex);
   return {

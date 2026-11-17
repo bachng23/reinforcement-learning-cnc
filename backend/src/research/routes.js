@@ -7,6 +7,7 @@ const s = require('./service');
 const demo = require('./demo-service');
 const health = require('./demo-health');
 const workOrders = require('./demo-work-orders');
+const situations = require('./demo-situations');
 const workOrderQuery = z.object({
   machineIndex: health.unsignedDecimal.optional(),
   limit: health.unsignedDecimal.pipe(z.number().min(1).max(100)).default(20),
@@ -29,8 +30,25 @@ const ok = (res, data, status = 200) => res.status(status).json({ success: true,
 const queued = (res, result) => { if (result.replayed) res.set('Idempotency-Replayed', 'true'); return ok(res, result.job, 202); };
 
 router.use('/demo/sessions/:id/machines/:machineIndex/health', (_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
+router.use('/demo', (_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
 router.use((req, _res, next) => { if (process.env.RESEARCH_API_ENABLED === 'false') return next(new ApiError(404, 'RESEARCH_DISABLED', 'Research API is disabled')); next(); });
 router.use(requireAuth);
+router.get('/docs/jcst-situations.openapi.yaml', (_req, res) => res.type('application/yaml').sendFile(require('node:path').resolve(__dirname, '../../docs/jcst-situations.openapi.yaml')));
+router.post('/demo/sessions/:id/snapshots', write, async (req, res) =>
+  ok(res, await situations.save(req.user, parse(id, req.params.id), parse(situations.saveSchema, req.body), key(req)), 201));
+router.get('/demo/snapshots', async (req, res) => ok(res, await situations.list(req.user, parse(situations.listSchema, req.query))));
+router.get('/demo/snapshots/:id', async (req, res) => {
+  parse(z.object({}).strict(), req.query);
+  ok(res, await situations.detail(req.user, parse(id, req.params.id)));
+});
+router.post('/demo/snapshots/:id/sessions', write, async (req, res) =>
+  ok(res, await situations.open(req.user, parse(id, req.params.id), parse(situations.openSchema, req.body), key(req)), 201));
+router.post('/demo/sessions/:id/incidents', write, async (req, res) =>
+  ok(res, await situations.incident(req.user, parse(id, req.params.id), parse(situations.incidentSchema, req.body), key(req)), 201));
+router.get('/demo/sessions/:id/incidents', async (req, res) => {
+  parse(z.object({}).strict(), req.query);
+  ok(res, situations.incidents(await demo.read(req.user, parse(id, req.params.id))));
+});
 // Engineering simulation is isolated from immutable scientific campaign evidence.
 router.post('/demo/sessions', write, async (req, res) => {
   const input = parse(z.object({case:z.enum(['base','generalist']).default('base'), seed:z.string().regex(/^99[0-9]{7}$/).default('990000001'), mode:z.enum(['incident','policy']).default('incident'), primary:demoPolicy.default('S'), baseline:demoPolicy.default('F'), continuous:z.boolean().default(true)}).strict().refine(v => v.primary !== v.baseline, 'Choose different comparison policies'), req.body);

@@ -8,6 +8,16 @@ servers:
 security:
   - session: []
 paths:
+  /demo/sessions/{id}/snapshots:
+    $ref: './docs/jcst-situations.openapi.yaml#/paths/~1sessions~1{id}~1snapshots'
+  /demo/snapshots:
+    $ref: './docs/jcst-situations.openapi.yaml#/paths/~1snapshots'
+  /demo/snapshots/{id}:
+    $ref: './docs/jcst-situations.openapi.yaml#/paths/~1snapshots~1{id}'
+  /demo/snapshots/{id}/sessions:
+    $ref: './docs/jcst-situations.openapi.yaml#/paths/~1snapshots~1{id}~1sessions'
+  /demo/sessions/{id}/incidents:
+    $ref: './docs/jcst-situations.openapi.yaml#/paths/~1sessions~1{id}~1incidents'
   /demo/sessions:
     post:
       summary: Create a persistent engineering simulation; ADMIN or ENGINEER
@@ -343,6 +353,22 @@ components:
         componentIndex: { type: integer, minimum: 0 }
         technicianIndex: { type: [integer, 'null'], minimum: 0 }
         kind: { enum: [null, PM, CM] }
+    ControlledMachineHealthEvent:
+      type: object
+      additionalProperties: false
+      description: A zero-time controlled incident, not a natural simulator transition. Uses the incident UUID shared with GET incidents/work orders. recordTick is its boundary tick; eventIndex=-1 explicitly denotes no ordinal in a transition record.
+      required: [eventId, type, tick, recordTick, eventIndex, machineIndex, componentIndex, technicianIndex, kind, provenance]
+      properties:
+        eventId: {type: string, format: uuid}
+        type: {const: failure}
+        tick: {type: integer, minimum: 0}
+        recordTick: {type: integer, minimum: 0}
+        eventIndex: {const: -1}
+        machineIndex: {type: integer, minimum: 0}
+        componentIndex: {type: integer, minimum: 0}
+        technicianIndex: {type: 'null'}
+        kind: {type: 'null'}
+        provenance: {const: CONTROLLED_INCIDENT}
     MachineHealth:
       type: object
       additionalProperties: false
@@ -386,7 +412,10 @@ components:
               items: { $ref: '#/components/schemas/MachineHealthSample' }
             events:
               type: array
-              items: { $ref: '#/components/schemas/MachineHealthEvent' }
+              items:
+                oneOf:
+                  - {$ref: '#/components/schemas/MachineHealthEvent'}
+                  - {$ref: '#/components/schemas/ControlledMachineHealthEvent'}
     DemoWorkOrders:
       type: object
       additionalProperties: false
