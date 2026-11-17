@@ -8,6 +8,7 @@ const { loadCanonicalSeedPlan, validatePayload } = require('../../src/services/o
 const { ingestFactorySnapshot } = require('../../src/services/operations-snapshot.service');
 const example = require('../../../contracts/v3/examples/demo-scenario.json');
 async function fixture(db, app) {
+  const seed = await validatePayload(await loadCanonicalSeedPlan(), 'seed');
   const users = {};
   for (const [name, role, active] of [
     ['ADMIN', 'ADMIN', true],
@@ -47,7 +48,6 @@ async function fixture(db, app) {
   };
   const member = (factoryId, user, method = 'PUT') =>
     http(`/factories/${factoryId}/members/${user.id}`, { method });
-  const seed = await validatePayload(await loadCanonicalSeedPlan(), 'seed');
   async function factory() {
     const factoryId = 'wo-' + randomUUID();
     const r = await http('/factories', {

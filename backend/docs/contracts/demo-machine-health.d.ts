@@ -45,8 +45,16 @@ export interface MachineHealth {
     /** Missing half-open intervals inside the returned history window. */
     gaps: { fromTick: number; toTick: number }[];
     samples: MachineHealthSample[];
-    events: MachineHealthEvent[];
+    events: (MachineHealthEvent | ControlledMachineHealthEvent)[];
   };
+}
+/** Zero-time intervention: UUID, boundary tick, no transition-record ordinal. */
+export interface ControlledMachineHealthEvent extends MachineHealthEvent {
+  type: 'failure';
+  eventIndex: -1;
+  technicianIndex: null;
+  kind: null;
+  provenance: 'CONTROLLED_INCIDENT';
 }
 export interface MachineHealthSuccess {
   success: true;

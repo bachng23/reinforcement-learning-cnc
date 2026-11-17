@@ -1,0 +1,4186 @@
+{
+  "protocol": "jcst-situations/1",
+  "evidence": "REAL_BUILTIN_POLICY_RUNTIME",
+  "healthy": {
+    "schemaVersion": "jcst-demo-snapshot/1",
+    "runtime": {
+      "case_id": "base",
+      "physical_seed": "990000001",
+      "mode": "policy",
+      "horizon": 48,
+      "tail": 16,
+      "continuous": true,
+      "simulation_start": "2026-11-16T00:00:00Z",
+      "step_seconds": 900,
+      "config": {
+        "components": [
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ]
+        ],
+        "duration": [
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        ],
+        "preventive_cost": 1.0,
+        "corrective_cost": 2.0,
+        "unavailable_cost": 6.0,
+        "failure_cost": 15.0,
+        "version": "JCST/1.1"
+      },
+      "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+      "releases": {},
+      "primary": {
+        "controller": "corrective",
+        "state": {
+          "tick": 0,
+          "components": [
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [],
+        "total_cost": 0,
+        "controlled_cost": 0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0,
+        "technician_busy_ticks": 0,
+        "overrides": 0
+      },
+      "baseline": {
+        "controller": "wait",
+        "state": {
+          "tick": 0,
+          "components": [
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [],
+        "total_cost": 0,
+        "controlled_cost": 0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0,
+        "technician_busy_ticks": 0,
+        "overrides": 0
+      },
+      "status": "RUNNING",
+      "activated": true,
+      "pending": null,
+      "decisions": [],
+      "workflow": [],
+      "first_incident_tick": null,
+      "branch": {
+        "branchId": "00000000-0000-4000-8000-000000000002"
+      }
+    },
+    "context": {
+      "layoutId": "smt-board-assembly"
+    },
+    "workOrders": null,
+    "provenance": {
+      "sourceTick": 0
+    }
+  },
+  "incidentRequest": {
+    "eventId": "00000000-0000-4000-8000-000000000003",
+    "machineIndex": 2,
+    "componentIndex": 1,
+    "scheduledTick": 0,
+    "status": "SCHEDULED",
+    "appliedTick": null,
+    "reason": null,
+    "requestedReason": "Controlled repair exercise",
+    "createdBy": "00000000-0000-4000-8000-000000000001",
+    "createdAt": "2026-11-16T00:00:00Z"
+  },
+  "afterInjection": {
+    "case_id": "base",
+    "physical_seed": "990000001",
+    "mode": "policy",
+    "horizon": 48,
+    "tail": 16,
+    "continuous": true,
+    "simulation_start": "2026-11-16T00:00:00Z",
+    "step_seconds": 900,
+    "config": {
+      "components": [
+        [
+          {
+            "scale": 6,
+            "shape": 5
+          },
+          {
+            "scale": 8,
+            "shape": 5
+          }
+        ],
+        [
+          {
+            "scale": 6,
+            "shape": 5
+          },
+          {
+            "scale": 8,
+            "shape": 5
+          }
+        ],
+        [
+          {
+            "scale": 6,
+            "shape": 5
+          },
+          {
+            "scale": 8,
+            "shape": 5
+          }
+        ]
+      ],
+      "duration": [
+        [
+          [
+            2,
+            8
+          ],
+          [
+            8,
+            2
+          ]
+        ],
+        [
+          [
+            2,
+            8
+          ],
+          [
+            8,
+            2
+          ]
+        ],
+        [
+          [
+            2,
+            8
+          ],
+          [
+            8,
+            2
+          ]
+        ]
+      ],
+      "preventive_cost": 1.0,
+      "corrective_cost": 2.0,
+      "unavailable_cost": 6.0,
+      "failure_cost": 15.0,
+      "version": "JCST/1.1"
+    },
+    "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+    "releases": {},
+    "primary": {
+      "controller": "corrective",
+      "state": {
+        "tick": 0,
+        "components": [
+          [
+            {
+              "age": 0,
+              "failed": false
+            },
+            {
+              "age": 0,
+              "failed": false
+            }
+          ],
+          [
+            {
+              "age": 0,
+              "failed": false
+            },
+            {
+              "age": 0,
+              "failed": false
+            }
+          ],
+          [
+            {
+              "age": 0,
+              "failed": false
+            },
+            {
+              "age": 0,
+              "failed": true
+            }
+          ]
+        ],
+        "jobs": [
+          null,
+          null
+        ]
+      },
+      "records": [],
+      "total_cost": 0,
+      "controlled_cost": 0,
+      "tail_cost": 0,
+      "failures": 0,
+      "unavailable_machine_ticks": 0,
+      "technician_busy_ticks": 0,
+      "overrides": 0
+    },
+    "baseline": {
+      "controller": "wait",
+      "state": {
+        "tick": 0,
+        "components": [
+          [
+            {
+              "age": 0,
+              "failed": false
+            },
+            {
+              "age": 0,
+              "failed": false
+            }
+          ],
+          [
+            {
+              "age": 0,
+              "failed": false
+            },
+            {
+              "age": 0,
+              "failed": false
+            }
+          ],
+          [
+            {
+              "age": 0,
+              "failed": false
+            },
+            {
+              "age": 0,
+              "failed": false
+            }
+          ]
+        ],
+        "jobs": [
+          null,
+          null
+        ]
+      },
+      "records": [],
+      "total_cost": 0,
+      "controlled_cost": 0,
+      "tail_cost": 0,
+      "failures": 0,
+      "unavailable_machine_ticks": 0,
+      "technician_busy_ticks": 0,
+      "overrides": 0
+    },
+    "status": "RUNNING",
+    "activated": true,
+    "pending": null,
+    "decisions": [],
+    "workflow": [
+      {
+        "tick": 0,
+        "stage": "INCIDENT",
+        "message": "INJECTED 00000000-0000-4000-8000-000000000003 at t0: M3/C2."
+      }
+    ],
+    "first_incident_tick": 0,
+    "branch": {
+      "branchId": "00000000-0000-4000-8000-000000000002"
+    },
+    "incidents": [
+      {
+        "eventId": "00000000-0000-4000-8000-000000000003",
+        "machineIndex": 2,
+        "componentIndex": 1,
+        "scheduledTick": 0,
+        "status": "APPLIED",
+        "appliedTick": 0,
+        "reason": null,
+        "requestedReason": "Controlled repair exercise",
+        "createdBy": "00000000-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-16T00:00:00Z"
+      }
+    ]
+  },
+  "review": {
+    "schemaVersion": "jcst-demo-snapshot/1",
+    "runtime": {
+      "case_id": "base",
+      "physical_seed": "990000001",
+      "mode": "policy",
+      "horizon": 48,
+      "tail": 16,
+      "continuous": true,
+      "simulation_start": "2026-11-16T00:00:00Z",
+      "step_seconds": 900,
+      "config": {
+        "components": [
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ]
+        ],
+        "duration": [
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        ],
+        "preventive_cost": 1.0,
+        "corrective_cost": 2.0,
+        "unavailable_cost": 6.0,
+        "failure_cost": 15.0,
+        "version": "JCST/1.1"
+      },
+      "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+      "releases": {},
+      "primary": {
+        "controller": "corrective",
+        "state": {
+          "tick": 0,
+          "components": [
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": true
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [],
+        "total_cost": 0,
+        "controlled_cost": 0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0,
+        "technician_busy_ticks": 0,
+        "overrides": 0
+      },
+      "baseline": {
+        "controller": "wait",
+        "state": {
+          "tick": 0,
+          "components": [
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [],
+        "total_cost": 0,
+        "controlled_cost": 0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0,
+        "technician_busy_ticks": 0,
+        "overrides": 0
+      },
+      "status": "REVIEW",
+      "activated": true,
+      "pending": {
+        "action": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "baseline_action": [],
+        "catalogue": [
+          [],
+          [
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          [
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              1,
+              1
+            ]
+          ],
+          [
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          [
+            [
+              1,
+              0,
+              1
+            ]
+          ],
+          [
+            [
+              1,
+              1,
+              0
+            ]
+          ],
+          [
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          [
+            [
+              2,
+              0,
+              0
+            ]
+          ],
+          [
+            [
+              2,
+              0,
+              1
+            ]
+          ],
+          [
+            [
+              2,
+              1,
+              0
+            ]
+          ],
+          [
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              1
+            ]
+          ],
+          [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              0,
+              1
+            ]
+          ],
+          [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              2,
+              0,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              2,
+              1,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              1,
+              0,
+              1
+            ]
+          ],
+          [
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          [
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              2,
+              0,
+              1
+            ]
+          ],
+          [
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          [
+            [
+              0,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              1,
+              1
+            ],
+            [
+              1,
+              1,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              1,
+              1
+            ],
+            [
+              2,
+              0,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              1,
+              1
+            ],
+            [
+              2,
+              1,
+              0
+            ]
+          ],
+          [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              0,
+              1
+            ]
+          ],
+          [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          [
+            [
+              1,
+              0,
+              1
+            ],
+            [
+              2,
+              0,
+              0
+            ]
+          ],
+          [
+            [
+              1,
+              0,
+              1
+            ],
+            [
+              2,
+              1,
+              0
+            ]
+          ],
+          [
+            [
+              1,
+              1,
+              0
+            ],
+            [
+              2,
+              0,
+              1
+            ]
+          ],
+          [
+            [
+              1,
+              1,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          [
+            [
+              1,
+              1,
+              1
+            ],
+            [
+              2,
+              0,
+              0
+            ]
+          ],
+          [
+            [
+              1,
+              1,
+              1
+            ],
+            [
+              2,
+              1,
+              0
+            ]
+          ]
+        ],
+        "tick": 0
+      },
+      "decisions": [],
+      "workflow": [
+        {
+          "tick": 0,
+          "stage": "INCIDENT",
+          "message": "INJECTED 00000000-0000-4000-8000-000000000003 at t0: M3/C2."
+        },
+        {
+          "tick": 0,
+          "stage": "OBSERVE",
+          "message": "Read component condition and technician commitments from the simulator."
+        },
+        {
+          "tick": 0,
+          "stage": "POLICY",
+          "message": "corrective policy selected a complete maintenance matching."
+        },
+        {
+          "tick": 0,
+          "stage": "VALIDATE",
+          "message": "Action validated against 37 legal complete matchings; busy workers and machine conflicts excluded."
+        },
+        {
+          "tick": 0,
+          "stage": "REVIEW",
+          "message": "Matching ready for confirmation. Simulator state has not advanced at this boundary."
+        }
+      ],
+      "first_incident_tick": 0,
+      "branch": {
+        "branchId": "00000000-0000-4000-8000-000000000002"
+      },
+      "incidents": [
+        {
+          "eventId": "00000000-0000-4000-8000-000000000003",
+          "machineIndex": 2,
+          "componentIndex": 1,
+          "scheduledTick": 0,
+          "status": "APPLIED",
+          "appliedTick": 0,
+          "reason": null,
+          "requestedReason": "Controlled repair exercise",
+          "createdBy": "00000000-0000-4000-8000-000000000001",
+          "createdAt": "2026-11-16T00:00:00Z"
+        }
+      ]
+    },
+    "context": {},
+    "workOrders": null,
+    "provenance": {}
+  },
+  "repairRemainingOne": {
+    "schemaVersion": "jcst-demo-snapshot/1",
+    "runtime": {
+      "case_id": "base",
+      "physical_seed": "990000001",
+      "mode": "policy",
+      "horizon": 48,
+      "tail": 16,
+      "continuous": true,
+      "simulation_start": "2026-11-16T00:00:00Z",
+      "step_seconds": 900,
+      "config": {
+        "components": [
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ]
+        ],
+        "duration": [
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        ],
+        "preventive_cost": 1.0,
+        "corrective_cost": 2.0,
+        "unavailable_cost": 6.0,
+        "failure_cost": 15.0,
+        "version": "JCST/1.1"
+      },
+      "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+      "releases": {},
+      "primary": {
+        "controller": "corrective",
+        "state": {
+          "tick": 1,
+          "components": [
+            [
+              {
+                "age": 1,
+                "failed": false
+              },
+              {
+                "age": 1,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 1,
+                "failed": false
+              },
+              {
+                "age": 1,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": true
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            {
+              "machine": 2,
+              "component": 1,
+              "technician": 1,
+              "kind": "CM",
+              "remaining": 1
+            }
+          ]
+        },
+        "records": [
+          {
+            "tick": 0,
+            "phase": "H",
+            "before": {
+              "tick": 0,
+              "components": [
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": true
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "action": [
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            "catalogue": [
+              [],
+              [
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  2,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  2,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  2,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  2,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ],
+                [
+                  2,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ],
+                [
+                  2,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  2,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  2,
+                  1,
+                  0
+                ]
+              ]
+            ],
+            "after": {
+              "tick": 1,
+              "components": [
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": true
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                {
+                  "machine": 2,
+                  "component": 1,
+                  "technician": 1,
+                  "kind": "CM",
+                  "remaining": 1
+                }
+              ]
+            },
+            "cost": 8.0,
+            "breakdown": {
+              "preventive": 0.0,
+              "corrective": 2.0,
+              "unavailable": 6.0,
+              "failure": 0.0
+            },
+            "events": [
+              {
+                "type": "start",
+                "tick": 0,
+                "machine": 2,
+                "component": 1,
+                "technician": 1,
+                "kind": "CM",
+                "duration": 2
+              },
+              {
+                "type": "occupancy",
+                "tick": 0,
+                "machine": 2,
+                "component": 1,
+                "technician": 1,
+                "remaining": 2
+              }
+            ]
+          }
+        ],
+        "total_cost": 8.0,
+        "controlled_cost": 8.0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 1.0,
+        "technician_busy_ticks": 1,
+        "overrides": 0,
+        "completed_jobs": [
+          0,
+          0
+        ]
+      },
+      "baseline": {
+        "controller": "wait",
+        "state": {
+          "tick": 1,
+          "components": [
+            [
+              {
+                "age": 1,
+                "failed": false
+              },
+              {
+                "age": 1,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 1,
+                "failed": false
+              },
+              {
+                "age": 1,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 1,
+                "failed": false
+              },
+              {
+                "age": 1,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [
+          {
+            "tick": 0,
+            "phase": "H",
+            "before": {
+              "tick": 0,
+              "components": [
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "action": [],
+            "catalogue": [
+              [],
+              [
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  2,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  2,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  2,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  2,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ],
+                [
+                  2,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ],
+                [
+                  2,
+                  1,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  2,
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ],
+                [
+                  2,
+                  1,
+                  0
+                ]
+              ]
+            ],
+            "after": {
+              "tick": 1,
+              "components": [
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "cost": 0.0,
+            "breakdown": {
+              "preventive": 0.0,
+              "corrective": 0.0,
+              "unavailable": 0.0,
+              "failure": 0.0
+            },
+            "events": []
+          }
+        ],
+        "total_cost": 0.0,
+        "controlled_cost": 0.0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0.0,
+        "technician_busy_ticks": 0,
+        "overrides": 0,
+        "completed_jobs": [
+          0,
+          0
+        ]
+      },
+      "status": "RUNNING",
+      "activated": true,
+      "pending": null,
+      "decisions": [
+        {
+          "tick": 0,
+          "actor": "00000000-0000-4000-8000-000000000001",
+          "reason": "Approve corrective matching",
+          "action": [
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          "proposed_action": [
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          "override": false
+        }
+      ],
+      "workflow": [
+        {
+          "tick": 0,
+          "stage": "INCIDENT",
+          "message": "INJECTED 00000000-0000-4000-8000-000000000003 at t0: M3/C2."
+        },
+        {
+          "tick": 0,
+          "stage": "OBSERVE",
+          "message": "Read component condition and technician commitments from the simulator."
+        },
+        {
+          "tick": 0,
+          "stage": "POLICY",
+          "message": "corrective policy selected a complete maintenance matching."
+        },
+        {
+          "tick": 0,
+          "stage": "VALIDATE",
+          "message": "Action validated against 37 legal complete matchings; busy workers and machine conflicts excluded."
+        },
+        {
+          "tick": 0,
+          "stage": "REVIEW",
+          "message": "Matching ready for confirmation. Simulator state has not advanced at this boundary."
+        },
+        {
+          "tick": 0,
+          "stage": "DISPATCH",
+          "message": "Human reviewer confirmed 1 assignments."
+        }
+      ],
+      "first_incident_tick": 0,
+      "branch": {
+        "branchId": "00000000-0000-4000-8000-000000000002"
+      },
+      "incidents": [
+        {
+          "eventId": "00000000-0000-4000-8000-000000000003",
+          "machineIndex": 2,
+          "componentIndex": 1,
+          "scheduledTick": 0,
+          "status": "APPLIED",
+          "appliedTick": 0,
+          "reason": null,
+          "requestedReason": "Controlled repair exercise",
+          "createdBy": "00000000-0000-4000-8000-000000000001",
+          "createdAt": "2026-11-16T00:00:00Z"
+        }
+      ]
+    },
+    "context": {},
+    "workOrders": null,
+    "provenance": {}
+  },
+  "completed": {
+    "case_id": "base",
+    "physical_seed": "990000001",
+    "mode": "policy",
+    "horizon": 48,
+    "tail": 16,
+    "continuous": true,
+    "simulation_start": "2026-11-16T00:00:00Z",
+    "step_seconds": 900,
+    "config": {
+      "components": [
+        [
+          {
+            "scale": 6,
+            "shape": 5
+          },
+          {
+            "scale": 8,
+            "shape": 5
+          }
+        ],
+        [
+          {
+            "scale": 6,
+            "shape": 5
+          },
+          {
+            "scale": 8,
+            "shape": 5
+          }
+        ],
+        [
+          {
+            "scale": 6,
+            "shape": 5
+          },
+          {
+            "scale": 8,
+            "shape": 5
+          }
+        ]
+      ],
+      "duration": [
+        [
+          [
+            2,
+            8
+          ],
+          [
+            8,
+            2
+          ]
+        ],
+        [
+          [
+            2,
+            8
+          ],
+          [
+            8,
+            2
+          ]
+        ],
+        [
+          [
+            2,
+            8
+          ],
+          [
+            8,
+            2
+          ]
+        ]
+      ],
+      "preventive_cost": 1.0,
+      "corrective_cost": 2.0,
+      "unavailable_cost": 6.0,
+      "failure_cost": 15.0,
+      "version": "JCST/1.1"
+    },
+    "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+    "releases": {},
+    "primary": {
+      "controller": "corrective",
+      "state": {
+        "tick": 2,
+        "components": [
+          [
+            {
+              "age": 2,
+              "failed": false
+            },
+            {
+              "age": 2,
+              "failed": false
+            }
+          ],
+          [
+            {
+              "age": 2,
+              "failed": false
+            },
+            {
+              "age": 2,
+              "failed": false
+            }
+          ],
+          [
+            {
+              "age": 0,
+              "failed": false
+            },
+            {
+              "age": 0,
+              "failed": false
+            }
+          ]
+        ],
+        "jobs": [
+          null,
+          null
+        ]
+      },
+      "records": [
+        {
+          "tick": 0,
+          "phase": "H",
+          "before": {
+            "tick": 0,
+            "components": [
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": true
+                }
+              ]
+            ],
+            "jobs": [
+              null,
+              null
+            ]
+          },
+          "action": [
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          "catalogue": [
+            [],
+            [
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                1,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                1,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ]
+          ],
+          "after": {
+            "tick": 1,
+            "components": [
+              [
+                {
+                  "age": 1,
+                  "failed": false
+                },
+                {
+                  "age": 1,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 1,
+                  "failed": false
+                },
+                {
+                  "age": 1,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": true
+                }
+              ]
+            ],
+            "jobs": [
+              null,
+              {
+                "machine": 2,
+                "component": 1,
+                "technician": 1,
+                "kind": "CM",
+                "remaining": 1
+              }
+            ]
+          },
+          "cost": 8.0,
+          "breakdown": {
+            "preventive": 0.0,
+            "corrective": 2.0,
+            "unavailable": 6.0,
+            "failure": 0.0
+          },
+          "events": [
+            {
+              "type": "start",
+              "tick": 0,
+              "machine": 2,
+              "component": 1,
+              "technician": 1,
+              "kind": "CM",
+              "duration": 2
+            },
+            {
+              "type": "occupancy",
+              "tick": 0,
+              "machine": 2,
+              "component": 1,
+              "technician": 1,
+              "remaining": 2
+            }
+          ]
+        },
+        {
+          "tick": 1,
+          "phase": "H",
+          "before": {
+            "tick": 1,
+            "components": [
+              [
+                {
+                  "age": 1,
+                  "failed": false
+                },
+                {
+                  "age": 1,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 1,
+                  "failed": false
+                },
+                {
+                  "age": 1,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": true
+                }
+              ]
+            ],
+            "jobs": [
+              null,
+              {
+                "machine": 2,
+                "component": 1,
+                "technician": 1,
+                "kind": "CM",
+                "remaining": 1
+              }
+            ]
+          },
+          "action": [],
+          "catalogue": [
+            [],
+            [
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                0
+              ]
+            ]
+          ],
+          "after": {
+            "tick": 2,
+            "components": [
+              [
+                {
+                  "age": 2,
+                  "failed": false
+                },
+                {
+                  "age": 2,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 2,
+                  "failed": false
+                },
+                {
+                  "age": 2,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": false
+                }
+              ]
+            ],
+            "jobs": [
+              null,
+              null
+            ]
+          },
+          "cost": 6.0,
+          "breakdown": {
+            "preventive": 0.0,
+            "corrective": 0.0,
+            "unavailable": 6.0,
+            "failure": 0.0
+          },
+          "events": [
+            {
+              "type": "occupancy",
+              "tick": 1,
+              "machine": 2,
+              "component": 1,
+              "technician": 1,
+              "remaining": 1
+            },
+            {
+              "type": "completion",
+              "tick": 2,
+              "machine": 2,
+              "component": 1,
+              "technician": 1,
+              "kind": "CM"
+            }
+          ]
+        }
+      ],
+      "total_cost": 14.0,
+      "controlled_cost": 14.0,
+      "tail_cost": 0,
+      "failures": 0,
+      "unavailable_machine_ticks": 2.0,
+      "technician_busy_ticks": 2,
+      "overrides": 0,
+      "completed_jobs": [
+        0,
+        1
+      ]
+    },
+    "baseline": {
+      "controller": "wait",
+      "state": {
+        "tick": 2,
+        "components": [
+          [
+            {
+              "age": 2,
+              "failed": false
+            },
+            {
+              "age": 2,
+              "failed": false
+            }
+          ],
+          [
+            {
+              "age": 2,
+              "failed": false
+            },
+            {
+              "age": 2,
+              "failed": false
+            }
+          ],
+          [
+            {
+              "age": 2,
+              "failed": false
+            },
+            {
+              "age": 2,
+              "failed": false
+            }
+          ]
+        ],
+        "jobs": [
+          null,
+          null
+        ]
+      },
+      "records": [
+        {
+          "tick": 0,
+          "phase": "H",
+          "before": {
+            "tick": 0,
+            "components": [
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 0,
+                  "failed": false
+                },
+                {
+                  "age": 0,
+                  "failed": false
+                }
+              ]
+            ],
+            "jobs": [
+              null,
+              null
+            ]
+          },
+          "action": [],
+          "catalogue": [
+            [],
+            [
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                1,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                1,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ]
+          ],
+          "after": {
+            "tick": 1,
+            "components": [
+              [
+                {
+                  "age": 1,
+                  "failed": false
+                },
+                {
+                  "age": 1,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 1,
+                  "failed": false
+                },
+                {
+                  "age": 1,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 1,
+                  "failed": false
+                },
+                {
+                  "age": 1,
+                  "failed": false
+                }
+              ]
+            ],
+            "jobs": [
+              null,
+              null
+            ]
+          },
+          "cost": 0.0,
+          "breakdown": {
+            "preventive": 0.0,
+            "corrective": 0.0,
+            "unavailable": 0.0,
+            "failure": 0.0
+          },
+          "events": []
+        },
+        {
+          "tick": 1,
+          "phase": "H",
+          "before": {
+            "tick": 1,
+            "components": [
+              [
+                {
+                  "age": 1,
+                  "failed": false
+                },
+                {
+                  "age": 1,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 1,
+                  "failed": false
+                },
+                {
+                  "age": 1,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 1,
+                  "failed": false
+                },
+                {
+                  "age": 1,
+                  "failed": false
+                }
+              ]
+            ],
+            "jobs": [
+              null,
+              null
+            ]
+          },
+          "action": [],
+          "catalogue": [
+            [],
+            [
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                1,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                1,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                0,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                0
+              ],
+              [
+                2,
+                1,
+                1
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ]
+          ],
+          "after": {
+            "tick": 2,
+            "components": [
+              [
+                {
+                  "age": 2,
+                  "failed": false
+                },
+                {
+                  "age": 2,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 2,
+                  "failed": false
+                },
+                {
+                  "age": 2,
+                  "failed": false
+                }
+              ],
+              [
+                {
+                  "age": 2,
+                  "failed": false
+                },
+                {
+                  "age": 2,
+                  "failed": false
+                }
+              ]
+            ],
+            "jobs": [
+              null,
+              null
+            ]
+          },
+          "cost": 0.0,
+          "breakdown": {
+            "preventive": 0.0,
+            "corrective": 0.0,
+            "unavailable": 0.0,
+            "failure": 0.0
+          },
+          "events": []
+        }
+      ],
+      "total_cost": 0.0,
+      "controlled_cost": 0.0,
+      "tail_cost": 0,
+      "failures": 0,
+      "unavailable_machine_ticks": 0.0,
+      "technician_busy_ticks": 0,
+      "overrides": 0,
+      "completed_jobs": [
+        0,
+        0
+      ]
+    },
+    "status": "RUNNING",
+    "activated": true,
+    "pending": null,
+    "decisions": [
+      {
+        "tick": 0,
+        "actor": "00000000-0000-4000-8000-000000000001",
+        "reason": "Approve corrective matching",
+        "action": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "proposed_action": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "override": false
+      },
+      {
+        "tick": 1,
+        "actor": "automatic",
+        "reason": "Automatic policy confirmation",
+        "action": [],
+        "proposed_action": [],
+        "override": false
+      }
+    ],
+    "workflow": [
+      {
+        "tick": 0,
+        "stage": "INCIDENT",
+        "message": "INJECTED 00000000-0000-4000-8000-000000000003 at t0: M3/C2."
+      },
+      {
+        "tick": 0,
+        "stage": "OBSERVE",
+        "message": "Read component condition and technician commitments from the simulator."
+      },
+      {
+        "tick": 0,
+        "stage": "POLICY",
+        "message": "corrective policy selected a complete maintenance matching."
+      },
+      {
+        "tick": 0,
+        "stage": "VALIDATE",
+        "message": "Action validated against 37 legal complete matchings; busy workers and machine conflicts excluded."
+      },
+      {
+        "tick": 0,
+        "stage": "REVIEW",
+        "message": "Matching ready for confirmation. Simulator state has not advanced at this boundary."
+      },
+      {
+        "tick": 0,
+        "stage": "DISPATCH",
+        "message": "Human reviewer confirmed 1 assignments."
+      },
+      {
+        "tick": 1,
+        "stage": "OBSERVE",
+        "message": "Read component condition and technician commitments from the simulator."
+      },
+      {
+        "tick": 1,
+        "stage": "POLICY",
+        "message": "corrective policy selected a complete maintenance matching."
+      },
+      {
+        "tick": 1,
+        "stage": "VALIDATE",
+        "message": "Action validated against 5 legal complete matchings; busy workers and machine conflicts excluded."
+      },
+      {
+        "tick": 1,
+        "stage": "REVIEW",
+        "message": "Matching ready for confirmation. Simulator state has not advanced at this boundary."
+      },
+      {
+        "tick": 1,
+        "stage": "DISPATCH",
+        "message": "Automatic policy mode confirmed 0 assignments."
+      },
+      {
+        "tick": 2,
+        "stage": "COMPLETE_SERVICE",
+        "message": "T2 completed CM at M3/C2."
+      }
+    ],
+    "first_incident_tick": 0,
+    "branch": {
+      "branchId": "00000000-0000-4000-8000-000000000002"
+    },
+    "incidents": [
+      {
+        "eventId": "00000000-0000-4000-8000-000000000003",
+        "machineIndex": 2,
+        "componentIndex": 1,
+        "scheduledTick": 0,
+        "status": "APPLIED",
+        "appliedTick": 0,
+        "reason": null,
+        "requestedReason": "Controlled repair exercise",
+        "createdBy": "00000000-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-16T00:00:00Z"
+      }
+    ]
+  },
+  "audit": {
+    "status": "PASS",
+    "scope": "retained intervals and contiguous engineering boundaries only",
+    "intervals": 4,
+    "gaps": [],
+    "scientificComparison": "UNSUPPORTED_WITH_INTERVENTIONS"
+  },
+  "failureCounters": {
+    "physics": 0,
+    "injected": 1,
+    "total": 1
+  }
+}

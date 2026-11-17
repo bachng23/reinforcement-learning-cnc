@@ -1,0 +1,237 @@
+openapi: 3.1.0
+info:
+  title: JCST saved situations and controlled incidents (M0 proposal)
+  version: 1.0.0
+servers: [{url: /api/v1/research/demo}]
+security: [{session: []}]
+paths:
+  /sessions/{id}/snapshots:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    post:
+      summary: Save an immutable complete runtime snapshot; ADMIN/ENGINEER
+      description: Copies a locked source at exactly revision. Does not advance or increment source revision. Includes both lanes, REVIEW proposal, counters, config, releases, queue and simulation clock. Snapshot belongs to the saving actor.
+      parameters: [{$ref: '#/components/parameters/key'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SaveSnapshot'}
+      responses:
+        '201': {$ref: '#/components/responses/Snapshot'}
+        default: {$ref: '#/components/responses/Error'}
+  /snapshots:
+    get:
+      summary: List snapshots in owner scope; ADMIN sees all
+      description: Stable createdAt DESC, id DESC. Opaque cursor binds actor and role. Unknown/repeated query parameters rejected. No raw snapshot JSON.
+      parameters:
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
+      responses:
+        '200':
+          description: No-store, bounded owner-scoped page
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success: {const: true}
+                  data:
+                    type: object
+                    required: [items, nextCursor]
+                    properties:
+                      items: {type: array, items: {$ref: '#/components/schemas/SnapshotMetadata'}}
+                      nextCursor: {type: [string, 'null']}
+        default: {$ref: '#/components/responses/Error'}
+  /snapshots/{id}:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    get:
+      summary: Read metadata and machine/technician/policy summary without runtime execution
+      responses:
+        '200': {$ref: '#/components/responses/Snapshot'}
+        default: {$ref: '#/components/responses/Error'}
+  /snapshots/{id}/sessions:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    post:
+      summary: Restore an independent session; ADMIN/ENGINEER
+      description: Revision is immutable sourceRevision from snapshot metadata. New session revision is 0, physical tick stays sourceTick. playbackPaused=true. Preserve COMPLETE/REVIEW and proposal. Validate engine/config/pinned releases before persistence. Receipts replay the original session response even if it later advances.
+      parameters: [{$ref: '#/components/parameters/key'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Revision'}
+      responses:
+        '201':
+          description: Existing full DemoSession success envelope plus sessionId, tick, playbackPaused and branch provenance. Same representation as GET session; see main research OpenAPI.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success: {const: true}
+                  data: {$ref: '#/components/schemas/Session'}
+        default: {$ref: '#/components/responses/Error'}
+  /sessions/{id}/incidents:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    get:
+      summary: Read controlled incidents without advancing or inferring
+      responses:
+        '200':
+          description: No-store success envelope with sessionId, revision, tick, source and events
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success: {const: true}
+                  data:
+                    type: object
+                    required: [sessionId, revision, tick, source, events]
+                    properties:
+                      sessionId: {type: string, format: uuid}
+                      revision: {type: integer, minimum: 0}
+                      tick: {type: integer, minimum: 0}
+                      source: {const: JCST_SIMULATION}
+                      events: {type: array, items: {$ref: '#/components/schemas/Incident'}}
+        default: {$ref: '#/components/responses/Error'}
+    post:
+      summary: Schedule/inject on primary lane of a restored session; ADMIN/ENGINEER
+      description: Immediate scheduledTick equals current tick, never advances time. Future scheduledTick is bounded to current tick+100000. Unique component/tick, primary lane only. At most 1024 retained incidents per session. Immediate REVIEW is 409. Skip if machine has any failed component or is in service; null risk is never zero. All actual application is delegated to the Flex bridge.
+      parameters: [{$ref: '#/components/parameters/key'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateIncident'}
+      responses:
+        '201':
+          description: Success envelope data contains full session and event. Atomic state, audit, receipt; exact response replay on retry.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success: {const: true}
+                  data:
+                    type: object
+                    required: [session, event]
+                    properties:
+                      session: {$ref: '#/components/schemas/Session'}
+                      event: {$ref: '#/components/schemas/Incident'}
+        default: {$ref: '#/components/responses/Error'}
+components:
+  securitySchemes:
+    session: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    id: {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    key: {in: header, name: Idempotency-Key, required: true, schema: {type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'}}
+  responses:
+    Snapshot:
+      description: Snapshot metadata (detail adds summary); Cache-Control no-store
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [success, data]
+            properties:
+              success: {const: true}
+              data: {$ref: '#/components/schemas/SnapshotMetadata'}
+    Error:
+      description: 'Existing research error envelope. 400 VALIDATION_ERROR/DEMO_CURSOR_INVALID; 401 inactive/invalid auth; 403 role; 404 DEMO_NOT_FOUND/DEMO_SNAPSHOT_NOT_FOUND; 409 DEMO_STALE/DEMO_KEY_CONFLICT/DEMO_INCIDENT_DUPLICATE/DEMO_REVIEW_REQUIRED/DEMO_COMPLETE/DEMO_BRANCH_REQUIRED/DEMO_RELEASE_UNAVAILABLE/DEMO_SNAPSHOT_INCOMPATIBLE/DEMO_INTERVENTION_REPLAY_UNSUPPORTED; 422 DEMO_INCIDENT_INVALID; 502 DEMO_SCENARIO_INVALID_OUTPUT; 503 DEMO_SCENARIO_RUNTIME_UNAVAILABLE; 504 JCST_TIMEOUT. Errors are no-store. No partial persistence on rejected write.'
+  schemas:
+    Session:
+      type: object
+      description: Existing full DemoSession runtime payload plus server-owned identity, revision, tick and branch provenance. No change to the simulator's canonical domain schema.
+      required: [id, sessionId, revision, tick, createdAt, simulation_start, step_seconds, playbackPaused, status, branch, primary, baseline, config, source_commit, physical_seed, releases]
+      properties:
+        id: {type: string, format: uuid}
+        sessionId: {type: string, format: uuid}
+        revision: {type: integer, minimum: 0}
+        tick: {type: integer, minimum: 0}
+        createdAt: {type: string, format: date-time}
+        simulation_start: {type: string, format: date-time}
+        step_seconds: {type: number, exclusiveMinimum: 0}
+        playbackPaused: {const: true}
+        status: {enum: [RUNNING, REVIEW, COMPLETE]}
+        primary: {type: object}
+        baseline: {type: object}
+        config: {type: object}
+        source_commit: {type: string}
+        physical_seed: {type: string}
+        releases: {type: object}
+        incidents: {type: array, items: {$ref: '#/components/schemas/Incident'}}
+        branch:
+          type: object
+          required: [branchId, snapshotId, snapshotHash, sourceSessionId, sourceRevision, sourceTick, branchStartTick, interventionRevision]
+          properties:
+            branchId: {type: string, format: uuid}
+            snapshotId: {type: string, format: uuid}
+            snapshotHash: {type: string, pattern: '^[a-f0-9]{64}$'}
+            sourceSessionId: {type: string, format: uuid}
+            sourceRevision: {type: integer, minimum: 0}
+            sourceTick: {type: integer, minimum: 0}
+            branchStartTick: {type: integer, minimum: 0}
+            interventionRevision: {type: integer, minimum: 0}
+    Revision:
+      type: object
+      additionalProperties: false
+      required: [revision]
+      properties:
+        revision: {type: integer, minimum: 0, maximum: 2147483647}
+    SaveSnapshot:
+      type: object
+      additionalProperties: false
+      required: [revision, name, layoutId]
+      properties:
+        revision: {type: integer, minimum: 0, maximum: 2147483647}
+        name: {type: string, minLength: 1, maxLength: 120, description: Trimmed, nonblank}
+        description: {type: string, maxLength: 2000, default: ''}
+        layoutId: {type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'}
+    CreateIncident:
+      type: object
+      additionalProperties: false
+      required: [revision, machineIndex, componentIndex, scheduledTick, reason]
+      properties:
+        revision: {type: integer, minimum: 0, maximum: 2147483647}
+        machineIndex: {type: integer, minimum: 0, description: Validated against requested session config}
+        componentIndex: {type: integer, minimum: 0, description: Validated against selected machine}
+        scheduledTick: {type: integer, minimum: 0}
+        reason: {type: string, minLength: 1, maxLength: 1000}
+    SnapshotMetadata:
+      type: object
+      required: [snapshotId, schemaVersion, sourceSessionId, sourceRevision, sourceTick, sourceCommit, snapshotHash, name, description, layoutId, createdAt, sessionId, revision, tick]
+      properties:
+        snapshotId: {type: string, format: uuid}
+        schemaVersion: {const: jcst-demo-snapshot/1}
+        sourceSessionId: {type: string, format: uuid}
+        sourceRevision: {type: integer, minimum: 0}
+        sourceTick: {type: integer, minimum: 0}
+        sourceCommit: {type: string}
+        snapshotHash: {type: string, pattern: '^[a-f0-9]{64}$'}
+        name: {type: string}
+        description: {type: string}
+        layoutId: {type: string}
+        createdAt: {type: string, format: date-time}
+        sessionId: {type: string, format: uuid}
+        revision: {type: integer, minimum: 0}
+        tick: {type: integer, minimum: 0}
+        summary: {type: object, description: caseId, seed, status, policies, machineCount, technicianCount; no raw payload}
+    Incident:
+      type: object
+      additionalProperties: false
+      required: [eventId, machineIndex, componentIndex, scheduledTick, status, appliedTick, reason, requestedReason, createdBy, createdAt]
+      properties:
+        eventId: {type: string, format: uuid}
+        machineIndex: {type: integer, minimum: 0}
+        componentIndex: {type: integer, minimum: 0}
+        scheduledTick: {type: integer, minimum: 0}
+        status: {enum: [SCHEDULED, APPLIED, SKIPPED]}
+        appliedTick: {type: [integer, 'null'], minimum: 0}
+        reason: {enum: [null, COMPONENT_ALREADY_FAILED, MACHINE_IN_SERVICE]}
+        requestedReason: {type: string}
+        createdBy: {type: string, format: uuid}
+        createdAt: {type: string, format: date-time}
