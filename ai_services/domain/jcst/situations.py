@@ -223,7 +223,13 @@ def audit_retained(session):
                 actual.append([tuple(e[k] for k in fields) for e in record['events'] if e['type'] == kind])
             if any(sorted(a) != sorted(b) for a, b in zip(actual, signatures)): invalid()
             for e in record['events']:
-                if e['type'] == 'failure' and float(e['uniform']) != auditor.u01(seed, record['tick'], e['machine'], e['component']): invalid()
+                if e['type'] == 'failure':
+                    uniform = e['uniform']
+                    expected = auditor.u01(seed, record['tick'], e['machine'], e['component'])
+                    # Match the demo's legacy JSON-number tolerance while preserving the frozen value.
+                    tolerance = 2 * math.ulp(expected) if type(uniform) in (int, float) else 0
+                    if abs(float(uniform) - expected) > tolerance:
+                        invalid()
                 if e['type'] == 'start' and e['duration'] != cfg['duration'][e['machine']][e['component']][e['technician']]: invalid()
             previous = record['after']
             count += 1

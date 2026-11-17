@@ -1,6 +1,7 @@
 """Real built-in policies and physical transitions; no checkpoint/test-double dependency."""
 from copy import deepcopy
 import json
+import math
 from uuid import uuid4
 
 import pytest
@@ -82,6 +83,21 @@ def test_natural_failure_before_schedule_skips_and_keeps_uniform():
     natural = [e for r in p['primary']['records'] for e in r['events'] if e['type'] == 'failure']
     assert natural and isinstance(natural[0]['uniform'], str)
     assert s.failure_counters(p)['injected'] == 0
+
+
+def test_restore_legacy_numeric_uniform_without_changing_frozen_evidence():
+    p = session()
+    for _ in range(5):
+        p = step(p)
+    failure = next(e for r in p['primary']['records'] for e in r['events'] if e['type'] == 'failure')
+    exact = float(failure['uniform'])
+    failure['uniform'] = math.nextafter(exact, 1)
+    frozen = s.snapshot(p)
+    assert s.restore(frozen) == p
+
+    failure['uniform'] = exact + 0.01
+    with pytest.raises(s.SituationError, match='DEMO_SNAPSHOT_INCOMPATIBLE'):
+        s.restore(s.snapshot(p))
 
 
 def test_repair_snapshot_and_completion_boundary_allows_next_incident():
