@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { hasNewFailure, incidentNotifications } from '@/lib/simulation/presentation';
 import type { Simulation, SimulationRecord } from '@/lib/simulation/types';
+import { branchSession, injected } from './situation-fixtures';
 const record=(events:unknown[])=>({events} as SimulationRecord);
 describe('live simulator event presentation',()=>{
   it('pauses only for newly appended primary failures, including failures within a batch',()=>{
@@ -11,13 +12,11 @@ describe('live simulator event presentation',()=>{
     expect(hasNewFailure(2,s)).toBe(true);
   });
   it('pauses when a scheduled incident first applies, then allows playback to continue', () => {
-    const s = { primary: { records: [] }, incidents: [
-      { status: 'APPLIED', appliedTick: 5 },
-      { status: 'SKIPPED', appliedTick: 6 },
-      { status: 'SCHEDULED', appliedTick: null },
-    ] } as Simulation;
-    expect(hasNewFailure(4, s)).toBe(true);
-    expect(hasNewFailure(5, s)).toBe(false);
+    const s = branchSession();
+    s.primary.records = [];
+    s.incidents = [injected(), injected('SCHEDULED'), { ...injected('SKIPPED'), appliedTick: 8, scheduledTick: 8 }];
+    expect(hasNewFailure(6, s)).toBe(true);
+    expect(hasNewFailure(7, s)).toBe(false);
   });
   it('shows chronological evidence newest first, excludes PM and does not mutate the trace',()=>{
     const records=[record([{type:'failure',tick:5},{type:'occupancy',tick:5}]),record([{type:'completion',kind:'PM',tick:7},{type:'failure',tick:7},{type:'completion',kind:'CM',tick:7}])];

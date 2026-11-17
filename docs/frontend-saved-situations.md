@@ -2,8 +2,9 @@
 
 Frontend base: `30a27f820e511567f7fad8199f123f75646cd9f3` (main).
 Branch: `frontend/simulation-situations-incidents`.
-Status: **M1 frontend / API consumer ready; M2 joint runtime acceptance pending**.
-Backend/Flex implementations, DB schemas and migrations are unchanged.
+The frontend consumes the saved situations API and the JCST situation runtime.
+See the [integrated acceptance runbook](research/situation-runtime-runbook.md)
+for the PostgreSQL, API and browser checks.
 
 ## M0: producer contract and remaining gaps
 
@@ -13,27 +14,11 @@ See `frontend/contracts/jcst-situations/manifest.json` for the full producer SHA
 consumer DTO is copied verbatim, not a second frontend domain model. Contract
 checks also cover the additive controlled-event health union from the same SHA.
 
-This is a **Backend M0 proposal**, not a claim that all three owners have frozen
-or jointly accepted it. Main has not merged these new routes. Backend's own
-handoff explicitly states that Flex has not implemented `demo_snapshot_restore`,
-`demo_incident` or `demo_situation_command` under `jcst-situations/1`. Runtime
-operations currently fail closed with `503 DEMO_SCENARIO_RUNTIME_UNAVAILABLE`.
-Neither a mock browser run nor Backend's bridge-double tests establish M2.
-
-Producer gaps to close before joint acceptance:
-
-- Flex: real restore, checkpoint/config compatibility, zero-time injection,
-  due-queue handling before observation on every command/internal autoplay tick,
-  and intervention-aware replay/comparison semantics.
-- Backend: merge/deploy routes and additive migration on an agreed integrated SHA.
-- Snapshot detail metadata only contains policies, counts and session status.
-  It does **not** return saved per-machine conditions, technician assignments,
-  remaining time, simulation start or step duration. List rows have no summary.
-  The library presents the saved tick and available detail fields, explicitly
-  marks detailed conditions as unavailable, and never reads the live source as
-  an immutable summary. Add rich summary fields in the producer DTO before
-  requiring that information in the library. Save preview and restored session
-  inspection use their actual authoritative runtime responses.
+Snapshot detail returns policies, counts and session status. The library shows
+the saved tick and the available detail fields. Per-machine conditions and
+technician assignments with remaining time are available when inspecting a
+restored session. The policy ranking is unavailable once a controlled incident
+changes the primary lane only.
 
 ## API mapping
 
@@ -151,7 +136,7 @@ Screenshots: `docs/design/screenshots/saved-situations/` (component evidence).
 The verification manifest records exact source/screenshot fingerprints and
 local check results. Production acceptance must be recorded separately.
 
-## M2 demo checklist (real API + PostgreSQL + Flex, still pending)
+## Manual integration checklist
 
 1. Integrate the agreed Backend/Flex SHAs; migrate a dedicated test DB and install
    the real pinned runtime/checkpoints. Sign in as ENGINEER/ADMIN. Create base,
