@@ -185,6 +185,18 @@ async function main() {
     await page.getByRole('button', { name: 'Create injected incident', exact: true }).click();
     const injected = (await (await incidentResponse).json()).data;
     assert.equal(injected.event.status, 'APPLIED'); assert.equal(injected.session.tick, 0);
+    const { bridge } = require(path.join(backend, 'src/research/bridge'));
+    const stored = await prisma.demoSession.findUniqueOrThrow({ where: { id: opened.id } });
+    const runtime = stored.payloadJson;
+    assert.ok(runtime, 'Persisted runtime payload must exist');
+    const exported = await bridge({ protocol: 'jcst-situations/1', operation: 'demo_snapshot', session: runtime });
+    const audited = await bridge({ protocol: 'jcst-situations/1', operation: 'demo_situation_audit', session: exported.snapshot.runtime });
+    assert.equal(audited.audit.status, 'PASS');
+    const replayed = await bridge({ protocol: 'jcst-situations/1', operation: 'demo_incident', session: runtime,
+      event: { ...injected.event, status: 'SCHEDULED', appliedTick: null, reason: null } });
+    assert.deepEqual(replayed.failureCounters, { physics: runtime.primary.failures, injected: 1, total: runtime.primary.failures + 1 });
+    assert.deepEqual(replayed.engineeringEvents.map(e => [e.eventId, e.source, e.tick]), [[injected.event.eventId, 'INJECTED', 0]]);
+    passed('persisted runtime consumer: injected UUID, source, counters and independent audit');
     await page.screenshot({ path: path.join(out, 'browser-injected.png'), fullPage: true });
     await page.reload();
     await expect(page.getByRole('button', { name: 'Run simulator', exact: true })).toBeEnabled();
@@ -193,6 +205,18 @@ async function main() {
     assert.equal(reloaded.incidents.length, 1); assert.equal(reloaded.incidents[0].eventId, injected.event.eventId);
     await page.screenshot({ path: path.join(out, 'browser-reloaded.png'), fullPage: true });
     passed('real Chromium: authenticated save/open paused, immediate incident and reload');
+    await page.goto(`${ui}/agents?session=${opened.id}&workshop=smt-board-assembly`);
+    const activity = page.getByRole('region', { name: 'Simulation activity', exact: true });
+    await expect(activity.getByText('Injected incident · APPLIED', { exact: true })).toBeVisible();
+    await expect(activity.getByText(`INJECTED ${injected.event.eventId} at t0: M3/C2.`, { exact: true })).toBeVisible();
+    await page.screenshot({ path: path.join(out, 'browser-activity.png'), fullPage: true });
+    await page.goto(`${ui}/simulation?session=${opened.id}&workshop=smt-board-assembly`);
+    await page.getByRole('button', { name: '2D', exact: true }).click();
+    const notifications = page.getByRole('region', { name: 'Incident notifications', exact: true });
+    await expect(notifications.getByText('Injected incident · APPLIED', { exact: true })).toBeVisible();
+    await expect(notifications.getByText('M3/C2', { exact: true })).toBeVisible();
+    await page.screenshot({ path: path.join(out, 'browser-notifications.png'), fullPage: true });
+    passed('real Chromium: Activity and incident notifications retain injected evidence');
     evidence.status = 'PASS';
   } finally {
     if (context) { await context.tracing.stop({ path: path.join(out, 'browser-trace.zip') }).catch(() => {}); await context.close().catch(() => {}); }
