@@ -1,163 +1,85 @@
-# Maintenance Demand–Capacity Coordination Research Platform
+# Maintenance Coordination Workspace
 
-Research evidence, learning-curve comparison, component-level replay and copied-state
-decision support for [maintenance-capacity-coordination](https://github.com/AIVIETNAM-AIO-BachNguyen/maintenance-capacity-coordination).
-The default workspace is `/overview`, with Application first in navigation and Research available below it at `/research`. JCST/1.1 is the physical contract; S/A/F are
-centralized PPO actors. The older CNC v2 and Operations v3 modules retain their own
-contracts and historical records.
+Maintenance Coordination Workspace is a browser-based factory simulator and research platform for deciding **which machine to service, when, and with which technician**. Run a simulated server power supply workshop, review a repair assignment when a component fails, and compare what different maintenance policies would have done under the same conditions.
 
-## Interactive web demo
+[Run locally](#run-locally) · [Product tour](#product-tour) · [Architecture](#architecture) · [Research documentation](docs/research/runbook.md)
 
-Open `/overview` and press **Auto demo** for a one-click presentation of a real
-JCST session: failure, AI workflow, matching proposal, automatic confirmation,
-technician service, repair and S/F comparison. Pause/Resume and manual control
-remain available. The default local demo took about 23 seconds in verification. Agent Control Room shows actual orchestration events;
-Compare controllers runs S/F against the same seed/configuration and displays
-actual costs and fleet states. Session state and decisions survive page reloads.
-See [demo setup and walkthrough](docs/research/live-demo.md). This engineering
-workflow is separate from the scientific results in the Research workspace.
+![3D simulator showing an SMT assembly line, technician status, and a component failure timeline](docs/screenshots/readme/factory-simulation.png)
 
-## Research workflow
+*The SMT workshop during a local simulation, with machine states, technician assignments, and the incident timeline visible.*
 
-1. Start PostgreSQL and apply the additive migrations with the commands below.
-2. Start the backend API and `npm --prefix backend run research:worker` separately.
-3. Start the frontend and sign in as an administrator or engineer.
-4. Export a bounded bundle, then upload it at `/research/import`.
+## Product tour
 
-```bash
-uv sync --frozen --project ai_services
-ai_services/.venv/bin/python ai_services/scripts/export_jcst_bundle.py --output /tmp/jcst-engineering.json
-```
+### Monitor the factory
 
-The engineering exporter runs a bounded reference-control episode and independent
-physical replay. It does not train a policy or estimate scientific performance.
-The SE1 exporter instead reads existing, explicitly supplied campaign artifacts.
+Explore four workshops in a server power supply production flow, from SMT assembly to reliability testing and pack-out. The dashboard shows availability, failure frequency, technician workload, and cost for the selected workshop. Open a station from the dashboard to inspect it on the factory floor. Save a workshop situation to reopen it later as an independent simulation, or inject a component failure to test a specific maintenance handoff.
 
-Set `RESEARCH_ARTIFACT_DIR` to the same absolute persistent directory for API and
-worker. For learned inference, install the separate `jcst_runtime` environment,
-register verified checkpoints and configure `JCST_PYTHON` and
-`JCST_RELEASE_REGISTRY`. See [research setup and operations](docs/research/runbook.md).
+![Factory dashboard showing availability, machine state over time, cost composition, and failure frequency](docs/screenshots/readme/factory-dashboard.png)
 
-The [architecture and capability inventory](docs/research/architecture.md),
-[migration plan](docs/research-alignment-migration-plan-2026-10-30.md) and
-[verification report](docs/research/implementation-report-2026-10-30.md) describe
-the implemented boundary and remaining optional integrations.
+### Review a dispatch decision
 
-## Verification of the research domain
+Pause for operator review to see which technician the policy recommends, where to send them, and how long the job is expected to take. Review technician qualifications, then approve the proposal, defer new work, or choose another eligible assignment. The session keeps the decision and your reason.
 
-```bash
-ai_services/.venv/bin/python scripts/check-jcst-contracts.py
-ai_services/.venv/bin/python -m pytest ai_services/tests -q
-npm --prefix backend test -- --runInBand
-npm --prefix frontend test
-npm --prefix frontend run build
-```
+![Decision Center showing a corrective dispatch recommendation, technician qualifications, and approval controls](docs/screenshots/readme/dispatch-review.png)
 
-PostgreSQL integration and real browser tests require an explicit dedicated
-`TEST_DATABASE_URL`; both use disposable schemas. They never fall back to the
-development database. See the runbook for the exact commands.
+### Compare maintenance policies
 
-## Compatibility modules
+Choose a maintenance policy and a baseline when you set up a scenario. Both run under the same physical seed. Compare costs, downtime, failures, and technician time as the simulation advances. The rule-based options include corrective, risk-based, and age-threshold maintenance. Structured, ablated, and flat PPO policies are available when their checkpoints are installed and registered.
 
-The following older modules remain available during migration:
+![Controller comparison showing two maintenance policies and their cumulative costs](docs/screenshots/readme/controller-comparison.png)
 
-- `contracts/v2`: canonical CNC tool-replacement research contract.
-- `contracts/v3`: canonical operations and multi-agent decision-support contract.
-- `ai_services`: Pydantic contract sources plus a minimal FastAPI process.
-- `backend`: platform health, authentication, user administration, and the Product API for policy catalogs, experiments, queued episodes, and persisted research results.
-- `frontend`: authenticated research console and user administration.
-- PostgreSQL 16 is the only infrastructure dependency.
+### Replay research evidence
 
-Their payloads are not JCST observations or scientific JCST results. Legacy CNC
-creation/execution is read-only by default in production; set
-`LEGACY_RESEARCH_WRITE_ENABLED=true` explicitly to enable it. Legacy history stays
-readable. The Operations planner uses a separate simplified model and does not
-supply metrics for JCST research.
+Import a JCST evidence bundle to browse campaign results and step through recorded episodes. The replay shows component states, technician commitments, the selected assignment, and costs at each interval. Start a separate what-if branch from a recorded state to evaluate another action while preserving the original episode. See the [companion research repository](https://github.com/AIVIETNAM-AIO-BachNguyen/maintenance-capacity-coordination) for the experiment protocol and training code.
 
-## Local development
+![Research episode replay showing component states, technician commitments, and the selected maintenance assignment](docs/screenshots/readme/research-replay.png)
+
+*Screenshots were captured in Chromium from a local run of the frontend, Express API, PostgreSQL, and JCST simulator. The controller results illustrate one engineering scenario. The workshops model maintenance behavior with illustrative equipment layouts and time scales.*
+
+## Run locally
+
+**Prerequisites** · Node.js 22, npm, Python 3.12.10 or newer in the 3.12 series, [uv](https://docs.astral.sh/uv/), and Docker Compose for PostgreSQL 16. An existing local PostgreSQL 16 instance also works. See [local development](DEV-LOCAL.md).
+
+For a fresh checkout, run these commands from the repository root.
 
 ```bash
 cp .env.example .env
 cp backend/.env.example backend/.env
 cp frontend/.env.local.example frontend/.env.local
 
-cd backend && npm install && npm run prisma:generate
-cd ../frontend && npm install
-cd ../ai_services && uv sync
+docker compose up -d --wait postgre_db
+npm ci --prefix backend
+npm ci --prefix frontend
+uv sync --frozen --project ai_services
 ```
 
-Prepare PostgreSQL and its seed data with the commands below.
-
-## Database migration
-
-Start PostgreSQL, generate the Prisma client, and apply every committed migration:
+For an existing checkout, keep your environment files and confirm that `DATABASE_URL` points to your local database. Set your local sign-in password with `ADMIN_PASSWORD` in `backend/.env`, then apply the migrations and seed the administrator.
 
 ```bash
-docker compose up -d postgre_db
-cd backend
-npm run prisma:generate
-npx prisma migrate deploy
+(cd backend && npm run prisma:generate && npx prisma migrate deploy && npm run prisma:seed)
 ```
 
-## Seed data
-
-Set `ADMIN_PASSWORD` in `backend/.env`, then seed the administrator and policy catalog. The seed is safe to run again because catalog records are upserted by their stable keys and versions.
-
-```bash
-cd backend
-npm run prisma:seed
-```
-
-## Product API verification
-
-The Product API contract, including authenticated request and response examples, is documented in [backend/openapi.yaml](backend/openapi.yaml). Worker claiming, lifecycle, retry-history, and event persistence rules are documented in [backend/WORKER-PERSISTENCE.md](backend/WORKER-PERSISTENCE.md). After starting the backend, verify health, authenticate, and query the policy catalog:
-
-```bash
-curl http://localhost:5000/api/health
-curl -i -c /tmp/cnc-api-cookie.txt \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"<ADMIN_PASSWORD>"}' \
-  http://localhost:5000/api/v1/auth/login
-curl -b /tmp/cnc-api-cookie.txt http://localhost:5000/api/v1/policies
-```
-
-Run the automated backend checks from `backend`:
-
-```bash
-npm test
-```
-
-Run the Product API integration suite against a real PostgreSQL database:
-
-```bash
-cd backend
-TEST_DATABASE_URL="postgresql://admin:password@localhost:5432/cnc_research_test" npm run test:integration
-```
-
-The command creates a uniquely named schema, applies every committed Prisma
-migration, runs the API tests serially, and drops only that schema afterward.
-The configured PostgreSQL user must be allowed to create and drop schemas.
-
-Start the source services from the repository root:
+Start the web stack from the repository root.
 
 ```bash
 bash scripts/dev-web.sh
-bash scripts/dev-ai.sh
 ```
 
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:5000/api/health`
-- AI API: `http://localhost:8001/health`
+Open [http://localhost:3000](http://localhost:3000) and sign in as `admin` with the configured password. The script starts Next.js, the API on port `5000`, and the research worker.
 
-See [DEV-LOCAL.md](DEV-LOCAL.md) for the complete workflow,
-[contracts/v2/README.md](contracts/v2/README.md) for the research contract, and
-[contracts/v3/README.md](contracts/v3/README.md) for the operations/multi-agent
-contract boundary.
+1. In **Simulation**, select **Repair after failure**, choose **Risk-based maintenance** as the comparison policy, and set **Maintenance decisions begin** to **After the first failure**. Click **Start simulation**. Use **5×** to speed up playback.
+2. Turn off **Auto-approve decisions** to review the next proposal yourself. Open **Review assignments**, then approve the dispatch or choose an alternative. Visit **Dashboard** for workshop metrics and **Compare controllers** for the two policy runs.
+3. In **Research workspace → Import evidence**, upload the [sample JCST bundle](contracts/jcst/v1/fixtures/engineering-bundle.json). Follow the validation job, open the imported campaign, and select an episode to replay.
 
-## Verification
+The rule-based demo runs without learned checkpoints. For PPO inference, configure `JCST_PYTHON` and `JCST_RELEASE_REGISTRY` as described in the [research runbook](docs/research/runbook.md).
 
-```bash
-cd backend && npm test
-cd ../frontend && npm run build
-cd ../ai_services && uv run pytest -q
-```
+## Architecture
+
+| Component | Responsibility |
+| --- | --- |
+| [Frontend](frontend/) | Next.js, React, and Three.js power the 3D simulator, factory dashboard, policy comparison, and research workspace. |
+| [Backend](backend/) | Express and Prisma handle authentication, simulation commands, persisted sessions and audit records, and the research job queue. |
+| [JCST simulator](ai_services/domain/jcst/) | Python models component failures, technician eligibility, maintenance duration, and costs. The Express API invokes it through a local Python bridge. |
+| [Research worker](backend/src/research/worker.js) | Processes evidence imports, replay checks, and copied-state research jobs. PostgreSQL stores job state and metadata, and the artifact store holds evidence files. |
+
+[Live demo guide](docs/research/live-demo.md) · [System architecture](docs/research/architecture.md) · [Research API specification](backend/research-openapi.yaml) · [JCST contract](contracts/jcst/v1/README.md)
