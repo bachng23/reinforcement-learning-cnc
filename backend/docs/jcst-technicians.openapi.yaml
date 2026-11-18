@@ -1,0 +1,200 @@
+openapi: 3.1.0
+info: {title: JCST technician availability (M0 proposal), version: 1.0.0}
+servers: [{url: /api/v1/research/demo}]
+security: [{session: []}]
+paths:
+  /sessions/{id}/technicians:
+    parameters: [{$ref: '#/components/parameters/id'}]
+    get:
+      summary: Read owner-scoped primary technician availability; ADMIN sees all
+      description: Strict empty query. Actual jobs determine BUSY; ABSENT uses engineering metadata. Legacy missing metadata means no absences. No advance, inference, writes or events. All responses are no-store.
+      responses:
+        '200':
+          description: Snapshot envelope
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success: {const: true}
+                  data: {$ref: '#/components/schemas/Technicians'}
+        default: {$ref: '#/components/responses/Error'}
+  /sessions/{id}/technicians/{technicianIndex}/absence:
+    parameters: [{$ref: '#/components/parameters/id'}, {$ref: '#/components/parameters/index'}]
+    post:
+      summary: Start an immediate absence; ADMIN/ENGINEER
+      description: Idle primary only. Interval is [currentTick,currentTick+durationTicks); baseline finishes an existing job but takes no new work during absence. Same physical tick, revision+1. Invalidates REVIEW/pending/deferral and pauses playback. Reject unknown body/query fields and repeated parameters.
+      parameters: [{$ref: '#/components/parameters/key'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StartAbsence'}
+      responses:
+        '200': {$ref: '#/components/responses/Command'}
+        default: {$ref: '#/components/responses/Error'}
+  /sessions/{id}/technicians/{technicianIndex}/return:
+    parameters: [{$ref: '#/components/parameters/id'}, {$ref: '#/components/parameters/index'}]
+    post:
+      summary: Return an absent technician early; ADMIN/ENGINEER
+      description: Append a separate ABSENCE_RETURNED_EARLY event, retain original planned returnTick. Physical tick unchanged, revision+1, pending cleared and playback paused. Not absent is a conflict; retry of a committed request replays its stored response before this guard.
+      parameters: [{$ref: '#/components/parameters/key'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReturnEarly'}
+      responses:
+        '200': {$ref: '#/components/responses/Command'}
+        default: {$ref: '#/components/responses/Error'}
+components:
+  securitySchemes:
+    session: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    id: {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    index: {in: path, name: technicianIndex, required: true, schema: {type: integer, minimum: 0}, description: 0-based, bounded by this session config; display T1 is index 0}
+    key: {in: header, name: Idempotency-Key, required: true, schema: {type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'}}
+  responses:
+    Command:
+      description: No-store. Mutation, audit and receipt are atomic. Identical retries replay exact original response; same key with a different target/body conflicts. Scope/active/role checked before replay. Runtime work outside transaction; revision and primary busy guard checked again at final write.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [success, data]
+            properties:
+              success: {const: true}
+              data:
+                allOf:
+                  - {$ref: '#/components/schemas/Technicians'}
+                  - type: object
+                    required: [session]
+                    properties:
+                      session:
+                        type: object
+                        description: Full existing DemoSession plus stepSeconds, technicians and comparisonContext
+                        required: [id, sessionId, revision, tick, stepSeconds, technicians, comparisonContext, technicianAvailability]
+                        properties:
+                          technicianAvailability: {$ref: '#/components/schemas/Calendar'}
+    Error:
+      description: 'Existing research error envelope, Cache-Control no-store. 400 VALIDATION_ERROR; 401 inactive/invalid token; 403 role denied; 404 DEMO_NOT_FOUND/TECHNICIAN_NOT_FOUND; 409 DEMO_STALE/DEMO_KEY_CONFLICT/DEMO_COMPLETE/TECHNICIAN_BUSY/TECHNICIAN_ALREADY_ABSENT/TECHNICIAN_NOT_ABSENT/TECHNICIAN_AVAILABILITY_LIMIT/DEMO_RELEASE_UNAVAILABLE/DEMO_SNAPSHOT_INCOMPATIBLE/DEMO_INTERVENTION_REPLAY_UNSUPPORTED; 500 DEMO_AVAILABILITY_INVALID for corrupted stored metadata; 502 TECHNICIAN_RUNTIME_INVALID_OUTPUT; 503 TECHNICIAN_RUNTIME_UNAVAILABLE; 504 JCST_TIMEOUT. No partial persistence on failure.'
+  schemas:
+    Calendar:
+      type: object
+      additionalProperties: false
+      required: [schemaVersion, version, absences, events, origin]
+      properties:
+        schemaVersion: {const: jcst-technician-availability/1}
+        version: {type: integer, minimum: 0}
+        absences:
+          type: array
+          maxItems: 1024
+          items:
+            type: object
+            additionalProperties: false
+            required: [eventId, automaticEndEventId, technicianIndex, startTick, returnTick, endedTick, endedByEventId]
+            properties:
+              eventId: {type: string, format: uuid}
+              automaticEndEventId: {type: string, format: uuid}
+              technicianIndex: {type: integer, minimum: 0}
+              startTick: {type: integer, minimum: 0}
+              returnTick: {type: integer, minimum: 1}
+              endedTick: {type: [integer, 'null'], minimum: 0}
+              endedByEventId: {type: [string, 'null'], format: uuid}
+        events: {type: array, maxItems: 2048, items: {$ref: '#/components/schemas/Event'}}
+        origin:
+          oneOf:
+            - {type: 'null'}
+            - type: object
+              required: [eventId, tick, workforceVersion]
+              properties:
+                eventId: {type: string, format: uuid}
+                tick: {type: integer, minimum: 0}
+                workforceVersion: {type: integer, minimum: 1}
+    StartAbsence:
+      type: object
+      additionalProperties: false
+      required: [revision, durationTicks, reason]
+      properties:
+        revision: {type: integer, minimum: 0, maximum: 2147483647}
+        durationTicks: {type: integer, minimum: 1, maximum: 100000}
+        reason: {type: string, minLength: 1, maxLength: 1000, description: Trimmed, nonblank}
+    ReturnEarly:
+      type: object
+      additionalProperties: false
+      required: [revision, reason]
+      properties:
+        revision: {type: integer, minimum: 0, maximum: 2147483647}
+        reason: {type: string, minLength: 1, maxLength: 1000}
+    Technician:
+      type: object
+      additionalProperties: false
+      required: [technicianIndex, availability, currentJob, activeAbsence, returnTick]
+      properties:
+        technicianIndex: {type: integer, minimum: 0}
+        availability: {enum: [AVAILABLE, BUSY, ABSENT]}
+        currentJob:
+          oneOf:
+            - {type: 'null'}
+            - type: object
+              required: [machine, component, technician, kind, remaining]
+              properties:
+                machine: {type: integer, minimum: 0}
+                component: {type: integer, minimum: 0}
+                technician: {type: integer, minimum: 0}
+                kind: {enum: [PM, CM]}
+                remaining: {type: integer, minimum: 1}
+        activeAbsence:
+          oneOf:
+            - {type: 'null'}
+            - type: object
+              required: [startTick, returnTick, eventId]
+              properties:
+                startTick: {type: integer, minimum: 0}
+                returnTick: {type: integer, minimum: 1}
+                eventId: {type: string, format: uuid}
+        returnTick: {type: [integer, 'null'], minimum: 1}
+    Event:
+      type: object
+      additionalProperties: false
+      required: [eventId, technicianIndex, type, tick, actor, reason]
+      properties:
+        eventId: {type: string, format: uuid}
+        technicianIndex: {type: integer, minimum: 0}
+        type: {enum: [ABSENCE_STARTED, ABSENCE_ENDED, ABSENCE_RETURNED_EARLY]}
+        tick: {type: integer, minimum: 0}
+        actor:
+          type: object
+          required: [type, userId]
+          properties:
+            type: {enum: [USER, SYSTEM]}
+            userId: {type: [string, 'null'], format: uuid}
+        reason: {type: string, minLength: 1, maxLength: 1000}
+    Technicians:
+      type: object
+      required: [sessionId, revision, tick, stepSeconds, lane, technicians, comparisonContext]
+      properties:
+        sessionId: {type: string, format: uuid}
+        revision: {type: integer, minimum: 0}
+        tick: {type: integer, minimum: 0}
+        stepSeconds: {type: number, exclusiveMinimum: 0}
+        lane: {const: primary}
+        technicians: {type: array, items: {$ref: '#/components/schemas/Technician'}}
+        comparisonContext:
+          type: object
+          required: [workforceVersion, workforceHash, cacheIdentity, origin, requiresCommonSnapshot]
+          properties:
+            workforceVersion: {type: integer, minimum: 0}
+            workforceHash: {type: string, pattern: '^[a-f0-9]{64}$'}
+            cacheIdentity: {type: string, pattern: '^[a-f0-9]{64}$'}
+            requiresCommonSnapshot: {type: boolean}
+            origin:
+              oneOf:
+                - {type: 'null'}
+                - type: object
+                  required: [eventId, tick, workforceVersion]
+                  properties:
+                    eventId: {type: string, format: uuid}
+                    tick: {type: integer, minimum: 0}
+                    workforceVersion: {type: integer, minimum: 1}
