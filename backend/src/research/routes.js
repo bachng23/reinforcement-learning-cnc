@@ -8,6 +8,7 @@ const demo = require('./demo-service');
 const health = require('./demo-health');
 const workOrders = require('./demo-work-orders');
 const situations = require('./demo-situations');
+const technicians = require('./demo-technicians');
 const workOrderQuery = z.object({
   machineIndex: health.unsignedDecimal.optional(),
   limit: health.unsignedDecimal.pipe(z.number().min(1).max(100)).default(20),
@@ -34,6 +35,18 @@ router.use('/demo', (_req, res, next) => { res.set('Cache-Control', 'no-store');
 router.use((req, _res, next) => { if (process.env.RESEARCH_API_ENABLED === 'false') return next(new ApiError(404, 'RESEARCH_DISABLED', 'Research API is disabled')); next(); });
 router.use(requireAuth);
 router.get('/docs/jcst-situations.openapi.yaml', (_req, res) => res.type('application/yaml').sendFile(require('node:path').resolve(__dirname, '../../docs/jcst-situations.openapi.yaml')));
+router.get('/docs/jcst-technicians.openapi.yaml', (_req, res) => res.type('application/yaml').sendFile(require('node:path').resolve(__dirname, '../../docs/jcst-technicians.openapi.yaml')));
+router.get('/demo/sessions/:id/technicians', async (req, res) => {
+  parse(z.object({}).strict(), req.query);
+  ok(res, technicians.present(await demo.read(req.user, parse(id, req.params.id))));
+});
+for (const action of ['absence', 'return']) {
+  router.post(`/demo/sessions/:id/technicians/:technicianIndex/${action}`, write, async (req, res) => {
+    parse(z.object({}).strict(), req.query);
+    const input = parse(action === 'absence' ? technicians.absenceSchema : technicians.returnSchema, req.body);
+    ok(res, await technicians.change(req.user, parse(id, req.params.id), parse(technicians.indexSchema, req.params.technicianIndex), input, key(req), action));
+  });
+}
 router.post('/demo/sessions/:id/snapshots', write, async (req, res) =>
   ok(res, await situations.save(req.user, parse(id, req.params.id), parse(situations.saveSchema, req.body), key(req)), 201));
 router.get('/demo/snapshots', async (req, res) => ok(res, await situations.list(req.user, parse(situations.listSchema, req.query))));

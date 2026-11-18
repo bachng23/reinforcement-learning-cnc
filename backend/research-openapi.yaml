@@ -8,6 +8,12 @@ servers:
 security:
   - session: []
 paths:
+  /demo/sessions/{id}/technicians:
+    $ref: './docs/jcst-technicians.openapi.yaml#/paths/~1sessions~1{id}~1technicians'
+  /demo/sessions/{id}/technicians/{technicianIndex}/absence:
+    $ref: './docs/jcst-technicians.openapi.yaml#/paths/~1sessions~1{id}~1technicians~1{technicianIndex}~1absence'
+  /demo/sessions/{id}/technicians/{technicianIndex}/return:
+    $ref: './docs/jcst-technicians.openapi.yaml#/paths/~1sessions~1{id}~1technicians~1{technicianIndex}~1return'
   /demo/sessions/{id}/snapshots:
     $ref: './docs/jcst-situations.openapi.yaml#/paths/~1sessions~1{id}~1snapshots'
   /demo/snapshots:
