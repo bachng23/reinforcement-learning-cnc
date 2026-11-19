@@ -129,7 +129,7 @@ def branch_episode(episode: Episode, tick: int, action: list, name: str) -> Epis
                                    "records": records, "controlled_cost": h, "tail_cost": tail, "total_cost": h + tail})
 
 
-def infer(config: Config, state: State, release: dict, horizon: int = 48, tail: int = 16) -> dict:
+def infer(config: Config, state: State, release: dict, horizon: int = 48, tail: int = 16, absent_technicians=frozenset()) -> dict:
     """Only server-registered checkpoint releases; CPU, greedy, weights_only loading."""
     import torch
     if torch.__version__.split('+')[0] != release["torch_version"]:
@@ -156,6 +156,14 @@ def infer(config: Config, state: State, release: dict, horizon: int = 48, tail: 
     policy.load_state_dict(torch.load(path, map_location="cpu", weights_only=True), strict=True)
     policy.eval()
     encoded = learner.encode(cfg, raw_state(cfg, state), universe, horizon, tail)
+    if absent_technicians:
+        from dataclasses import replace
+        import numpy as np
+        if any(type(i) is not int or not 0 <= i < cfg.technicians for i in absent_technicians):
+            raise ValueError('Invalid absent technician')
+        mask = encoded.mask & np.asarray([all(e[2] not in absent_technicians for e in action) for action in universe], dtype=np.bool_)
+        if not mask[0]: raise ValueError('WAIT must remain legal')
+        encoded = replace(encoded, mask=mask)
     with torch.no_grad():
         choice = learner.choose(policy, encoded, deterministic=True)
     # Upstream choose returns (action index, log probability, value).

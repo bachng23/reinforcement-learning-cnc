@@ -12,6 +12,9 @@ from domain.jcst.runtime import audit_episode, branch_episode, controller, gener
 
 def execute(request: dict):
     operation = request["operation"]
+    if operation.startswith('demo_technician_'):
+        from domain.jcst.availability import execute as technician_execute
+        return technician_execute(request)
     if operation in ('demo_snapshot', 'demo_snapshot_restore', 'demo_incident', 'demo_situation_command', 'demo_situation_audit'):
         from domain.jcst.situations import execute as situation_execute
         return situation_execute(request)

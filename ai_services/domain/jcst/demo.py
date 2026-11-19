@@ -67,35 +67,41 @@ def note(session, stage, message):
 
 
 def choose(session, lane):
+    from .availability import catalogue, absent
     cfg = raw_config(Config.model_validate(session['config']))
     _, controls = modules()
     state = raw_state(cfg, State.model_validate(lane['state']))
+    def observation(horizon):
+        return replace(controls.observe(cfg, state, horizon, 16), actions=catalogue(session, cfg, state))
     if not session.get('continuous') and state.tick >= session['horizon']:
-        return list(controller('risk').choose(controls.observe(cfg, state, 48, 16)).action)
+        return list(controller('risk').choose(observation(48)).action)
     if not session['activated']:
         return []
     if lane['controller'] not in ('S', 'A', 'F'):
-        return list(controller(lane['controller']).choose(controls.observe(cfg, state, state.tick + 48 if session.get('continuous') else 48, 16)).action)
+        return list(controller(lane['controller']).choose(observation(state.tick + 48 if session.get('continuous') else 48)).action)
     key, release = release_for(lane['controller'], session['case_id'])
     if session['releases'][lane['controller']] != {'release_id': key, 'sha256': release['sha256']}:
         raise ValueError('Session checkpoint changed; create a new session')
     # Receding-horizon inference keeps the trained 48/16 feature scale, while
     # physical time, keyed failures, component ages and jobs continue unchanged.
     observation = {**lane['state'], 'tick': 0} if session.get('continuous') else lane['state']
-    return infer(Config.model_validate(session['config']), State.model_validate(observation), release, 48, 16)['action']
+    return infer(Config.model_validate(session['config']), State.model_validate(observation), release, 48, 16,
+                 absent_technicians=frozenset(i for i in range(len(state.jobs)) if absent(session, i, state.tick)))['action']
 
 
 def prepare(session):
     if session['status'] != 'RUNNING':
         raise ValueError('Session is not ready for a new decision')
     from .situations import apply_due
+    from .availability import expire, catalogue as engineering_catalogue
+    expire(session)
     apply_due(session)
     physics, _ = modules()
     cfg = raw_config(Config.model_validate(session['config']))
     state = raw_state(cfg, State.model_validate(session['primary']['state']))
     action = choose(session, session['primary'])
     baseline = choose(session, session['baseline'])
-    catalogue = physics.legal_actions(cfg, state)
+    catalogue = engineering_catalogue(session, cfg, state)
     if session['activated'] and (session.get('continuous') or state.tick < session['horizon']) and len(catalogue) > 1:
         note(session, 'OBSERVE', 'Read component condition and technician commitments from the simulator.')
         note(session, 'POLICY', f"{session['primary']['controller']} policy selected a complete maintenance matching.")
@@ -113,8 +119,12 @@ def commit(session, action, actor, reason):
     if session['pending'] is None or session['status'] == 'COMPLETE':
         raise ValueError('No pending decision')
     from .situations import apply_due, SituationError
+    from .availability import expire, validate_action, catalogue as engineering_catalogue
+    expire(session)
+    if session['pending'] is None:
+        raise SituationError('DEMO_REVIEW_REQUIRED')
     apply_due(session)
-    if session.get('incidents') and not session.get('continuous') and session['primary']['state']['tick'] >= 63:
+    if (session.get('incidents') or session.get('technicianAvailability', {}).get('version')) and not session.get('continuous') and session['primary']['state']['tick'] >= 63:
         raise SituationError('DEMO_INTERVENTION_REPLAY_UNSUPPORTED')
     physics, _ = modules()
     cfg = raw_config(Config.model_validate(session['config']))
@@ -131,7 +141,7 @@ def commit(session, action, actor, reason):
                         raise ValueError('Stored demo uniform differs from its physical key')
                     event['uniform'] = repr(exact)
     state = raw_state(cfg, State.model_validate(session['primary']['state']))
-    chosen = physics.canonical_action(cfg, state, action)
+    chosen = validate_action(session, cfg, state, action)
     pending = session['pending']
     if pending['tick'] != state.tick:
         raise ValueError('Stale decision')
@@ -146,9 +156,10 @@ def commit(session, action, actor, reason):
     for key, selected in (('primary', chosen), ('baseline', pending['baseline_action'])):
         lane = session[key]
         before = raw_state(cfg, State.model_validate(lane['state']))
+        validate_action(session, cfg, before, selected)
         result = physics.transition(cfg, before, selected, int(session['physical_seed']))
         record = dict(tick=before.tick, phase='H' if session.get('continuous') or before.tick < 48 else 'tail', before=asdict(before),
-                      action=selected, catalogue=physics.legal_actions(cfg, before), after=asdict(result.state),
+                      action=selected, catalogue=engineering_catalogue(session, cfg, before), after=asdict(result.state),
                       cost=result.cost, breakdown=result.breakdown,
                       events=[{**e, 'uniform': repr(e['uniform'])} if e['type'] == 'failure' else e for e in result.events])
         lane['records'].append(record)
@@ -178,6 +189,7 @@ def commit(session, action, actor, reason):
             note(session, 'COMPLETE_SERVICE', f"T{e['technician']+1} completed {e['kind']} at M{e['machine']+1}/C{e['component']+1}.")
     session['pending'] = None
     session['status'] = 'COMPLETE' if not session.get('continuous') and session['primary']['state']['tick'] >= 64 else 'RUNNING'
+    expire(session)
     apply_due(session)
     if session['status'] == 'COMPLETE':
         from .contracts import Episode
