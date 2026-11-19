@@ -142,3 +142,18 @@ def test_common_snapshot_comparison_shares_state_calendar_and_cache_identity():
         assert branch['audit']['status'] == 'PASS'
     returned = a.change(p, plan(p, early=True))
     assert compared['cacheIdentity'] != a.compare_from_snapshot(s.snapshot(returned), ['corrective', 'risk', 'threshold5'], 2)['cacheIdentity']
+
+
+def test_comparison_after_injected_history_does_not_relabel_old_primary_records():
+    from datetime import datetime, timezone
+    p = session(); p['branch'] = {'branchId': str(uuid4())}
+    p, _ = s.inject(p, dict(eventId=str(uuid4()), machineIndex=2, componentIndex=1,
+         scheduledTick=0, status='SCHEDULED', appliedTick=None, reason=None,
+         requestedReason='Real controlled boundary', createdBy=ACTOR['userId'], createdAt=datetime.now(timezone.utc).isoformat()))
+    p = step(p)
+    p = a.change(p, plan(p, duration=1))
+    compared = a.compare_from_snapshot(s.snapshot(p), ['corrective', 'wait'], 2)
+    for branch in compared['branches']:
+        assert branch['lane']['records'][0]['tick'] == p['primary']['state']['tick']
+        assert branch['lane']['records'][0]['before'] == compared['commonInitialState']
+        assert branch['audit']['status'] == 'PASS'

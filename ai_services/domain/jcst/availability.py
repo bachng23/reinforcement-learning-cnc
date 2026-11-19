@@ -197,13 +197,16 @@ def compare_from_snapshot(frozen, policies, max_ticks=3):
         for name in ('primary', 'baseline'):
             branch[name] = deepcopy(source['primary'])
             branch[name]['controller'] = policy
+            # The comparison origin is the frozen state, not a rewritten copy
+            # of primary history under a different baseline provenance.
+            branch[name]['records'] = []
         clear_review(branch)
         demo.autoplay(branch, 'complete', max_ticks)
         situations.validate_session(branch)
         audit = situations.audit_retained(branch)
         branches.append(dict(policy=policy, lane=branch['primary'], calendar=branch.get('technicianAvailability', empty()),
                              audit=audit, deltaCost=branch['primary']['total_cost']-source['primary']['total_cost']))
-    return json.loads(json.dumps(dict(version='jcst-workforce-comparison/1', cacheIdentity=identity,
+    return json.loads(json.dumps(dict(version='jcst-workforce-comparison/1', historyScope='comparison intervals only', cacheIdentity=identity,
                 commonInitialState=initial, calendarHash=digest(calendar), workforceVersion=calendar['version'], branches=branches), allow_nan=False))
 
 
