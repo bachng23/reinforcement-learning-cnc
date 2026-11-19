@@ -215,6 +215,8 @@ def execute(request):
     try:
         if request.get('protocol') != PROTOCOL: invalid()
         op = request['operation']
+        if op == 'demo_technician_compare':
+            return dict(protocol=PROTOCOL, comparison=compare_from_snapshot(request['snapshot'], request['policies'], request.get('maxTicks', 3)))
         if op == 'demo_technician_change': result = change(request['session'], request['metadata'])
         elif op == 'demo_technician_command': result = situations.command(request['session'], request['command'], request['actor'])
         elif op == 'demo_technician_restore': result = situations.restore(request['snapshot'])

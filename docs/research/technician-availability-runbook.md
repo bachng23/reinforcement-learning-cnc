@@ -42,6 +42,9 @@ covers the whole snapshot, policies and bound. Input is not mutated.
 The existing UI correctly requires a common snapshot instead of presenting the
 two old lanes as a fair new comparison. This callable is a Backend handoff; no
 new public Compare API is introduced here.
+Node consumers can call the existing Python bridge with operation
+`demo_technician_compare`, protocol `jcst-technicians/1`, snapshot, policies and
+maxTicks. Its response is `{protocol, comparison}` with the versioned result above.
 
 Saved-snapshot continuation and retained-transition audit consume the calendar.
 Audit checks both physical replay and the filtered catalogue/action. Finite paper

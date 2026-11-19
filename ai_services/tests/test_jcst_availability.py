@@ -131,6 +131,9 @@ def test_common_snapshot_comparison_shares_state_calendar_and_cache_identity():
     p = a.change(session(), plan(session(), duration=1)); frozen = s.snapshot(p)
     before = deepcopy(frozen)
     compared = a.compare_from_snapshot(frozen, ['corrective', 'risk', 'threshold5'], 2)
+    wire = a.execute(dict(protocol=a.PROTOCOL, operation='demo_technician_compare', snapshot=frozen,
+                          policies=['corrective', 'risk', 'threshold5'], maxTicks=2))
+    assert wire == dict(protocol=a.PROTOCOL, comparison=compared)
     assert compared == a.compare_from_snapshot(frozen, ['corrective', 'risk', 'threshold5'], 2)
     assert frozen == before
     for branch in compared['branches']:
