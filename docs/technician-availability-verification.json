@@ -5,7 +5,7 @@
   "branch": "frontend/simulation-technician-availability",
   "baseSha": "72af5ecda40833e3c9aaa68f6977f08937fa5814",
   "producerSha": "145edb0ce73eddee3bfa881ac26730781c1d5d1f",
-  "testedFrontendCommit": null,
+  "testedFrontendCommit": "9c6c976e8263e9b55a57e420f5e23268cc4432e3",
   "sourceFingerprintSha256": "4f8c6d09db40f59b63b0bf25882f896528df07f55e9224547f55992fd046d034",
   "checks": {
     "contracts": {

@@ -15,3 +15,5 @@ Actual installed Edge captures, 2026-11-19. M1 consumer evidence with intercepte
 | busy | [Desktop](component-busy-desktop.png) | [Mobile](component-busy-mobile.png) |
 
 Desktop WebGL: [Absent marker/panel](component-3d-absent-desktop.png), [Return confirmation](component-3d-return-review-desktop.png).
+
+Tested frontend SHA: `9c6c976e8263e9b55a57e420f5e23268cc4432e3`. Subsequent evidence-only commit leaves frontend unchanged.
