@@ -112,14 +112,16 @@ def validate_session(session, check_releases=True):
         if session['primary']['state']['tick'] != session['baseline']['state']['tick']:
             invalid()
         pending = session['pending']
+        from .availability import metadata, catalogue, validate_action
+        metadata(session)
         if session['status'] == 'REVIEW':
             if not pending or pending['tick'] != session['primary']['state']['tick']:
                 invalid()
             primary = raw_state(cfg, State.model_validate(session['primary']['state']))
             baseline = raw_state(cfg, State.model_validate(session['baseline']['state']))
-            physics.canonical_action(cfg, primary, pending['action'])
-            physics.canonical_action(cfg, baseline, pending['baseline_action'])
-            expected = {tuple(tuple(edge) for edge in a) for a in physics.legal_actions(cfg, primary)}
+            validate_action(session, cfg, primary, pending['action'])
+            validate_action(session, cfg, baseline, pending['baseline_action'])
+            expected = {tuple(tuple(edge) for edge in a) for a in catalogue(session, cfg, primary)}
             observed = [tuple(tuple(edge) for edge in a) for a in pending['catalogue']]
             if len(set(observed)) != len(observed) or set(observed) != expected:
                 invalid()
@@ -213,6 +215,9 @@ def audit_retained(session):
                 else: gaps.append({'lane': name, 'fromTick': previous['tick'], 'toTick': record['tick']})
             action = tuple(tuple(edge) for edge in record['action'])
             if action not in auditor.catalogue(cfg, record['before']): invalid()
+            from .availability import absent
+            legal = tuple(a for a in auditor.catalogue(cfg, record['before']) if all(not absent(session, e[2], record['tick']) for e in a))
+            if action not in legal or {tuple(tuple(e) for e in a) for a in record['catalogue']} != set(legal): invalid()
             after, breakdown, signatures = auditor.independent_step(cfg, record['before'], action, seed)
             if after != json_value(record['after']) or breakdown != record['breakdown'] or not math.isclose(sum(breakdown.values()), record['cost'], abs_tol=1e-8): invalid()
             actual = []
