@@ -1,0 +1,12 @@
+
+> cnc-research-console@0.1.0 test
+> vitest run --maxWorkers=3
+
+
+ RUN  v4.1.11 C:/Users/ADMIN/Desktop/đồ án tốt nghiệp/reinforcement-learning-cnc/frontend
+
+
+ Test Files  64 passed (64)
+      Tests  570 passed (570)
+   Start at  16:46:46
+   Duration  46.53s (transform 3.18s, setup 13.16s, import 9.50s, tests 55.09s, environment 50.70s)

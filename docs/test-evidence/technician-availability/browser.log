@@ -1,0 +1,41 @@
+
+> cnc-research-console@0.1.0 test:simulation:technicians
+> playwright test --config playwright.technicians.config.ts
+
+npm.cmd : [WebServer] (node:7132) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+At line:2 char:182
++ ... ion\msedge.exe'; npm.cmd run test:simulation:technicians 2>&1 | Tee-O ...
++                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([WebServer] (no... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:22836) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+[WebServer]   npx update-browserslist-db@latest
+[WebServer]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+Running 14 tests using 1 worker
+
+(node:11624) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop] › tests\technicians-browser\technicians.spec.ts:77:5 › component: pending, absence, reload, return now and focus (6.7s)
+  ok  2 [desktop] › tests\technicians-browser\technicians.spec.ts:89:5 › component: review invalidation, immutable snapshot reopen and server expiry (3.3s)
+  ok  3 [desktop] › tests\technicians-browser\technicians.spec.ts:99:5 › component: stale re-review, unavailable and exact-key recovery (2.8s)
+  ok  4 [desktop] › tests\technicians-browser\technicians.spec.ts:106:5 › component: VIEWER cannot change availability (1.4s)
+  ok  5 [desktop] › tests\technicians-browser\technicians.spec.ts:109:5 › component: busy technician must finish the actual repair (2.0s)
+  ok  6 [desktop] › tests\technicians-browser\technicians.spec.ts:113:5 › component: absence links to restored-session incident and the server eligible proposal (3.3s)
+  ok  7 [desktop] › tests\technicians-browser\technicians.spec.ts:122:5 › component: 3D absence label and panel (3.9s)
+(node:5712) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  8 [mobile] › tests\technicians-browser\technicians.spec.ts:77:5 › component: pending, absence, reload, return now and focus (3.3s)
+  ok  9 [mobile] › tests\technicians-browser\technicians.spec.ts:89:5 › component: review invalidation, immutable snapshot reopen and server expiry (2.6s)
+  ok 10 [mobile] › tests\technicians-browser\technicians.spec.ts:99:5 › component: stale re-review, unavailable and exact-key recovery (2.1s)
+  ok 11 [mobile] › tests\technicians-browser\technicians.spec.ts:106:5 › component: VIEWER cannot change availability (1.3s)
+  ok 12 [mobile] › tests\technicians-browser\technicians.spec.ts:109:5 › component: busy technician must finish the actual repair (1.4s)
+  ok 13 [mobile] › tests\technicians-browser\technicians.spec.ts:113:5 › component: absence links to restored-session incident and the server eligible proposal (2.7s)
+  -  14 [mobile] › tests\technicians-browser\technicians.spec.ts:122:5 › component: 3D absence label and panel
+
+  1 skipped
+  13 passed (44.2s)

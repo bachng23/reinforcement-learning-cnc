@@ -6,7 +6,7 @@ import { MachineDetail, demoMachines } from './machine-detail';
 import type { Config } from '@/types/generated/jcst';
 import type { Lane, Matching, Simulation } from '@/lib/simulation/types';
 
-export function FleetView({ layout, lane, config, proposal = [], compact = false, onInspect, clockSession }: { layout?: FactoryLayout; lane: Lane; config: Config; proposal?: Matching; compact?: boolean; onInspect?:(machine:number)=>void; clockSession?: Pick<Simulation,'simulation_start'|'step_seconds'> }) {
+export function FleetView({ layout, lane, config, proposal = [], compact = false, onInspect, clockSession,workforce,onInspectTechnician,technicianPanel }: { layout?: FactoryLayout; lane: Lane; config: Config; proposal?: Matching; compact?: boolean; onInspect?:(machine:number)=>void; clockSession?: Pick<Simulation,'simulation_start'|'step_seconds'>;workforce?:import('@/lib/simulation/use-technician-availability').TechnicianRead;onInspectTechnician?:(index:number)=>void;technicianPanel?:import('react').ReactNode }) {
   const [selected,setSelected]=useState<number | null>(null);
   const { state } = lane;
   const markerId = useId().replaceAll(':','');
@@ -29,8 +29,10 @@ export function FleetView({ layout, lane, config, proposal = [], compact = false
     <div className="sim-dispatch-links" aria-label="Technician dispatch map">
       {state.jobs.map((job,j) => {
         const next = proposal.find(a => a[2] === j);
-        return <div className={`sim-technician ${job ? 'is-busy' : next ? 'is-proposed' : ''}`} key={j}><span className="sim-tech-avatar"><Wrench size={17} aria-hidden="true" /></span><div><strong>T{j+1}</strong><p>{job ? `${job.kind} → M${job.machine+1}/C${job.component+1}` : next ? `Proposed → M${next[0]+1}/C${next[1]+1}` : 'Available'}</p></div><span>{job ? serviceDuration(job.remaining,clockSession?.step_seconds) : next ? `${serviceDuration(config.duration[next[0]][next[1]][j],clockSession?.step_seconds)} service` : 'Idle'}</span></div>;
+        const row=workforce?.rows?.[j];const absent=row?.availability==='ABSENT';
+        return <div className={`sim-technician ${job ? 'is-busy' : next ? 'is-proposed' : ''}`} data-availability={row?.availability} key={j}><span className="sim-tech-avatar"><Wrench size={17} aria-hidden="true" /></span><div>{onInspectTechnician?<button className="sim-tech-open" aria-label={`Inspect technician T${j+1}`} onClick={()=>onInspectTechnician(j)}>T{j+1}</button>:<strong>T{j+1}</strong>}<p>{absent?'ABSENT':job ? `${job.kind} → M${job.machine+1}/C${job.component+1}` : next ? `Proposed → M${next[0]+1}/C${next[1]+1}` : workforce&&!row?'Updating availability…':'Ready for assignment'}</p></div><span>{absent?`Returns t${row.returnTick}`:job ? serviceDuration(job.remaining,clockSession?.step_seconds) : next ? `${serviceDuration(config.duration[next[0]][next[1]][j],clockSession?.step_seconds)} service` : 'Idle'}</span></div>;
       })}
     </div>
+    {technicianPanel}
   </div>;
 }
