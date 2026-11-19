@@ -102,6 +102,11 @@ def prepare(session):
     action = choose(session, session['primary'])
     baseline = choose(session, session['baseline'])
     catalogue = engineering_catalogue(session, cfg, state)
+    if session.get('technicianAvailability', {}).get('version'):
+        from .availability import repair_warnings
+        for warning in repair_warnings(session):
+            reasons = ', '.join(f"T{x['technicianIndex']+1}: {x['reason']}" for x in warning['technicians'])
+            note(session, 'REPAIR_BLOCKED', f"M{warning['machineIndex']+1}/C{warning['componentIndex']+1} waiting: {reasons}.")
     if session['activated'] and (session.get('continuous') or state.tick < session['horizon']) and len(catalogue) > 1:
         note(session, 'OBSERVE', 'Read component condition and technician commitments from the simulator.')
         note(session, 'POLICY', f"{session['primary']['controller']} policy selected a complete maintenance matching.")
@@ -111,7 +116,9 @@ def prepare(session):
         session['status'] = 'REVIEW'
     else:
         session['pending'] = dict(action=action, baseline_action=baseline, catalogue=catalogue, tick=state.tick)
-        commit(session, action, 'automatic', 'Shared WAIT prelude' if not session['activated'] else 'Fixed risk tail' if not session.get('continuous') and state.tick >= 48 else 'Only WAIT is legal while technicians are occupied')
+        from .availability import absent
+        workforce_wait = any(absent(session, i, state.tick) for i in range(len(state.jobs)))
+        commit(session, action, 'automatic', 'Shared WAIT prelude' if not session['activated'] else 'Fixed risk tail' if not session.get('continuous') and state.tick >= 48 else 'Only WAIT is legal under current workforce availability' if workforce_wait else 'Only WAIT is legal while technicians are occupied')
     return session
 
 

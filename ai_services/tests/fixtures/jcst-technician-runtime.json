@@ -1,0 +1,1856 @@
+{
+  "protocol": "jcst-technicians/1",
+  "scope": "real heuristic runtime, seed 990000001",
+  "changeRequest": {
+    "protocol": "jcst-technicians/1",
+    "operation": "demo_technician_change",
+    "session": {
+      "case_id": "base",
+      "physical_seed": "990000001",
+      "mode": "policy",
+      "horizon": 48,
+      "tail": 16,
+      "continuous": true,
+      "simulation_start": "2026-11-19T00:00:00Z",
+      "step_seconds": 900,
+      "config": {
+        "components": [
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ]
+        ],
+        "duration": [
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        ],
+        "preventive_cost": 1.0,
+        "corrective_cost": 2.0,
+        "unavailable_cost": 6.0,
+        "failure_cost": 15.0,
+        "version": "JCST/1.1"
+      },
+      "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+      "releases": {},
+      "primary": {
+        "controller": "corrective",
+        "state": {
+          "tick": 0,
+          "components": [
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [],
+        "total_cost": 0,
+        "controlled_cost": 0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0,
+        "technician_busy_ticks": 0,
+        "overrides": 0
+      },
+      "baseline": {
+        "controller": "wait",
+        "state": {
+          "tick": 0,
+          "components": [
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [],
+        "total_cost": 0,
+        "controlled_cost": 0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0,
+        "technician_busy_ticks": 0,
+        "overrides": 0
+      },
+      "status": "RUNNING",
+      "activated": true,
+      "pending": null,
+      "decisions": [],
+      "workflow": [],
+      "first_incident_tick": null
+    },
+    "metadata": {
+      "schemaVersion": "jcst-technician-availability/1",
+      "version": 1,
+      "absences": [
+        {
+          "eventId": "00000000-0000-4000-8000-000000000002",
+          "automaticEndEventId": "00000000-0000-4000-8000-000000000003",
+          "technicianIndex": 0,
+          "startTick": 0,
+          "returnTick": 3,
+          "endedTick": null,
+          "endedByEventId": null
+        }
+      ],
+      "events": [
+        {
+          "eventId": "00000000-0000-4000-8000-000000000002",
+          "technicianIndex": 0,
+          "type": "ABSENCE_STARTED",
+          "tick": 0,
+          "actor": {
+            "type": "USER",
+            "userId": "00000000-0000-4000-8000-000000000001"
+          },
+          "reason": "Three-step engineering absence"
+        }
+      ],
+      "origin": {
+        "eventId": "00000000-0000-4000-8000-000000000002",
+        "tick": 0,
+        "workforceVersion": 1
+      }
+    }
+  },
+  "absentResponse": {
+    "protocol": "jcst-technicians/1",
+    "session": {
+      "case_id": "base",
+      "physical_seed": "990000001",
+      "mode": "policy",
+      "horizon": 48,
+      "tail": 16,
+      "continuous": true,
+      "simulation_start": "2026-11-19T00:00:00Z",
+      "step_seconds": 900,
+      "config": {
+        "components": [
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ]
+        ],
+        "duration": [
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        ],
+        "preventive_cost": 1.0,
+        "corrective_cost": 2.0,
+        "unavailable_cost": 6.0,
+        "failure_cost": 15.0,
+        "version": "JCST/1.1"
+      },
+      "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+      "releases": {},
+      "primary": {
+        "controller": "corrective",
+        "state": {
+          "tick": 0,
+          "components": [
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [],
+        "total_cost": 0,
+        "controlled_cost": 0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0,
+        "technician_busy_ticks": 0,
+        "overrides": 0
+      },
+      "baseline": {
+        "controller": "wait",
+        "state": {
+          "tick": 0,
+          "components": [
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [],
+        "total_cost": 0,
+        "controlled_cost": 0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0,
+        "technician_busy_ticks": 0,
+        "overrides": 0
+      },
+      "status": "RUNNING",
+      "activated": true,
+      "pending": null,
+      "decisions": [],
+      "workflow": [],
+      "first_incident_tick": null,
+      "technicianAvailability": {
+        "schemaVersion": "jcst-technician-availability/1",
+        "version": 1,
+        "absences": [
+          {
+            "eventId": "00000000-0000-4000-8000-000000000002",
+            "automaticEndEventId": "00000000-0000-4000-8000-000000000003",
+            "technicianIndex": 0,
+            "startTick": 0,
+            "returnTick": 3,
+            "endedTick": null,
+            "endedByEventId": null
+          }
+        ],
+        "events": [
+          {
+            "eventId": "00000000-0000-4000-8000-000000000002",
+            "technicianIndex": 0,
+            "type": "ABSENCE_STARTED",
+            "tick": 0,
+            "actor": {
+              "type": "USER",
+              "userId": "00000000-0000-4000-8000-000000000001"
+            },
+            "reason": "Three-step engineering absence"
+          }
+        ],
+        "origin": {
+          "eventId": "00000000-0000-4000-8000-000000000002",
+          "tick": 0,
+          "workforceVersion": 1
+        }
+      },
+      "playbackPaused": true
+    }
+  },
+  "snapshot": {
+    "schemaVersion": "jcst-demo-snapshot/1",
+    "runtime": {
+      "case_id": "base",
+      "physical_seed": "990000001",
+      "mode": "policy",
+      "horizon": 48,
+      "tail": 16,
+      "continuous": true,
+      "simulation_start": "2026-11-19T00:00:00Z",
+      "step_seconds": 900,
+      "config": {
+        "components": [
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ]
+        ],
+        "duration": [
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        ],
+        "preventive_cost": 1.0,
+        "corrective_cost": 2.0,
+        "unavailable_cost": 6.0,
+        "failure_cost": 15.0,
+        "version": "JCST/1.1"
+      },
+      "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+      "releases": {},
+      "primary": {
+        "controller": "corrective",
+        "state": {
+          "tick": 0,
+          "components": [
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [],
+        "total_cost": 0,
+        "controlled_cost": 0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0,
+        "technician_busy_ticks": 0,
+        "overrides": 0
+      },
+      "baseline": {
+        "controller": "wait",
+        "state": {
+          "tick": 0,
+          "components": [
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 0,
+                "failed": false
+              },
+              {
+                "age": 0,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [],
+        "total_cost": 0,
+        "controlled_cost": 0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0,
+        "technician_busy_ticks": 0,
+        "overrides": 0
+      },
+      "status": "RUNNING",
+      "activated": true,
+      "pending": null,
+      "decisions": [],
+      "workflow": [],
+      "first_incident_tick": null,
+      "technicianAvailability": {
+        "schemaVersion": "jcst-technician-availability/1",
+        "version": 1,
+        "absences": [
+          {
+            "eventId": "00000000-0000-4000-8000-000000000002",
+            "automaticEndEventId": "00000000-0000-4000-8000-000000000003",
+            "technicianIndex": 0,
+            "startTick": 0,
+            "returnTick": 3,
+            "endedTick": null,
+            "endedByEventId": null
+          }
+        ],
+        "events": [
+          {
+            "eventId": "00000000-0000-4000-8000-000000000002",
+            "technicianIndex": 0,
+            "type": "ABSENCE_STARTED",
+            "tick": 0,
+            "actor": {
+              "type": "USER",
+              "userId": "00000000-0000-4000-8000-000000000001"
+            },
+            "reason": "Three-step engineering absence"
+          }
+        ],
+        "origin": {
+          "eventId": "00000000-0000-4000-8000-000000000002",
+          "tick": 0,
+          "workforceVersion": 1
+        }
+      },
+      "playbackPaused": true
+    },
+    "context": {},
+    "workOrders": null,
+    "provenance": {}
+  },
+  "expiredResponse": {
+    "protocol": "jcst-technicians/1",
+    "session": {
+      "case_id": "base",
+      "physical_seed": "990000001",
+      "mode": "policy",
+      "horizon": 48,
+      "tail": 16,
+      "continuous": true,
+      "simulation_start": "2026-11-19T00:00:00Z",
+      "step_seconds": 900,
+      "config": {
+        "components": [
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ],
+          [
+            {
+              "scale": 6,
+              "shape": 5
+            },
+            {
+              "scale": 8,
+              "shape": 5
+            }
+          ]
+        ],
+        "duration": [
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        ],
+        "preventive_cost": 1.0,
+        "corrective_cost": 2.0,
+        "unavailable_cost": 6.0,
+        "failure_cost": 15.0,
+        "version": "JCST/1.1"
+      },
+      "source_commit": "c577b6be26f40de5f539cee0bc1b99a3405e0f7e",
+      "releases": {},
+      "primary": {
+        "controller": "corrective",
+        "state": {
+          "tick": 3,
+          "components": [
+            [
+              {
+                "age": 3,
+                "failed": false
+              },
+              {
+                "age": 3,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 3,
+                "failed": false
+              },
+              {
+                "age": 3,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 3,
+                "failed": false
+              },
+              {
+                "age": 3,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [
+          {
+            "tick": 0,
+            "phase": "H",
+            "before": {
+              "tick": 0,
+              "components": [
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "action": [],
+            "catalogue": [
+              [],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ]
+            ],
+            "after": {
+              "tick": 1,
+              "components": [
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "cost": 0.0,
+            "breakdown": {
+              "preventive": 0.0,
+              "corrective": 0.0,
+              "unavailable": 0.0,
+              "failure": 0.0
+            },
+            "events": []
+          },
+          {
+            "tick": 1,
+            "phase": "H",
+            "before": {
+              "tick": 1,
+              "components": [
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "action": [],
+            "catalogue": [
+              [],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ]
+            ],
+            "after": {
+              "tick": 2,
+              "components": [
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "cost": 0.0,
+            "breakdown": {
+              "preventive": 0.0,
+              "corrective": 0.0,
+              "unavailable": 0.0,
+              "failure": 0.0
+            },
+            "events": []
+          },
+          {
+            "tick": 2,
+            "phase": "H",
+            "before": {
+              "tick": 2,
+              "components": [
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "action": [],
+            "catalogue": [
+              [],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ]
+            ],
+            "after": {
+              "tick": 3,
+              "components": [
+                [
+                  {
+                    "age": 3,
+                    "failed": false
+                  },
+                  {
+                    "age": 3,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 3,
+                    "failed": false
+                  },
+                  {
+                    "age": 3,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 3,
+                    "failed": false
+                  },
+                  {
+                    "age": 3,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "cost": 0.0,
+            "breakdown": {
+              "preventive": 0.0,
+              "corrective": 0.0,
+              "unavailable": 0.0,
+              "failure": 0.0
+            },
+            "events": []
+          }
+        ],
+        "total_cost": 0.0,
+        "controlled_cost": 0.0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0.0,
+        "technician_busy_ticks": 0,
+        "overrides": 0,
+        "completed_jobs": [
+          0,
+          0
+        ]
+      },
+      "baseline": {
+        "controller": "wait",
+        "state": {
+          "tick": 3,
+          "components": [
+            [
+              {
+                "age": 3,
+                "failed": false
+              },
+              {
+                "age": 3,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 3,
+                "failed": false
+              },
+              {
+                "age": 3,
+                "failed": false
+              }
+            ],
+            [
+              {
+                "age": 3,
+                "failed": false
+              },
+              {
+                "age": 3,
+                "failed": false
+              }
+            ]
+          ],
+          "jobs": [
+            null,
+            null
+          ]
+        },
+        "records": [
+          {
+            "tick": 0,
+            "phase": "H",
+            "before": {
+              "tick": 0,
+              "components": [
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 0,
+                    "failed": false
+                  },
+                  {
+                    "age": 0,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "action": [],
+            "catalogue": [
+              [],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ]
+            ],
+            "after": {
+              "tick": 1,
+              "components": [
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "cost": 0.0,
+            "breakdown": {
+              "preventive": 0.0,
+              "corrective": 0.0,
+              "unavailable": 0.0,
+              "failure": 0.0
+            },
+            "events": []
+          },
+          {
+            "tick": 1,
+            "phase": "H",
+            "before": {
+              "tick": 1,
+              "components": [
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 1,
+                    "failed": false
+                  },
+                  {
+                    "age": 1,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "action": [],
+            "catalogue": [
+              [],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ]
+            ],
+            "after": {
+              "tick": 2,
+              "components": [
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "cost": 0.0,
+            "breakdown": {
+              "preventive": 0.0,
+              "corrective": 0.0,
+              "unavailable": 0.0,
+              "failure": 0.0
+            },
+            "events": []
+          },
+          {
+            "tick": 2,
+            "phase": "H",
+            "before": {
+              "tick": 2,
+              "components": [
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 2,
+                    "failed": false
+                  },
+                  {
+                    "age": 2,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "action": [],
+            "catalogue": [
+              [],
+              [
+                [
+                  0,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  0,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  1,
+                  1,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  0,
+                  1
+                ]
+              ],
+              [
+                [
+                  2,
+                  1,
+                  1
+                ]
+              ]
+            ],
+            "after": {
+              "tick": 3,
+              "components": [
+                [
+                  {
+                    "age": 3,
+                    "failed": false
+                  },
+                  {
+                    "age": 3,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 3,
+                    "failed": false
+                  },
+                  {
+                    "age": 3,
+                    "failed": false
+                  }
+                ],
+                [
+                  {
+                    "age": 3,
+                    "failed": false
+                  },
+                  {
+                    "age": 3,
+                    "failed": false
+                  }
+                ]
+              ],
+              "jobs": [
+                null,
+                null
+              ]
+            },
+            "cost": 0.0,
+            "breakdown": {
+              "preventive": 0.0,
+              "corrective": 0.0,
+              "unavailable": 0.0,
+              "failure": 0.0
+            },
+            "events": []
+          }
+        ],
+        "total_cost": 0.0,
+        "controlled_cost": 0.0,
+        "tail_cost": 0,
+        "failures": 0,
+        "unavailable_machine_ticks": 0.0,
+        "technician_busy_ticks": 0,
+        "overrides": 0,
+        "completed_jobs": [
+          0,
+          0
+        ]
+      },
+      "status": "RUNNING",
+      "activated": true,
+      "pending": null,
+      "decisions": [
+        {
+          "tick": 0,
+          "actor": "automatic",
+          "reason": "Guided auto demo; policy matching confirmed automatically",
+          "action": [],
+          "proposed_action": [],
+          "override": false
+        },
+        {
+          "tick": 1,
+          "actor": "automatic",
+          "reason": "Guided auto demo; policy matching confirmed automatically",
+          "action": [],
+          "proposed_action": [],
+          "override": false
+        },
+        {
+          "tick": 2,
+          "actor": "automatic",
+          "reason": "Guided auto demo; policy matching confirmed automatically",
+          "action": [],
+          "proposed_action": [],
+          "override": false
+        }
+      ],
+      "workflow": [
+        {
+          "tick": 0,
+          "stage": "OBSERVE",
+          "message": "Read component condition and technician commitments from the simulator."
+        },
+        {
+          "tick": 0,
+          "stage": "POLICY",
+          "message": "corrective policy selected a complete maintenance matching."
+        },
+        {
+          "tick": 0,
+          "stage": "VALIDATE",
+          "message": "Action validated against 7 legal complete matchings; busy workers and machine conflicts excluded."
+        },
+        {
+          "tick": 0,
+          "stage": "REVIEW",
+          "message": "Matching ready for confirmation. Simulator state has not advanced at this boundary."
+        },
+        {
+          "tick": 0,
+          "stage": "DISPATCH",
+          "message": "Automatic policy mode confirmed 0 assignments."
+        },
+        {
+          "tick": 1,
+          "stage": "OBSERVE",
+          "message": "Read component condition and technician commitments from the simulator."
+        },
+        {
+          "tick": 1,
+          "stage": "POLICY",
+          "message": "corrective policy selected a complete maintenance matching."
+        },
+        {
+          "tick": 1,
+          "stage": "VALIDATE",
+          "message": "Action validated against 7 legal complete matchings; busy workers and machine conflicts excluded."
+        },
+        {
+          "tick": 1,
+          "stage": "REVIEW",
+          "message": "Matching ready for confirmation. Simulator state has not advanced at this boundary."
+        },
+        {
+          "tick": 1,
+          "stage": "DISPATCH",
+          "message": "Automatic policy mode confirmed 0 assignments."
+        },
+        {
+          "tick": 2,
+          "stage": "OBSERVE",
+          "message": "Read component condition and technician commitments from the simulator."
+        },
+        {
+          "tick": 2,
+          "stage": "POLICY",
+          "message": "corrective policy selected a complete maintenance matching."
+        },
+        {
+          "tick": 2,
+          "stage": "VALIDATE",
+          "message": "Action validated against 7 legal complete matchings; busy workers and machine conflicts excluded."
+        },
+        {
+          "tick": 2,
+          "stage": "REVIEW",
+          "message": "Matching ready for confirmation. Simulator state has not advanced at this boundary."
+        },
+        {
+          "tick": 2,
+          "stage": "DISPATCH",
+          "message": "Automatic policy mode confirmed 0 assignments."
+        }
+      ],
+      "first_incident_tick": null,
+      "technicianAvailability": {
+        "schemaVersion": "jcst-technician-availability/1",
+        "version": 1,
+        "absences": [
+          {
+            "eventId": "00000000-0000-4000-8000-000000000002",
+            "automaticEndEventId": "00000000-0000-4000-8000-000000000003",
+            "technicianIndex": 0,
+            "startTick": 0,
+            "returnTick": 3,
+            "endedTick": 3,
+            "endedByEventId": "00000000-0000-4000-8000-000000000003"
+          }
+        ],
+        "events": [
+          {
+            "eventId": "00000000-0000-4000-8000-000000000002",
+            "technicianIndex": 0,
+            "type": "ABSENCE_STARTED",
+            "tick": 0,
+            "actor": {
+              "type": "USER",
+              "userId": "00000000-0000-4000-8000-000000000001"
+            },
+            "reason": "Three-step engineering absence"
+          },
+          {
+            "eventId": "00000000-0000-4000-8000-000000000003",
+            "technicianIndex": 0,
+            "type": "ABSENCE_ENDED",
+            "tick": 3,
+            "actor": {
+              "type": "SYSTEM",
+              "userId": null
+            },
+            "reason": "Absence interval elapsed"
+          }
+        ],
+        "origin": {
+          "eventId": "00000000-0000-4000-8000-000000000002",
+          "tick": 0,
+          "workforceVersion": 1
+        }
+      },
+      "playbackPaused": true
+    }
+  },
+  "audit": {
+    "status": "PASS",
+    "scope": "retained intervals and contiguous engineering boundaries only",
+    "intervals": 6,
+    "gaps": [],
+    "scientificComparison": "UNSUPPORTED_WITH_INTERVENTIONS"
+  }
+}
