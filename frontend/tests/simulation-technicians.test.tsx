@@ -18,7 +18,12 @@ import {commandResponse,returnedSession,technicianSession} from './technician-fi
 vi.mock('@/components/app-shell',()=>({AppShell:({children}:{children:ReactNode})=><>{children}</>}));
 vi.mock('@/lib/research-api/client',()=>({researchRequest:vi.fn()}));
 vi.mock('@/components/simulation/factory-preview',()=>({FactoryPreview:()=>null}));
-beforeEach(()=>{vi.clearAllMocks();sessionStorage.clear();localStorage.clear();window.history.replaceState(null,'','/simulation');});
+beforeEach(() => {
+  vi.clearAllMocks();
+  window.sessionStorage.clear();
+  window.localStorage?.clear();
+  window.history.replaceState(null, '', '/simulation');
+});
 const engineer={id:'10000000-0000-4000-8000-000000000002',username:'Engineer',role:'ENGINEER' as const};
 const wrapper=({children}:{children:ReactNode})=><WorkspaceUserContext.Provider value={engineer}>{children}</WorkspaceUserContext.Provider>;
 const read=(session:Simulation)=>({data:embeddedTechnicians(session),rows:session.technicians,loading:false,legacy:false,retry:vi.fn()});
