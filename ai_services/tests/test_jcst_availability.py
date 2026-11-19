@@ -125,3 +125,20 @@ def test_overlap_rejected_and_protocol_bounded():
     with pytest.raises(s.SituationError): a.change(p, plan(p))
     result = a.execute(dict(protocol=a.PROTOCOL, operation='demo_technician_change', session=p, metadata={'bad': True}))
     assert result == dict(protocol=a.PROTOCOL, error=dict(code='DEMO_SNAPSHOT_INCOMPATIBLE'))
+
+
+def test_common_snapshot_comparison_shares_state_calendar_and_cache_identity():
+    p = a.change(session(), plan(session(), duration=1)); frozen = s.snapshot(p)
+    before = deepcopy(frozen)
+    compared = a.compare_from_snapshot(frozen, ['corrective', 'risk', 'threshold5'], 2)
+    assert compared == a.compare_from_snapshot(frozen, ['corrective', 'risk', 'threshold5'], 2)
+    assert frozen == before
+    for branch in compared['branches']:
+        records = branch['lane']['records']
+        assert records[0]['before'] == compared['commonInitialState']
+        assert all(edge[2] != 0 for edge in records[0]['action'])
+        assert branch['calendar']['events'][-1]['type'] == 'ABSENCE_ENDED'
+        assert branch['calendar']['events'][-1]['tick'] == 1
+        assert branch['audit']['status'] == 'PASS'
+    returned = a.change(p, plan(p, early=True))
+    assert compared['cacheIdentity'] != a.compare_from_snapshot(s.snapshot(returned), ['corrective', 'risk', 'threshold5'], 2)['cacheIdentity']

@@ -141,8 +141,14 @@ def change(session, planned):
 def summary(session):
     metadata(session)
     tick = session['primary']['state']['tick']
-    return [dict(technicianIndex=i, availability='BUSY' if job else 'ABSENT' if absent(session, i, tick) else 'AVAILABLE')
-            for i, job in enumerate(session['primary']['state']['jobs'])]
+    rows = []
+    for i, job in enumerate(session['primary']['state']['jobs']):
+        interval = next((x for x in session.get('technicianAvailability', {}).get('absences', [])
+                         if x['technicianIndex'] == i and x['startTick'] <= tick < (x['returnTick'] if x['endedTick'] is None else x['endedTick'])), None)
+        rows.append(dict(technicianIndex=i, availability='BUSY' if job else 'ABSENT' if interval else 'AVAILABLE', currentJob=deepcopy(job),
+                         activeAbsence={k: interval[k] for k in ('eventId', 'startTick', 'returnTick')} if interval else None,
+                         returnTick=interval['returnTick'] if interval else None))
+    return rows
 
 
 def repair_warnings(session, lane_name='primary'):
@@ -161,6 +167,44 @@ def repair_warnings(session, lane_name='primary'):
                 result.append(dict(machineIndex=machine, componentIndex=component, reason='NO_AVAILABLE_QUALIFIED_TECHNICIAN',
                                    technicians=[dict(technicianIndex=i, reason=reason) for i, reason in enumerate(reasons)]))
     return result
+
+
+def compare_from_snapshot(frozen, policies, max_ticks=3):
+    """Bounded engineering callable; every policy forks the same primary state.
+
+    Existing divergent lanes are never labelled a common-state comparison.
+    Registered learned releases must already be pinned in the saved snapshot.
+    """
+    import hashlib
+    import json
+    from . import demo, situations
+    if type(max_ticks) is not int or not 1 <= max_ticks <= 8 or not isinstance(policies, list) or not 1 <= len(policies) <= 7 or len(set(policies)) != len(policies): invalid()
+    source = situations.restore(frozen)
+    if not source['continuous'] or source['status'] == 'COMPLETE':
+        raise SituationError('DEMO_INTERVENTION_REPLAY_UNSUPPORTED')
+    for policy in policies:
+        if policy not in demo.POLICIES: invalid()
+        if policy in ('S', 'A', 'F') and policy not in source['releases']:
+            raise SituationError('DEMO_RELEASE_UNAVAILABLE')
+    def digest(value):
+        return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+    identity = digest(dict(snapshot=frozen, policies=policies, maxTicks=max_ticks))
+    initial = deepcopy(source['primary']['state'])
+    calendar = deepcopy(metadata(source))
+    branches = []
+    for policy in policies:
+        branch = deepcopy(source)
+        for name in ('primary', 'baseline'):
+            branch[name] = deepcopy(source['primary'])
+            branch[name]['controller'] = policy
+        clear_review(branch)
+        demo.autoplay(branch, 'complete', max_ticks)
+        situations.validate_session(branch)
+        audit = situations.audit_retained(branch)
+        branches.append(dict(policy=policy, lane=branch['primary'], calendar=branch.get('technicianAvailability', empty()),
+                             audit=audit, deltaCost=branch['primary']['total_cost']-source['primary']['total_cost']))
+    return json.loads(json.dumps(dict(version='jcst-workforce-comparison/1', cacheIdentity=identity,
+                commonInitialState=initial, calendarHash=digest(calendar), workforceVersion=calendar['version'], branches=branches), allow_nan=False))
 
 
 def execute(request):

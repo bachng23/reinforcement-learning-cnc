@@ -193,6 +193,29 @@ async function main() {
       assert.equal(r.technicianAvailability.events.at(-1).actor.type, 'SYSTEM');
       assert.equal(r.technicianAvailability.events.at(-1).tick, 3);
       passed('real workforce API: zero-time absence, receipt/read-only, restore, masked proposal, REVIEW return, busy conflict, CM completion and exact expiry');
+      let both = await open(frozen);
+      for (const index of [0, 1]) both = (await request(`/sessions/${both.id}/technicians/${index}/absence`, { revision: both.revision, durationTicks: 3, reason: 'Both absent real acceptance' })).session;
+      both = (await inject(both, 0)).session;
+      both = await command(both, 'autoplay', { maxTicks: 3, stopAt: 'complete' });
+      for (const record of both.primary.records) {
+        assert.equal(record.action.length, 0); assert.equal(record.catalogue.length, 1);
+      }
+      assert.ok(both.workflow.some(e => e.stage === 'REPAIR_BLOCKED' && e.message.includes('ABSENT')));
+      assert.equal(both.technicianAvailability.events.filter(e => e.type === 'ABSENCE_ENDED').length, 2);
+      both = await command(both, 'advance');
+      assert.equal(both.status, 'REVIEW'); assert.ok(both.pending.action.length > 0);
+      let baselineBusy = await request('/sessions', { case: 'base', seed: '990000001', mode: 'policy', primary: 'wait', baseline: 'threshold5', continuous: true });
+      for (let count = 0; count < 8 && !baselineBusy.baseline.state.jobs.some(Boolean); count++) baselineBusy = await command(baselineBusy, 'advance', { autoApprove: true });
+      const index = baselineBusy.baseline.state.jobs.findIndex(Boolean);
+      assert.ok(index >= 0, 'Real baseline policy must start a service');
+      const initialJob = baselineBusy.baseline.state.jobs[index];
+      assert.equal(baselineBusy.primary.state.jobs[index], null);
+      const startTick = baselineBusy.tick;
+      baselineBusy = (await request(`/sessions/${baselineBusy.id}/technicians/${index}/absence`, { revision: baselineBusy.revision, durationTicks: 3, reason: 'Baseline finishes its real job' })).session;
+      for (let count = 0; count < initialJob.remaining; count++) baselineBusy = await command(baselineBusy, 'advance', { autoApprove: true });
+      assert.ok(baselineBusy.baseline.records.flatMap(r => r.events).some(e => e.type === 'completion' && e.technician === index && e.tick >= startTick));
+      assert.ok(baselineBusy.baseline.records.filter(r => r.tick >= startTick && r.tick < startTick + 3).every(r => r.action.every(edge => edge[2] !== index)));
+      passed('real workforce API: all-absent WAIT/blocked warning and real baseline job completes under shared calendar');
     }
 
     next = child(['node_modules/next/dist/bin/next', 'dev', '--hostname', '127.0.0.1', '--port', String(uiPort)], frontend,
