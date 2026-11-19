@@ -116,6 +116,8 @@ def expire(session):
 def change(session, planned):
     from .situations import validate_session
     validate_session(session)
+    if not session['continuous']:
+        raise SituationError('DEMO_INTERVENTION_REPLAY_UNSUPPORTED')
     old = metadata(session)
     result = deepcopy(session); result['technicianAvailability'] = deepcopy(planned)
     metadata(result)

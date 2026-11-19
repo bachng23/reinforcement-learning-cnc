@@ -120,6 +120,19 @@ def test_invalid_index_duration(index, duration):
     with pytest.raises(s.SituationError): a.change(p, plan(p, index, duration))
 
 
+def test_finite_session_rejects_absence_before_changing_runtime():
+    finite = json.loads(json.dumps(demo.initialize(
+        'base', '990000001', 'policy', 'corrective', 'wait', False,
+    )))
+    original = deepcopy(finite)
+
+    result = a.execute(dict(protocol=a.PROTOCOL, operation='demo_technician_change',
+                            session=finite, metadata=plan(finite)))
+
+    assert result == dict(protocol=a.PROTOCOL, error=dict(code='DEMO_INTERVENTION_REPLAY_UNSUPPORTED'))
+    assert finite == original
+
+
 def test_overlap_rejected_and_protocol_bounded():
     p = a.change(session(), plan(session()))
     with pytest.raises(s.SituationError): a.change(p, plan(p))
