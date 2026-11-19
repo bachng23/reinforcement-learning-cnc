@@ -1,0 +1,43 @@
+{
+  "sha": "485641b43d7f6423f4a973843f15abac54fdf2e7",
+  "schema": "product_api_it_situations_089168f41b943b36",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "healthy snapshot exact replay through real API and PostgreSQL",
+      "status": "PASS"
+    },
+    {
+      "name": "immediate injection, health event, REVIEW conflict, repair snapshot and completion",
+      "status": "PASS"
+    },
+    {
+      "name": "scheduled incident single-step/autoplay parity and reload",
+      "status": "PASS"
+    },
+    {
+      "name": "immutable snapshot and read-only GET",
+      "status": "PASS"
+    },
+    {
+      "name": "persisted runtime consumer: injected UUID, source, counters and independent audit",
+      "status": "PASS"
+    },
+    {
+      "name": "real Chromium: authenticated save/open paused, immediate incident and reload",
+      "status": "PASS"
+    },
+    {
+      "name": "real Chromium: Activity and incident notifications retain injected evidence",
+      "status": "PASS"
+    }
+  ],
+  "interceptedApi": false,
+  "cleanup": {
+    "schema": "DROPPED",
+    "services": "STOPPED",
+    "ports": "CLOSED"
+  },
+  "apiPort": 62846,
+  "frontendPort": 51271
+}
