@@ -280,9 +280,14 @@ test("historical S1 stays pinned without reading S2 entities; untyped results ne
   await page.goto(
     `/operations/scenarios/${workspaceId}?factory_id=${factory}&scenario_id=${draftId}&run_id=${runId}`,
   );
+  // This harness supplies the immutable S1 baseline entities. Wait for the
+  // resolved editor, rather than the read-only fallback briefly rendered while
+  // those entities load. A stale current head does not remove saved S1 entities.
   await expect(
-    page.getByRole("heading", { name: "Saved historical draft" }),
+    page.getByRole("region", { name: "Scenario editor", exact: true }),
   ).toBeVisible();
+  expect(api.reads.some((read) => read.endsWith("/baseline-entities"))).toBe(true);
+  expect(api.reads).not.toContain("snapshot");
   await capture(page, info, "historical-baseline");
   api.job.result = {
     kpis: { makespan_minutes: 987654 },
