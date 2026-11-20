@@ -1,0 +1,136 @@
+{
+  "evidence": "M0_CONTRACT_EXAMPLES_NOT_RUNTIME_ACCEPTANCE",
+  "startRequest": {
+    "revision": 10,
+    "durationTicks": 3,
+    "reason": "Short break"
+  },
+  "returnRequest": {
+    "revision": 11,
+    "reason": "Returned early"
+  },
+  "AVAILABLE": {
+    "success": true,
+    "data": {
+      "sessionId": "10000000-0000-4000-8000-000000000003",
+      "revision": 11,
+      "tick": 5,
+      "stepSeconds": 900,
+      "lane": "primary",
+      "technicians": [
+        {
+          "technicianIndex": 0,
+          "availability": "AVAILABLE",
+          "currentJob": null,
+          "activeAbsence": null,
+          "returnTick": null
+        },
+        {
+          "technicianIndex": 1,
+          "availability": "AVAILABLE",
+          "currentJob": null,
+          "activeAbsence": null,
+          "returnTick": null
+        }
+      ],
+      "comparisonContext": {
+        "workforceVersion": 0,
+        "workforceHash": "d6d75090c9e235d5714cb023cc444be71b4763e08ec3429d1a2e57e479144bcf",
+        "origin": null,
+        "requiresCommonSnapshot": false,
+        "cacheIdentity": "b6bfe737d72157d8ef747d550a2b697c903a8632211c01052b4780d7401359a6"
+      }
+    }
+  },
+  "BUSY": {
+    "success": true,
+    "data": {
+      "sessionId": "10000000-0000-4000-8000-000000000003",
+      "revision": 11,
+      "tick": 6,
+      "stepSeconds": 900,
+      "lane": "primary",
+      "technicians": [
+        {
+          "technicianIndex": 0,
+          "availability": "AVAILABLE",
+          "currentJob": null,
+          "activeAbsence": null,
+          "returnTick": null
+        },
+        {
+          "technicianIndex": 1,
+          "availability": "BUSY",
+          "currentJob": {
+            "machine": 2,
+            "component": 1,
+            "technician": 1,
+            "kind": "CM",
+            "remaining": 1
+          },
+          "activeAbsence": null,
+          "returnTick": null
+        }
+      ],
+      "comparisonContext": {
+        "workforceVersion": 0,
+        "workforceHash": "d6d75090c9e235d5714cb023cc444be71b4763e08ec3429d1a2e57e479144bcf",
+        "origin": null,
+        "requiresCommonSnapshot": false,
+        "cacheIdentity": "b6f3e83c059c6f4afb2c94bfb1536fd6196ed5028a6824e08a3933aa5ebedf40"
+      }
+    }
+  },
+  "ABSENT": {
+    "success": true,
+    "data": {
+      "sessionId": "10000000-0000-4000-8000-000000000003",
+      "revision": 11,
+      "tick": 5,
+      "stepSeconds": 900,
+      "lane": "primary",
+      "technicians": [
+        {
+          "technicianIndex": 0,
+          "availability": "ABSENT",
+          "currentJob": null,
+          "activeAbsence": {
+            "eventId": "10000000-0000-4000-8000-000000000001",
+            "startTick": 5,
+            "returnTick": 8
+          },
+          "returnTick": 8
+        },
+        {
+          "technicianIndex": 1,
+          "availability": "AVAILABLE",
+          "currentJob": null,
+          "activeAbsence": null,
+          "returnTick": null
+        }
+      ],
+      "comparisonContext": {
+        "workforceVersion": 1,
+        "workforceHash": "76b3e39e673619ca199deee58fc3c7e0273cf91160d31ca0b99b5caf75074315",
+        "origin": {
+          "eventId": "10000000-0000-4000-8000-000000000001",
+          "tick": 5,
+          "workforceVersion": 1
+        },
+        "requiresCommonSnapshot": true,
+        "cacheIdentity": "edcca1aea6712f783afbdabdcf3638c45ca43dcc948ceaf316b95bc468e624e1"
+      }
+    }
+  },
+  "event": {
+    "eventId": "10000000-0000-4000-8000-000000000001",
+    "technicianIndex": 0,
+    "type": "ABSENCE_STARTED",
+    "tick": 5,
+    "actor": {
+      "type": "USER",
+      "userId": "10000000-0000-4000-8000-000000000002"
+    },
+    "reason": "Short break"
+  }
+}

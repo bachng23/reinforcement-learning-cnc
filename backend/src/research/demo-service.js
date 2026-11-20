@@ -5,9 +5,11 @@ const { canonical, sha } = require('./artifact-store');
 const workOrders = require('./demo-work-orders');
 const writes = require('./demo-write');
 const situations = require('./demo-situation-runtime');
+const technicians = require('./demo-technician-state');
 const scope = user => user.role === 'ADMIN' ? {} : { ownerId: user.id };
 const present = row => ({ simulation_start: row.createdAt.toISOString(), step_seconds: 900, ...row.payloadJson,
-  id: row.id, sessionId: row.id, revision: row.revision, tick: row.payloadJson.primary.state.tick, createdAt: row.createdAt });
+  id: row.id, sessionId: row.id, revision: row.revision, tick: row.payloadJson.primary.state.tick, createdAt: row.createdAt,
+  stepSeconds: row.payloadJson.step_seconds ?? 900, technicians: technicians.technicians(row.payloadJson), comparisonContext: technicians.comparison(row) });
 
 async function read(user, id) {
   const row = await prisma.demoSession.findFirst({ where: { id, ...scope(user) } });
@@ -54,7 +56,7 @@ async function command(user, id, input, key) {
   if (row.revision !== input.revision) throw new ApiError(409, 'DEMO_STALE', 'Session changed; reload before deciding');
   if (row.payloadJson.status === 'COMPLETE' && input.command !== 'configure') throw new ApiError(409, 'DEMO_COMPLETE', 'Simulation has completed');
   let payloadJson;
-  if (row.sourceSnapshotId || row.payloadJson.branch || row.payloadJson.incidents?.length) {
+  if (row.sourceSnapshotId || row.payloadJson.branch || row.payloadJson.incidents?.length || row.payloadJson.technicianAvailability !== undefined) {
     payloadJson = await situations.command(row.payloadJson, input, actor.id);
   } else if (input.command === 'configure') {
     payloadJson = await bridge({ operation: 'demo_configure', session: row.payloadJson, primary: input.primary, baseline: input.baseline, continuous: true });
@@ -98,6 +100,12 @@ async function command(user, id, input, key) {
     for (const event of payloadJson.incidents ?? []) {
       if (before.get(event.eventId) === 'SCHEDULED' && event.status !== 'SCHEDULED')
         await writes.audit(tx, actor, id, 'DEMO_INCIDENT_RESOLVED', { ...event, revision: row.revision + 1 });
+    }
+    const oldEvents = new Set((row.payloadJson.technicianAvailability?.events ?? []).map(e => e.eventId));
+    for (const event of payloadJson.technicianAvailability?.events ?? []) {
+      if (!oldEvents.has(event.eventId))
+        await writes.audit(tx, { id: null }, id, `DEMO_${event.type}`, { ...event, commandActorId: actor.id,
+          revision: row.revision + 1, workforceVersion: payloadJson.technicianAvailability.version });
     }
     return present(await tx.demoSession.findUnique({ where: { id } }));
   });
