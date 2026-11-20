@@ -35,6 +35,7 @@ function check(row, index, input, type) {
   const p = row.payloadJson, n = state.count(p);
   if (index >= n) throw new ApiError(404, 'TECHNICIAN_NOT_FOUND', 'Technician was not found in this session');
   if (p.status === 'COMPLETE') throw new ApiError(409, 'DEMO_COMPLETE', 'Simulation has completed');
+  if (!p.continuous) throw new ApiError(409, 'DEMO_INTERVENTION_REPLAY_UNSUPPORTED', 'Technician availability changes require a continuous simulation');
   const active = state.active(p, index);
   if (type === 'absence') {
     if (p.primary.state.jobs[index]) throw new ApiError(409, 'TECHNICIAN_BUSY', 'Complete the active repair before starting absence');

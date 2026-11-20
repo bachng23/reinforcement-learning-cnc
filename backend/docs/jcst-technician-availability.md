@@ -22,7 +22,8 @@ stepSeconds,comparisonContext}}`. Full session also exposes the technician summa
 and comparisonContext. Retain existing snake_case step_seconds for compatibility.
 New endpoints and errors are Cache-Control:no-store. Reason is trimmed, nonblank,
 maximum 1000 characters. Actor/event IDs come from the server. Physical tick is
-unchanged, revision increments once. COMPLETE is 409. Invalid index is scoped 404
+unchanged, revision increments once. COMPLETE is 409. Finite sessions reject
+availability writes with 409 DEMO_INTERVENTION_REPLAY_UNSUPPORTED. Invalid index is scoped 404
 TECHNICIAN_NOT_FOUND, malformed input is 400 VALIDATION_ERROR. Business conflicts:
 409 TECHNICIAN_BUSY, TECHNICIAN_ALREADY_ABSENT, TECHNICIAN_NOT_ABSENT,
 TECHNICIAN_AVAILABILITY_LIMIT, DEMO_COMPLETE, DEMO_STALE, DEMO_KEY_CONFLICT.
@@ -105,10 +106,10 @@ DEMO_INTERVENTION_REPLAY_UNSUPPORTED. Unsupported/unavailable bridge maps to
 503 TECHNICIAN_RUNTIME_UNAVAILABLE; malformed output is 502
 TECHNICIAN_RUNTIME_INVALID_OUTPUT. Never fall back to the old engine.
 
-Main currently has the real situations runtime but none of these availability
-operations (all remote JCST bridges searched). M1 tests use an explicit contract
-double. M2 requires Flex fixtures, real busy-baseline completion, legal catalogue/
-dispatch checks, exact return boundary, shared snapshot comparisons and joint E2E.
+The availability-aware runtime entered main in PR #72. Backend contract tests use
+an explicit bridge double. The real-service acceptance harness exercises the
+calendar, dispatch, restoration and review flow across PostgreSQL, Express, the
+Python runtime and Chromium. See the [runtime runbook](../../docs/research/technician-availability-runbook.md).
 
 ## Run / handoff
 

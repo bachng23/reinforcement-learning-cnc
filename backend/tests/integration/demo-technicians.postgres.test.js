@@ -102,6 +102,21 @@ test('busy primary/COMPLETE reject before bridge; baseline busy does not prohibi
   expect(s.technicians[0].availability).toBe('ABSENT');
 });
 
+test('finite sessions reject workforce writes without running the bridge or changing state', async () => {
+  const s = await source({ ...healthy(), continuous: false });
+  const receipts = await prisma.demoWriteReceipt.count();
+  const audits = await prisma.auditLog.count();
+  bridge.mockClear();
+  for (const result of [await start(s), await back(s)]) {
+    expect(result.status).toBe(409);
+    expect(result.body.error.code).toBe('DEMO_INTERVENTION_REPLAY_UNSUPPORTED');
+  }
+  expect(bridge).not.toHaveBeenCalled();
+  expect(await prisma.demoSession.findUnique({ where: { id: s.id } })).toEqual(s);
+  expect(await prisma.demoWriteReceipt.count()).toBe(receipts);
+  expect(await prisma.auditLog.count()).toBe(audits);
+});
+
 test('early return emits one event and retries return the original receipt after later changes', async () => {
   const initial = await source(), startKey = key(), started = await start(initial, 0, { identity: startKey });
   const s = started.body.data.session, identity = key(), returned = await back(s, 0, { identity });
