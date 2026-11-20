@@ -1,0 +1,47 @@
+{
+  "sha": "52720b63a38db69740514a16b26b7e24e4905a83",
+  "schema": "product_api_it_situations_237a2798ac67660b",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "healthy snapshot exact replay through real API and PostgreSQL",
+      "status": "PASS"
+    },
+    {
+      "name": "immediate injection, health event, REVIEW conflict, repair snapshot and completion",
+      "status": "PASS"
+    },
+    {
+      "name": "scheduled incident single-step/autoplay parity and reload",
+      "status": "PASS"
+    },
+    {
+      "name": "immutable snapshot and read-only GET",
+      "status": "PASS"
+    },
+    {
+      "name": "real workforce API: zero-time absence, receipt/read-only, restore, masked proposal, REVIEW return, busy conflict, CM completion and exact expiry",
+      "status": "PASS"
+    },
+    {
+      "name": "real workforce API: all-absent WAIT/blocked warning and real baseline job completes under shared calendar",
+      "status": "PASS"
+    },
+    {
+      "name": "real Chromium: authenticated save/open paused, immediate incident and reload",
+      "status": "PASS"
+    },
+    {
+      "name": "real Chromium workforce journey: absence, masked proposal, CM dispatch, early return and repair completion",
+      "status": "PASS"
+    }
+  ],
+  "interceptedApi": false,
+  "cleanup": {
+    "schema": "DROPPED",
+    "services": "STOPPED",
+    "ports": "CLOSED"
+  },
+  "apiPort": 58392,
+  "frontendPort": 49527
+}

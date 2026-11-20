@@ -30,12 +30,12 @@ async function main() {
     run('createdb', ['-h', '127.0.0.1', '-p', String(port), '-U', 'situations_test', 'jcst_situations_test']);
     const env = { ...process.env, TEST_DATABASE_URL: `postgresql://situations_test@127.0.0.1:${port}/jcst_situations_test`,
       OPERATIONS_SCHEMA_JOURNAL: path.join(temp, 'schemas.jsonl'), FACTORY_ACCESS_SOURCE: 'database' };
-    if (process.argv.includes('--regression')) {
+    if (process.argv.includes('--regression') || process.argv.includes('--technicians')) {
       runtime = require('./machine-health-runtime').runtime();
       env.JCST_BRIDGE_SCRIPT = runtime.script;
       env.JCST_PYTHON ||= path.resolve(__dirname, '../../../ai_services/.venv/Scripts/python.exe');
     }
-    const args = ['tests/integration/run-integration-tests.js', ...(process.argv.includes('--all') ? [] : [process.argv.includes('--regression') ? '--demo-regression' : '--demo-situations'])];
+    const args = ['tests/integration/run-integration-tests.js', ...(process.argv.includes('--all') ? [] : [process.argv.includes('--technicians') ? '--demo-technicians' : process.argv.includes('--regression') ? '--demo-regression' : '--demo-situations'])];
     child = spawn(process.execPath, args, { cwd: path.resolve(__dirname, '../..'), env, stdio: 'inherit' });
     const status = await new Promise((resolve, reject) => { child.once('exit', resolve); child.once('error', reject); });
     process.exitCode = status ?? 1;

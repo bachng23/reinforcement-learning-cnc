@@ -45,6 +45,17 @@ def test_checkpoint_adapter_matches_source_and_rejects_mismatches(tmp_path,case,
         actual=infer(config,State.model_validate(asdict(state)),release)
         assert actual['action']==expected
         assert actual['mode']=='greedy'
+        # Synthetic checkpoints exercise adapter compatibility, not registered
+        # historical release acceptance. Feature arrays remain upstream values.
+        for absent in ({0}, {1}, set(range(cfg.technicians))):
+            encoded = learner.encode(cfg, state, universe)
+            import numpy as np
+            masked = replace(encoded, mask=encoded.mask & np.asarray([
+                all(edge[2] not in absent for edge in action) for action in universe]))
+            expected_masked = universe[learner.choose(policy, masked, deterministic=True)[0]]
+            result = infer(config, State.model_validate(asdict(state)), release, absent_technicians=absent)
+            assert result['action'] == expected_masked
+            assert all(edge[2] not in absent for edge in result['action'])
     for changed in ({'sha256':'0'*64},{'config_hash':'0'*64},{'catalogue_hash':'0'*64},{'source_commit':'0'*40},{'torch_version':'wrong'}):
         with pytest.raises(ValueError): infer(config,State.model_validate(asdict(states[0])),{**release,**changed})
     with pytest.raises(ValueError): infer(config,State.model_validate(asdict(states[0])),release,24,8)

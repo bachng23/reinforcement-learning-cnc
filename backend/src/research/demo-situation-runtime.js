@@ -22,6 +22,7 @@ const invalid = () => new ApiError(502, 'DEMO_SCENARIO_INVALID_OUTPUT', 'Scenari
 const same = (a, b) => canonical(a) === canonical(b);
 function validate(session) {
   if (!payload.safeParse(session).success) throw invalid();
+  if (session.technicianAvailability !== undefined) require('./demo-technician-state').metadata(session);
   const { primary, baseline, config } = session;
   if (primary.state.tick !== baseline.state.tick) throw invalid();
   for (const lane of [primary, baseline]) {
@@ -50,6 +51,10 @@ function validate(session) {
   return session;
 }
 async function invoke(operation, input) {
+  if (input.session?.technicianAvailability !== undefined || input.snapshot?.runtime?.technicianAvailability !== undefined) {
+    const operations = { demo_snapshot_restore: 'demo_technician_restore', demo_situation_command: 'demo_technician_command', demo_incident: 'demo_technician_incident' };
+    return require('./demo-technicians').invoke(operations[operation], input);
+  }
   let output;
   try { output = await bridge({ operation, protocol, ...input }); }
   catch (e) {
@@ -118,6 +123,10 @@ async function command(session, command, actor) {
     if (old.status !== 'SCHEDULED' && !same(event, old)) throw invalid();
     if (event.status === 'SCHEDULED' && event.scheduledTick < next.primary.state.tick) throw invalid();
   }
+  if (session.technicianAvailability !== undefined) {
+    try { require('./demo-technician-state').assertAdvance(session, next); }
+    catch { throw new ApiError(502, 'TECHNICIAN_RUNTIME_INVALID_OUTPUT', 'Availability runtime violated the stored calendar'); }
+  } else if (next.technicianAvailability !== undefined) throw invalid();
   return next;
 }
 module.exports = { protocol, incidentSchema, validate, restore, incident, command };

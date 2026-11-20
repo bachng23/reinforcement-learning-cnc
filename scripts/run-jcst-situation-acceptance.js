@@ -154,6 +154,69 @@ async function main() {
     await request(`/snapshots/${frozen.snapshotId}`);
     assert.deepEqual(await prisma.demoSnapshot.findUnique({ where: { id: frozen.snapshotId } }), before);
     passed('immutable snapshot and read-only GET');
+    const technicians = process.env.JCST_TECHNICIAN_ACCEPTANCE === '1';
+    if (technicians) {
+      let p = await open(frozen);
+      const absenceKey = randomUUID();
+      const absent = await request(`/sessions/${p.id}/technicians/0/absence`, { revision: p.revision, durationTicks: 3, reason: 'Three-step real acceptance' }, absenceKey);
+      assert.equal(absent.tick, 0); assert.equal(absent.revision, p.revision + 1);
+      assert.equal(absent.technicians[0].availability, 'ABSENT');
+      assert.deepEqual(await request(`/sessions/${p.id}/technicians/0/absence`, { revision: p.revision, durationTicks: 3, reason: 'Three-step real acceptance' }, absenceKey), absent);
+      p = absent.session;
+      const readBefore = await prisma.demoSession.findUniqueOrThrow({ where: { id: p.id } });
+      await request(`/sessions/${p.id}/technicians`);
+      assert.deepEqual(await prisma.demoSession.findUniqueOrThrow({ where: { id: p.id } }), readBefore);
+      const saved = await save(p, 'Absent real acceptance');
+      let q = await open(saved), r = await open(saved);
+      assert.deepEqual(q.technicianAvailability, r.technicianAvailability);
+      q = (await inject(q, 0)).session;
+      q = await command(q, 'advance');
+      assert.equal(q.status, 'REVIEW');
+      assert.ok(q.pending.action.length > 0);
+      assert.ok(q.pending.catalogue.every(action => action.every(edge => edge[2] === 1)));
+      await request(`/sessions/${q.id}/commands`, { revision: q.revision, command: 'override', action: [[2, 1, 0]], reason: 'Must not dispatch absent T1' }, undefined, 409);
+      const returned = await request(`/sessions/${q.id}/technicians/0/return`, { revision: q.revision, reason: 'Early return at REVIEW' });
+      assert.equal(returned.tick, q.tick); assert.equal(returned.session.pending, null);
+      assert.equal(returned.session.status, 'RUNNING'); assert.equal(returned.revision, q.revision + 1);
+      q = await command(returned.session, 'advance');
+      assert.ok(q.pending.catalogue.some(action => action.some(edge => edge[2] === 0)));
+      q = await command(q, 'approve', { reason: 'Dispatch real CM' });
+      const busy = q.primary.state.jobs.findIndex(Boolean);
+      assert.ok(busy >= 0);
+      await request(`/sessions/${q.id}/technicians/${busy}/absence`, { revision: q.revision, durationTicks: 1, reason: 'Busy must conflict' }, undefined, 409);
+      q = await command(q, 'advance', { autoApprove: true });
+      assert.ok((await request(`/sessions/${q.id}/work-orders?machineIndex=2`)).items.some(o => o.status === 'COMPLETED'));
+      for (let i = 0; i < 3; i++) r = await command(r, 'advance', { autoApprove: true });
+      const ended = await request(`/sessions/${r.id}/technicians`);
+      assert.equal(ended.technicians[0].availability, 'AVAILABLE');
+      assert.equal(r.technicianAvailability.events.filter(e => e.type === 'ABSENCE_ENDED').length, 1);
+      assert.equal(r.technicianAvailability.events.at(-1).actor.type, 'SYSTEM');
+      assert.equal(r.technicianAvailability.events.at(-1).tick, 3);
+      passed('real workforce API: zero-time absence, receipt/read-only, restore, masked proposal, REVIEW return, busy conflict, CM completion and exact expiry');
+      let both = await open(frozen);
+      for (const index of [0, 1]) both = (await request(`/sessions/${both.id}/technicians/${index}/absence`, { revision: both.revision, durationTicks: 3, reason: 'Both absent real acceptance' })).session;
+      both = (await inject(both, 0)).session;
+      both = await command(both, 'autoplay', { maxTicks: 3, stopAt: 'complete' });
+      for (const record of both.primary.records) {
+        assert.equal(record.action.length, 0); assert.equal(record.catalogue.length, 1);
+      }
+      assert.ok(both.workflow.some(e => e.stage === 'REPAIR_BLOCKED' && e.message.includes('ABSENT')));
+      assert.equal(both.technicianAvailability.events.filter(e => e.type === 'ABSENCE_ENDED').length, 2);
+      both = await command(both, 'advance');
+      assert.equal(both.status, 'REVIEW'); assert.ok(both.pending.action.length > 0);
+      let baselineBusy = await request('/sessions', { case: 'base', seed: '990000001', mode: 'policy', primary: 'wait', baseline: 'threshold5', continuous: true });
+      for (let count = 0; count < 8 && !baselineBusy.baseline.state.jobs.some(Boolean); count++) baselineBusy = await command(baselineBusy, 'advance', { autoApprove: true });
+      const index = baselineBusy.baseline.state.jobs.findIndex(Boolean);
+      assert.ok(index >= 0, 'Real baseline policy must start a service');
+      const initialJob = baselineBusy.baseline.state.jobs[index];
+      assert.equal(baselineBusy.primary.state.jobs[index], null);
+      const startTick = baselineBusy.tick;
+      baselineBusy = (await request(`/sessions/${baselineBusy.id}/technicians/${index}/absence`, { revision: baselineBusy.revision, durationTicks: 3, reason: 'Baseline finishes its real job' })).session;
+      for (let count = 0; count < initialJob.remaining; count++) baselineBusy = await command(baselineBusy, 'advance', { autoApprove: true });
+      assert.ok(baselineBusy.baseline.records.flatMap(r => r.events).some(e => e.type === 'completion' && e.technician === index && e.tick >= startTick));
+      assert.ok(baselineBusy.baseline.records.filter(r => r.tick >= startTick && r.tick < startTick + 3).every(r => r.action.every(edge => edge[2] !== index)));
+      passed('real workforce API: all-absent WAIT/blocked warning and real baseline job completes under shared calendar');
+    }
 
     next = child(['node_modules/next/dist/bin/next', 'dev', '--hostname', '127.0.0.1', '--port', String(uiPort)], frontend,
       { ...process.env, NODE_ENV: 'development', NEXT_PUBLIC_API_BASE_URL: api, NEXT_PUBLIC_SKIP_AUTH: 'false', NEXT_TELEMETRY_DISABLED: '1', CNC_BUILD_DIR: '.next-situation-real' }, 'frontend');
@@ -177,6 +240,20 @@ async function main() {
     const opened = (await (await openedResponse).json()).data;
     assert.notEqual(opened.id, healthy.id); assert.equal(opened.tick, 0);
     await expect(page.getByRole('button', { name: 'Run simulator', exact: true })).toBeEnabled();
+    if (technicians) {
+      await page.getByRole('button', { name: '2D', exact: true }).click();
+      await page.getByRole('button', { name: 'Inspect technician T1', exact: true }).click();
+      const panel = page.getByRole('complementary', { name: 'Technician T1 details' });
+      await panel.getByRole('button', { name: 'Mark temporarily absent', exact: true }).click();
+      await panel.getByLabel('Absence duration', { exact: true }).fill('3');
+      await panel.getByLabel('Availability reason (optional)', { exact: true }).fill('Real browser absence');
+      const response = page.waitForResponse(r => r.url().endsWith(`/sessions/${opened.id}/technicians/0/absence`) && r.request().method() === 'POST');
+      await panel.getByRole('button', { name: 'Confirm temporary absence', exact: true }).click();
+      const result = (await (await response).json()).data;
+      assert.equal(result.tick, 0); assert.equal(result.technicians[0].availability, 'ABSENT');
+      await expect(panel.getByText('Temporarily absent', { exact: true })).toBeVisible();
+      await page.screenshot({ path: path.join(out, 'browser-real-absence.png'), fullPage: true });
+    }
     await page.goto(`${ui}/simulation?session=${opened.id}&machine=2&inspect=1&workshop=smt-board-assembly`);
     await page.getByRole('button', { name: 'Create incident', exact: true }).click();
     await page.getByLabel('Incident component').selectOption('1');
@@ -185,6 +262,18 @@ async function main() {
     await page.getByRole('button', { name: 'Create injected incident', exact: true }).click();
     const injected = (await (await incidentResponse).json()).data;
     assert.equal(injected.event.status, 'APPLIED'); assert.equal(injected.session.tick, 0);
+    const { bridge } = require(path.join(backend, 'src/research/bridge'));
+    const stored = await prisma.demoSession.findUniqueOrThrow({ where: { id: opened.id } });
+    const runtime = stored.payloadJson;
+    assert.ok(runtime, 'Persisted runtime payload must exist');
+    const exported = await bridge({ protocol: 'jcst-situations/1', operation: 'demo_snapshot', session: runtime });
+    const audited = await bridge({ protocol: 'jcst-situations/1', operation: 'demo_situation_audit', session: exported.snapshot.runtime });
+    assert.equal(audited.audit.status, 'PASS');
+    const replayed = await bridge({ protocol: 'jcst-situations/1', operation: 'demo_incident', session: runtime,
+      event: { ...injected.event, status: 'SCHEDULED', appliedTick: null, reason: null } });
+    assert.deepEqual(replayed.failureCounters, { physics: runtime.primary.failures, injected: 1, total: runtime.primary.failures + 1 });
+    assert.deepEqual(replayed.engineeringEvents.map(e => [e.eventId, e.source, e.tick]), [[injected.event.eventId, 'INJECTED', 0]]);
+    passed('persisted runtime consumer: injected UUID, source, counters and independent audit');
     await page.screenshot({ path: path.join(out, 'browser-injected.png'), fullPage: true });
     await page.reload();
     await expect(page.getByRole('button', { name: 'Run simulator', exact: true })).toBeEnabled();
@@ -193,6 +282,50 @@ async function main() {
     assert.equal(reloaded.incidents.length, 1); assert.equal(reloaded.incidents[0].eventId, injected.event.eventId);
     await page.screenshot({ path: path.join(out, 'browser-reloaded.png'), fullPage: true });
     passed('real Chromium: authenticated save/open paused, immediate incident and reload');
+    if (technicians) {
+      const uiCommand = async (label) => {
+        const response = page.waitForResponse(r => r.url().endsWith(`/sessions/${opened.id}/commands`) && r.request().method() === 'POST');
+        await page.getByRole('button', { name: label, exact: true }).click();
+        const received = await response; assert.ok(received.ok(), await received.text());
+        return (await received.json()).data;
+      };
+      const proposal = await uiCommand('View dispatch proposal');
+      assert.equal(proposal.status, 'REVIEW');
+      assert.ok(proposal.pending.catalogue.every(action => action.every(edge => edge[2] === 1)));
+      const dispatched = await uiCommand('Approve & dispatch');
+      assert.equal(dispatched.tick, 1); assert.equal(dispatched.primary.state.jobs[1].remaining, 1);
+      await page.goto(`${ui}/simulation?session=${opened.id}&technician=0&workshop=smt-board-assembly`);
+      const panel = page.getByRole('complementary', { name: 'Technician T1 details' });
+      await panel.getByRole('button', { name: 'Return now', exact: true }).click();
+      await panel.getByLabel('Availability reason (optional)', { exact: true }).fill('Real browser early return');
+      const response = page.waitForResponse(r => r.url().endsWith(`/sessions/${opened.id}/technicians/0/return`) && r.request().method() === 'POST');
+      await panel.getByRole('button', { name: 'Confirm return now', exact: true }).click();
+      const returned = (await (await response).json()).data;
+      assert.equal(returned.tick, 1); assert.equal(returned.technicians[0].availability, 'AVAILABLE');
+      await expect(panel.getByText('Ready for assignment', { exact: true })).toBeVisible();
+      await page.screenshot({ path: path.join(out, 'browser-real-return.png'), fullPage: true });
+      await panel.getByRole('button', { name: 'Close technician panel', exact: true }).click();
+      let completed = await uiCommand('Step');
+      if (completed.status === 'REVIEW') {
+        await page.goto(`${ui}/decisions?session=${opened.id}&workshop=smt-board-assembly`);
+        completed = await uiCommand('Continue without dispatch');
+      }
+      assert.equal(completed.tick, 2); assert.equal(completed.primary.state.jobs[1], null);
+      assert.ok((await request(`/sessions/${opened.id}/work-orders?machineIndex=2`)).items.some(o => o.status === 'COMPLETED'));
+      passed('real Chromium workforce journey: absence, masked proposal, CM dispatch, early return and repair completion');
+    }
+    await page.goto(`${ui}/agents?session=${opened.id}&workshop=smt-board-assembly`);
+    const activity = page.getByRole('region', { name: 'Simulation activity', exact: true });
+    await expect(activity.getByText('Injected incident · APPLIED', { exact: true })).toBeVisible();
+    await expect(activity.getByText(`INJECTED ${injected.event.eventId} at t0: M3/C2.`, { exact: true })).toBeVisible();
+    await page.screenshot({ path: path.join(out, 'browser-activity.png'), fullPage: true });
+    await page.goto(`${ui}/simulation?session=${opened.id}&workshop=smt-board-assembly`);
+    await page.getByRole('button', { name: '2D', exact: true }).click();
+    const notifications = page.getByRole('region', { name: 'Incident notifications', exact: true });
+    await expect(notifications.getByText('Injected incident · APPLIED', { exact: true })).toBeVisible();
+    await expect(notifications.getByText('M3/C2', { exact: true })).toBeVisible();
+    await page.screenshot({ path: path.join(out, 'browser-notifications.png'), fullPage: true });
+    passed('real Chromium: Activity and incident notifications retain injected evidence');
     evidence.status = 'PASS';
   } finally {
     if (context) { await context.tracing.stop({ path: path.join(out, 'browser-trace.zip') }).catch(() => {}); await context.close().catch(() => {}); }
