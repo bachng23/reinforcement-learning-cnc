@@ -4,6 +4,9 @@ import type { Simulation } from '@/lib/simulation/types';
 import { FleetView } from './fleet-view';
 
 export function ComparisonView({ session, layout }: { session: Simulation; layout?:FactoryLayout }) {
+  if(session.comparisonContext?.requiresCommonSnapshot||session.technicianAvailability?.version){
+    return <section className="sim-panel"><div className="sim-panel-heading"><h2>Common snapshot required</h2></div><p className="sim-footnote">Workforce availability changed. A fair policy comparison must start every policy from the same frozen physical state and calendar. Existing lane results are not a new common-snapshot comparison.</p><p className="sim-footnote">Save this situation for the shared comparison workflow. Workforce version: {session.comparisonContext?.workforceVersion??session.technicianAvailability?.version}.</p></section>;
+  }
   if (session.incidents?.some(event => event.status === 'APPLIED')) {
     return <section className="sim-panel">
       <div className="sim-panel-heading"><h2>Policy comparison unavailable</h2></div>

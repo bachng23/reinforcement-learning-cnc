@@ -1,0 +1,249 @@
+{
+  "task": "Simulation technician availability",
+  "date": "2026-11-19",
+  "status": "M1_FRONTEND_READY_M2_INTEGRATION_PENDING",
+  "branch": "frontend/simulation-technician-availability",
+  "baseSha": "72af5ecda40833e3c9aaa68f6977f08937fa5814",
+  "producerSha": "145edb0ce73eddee3bfa881ac26730781c1d5d1f",
+  "testedFrontendCommit": "9c6c976e8263e9b55a57e420f5e23268cc4432e3",
+  "sourceFingerprintSha256": "4f8c6d09db40f59b63b0bf25882f896528df07f55e9224547f55992fd046d034",
+  "checks": {
+    "contracts": {
+      "exitCode": 0
+    },
+    "typecheck": {
+      "exitCode": 0
+    },
+    "lint": {
+      "exitCode": 0
+    },
+    "unit": {
+      "exitCode": 0,
+      "files": 64,
+      "tests": 570,
+      "maxWorkers": 3
+    },
+    "productionBuild": {
+      "exitCode": 0
+    },
+    "browser": {
+      "exitCode": 0,
+      "passed": 13,
+      "skipped": 1,
+      "mobileSkipReason": "WebGL exercised on desktop; mobile uses same form in 2D",
+      "interceptedHttp": true,
+      "desktop": "1440x900",
+      "mobile": "390x844",
+      "browser": "Installed Microsoft Edge"
+    }
+  },
+  "realIntegratedAcceptance": false,
+  "backendOrFlexChanged": false,
+  "producerGaps": [
+    "Pinned Backend availability routes not merged into main.",
+    "Flex jcst-technicians/1 runtime change/command/restore/incident operations and joint fixtures not delivered.",
+    "Real policy/legal catalogue/shared-calendar expiry/baseline jobs/snapshot/replay must be jointly verified."
+  ],
+  "cleanup": "Only test-owned Next/Edge processes; no database or development environment mutation.",
+  "logs": "docs/test-evidence/technician-availability",
+  "files": [
+    {
+      "file": "frontend/app/simulation.css",
+      "sha256": "2d227b97792cb1b838e1e11e0c8c153c7b9e87a7b3d98fd5b54052b9b8edc1a2"
+    },
+    {
+      "file": "frontend/components/simulation/comparison-view.tsx",
+      "sha256": "82510fb5171c1ae59a266af18eb10607279d572615aacad6dad993722ef2585d"
+    },
+    {
+      "file": "frontend/components/simulation/decision-view.tsx",
+      "sha256": "46a1ed156ef6e6d089ca2c79802c506f15a0b83454671d68afc727c91552aed8"
+    },
+    {
+      "file": "frontend/components/simulation/demo-workspace.tsx",
+      "sha256": "e4060cab5ae67f0f36af2157e126a18c38a0ac047988d53cf88a809153cc55b9"
+    },
+    {
+      "file": "frontend/components/simulation/factory-preview-scene.tsx",
+      "sha256": "0a8283b3fb1863a6c54994feb123bd72ebcfbba38fb57616829897a83b44027b"
+    },
+    {
+      "file": "frontend/components/simulation/factory-preview.tsx",
+      "sha256": "26e848e97a86e66e939db64d7b7c7a257b3353da5038d9dab0d5d73282b09e80"
+    },
+    {
+      "file": "frontend/components/simulation/fleet-view.tsx",
+      "sha256": "f6e77a9a4ab333efece6e22f1c8f4f966a54866a420e65eeb3e8d37281660a0c"
+    },
+    {
+      "file": "frontend/components/simulation/simulation-activity.tsx",
+      "sha256": "433570f3c25824c4ff8480d405ce37726652c8ab2da4d769b4b1eac69937ea55"
+    },
+    {
+      "file": "frontend/components/simulation/technician-activity.tsx",
+      "sha256": "d8ed0028bf49d6bbdc6269e2ccc7e9e0eb1ebf32d57a6cb7d00f71ce6306ff44"
+    },
+    {
+      "file": "frontend/components/simulation/technician-details.tsx",
+      "sha256": "d5e3293854dbbd210a62d46d65512a6e70aa4f6d2eee946f3087a49c05c7006f"
+    },
+    {
+      "file": "frontend/contracts/jcst-technicians/manifest.json",
+      "sha256": "3063714bfb17e50f328eeec05344e9c97de9e9005e86536a6650fdfd04212bae"
+    },
+    {
+      "file": "frontend/contracts/jcst-technicians/openapi.yaml",
+      "sha256": "85ab6289c5bbf6feee1206556b4dcc275b21509b44ab4254b2fa715edeff1fdc"
+    },
+    {
+      "file": "frontend/contracts/jcst-technicians/producer.d.ts",
+      "sha256": "c93ce8708b56bba5e6d01e4674d99dc109edc1a3ab8852ecbbf2050882375e11"
+    },
+    {
+      "file": "frontend/lib/simulation/technicians.ts",
+      "sha256": "b1ed2c52e587d418fc8078a3fbfbad3902de89665e1a8a9539fdc51e83a32195"
+    },
+    {
+      "file": "frontend/lib/simulation/types.ts",
+      "sha256": "e461e85c896595baa7ee2c7f07ff3bc4dca87ed6e56343a9b2363bfc2be56a0c"
+    },
+    {
+      "file": "frontend/lib/simulation/use-technician-availability.ts",
+      "sha256": "50d73db3dc93ed744880c550c6b11e1377f212b0f86bf8cfbe0eec4d670d66b4"
+    },
+    {
+      "file": "frontend/lib/simulation/use-technician-write.ts",
+      "sha256": "9e621a2e0dde617a1b4ade6feff509f82300725a004ef2fb166524d81e55f99d"
+    },
+    {
+      "file": "frontend/package.json",
+      "sha256": "e4ceb27958c11cd0a67aa37a1a525f68579500e1b02ff5f0084f2a3ae055f3a3"
+    },
+    {
+      "file": "frontend/playwright.technicians.config.ts",
+      "sha256": "6cf08c7f9c09cb437c6455e0b7746d50a1bb25c5e01d6a6b911332201958ef6d"
+    },
+    {
+      "file": "frontend/scripts/generate-technician-types.mjs",
+      "sha256": "e4fc320c7357af34e7d15b4a4acd70e3653c90563cb285ef923891509c06ef34"
+    },
+    {
+      "file": "frontend/tests/fixtures/technicians/producer-examples.json",
+      "sha256": "4694e70536867617e8e1054038d42a10372ed516dcaf8505295ed88ab8aab3fb"
+    },
+    {
+      "file": "frontend/tests/simulation-technicians.test.tsx",
+      "sha256": "94e3b2121b3113bf2ae198988fa29132d77436520b4de8673bd81bbbbda55306"
+    },
+    {
+      "file": "frontend/tests/technician-fixtures.ts",
+      "sha256": "8f4beab6d83e6901b19054579bd1fdade3780de782e767f690d1d0d148358e9d"
+    },
+    {
+      "file": "frontend/tests/technician-read.test.ts",
+      "sha256": "496c910884a7ff3118ef2cfebb8858c16bc72c746fcf069cb98cd85037720e37"
+    },
+    {
+      "file": "frontend/tests/technician-write.test.ts",
+      "sha256": "009d908b89f4270d86e6d4e02dac020d21af64f94a44640c5f06c33fc8b1df8d"
+    },
+    {
+      "file": "frontend/tests/technicians-browser/technicians.spec.ts",
+      "sha256": "062b3a85806312442183a13a4875dc6088d068abb0ea3f912f8d5299b468c427"
+    },
+    {
+      "file": "frontend/tests/technicians-client.test.ts",
+      "sha256": "91a6822ac5d8c0722a203f52781c672476d1cd8a6fb84c0dfc75a953a7b779f0"
+    },
+    {
+      "file": "frontend/tests/technicians-http.test.ts",
+      "sha256": "4b000f5b94a0beb0764697365a103691b14f528662c9a523c4a7407497de976d"
+    },
+    {
+      "file": "frontend/types/generated/simulation-technicians.ts",
+      "sha256": "27d2a7c8bbea8c9c28cdccf31d784bdffc0638d26b9bd3083c672a97007e7752"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "docs/design/screenshots/technician-availability/component-3d-absent-desktop.png",
+      "sha256": "04426c3f7d0f4dfc1d63f1680b80e0e2981754cf7ed7fbf37026b8766b700bd0"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-3d-return-review-desktop.png",
+      "sha256": "0a07af4fdcb0c42e562718657a437d008bea1b7e0890f1475c13eea12cf3a913"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-absence-review-desktop.png",
+      "sha256": "ca45148502aac8fb104f73ebfe47500808574dafb288815ce92bd05b592e4b66"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-absence-review-mobile.png",
+      "sha256": "b62776b312ed308d2e61656bb7e9dee2ec0401e5bc5f4469e4313ee42e4ada4c"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-absent-desktop.png",
+      "sha256": "f7c495742f67b3d4626cc020d50b0488e18e6397e17c72c670159b01d3618dd2"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-absent-mobile.png",
+      "sha256": "09173825ed8358cd71e7988fdcae50e9426d125e5908544346a9da23c6fc627c"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-busy-desktop.png",
+      "sha256": "b84b51a0a6e223250a2bf8de579bd2b7d0606e094f32873ccfb5a25cd68c93ab"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-busy-mobile.png",
+      "sha256": "0f69c5f2ba61ff30644a5117b251815dd16de7add6e49d5bbcdcd0c08dcc0701"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-eligible-proposal-desktop.png",
+      "sha256": "c7bfedc0e46a989cd95dd12372ed1656b3698fc7f52ae2b0a98a4757961000cd"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-eligible-proposal-mobile.png",
+      "sha256": "8b5c42bd44a147b4670b02536cb5e55e2bd158b1c9b53b8ab933f4922c811c28"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-pending-desktop.png",
+      "sha256": "d72e1461429209d16b530642a0acae47a5e0278916f06c880854176327b0aefe"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-pending-mobile.png",
+      "sha256": "4e742224af84220ef70c9ed9eef862c72dc5f482ab950674cd094f8418e9b390"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-restored-absence-desktop.png",
+      "sha256": "ac6236cfc1b1b6d5b543d8ba40e7083892468d4bf4a331e4f8419375d1aa1109"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-restored-absence-mobile.png",
+      "sha256": "3867efc05faac516b5d4fe5cdadf7009ab7a86b524dd62d0dba3e566adcfe5e3"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-returned-desktop.png",
+      "sha256": "0d12a8408e9ef0149fc63f9f52c9c4bc3147f284e4250cecfe6339c97d6c113e"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-returned-mobile.png",
+      "sha256": "1faa751c6fc2e7b5671098c22d8fc7580bff7721ed35fcabdc0afc620a1ab176"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-stale-desktop.png",
+      "sha256": "10e0bb21292bdc1ae09798376254670bb8f3d3d1caa2e81601b6b6e331575cff"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-stale-mobile.png",
+      "sha256": "af6694462399dd4ebae0d227d095747d02c83e2524129e7638ae51790c11ce2d"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-unavailable-desktop.png",
+      "sha256": "ef605c92bbe2668814a1af6c372a123c832dc4b5806c46a27b0b224a33f9cdba"
+    },
+    {
+      "file": "docs/design/screenshots/technician-availability/component-unavailable-mobile.png",
+      "sha256": "4d39ff59a8afc8e0b043b570451f652843d6cbe1fa5bbbce6023dfc3d3771b64"
+    }
+  ]
+}

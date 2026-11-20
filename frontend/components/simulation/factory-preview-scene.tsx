@@ -91,7 +91,7 @@ function FactoryGround() {
 }
 
 export type ShopStation = { status: PreviewStatus };
-export type ShopTechnician = { machine: number | null; justDispatched: boolean };
+export type ShopTechnician = { machine: number | null; justDispatched: boolean; availability?: 'AVAILABLE'|'BUSY'|'ABSENT' };
 
 const StationMuted = createContext(false);
 const mutedStationColor = new Color('#dce4ea');
@@ -1120,8 +1120,8 @@ export default function FactoryPreviewScene({ layoutId, stations, technicians, s
       {stations.map(({ status }, machine) => <Station key={machine} placement={alternative?.stations[machine]} machine={machine} status={status}
         selected={selected === machine} muted={hasSelection && selected !== machine} moving={moving} arrivals={arrivals} onSelect={() => onSelect(machine)} />)}
       {alternative ? <WorkshopLine layout={alternative} stations={stations} moving={moving} /> : <><MaterialLine stations={stations} moving={moving} /><MaintenanceBay /></>}
-      {technicians.map(({ machine, justDispatched }, index) => (
-        <StationMuted.Provider key={index} value={hasSelection && selectedTechnician !== index}>
+      {technicians.map(({ machine, justDispatched, availability }, index) => (
+        <StationMuted.Provider key={index} value={availability==='ABSENT'||hasSelection && selectedTechnician !== index}>
           <Technician layout={alternative} index={index} machine={machine} moving={moving} justDispatched={justDispatched} arrivals={arrivals}
             marker={technicianMarkers.current[index]} selected={selectedTechnician === index} onSelect={() => onSelectTechnician(index)} />
         </StationMuted.Provider>
@@ -1141,10 +1141,10 @@ export default function FactoryPreviewScene({ layoutId, stations, technicians, s
         ref={node => { labels.current[stations.length + index] = node; }}>{label}</span>
     ))}
     {technicians.map((technician, index) => <button key={index} type="button"
-      ref={button => { technicianMarkers.current[index].current = button; }} className="sim-tech-marker"
+      ref={button => { technicianMarkers.current[index].current = button; }} className="sim-tech-marker" data-availability={technician.availability}
       aria-label={`Inspect technician T${index + 1}`} aria-pressed={selectedTechnician === index}
       data-muted={hasSelection && selectedTechnician !== index} onClick={() => onSelectTechnician(index)}>
-      T{index + 1}
+      T{index + 1}{technician.availability==='ABSENT'?' · Absent':''}
     </button>)}
     {displayLabels.map(({ title }, index) => <span key={title}
       className="sim-twin-marker sim-twin-terminal" data-muted={hasSelection}

@@ -19,6 +19,11 @@ import { SituationButtons, SituationPanels, type OpenSituation } from './situati
 import { sendSituationCommand, situationLayout, validateSituationSession, SituationDataError, type SituationExecutor } from '@/lib/simulation/situations';
 import { useSessionIncidents, type IncidentRead } from '@/lib/simulation/use-session-incidents';
 import { InjectedIncidents } from './injected-incidents';
+import {useTechnicianAvailability} from '@/lib/simulation/use-technician-availability';
+import {sendTechnicianCommand,embeddedTechnicians,TechnicianContextError,TechnicianRecoveryError,type TechnicianExecutor} from '@/lib/simulation/technicians';
+import {useWorkspaceUser} from '@/lib/workspace-user';
+import {TechnicianDetails} from './technician-details';
+import {TechnicianActivity} from './technician-activity';
 
 export type DemoView = 'overview' | 'decision' | 'agents' | 'compare' | 'dashboard';
 const labels: Record<DemoView,string> = {overview:'Simulation',dashboard:'Factory dashboard',decision:'Decision Center',agents:'Decision activity',compare:'Compare controllers'};
@@ -37,7 +42,14 @@ const routes: Record<DemoView,string> = {overview:'/simulation',dashboard:'/dash
 const factoryViewKey = 'mcc-demo-factory-view';
 const stationKey = (sessionId: string) => `mcc-demo-station:${sessionId}`;
 
+type WorkspaceHeading={title:string;simulationId?:string;workshopId:string};
 export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initialId?:string}) {
+  const [heading,setHeading]=useState<WorkspaceHeading>({title:labels[view],simulationId:initialId,workshopId:'machining'});
+  return <AppShell {...heading}><SimulationWorkspace view={view} initialId={initialId} onHeading={setHeading}/></AppShell>;
+}
+function SimulationWorkspace({view,initialId,onHeading}:{view:DemoView;initialId?:string;onHeading:(heading:WorkspaceHeading)=>void}) {
+  const user=useWorkspaceUser();const actor=useRef(user?.id);actor.current=user?.id;
+  const acceptedActor=useRef(user?.id);
   const [layoutId, setLayoutId] = useState<LayoutId>('machining');
   const selectedLayout = getFactoryLayout(layoutId);
   const [session,setSession]=useState<Simulation>(); const current=useRef<Simulation | undefined>(undefined);
@@ -51,6 +63,19 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   const [automatic,setAutomatic]=useState(false); const [speed,setSpeed]=useState(2000);
   const [pauseOnIncident,setPauseOnIncident]=useState(true);
   const [selectedMachine,setSelectedMachine]=useState<number|null>(null);
+  const [selectedTechnician,setSelectedTechnician]=useState<number|null>(null);
+  const [technicianBusy,setTechnicianBusy]=useState(false);
+  const technicianTrigger=useRef<HTMLElement|null>(null);
+  function inspectTechnician(index:number|null){
+    if(technicianBusy)return;
+    setRunning(false);setSituationNotice('');setSelectedMachine(null);setStation(null);
+    const url=new URL(window.location.href);url.searchParams.delete('machine');url.searchParams.delete('inspect');
+    if(current.current)try{sessionStorage.removeItem(stationKey(current.current.id));}catch{}
+    if(index===null)url.searchParams.delete('technician');else url.searchParams.set('technician',String(index));window.history.replaceState(null,'',url);
+    if(index!==null)technicianTrigger.current=document.activeElement as HTMLElement|null;
+    setSelectedTechnician(index);
+    if(index===null)requestAnimationFrame(()=>technicianTrigger.current?.focus());
+  }
   const [factoryView, setFactoryView] = useState<'2d' | '3d'>('2d');
   const workspace = useRef<HTMLElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -90,9 +115,12 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   }
 
   function selectStation(machine: number | null) {
+    if(technicianBusy)return;
+    if(machine!==null)setSelectedTechnician(null);
     setSituationNotice('');
     setStation(machine);
     const url = new URL(window.location.href);
+    if(machine!==null)url.searchParams.delete('technician');
     if (machine === null) { url.searchParams.delete('machine'); url.searchParams.delete('inspect'); }
     else url.searchParams.set('machine', String(machine));
     window.history.replaceState(null, '', url);
@@ -107,6 +135,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     setPreviewUnavailable(true);
   }, []);
   const inspectMachine = useCallback((machine: number) => {
+    setSelectedTechnician(null);
     setSituationNotice('');
     setRunning(false);
     setStation(machine);
@@ -115,6 +144,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     if (!now) return;
     try { sessionStorage.setItem(stationKey(now.id), String(machine)); } catch {}
     const url = new URL(window.location.href);
+    url.searchParams.delete('technician');
     url.searchParams.set('machine', String(machine));
     url.searchParams.set('inspect', '1');
     window.history.replaceState(null, '', url);
@@ -127,15 +157,16 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   const pathname = usePathname();
   const [localView, setLocalView] = useState<DemoView>(view);
   const activeView = pathname === '/overview' ? 'overview' : (Object.keys(routes) as DemoView[]).find(key => routes[key] === pathname) ?? localView;
+  useEffect(()=>onHeading({title:labels[activeView],simulationId:session?.id,workshopId:layoutId}),[activeView,session?.id,layoutId,onHeading]);
 
-  function openView(nextView: DemoView, sessionId: string, workshop=layoutId) {
+  const openView=useCallback((nextView: DemoView, sessionId: string, workshop=layoutId) => {
     setLocalView(nextView);
     const url = new URL(window.location.href);
     url.pathname = routes[nextView];
     url.searchParams.set('session', sessionId);
     url.searchParams.set('workshop', workshop);
     window.history.replaceState(null, '', url);
-  }
+  },[layoutId]);
 
   const mounted=useRef(true);
   const commandAbort=useRef<AbortController | null>(null);
@@ -163,26 +194,31 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     } catch {}
     setLayoutId(layout);
     if (current.current?.id !== data.id) {
+      setSelectedTechnician(null);
       let savedStation: number | null = null;
       try {
         const saved = sessionStorage.getItem(stationKey(data.id));
         if (saved !== null) savedStation = Number(saved);
       } catch {}
       const params = new URLSearchParams(window.location.search);
+      const technician=params.get('technician');
+      const validTechnician=params.get('session')===data.id&&technician!==null&&/^\d+$/.test(technician)&&Number(technician)<data.primary.state.jobs.length;
+      if(validTechnician)setSelectedTechnician(Number(technician));
       const machine = params.get('machine');
       if (params.get('session') === data.id && machine !== null && /^\d+$/.test(machine)) savedStation = Number(machine);
-      setSelectedMachine(params.get('session') === data.id && params.get('inspect') === '1' && savedStation !== null &&
+      setSelectedMachine(!validTechnician&&params.get('session') === data.id && params.get('inspect') === '1' && savedStation !== null &&
         savedStation >= 0 && savedStation < data.primary.state.components.length ? savedStation : null);
-      setStation(savedStation !== null && Number.isInteger(savedStation) &&
+      setStation(!validTechnician&&savedStation !== null && Number.isInteger(savedStation) &&
         savedStation >= 0 && savedStation < data.primary.state.components.length ? savedStation : null);
     }
     const changedSession=current.current?.id!==data.id;
-    current.current=data;setSession(data);setError('');setNeedsReviewSync(false);
+    current.current=data;acceptedActor.current=actor.current;setSession(data);setError('');setNeedsReviewSync(false);
     try{sessionStorage.setItem('mcc-demo-session',data.id);}catch{}
-    const url=new URL(window.location.href);if(changedSession&&url.searchParams.get('session')!==data.id){url.searchParams.delete('machine');url.searchParams.delete('inspect');}url.searchParams.set('session',data.id);url.searchParams.set('workshop',layout);window.history.replaceState(null,'',url);
+    const url=new URL(window.location.href);if(changedSession&&url.searchParams.get('session')!==data.id){url.searchParams.delete('machine');url.searchParams.delete('inspect');url.searchParams.delete('technician');}url.searchParams.set('session',data.id);url.searchParams.set('workshop',layout);window.history.replaceState(null,'',url);
   },[]);
   useEffect(()=>{
     const abort=new AbortController();
+    setRunning(false);setSelectedTechnician(null);setSituationPanel(null);commandAbort.current?.abort();
     let stored: string | null=null;try{stored=sessionStorage.getItem('mcc-demo-session');}catch{}
     const addressId=new URLSearchParams(window.location.search).get('session');
     const id=addressId || initialId || stored;
@@ -190,7 +226,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     if(id)researchRequest<Simulation>(`/demo/sessions/${encodeURIComponent(id)}`,{signal:abort.signal}).then(data=>{if(!abort.signal.aborted)accept(data);}).catch(e=>{if(!abort.signal.aborted)setError(e.message);}).finally(()=>{if(!abort.signal.aborted)setLoading(false);});
     else setLoading(false);
     return()=>abort.abort();
-  },[initialId,accept,readAttempt]);
+  },[initialId,accept,readAttempt,user?.id,setRunning]);
   useEffect(()=>{
     const abort=new AbortController();
     setAvailable(undefined);
@@ -264,6 +300,24 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
       return result;
     }finally{locked.current=false;if(mounted.current)setBusy(false);}
   },[accept,setRunning]);
+  const executeTechnician=useCallback<TechnicianExecutor>(async(operation,key,signal)=>{
+    setRunning(false);const origin=current.current?.id,owner=actor.current;await inFlight.current;
+    if(signal.aborted||!mounted.current||current.current?.id!==origin||actor.current!==owner)throw new DOMException('Context changed','AbortError');
+    if(locked.current)throw new Error('Another simulator command is running');
+    if(operation.sessionId!==origin)throw new TechnicianContextError();
+    locked.current=true;setBusy(true);
+    try{
+      const receipt=await sendTechnicianCommand(operation,key,signal);
+      // Idempotent recovery may return an old receipt. Read current authoritative state.
+      let latest:Simulation;
+      try{latest=await researchRequest<Simulation>(`/demo/sessions/${encodeURIComponent(receipt.id)}`,{signal});}catch(e){throw new TechnicianRecoveryError(e);}
+      if(signal.aborted||!mounted.current||current.current?.id!==origin||actor.current!==owner)throw new DOMException('Context changed','AbortError');
+      if(latest.id!==origin||latest.revision<receipt.revision||latest.primary.state.tick<receipt.primary.state.tick||!embeddedTechnicians(latest))throw new TechnicianContextError();
+      accept(latest);setSituationNotice('Workforce availability updated. Playback is paused; review assignments from the new state.');
+      if(latest.pending===null&&new URL(window.location.href).pathname==='/decisions')openView('overview',latest.id);
+      return latest;
+    }finally{locked.current=false;if(mounted.current)setBusy(false);}
+  },[accept,setRunning,openView]);
   const openedSituation:OpenSituation=(opened,snapshot)=>{
     const layout=situationLayout(snapshot.layoutId);if(!layout)return;
     setRunning(false);accept(opened,layout);setSetup(false);setStation(null);setSelectedMachine(null);setSituationPanel(null);
@@ -340,7 +394,10 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     </select></label>
   </div>;
   const notifications=incidentNotifications(session?.primary.records??[]);
-  const incidentRead=useSessionIncidents(session);
+  const actorMatches=acceptedActor.current===user?.id;
+  const incidentRead=useSessionIncidents(actorMatches?session:undefined);
+  const technicianRead=useTechnicianAvailability(actorMatches?session:undefined,user?.id??'authenticated');
+  const technicianPanel=session&&selectedTechnician!==null?<TechnicianDetails key={`${user?.id}:${session.id}:${selectedTechnician}`} technician={selectedTechnician} lane={session.primary} config={session.config} proposal={session.pending?.action} session={session} read={technicianRead} prepare={prepareSituation} execute={executeTechnician} onBusy={setTechnicianBusy} onClose={()=>inspectTechnician(null)} onSelectMachine={inspectMachine}/>:undefined;
   function openScenarioSetup() {
     if (!session) return;
     setRunning(false);
@@ -355,8 +412,8 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
   const status = session?.status === 'REVIEW' ? 'Awaiting decision'
     : session?.status === 'COMPLETE' ? 'Complete'
     : running ? 'Running' : 'Paused';
-  return <AppShell title={labels[activeView]} simulationId={session?.id} workshopId={layoutId}><main ref={workspace} className={showFloor ? "simulation-workspace sim-floor-workspace" : "simulation-workspace"}>
-    {situationPanel&&<SituationPanels key={`${situationPanel}:${session?.id??'none'}`} mode={situationPanel} session={session} layoutId={layoutId} prepare={prepareSituation} execute={executeSituation} onOpened={openedSituation} onClose={()=>setSituationPanel(null)}/>}
+  return <main ref={workspace} className={showFloor ? "simulation-workspace sim-floor-workspace" : "simulation-workspace"}>
+    {situationPanel&&actorMatches&&<SituationPanels key={`${situationPanel}:${session?.id??'none'}`} mode={situationPanel} session={session} layoutId={layoutId} prepare={prepareSituation} execute={executeSituation} onOpened={openedSituation} onClose={()=>setSituationPanel(null)}/>}
     {situationNotice&&<p role="status" className="sim-inspection-note sim-situation-notice">{situationNotice}</p>}
     {showFloor ? <h1 className="sr-only">{labels[activeView]}</h1> : <header className="sim-page-heading">
       <div>
@@ -406,7 +463,7 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
     </section>}
     {loading && <p role="status">Loading simulator session…</p>}
     {activeView==='overview'&&showSetup&&<SituationButtons session={session} onSave={()=>showSituations('save')} onLibrary={()=>showSituations('library')}/>}
-    {session && !showSetup && !loading && <>
+    {session && !showSetup && !loading && actorMatches && <>
       {activeView !== 'dashboard' && <section className={showFloor ? 'sim-control-bar sim-floor-controls' : 'sim-control-bar'} aria-label="Simulation controls">
         {showFloor && <h2 className="sim-floor-eyebrow">Simulation</h2>}
         <div className="sim-clock">
@@ -444,11 +501,11 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
             <option value={400}>5×</option>
           </select>}
           <div className="sim-playback-buttons">
-          <button className="sim-button" disabled={session.status !== 'RUNNING' || busy}
+          <button className="sim-button" disabled={session.status !== 'RUNNING' || busy || technicianBusy}
             onClick={() => { setRunning(false); void command({command:'advance', autoApprove:automatic}); }}>
             <SkipForward size={14} aria-hidden="true" />Step
           </button>
-          <button className="research-primary" disabled={session.status !== 'RUNNING'} onClick={() => setRunning(value => !value)}>
+          <button className="research-primary" disabled={session.status !== 'RUNNING'||busy||technicianBusy} onClick={() => setRunning(value => !value)}>
             {running ? <Pause size={14} aria-hidden="true" /> : <Play size={14} aria-hidden="true" />}
             {running ? 'Pause' : 'Run simulator'}
           </button>
@@ -468,7 +525,8 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
         </button>
       </div>}
       {activeView === 'overview' && <>
-        {showFloor && <FactoryStatus lane={session.primary} />}
+        {showFloor && <FactoryStatus lane={session.primary} workforce={technicianRead} onInspect={inspectTechnician} busy={technicianBusy}/>}
+        {technicianRead.rows?.every(row=>row.availability==='ABSENT')&&session.primary.state.components.some(parts=>parts.some(part=>part.failed))&&<p role="status" className="sim-inspection-note">Repairs waiting · all technicians are absent. WAIT remains available while the server waits for eligible personnel.</p>}
         <section className={showFloor ? "sim-floor-panel" : "sim-panel sim-factory-panel"} aria-label="Factory floor">
           <div className="sim-panel-heading">
             {!showFloor && <h2>Machines and technicians</h2>}
@@ -493,11 +551,12 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
           {previewUnavailable && <p className="sim-footnote" role="status">3D could not load. Select 3D to try again.</p>}
           {factoryView === '3d'
             ? <FactoryPreview key={`${session.id}:${layoutId}`} layout={selectedLayout} lane={session.primary} config={session.config} clockSession={session} proposal={session.pending?.action} running={running} injected={incidentRead.data?.events}
-                selected={station} onSelect={selectStation} onInspect={inspectMachine} onUnavailable={showFleet} />
-            : <FleetView clockSession={session} layout={selectedLayout} lane={session.primary} config={session.config} proposal={session.pending?.action} onInspect={inspectMachine} />}
+                selected={station} onSelect={selectStation} onInspect={inspectMachine} onUnavailable={showFleet} workforce={technicianRead} selectedTechnician={selectedTechnician} onSelectTechnician={inspectTechnician} technicianPanel={technicianPanel}/>
+            : <FleetView clockSession={session} layout={selectedLayout} lane={session.primary} config={session.config} proposal={session.pending?.action} onInspect={inspectMachine} workforce={technicianRead} onInspectTechnician={inspectTechnician} technicianPanel={technicianPanel}/>}
+          {!showFloor&&<div className="sim-workforce-toolbar" role="group" aria-label="Technician availability"><span>Technicians free: {technicianRead.rows?.filter(row=>row.availability==='AVAILABLE').length??'Updating'}</span>{session.primary.state.jobs.map((_,index)=><button className="sim-button" key={index} disabled={technicianBusy} aria-pressed={selectedTechnician===index} onClick={()=>inspectTechnician(index)}>T{index+1} · {technicianRead.rows?.[index]?.availability??'Updating'}</button>)}</div>}
         </section>
         {showFloor
-          ? <FactoryTimeline session={session} records={session.primary.records} selected={station} onSelect={inspectMachine} incidents={incidentRead}/>
+          ? selectedTechnician===null&&<FactoryTimeline session={session} records={session.primary.records} selected={station} onSelect={inspectMachine} incidents={incidentRead} onInspectTechnician={inspectTechnician}/>
           : <section className="sim-panel sim-notifications" aria-label="Incident notifications"><div className="sim-panel-heading"><h2>Incident notifications</h2></div>
           <ul aria-live="polite" aria-relevant="additions">{notifications.slice(0,1).map(e=><li key={`${e.tick}-${e.type}-${e.machine}-${e.component}`}><button className={e.type==='failure'?'sim-notice-failure':'sim-notice-resolved'} onClick={()=>inspectMachine(e.machine)}>{e.type==='failure'?<AlertTriangle size={16} aria-hidden="true"/>:<CheckCircle2 size={16} aria-hidden="true"/>}<span><strong>{e.type==='failure'?`M${e.machine+1} / C${e.component+1} failure detected`:`M${e.machine+1} / C${e.component+1} corrective service completed`}</strong><small>{simulationTime(session,e.tick).time}</small></span><ArrowRight size={14} aria-hidden="true"/></button></li>)}</ul>
           {notifications.length>1&&<details className="sim-notification-history"><summary>Event history ({notifications.length-1} earlier events)</summary><ul>{notifications.slice(1).map(e=><li key={`${e.tick}-${e.type}-${e.machine}-${e.component}`}><button onClick={()=>inspectMachine(e.machine)}>{simulationTime(session,e.tick).time} · M{e.machine+1}/C{e.component+1} · {e.type==='failure'?'Failure detected':'Corrective service completed'}<ArrowRight size={13} aria-hidden="true"/></button></li>)}</ul></details>}
@@ -505,15 +564,16 @@ export function DemoWorkspace({view='overview',initialId}: {view?:DemoView;initi
           <InjectedIncidents session={session} read={incidentRead} onInspect={inspectMachine}/>
         </section>}
       </>}
+      {activeView==='overview'&&!showFloor&&<section className="sim-panel"><TechnicianActivity session={session} onInspect={inspectTechnician}/></section>}
       {activeView === 'dashboard' && <><div className="sim-dashboard-toolbar">{workshopField}<p>{selectedLayout.description}</p><button className="sim-button" disabled={busy} onClick={()=>void refreshSession()}><RotateCcw size={14}/> Refresh data</button><button className="sim-button" onClick={()=>openView('overview',session.id)}>Open simulation <ArrowRight size={14}/></button></div><FactoryDashboard session={session} layout={selectedLayout} onSelectMachine={machine=>{selectStation(machine);openView('overview',session.id);}} /></>}
-      {activeView === 'decision' && <DecisionView session={session} busy={busy} blocked={needsReviewSync} onDecide={decide} />}
-      {activeView === 'agents' && <SimulationActivity session={session} incidents={incidentRead} onInspect={machine=>{inspectMachine(machine);openView('overview',session.id);}} />}
+      {activeView === 'decision' && <><DecisionView session={session} busy={busy} blocked={needsReviewSync} onDecide={decide} workforce={technicianRead}/><section className="sim-panel"><h2>Workforce availability</h2>{session.primary.state.jobs.map((_,index)=><button className="sim-button" disabled={technicianBusy} key={index} onClick={()=>inspectTechnician(index)}>Inspect T{index+1}</button>)}{technicianPanel}</section></>}
+      {activeView === 'agents' && <SimulationActivity session={session} incidents={incidentRead} onInspect={machine=>{inspectMachine(machine);openView('overview',session.id);}} onInspectTechnician={index=>{openView('overview',session.id);inspectTechnician(index);}}/>}
       {activeView === 'compare' && <ComparisonView layout={selectedLayout} session={session} />}
     </>}
-  </main></AppShell>;
+  </main>;
 }
 
-function FactoryStatus({ lane }: { lane: Lane }) {
+function FactoryStatus({ lane,workforce,onInspect,busy }: { lane: Lane;workforce:import('@/lib/simulation/use-technician-availability').TechnicianRead;onInspect:(index:number)=>void;busy:boolean }) {
   const machines = lane.state.components.length;
   const servicing = lane.state.jobs.filter(job => job !== null).length;
   const stopped = lane.state.components.filter((components, machine) =>
@@ -526,14 +586,16 @@ function FactoryStatus({ lane }: { lane: Lane }) {
       <div><dt>Working</dt><dd>{machines - servicing - stopped}</dd></div>
       <div><dt>Breakdown</dt><dd>{stopped}</dd></div>
       <div><dt>In service</dt><dd>{servicing}</dd></div>
-      <div><dt>Technicians free</dt><dd>{lane.state.jobs.length - servicing}</dd></div>
+      <div><dt>Technicians free</dt><dd>{workforce.rows?.filter(row=>row.availability==='AVAILABLE').length??'—'}</dd></div>
     </dl>
+    <div className="sim-workforce-toolbar" role="group" aria-label="Technician availability">{lane.state.jobs.map((_,index)=><button className="sim-button" disabled={busy} key={index} onClick={()=>onInspect(index)} aria-label={`Inspect technician T${index+1}`}>T{index+1} · {workforce.rows?.[index]?.availability??'Updating'}</button>)}</div>
   </aside>;
 }
 
-function FactoryTimeline({ session, records, selected, onSelect, incidents }: {
+function FactoryTimeline({ session, records, selected, onSelect, incidents,onInspectTechnician }: {
   session: Simulation; records: SimulationRecord[]; selected: number | null; onSelect: (machine: number) => void;
   incidents:IncidentRead;
+  onInspectTechnician:(index:number)=>void;
 }) {
   const events = records.flatMap(record => record.events)
     .filter(event => event.type === 'failure' || event.type === 'start' || event.type === 'completion')
@@ -559,5 +621,6 @@ function FactoryTimeline({ session, records, selected, onSelect, incidents }: {
       </li>;
     })}</ol> : <p className="sim-footnote">No machine or maintenance events yet.</p>}
     <InjectedIncidents session={session} read={incidents} onInspect={onSelect}/>
+    <details className="sim-compatibility"><summary>Workforce activity ({session.technicianAvailability?.events.length??0})</summary><TechnicianActivity session={session} onInspect={onInspectTechnician}/></details>
   </section>;
 }

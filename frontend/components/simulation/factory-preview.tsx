@@ -1,8 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
-import { Box, RotateCcw, Wrench, X } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Box, RotateCcw, X } from 'lucide-react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import type { Config } from '@/types/generated/jcst';
 import type { Lane, Matching, Simulation } from '@/lib/simulation/types';
@@ -17,7 +17,7 @@ const Scene = dynamic(() => import('./factory-preview-scene'), {
   loading: () => <p className="sim-twin-fallback" role="status">Loading 3D view…</p>,
 });
 
-export function FactoryPreview({ layout, lane, config, proposal, running, clockSession, selected, onSelect, onInspect, onUnavailable, injected=[] }: {
+export function FactoryPreview({ layout, lane, config, proposal, running, clockSession, selected, onSelect, onInspect, onUnavailable, injected=[], selectedTechnician=null, onSelectTechnician, technicianPanel, workforce }: {
   layout?: FactoryLayout;
   lane: Lane;
   clockSession?: Pick<Simulation, 'simulation_start' | 'step_seconds'>;
@@ -29,11 +29,12 @@ export function FactoryPreview({ layout, lane, config, proposal, running, clockS
   onInspect: (machine: number) => void;
   onUnavailable: () => void;
   injected?:Incident[];
+  selectedTechnician?:number|null;
+  onSelectTechnician?:(index:number|null)=>void;
+  technicianPanel?:ReactNode;
+  workforce?:import('@/lib/simulation/use-technician-availability').TechnicianRead;
 }) {
-  const [selectedTechnician, setSelectedTechnician] = useState<number | null>(null);
-  useEffect(() => {
-    if (selected !== null) setSelectedTechnician(null);
-  }, [selected]);
+  const setSelectedTechnician=onSelectTechnician??(()=>{});
 
   function selectMachine(machine: number | null) {
     setSelectedTechnician(null);
@@ -84,6 +85,7 @@ export function FactoryPreview({ layout, lane, config, proposal, running, clockS
   const moving = running && !reduceMotion;
   const technicians = state.jobs.map((job, technician) => ({
     machine: job?.machine ?? null,
+    availability: workforce?.rows?.[technician]?.availability,
     justDispatched: Boolean(job && moving && records.at(-1)?.events.some(event =>
       event.type === 'start' && event.technician === technician,
     )),
@@ -116,53 +118,8 @@ export function FactoryPreview({ layout, lane, config, proposal, running, clockS
         </dl>
         <button className="sim-button" type="button" onClick={() => onInspect(selected)}>Inspect machine</button>
     </aside>}
-    {selectedTechnician !== null && selected === null && <TechnicianDetails
-      technician={selectedTechnician} clockSession={clockSession} lane={lane} config={config} proposal={proposal}
-      onClose={() => setSelectedTechnician(null)} onSelectMachine={selectMachine} />}
+    {selectedTechnician !== null && selected === null && technicianPanel}
   </div>;
-}
-
-function TechnicianDetails({ technician, lane, config, proposal, onClose, onSelectMachine, clockSession }: {
-  clockSession?: Pick<Simulation, 'simulation_start' | 'step_seconds'>;
-  technician: number; lane: Lane; config: Config; proposal?: Matching;
-  onClose: () => void; onSelectMachine: (machine: number) => void;
-}) {
-  const job = lane.state.jobs[technician];
-  const pending = proposal?.find(([, , worker]) => worker === technician);
-  const history = lane.records.flatMap(record => record.events)
-    .filter(event => event.type === 'completion' && event.technician === technician);
-  const qualifications = config.duration.flatMap((components, machine) =>
-    components.map((durations, component) => ({ machine, component, duration: durations[technician] })),
-  );
-  const qualified = qualifications.filter(({ duration }) => duration > 0).length;
-  return <aside className="sim-twin-inspector sim-technician-inspector" aria-label={`Technician T${technician + 1} details`}>
-    <div className="sim-twin-inspector-header">
-      <p className="sim-twin-kicker"><Wrench size={15} aria-hidden="true" /> Maintenance team</p>
-      <button type="button" className="sim-button" aria-label="Close technician panel" onClick={onClose}>
-        <X size={15} aria-hidden="true" />
-      </button>
-    </div>
-    <h3>Technician T{technician + 1}</h3>
-    <span className="sim-twin-status" data-status={job ? 'In service' : 'Working'}>{job ? 'In service' : 'Available'}</span>
-    <dl>
-      <div><dt>Current assignment</dt><dd>{job ? `M${job.machine + 1} / C${job.component + 1}` : 'Unassigned'}</dd></div>
-      {job && <>
-        <div><dt>Service</dt><dd>{job.kind === 'CM' ? 'Corrective' : 'Preventive'}</dd></div>
-        <div><dt>Time remaining</dt><dd>{serviceDuration(job.remaining,clockSession?.step_seconds)}</dd></div>
-      </>}
-      {!job && pending && <div><dt>Proposed assignment</dt><dd>M{pending[0] + 1} / C{pending[1] + 1}</dd></div>}
-      <div><dt>Jobs completed</dt><dd>{lane.completed_jobs?.[technician] ?? history.length}</dd></div>
-    </dl>
-    <h4 className="sim-tech-qualification-title">Qualifications <span>{qualified} / {qualifications.length} components</span></h4>
-    <table className="sim-tech-qualifications">
-      <thead><tr><th scope="col">Component</th><th scope="col">Service time</th></tr></thead>
-      <tbody>{qualifications.map(({ machine, component, duration }) => <tr key={`${machine}-${component}`}>
-        <th scope="row">M{machine + 1} / C{component + 1}</th>
-        <td>{duration > 0 ? serviceDuration(duration,clockSession?.step_seconds) : 'Not qualified'}</td>
-      </tr>)}</tbody>
-    </table>
-    {job && <button type="button" className="sim-button" onClick={() => onSelectMachine(job.machine)}>View assigned machine</button>}
-  </aside>;
 }
 
 function PreviewUnavailable({ onUnavailable }: { onUnavailable: () => void }) {

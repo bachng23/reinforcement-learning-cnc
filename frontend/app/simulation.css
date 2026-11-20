@@ -458,3 +458,29 @@
   .sim-health-milestones li { flex-basis: 100%; }
   .sim-machine-detail .sim-error button { display: inline-block; margin: 8px 10px 0 0; }
 }
+/* Technician availability uses the existing Simulation surfaces and tokens. */
+.sim-availability { display:inline-flex; padding:4px 9px; border-radius:5px; font-size:11px; font-weight:700; letter-spacing:.035em; background:#eaf3ef; color:#27684c; }
+.sim-availability[data-availability="BUSY"] { background:#e9f0fc; color:#285a9d; }
+.sim-availability[data-availability="ABSENT"] { background:#f3eddf; color:#795b26; }
+.sim-availability[data-availability="UPDATING"] { background:#eef0f3; color:#606c7a; }
+.sim-tech-marker[data-availability="ABSENT"] { opacity:.7; background:#f3eddf; color:#795b26; border-style:dashed; border-radius:14px; width:auto; min-width:27px; padding:0 7px; white-space:nowrap; }
+.sim-technician[data-availability="ABSENT"] { background:#faf8f2; border-style:dashed; }
+.sim-tech-open { border:0; background:none; padding:3px 0; font:inherit; font-weight:700; color:inherit; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+.sim-workforce-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px; font-size:12px; }
+.sim-workforce-toolbar>span { margin-right:auto; color:#647183; }
+.sim-floor-hud .sim-workforce-toolbar { padding:10px 0 0; gap:6px; }
+.sim-floor-hud .sim-workforce-toolbar .sim-button { width:100%; font-size:10px; }
+.sim-floor-workspace .sim-technician-inspector { top:285px; max-height:calc(100% - 301px); }
+.sim-floor-workspace .sim-factory-timeline { max-height:30%; overflow-y:auto; }
+.sim-floor-workspace>.sim-situation-notice { max-width:calc(100% - 550px); }
+@media(max-width:1000px) { .sim-floor-workspace .sim-technician-inspector { top:auto; max-height:55%; } }
+.sim-availability-controls { min-width:0; margin-bottom:16px; }
+.sim-availability-controls form { display:grid; gap:12px; }
+.sim-availability-controls .sim-field input,.sim-availability-controls .sim-field select,.sim-availability-controls .sim-field textarea { width:100%; min-width:0; box-sizing:border-box; }
+.sim-availability-controls .sim-error,.sim-availability-controls .sim-situation-context,.sim-technician-activity li { overflow-wrap:anywhere; }
+.sim-availability-controls .sim-button { white-space:normal; }
+.sim-technician-inspector { min-width:0; }
+.sim-fleet>.sim-technician-inspector { margin-top:16px; max-width:640px; }
+.sim-technician-activity h3 { font-size:14px; margin:0 0 10px; }
+.sim-tech-open:focus-visible,.sim-availability-controls button:focus-visible { outline:2px solid #266df0; outline-offset:3px; }
+@media(max-width:650px) { .sim-technician-inspector { width:100%; box-sizing:border-box; } .sim-workforce-toolbar .sim-button { flex:1 1 auto; } .sim-availability-controls .research-primary { width:100%; white-space:normal; } }

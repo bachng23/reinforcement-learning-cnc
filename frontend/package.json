@@ -6,8 +6,8 @@
     "test:research:e2e": "playwright test --config playwright.research.config.ts",
     "contracts:jcst:generate": "node scripts/generate-jcst-types.mjs",
     "contracts:jcst:check": "node scripts/generate-jcst-types.mjs --check",
-    "contracts:generate": "node scripts/generate-operations-types.mjs && node scripts/generate-work-order-types.mjs && node scripts/generate-scenario-types.mjs && node scripts/generate-simulation-health-types.mjs && node scripts/generate-situation-types.mjs",
-    "contracts:check": "node scripts/generate-operations-types.mjs --check && node scripts/generate-work-order-types.mjs --check && node scripts/generate-scenario-types.mjs --check && node scripts/generate-simulation-health-types.mjs --check && node scripts/generate-situation-types.mjs --check",
+    "contracts:generate": "node scripts/generate-operations-types.mjs && node scripts/generate-work-order-types.mjs && node scripts/generate-scenario-types.mjs && node scripts/generate-simulation-health-types.mjs && node scripts/generate-situation-types.mjs && node scripts/generate-technician-types.mjs",
+    "contracts:check": "node scripts/generate-operations-types.mjs --check && node scripts/generate-work-order-types.mjs --check && node scripts/generate-scenario-types.mjs --check && node scripts/generate-simulation-health-types.mjs --check && node scripts/generate-situation-types.mjs --check && node scripts/generate-technician-types.mjs --check",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -20,7 +20,8 @@
     "test:cases:live": "playwright test --config playwright.cases-live.config.ts",
     "test:scenarios:desktop": "playwright test --config playwright.scenarios.config.ts",
     "test:simulation:inspection": "playwright test --config playwright.simulation-inspection.config.ts",
-    "test:simulation:situations": "playwright test --config playwright.situations.config.ts"
+    "test:simulation:situations": "playwright test --config playwright.situations.config.ts",
+    "test:simulation:technicians": "playwright test --config playwright.technicians.config.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.0",
