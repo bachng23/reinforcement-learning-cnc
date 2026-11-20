@@ -45,6 +45,19 @@ it('return now is separate confirmation at the same physical tick',async()=>{
   await userEvent.click(screen.getByRole('button',{name:'Return now'}));await userEvent.click(await screen.findByRole('button',{name:'Confirm return now'}));
   expect(execute).toHaveBeenCalledWith({kind:'return',sessionId:session.id,technicianIndex:0,basisTick:5,body:{revision:11,reason:'Returned early'}},expect.any(String),expect.any(AbortSignal));
 });
+it('explains why finite sessions cannot change technician availability', async () => {
+  const session = { ...technicianSession(), continuous: false };
+  const execute = vi.fn<TechnicianExecutor>();
+  const prepare = vi.fn<PrepareSituation>();
+  render(form(session, execute, prepare), { wrapper });
+
+  const button = screen.getByRole('button', { name: 'Mark temporarily absent' });
+  expect(button).toBeDisabled();
+  expect(screen.getByText('Availability changes require a continuous simulation.')).toBeVisible();
+  await userEvent.click(button);
+  expect(prepare).not.toHaveBeenCalled();
+  expect(execute).not.toHaveBeenCalled();
+});
 it('BUSY panel explains repair and remaining time; cannot mark absent',()=>{
   const session=technicianSession('BUSY');render(<TechnicianDetails session={session} technician={1} lane={session.primary} config={session.config} read={read(session)} prepare={vi.fn()} execute={vi.fn()} onClose={vi.fn()} onSelectMachine={vi.fn()} onBusy={vi.fn()}/>,{wrapper});
   expect(screen.getByLabelText('Technician T2 details')).toHaveTextContent('M3 / C2');expect(screen.getByText('15 min')).toBeInTheDocument();expect(screen.getByRole('button',{name:'Mark temporarily absent'})).toBeDisabled();expect(screen.getByText(/Finish the active repair/)).toBeInTheDocument();

@@ -43,6 +43,7 @@ export function TechnicianDetails({technician,lane,config,proposal,onClose,onSel
 
 export function TechnicianAvailabilityForm({session,technician,read,prepare,execute,onBusy}:{session:Simulation;technician:number;read:TechnicianRead;prepare:PrepareSituation;execute:TechnicianExecutor;onBusy:(busy:boolean)=>void}){
   const user=useWorkspaceUser();const allowed=Boolean(user&&['ADMIN','ENGINEER'].includes(user.role));
+  const finite = session.continuous === false;
   const write=useTechnicianWrite(`${user?.id??'unknown'}:${session.id}:${technician}`,execute);
   const [expanded,setExpanded]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState('');
   const [context,setContext]=useState<{session:Simulation;availability:string;returnTick:number|null}>();
@@ -67,18 +68,19 @@ export function TechnicianAvailabilityForm({session,technician,read,prepare,exec
   const base=context?.session.primary.state.tick;
   const returnTick=base!==undefined&&valid?base+ticks:undefined;
   const contextChanged=Boolean(context&&context.session.revision!==session.revision);
-  const disabled=!allowed||loading||write.pending||!context||contextChanged||confirmFresh||write.status===409||Boolean(write.recovery)||Boolean(write.result)||context.session.status==='COMPLETE'||context.availability==='BUSY'||(operation==='absence'&&(!valid||returnTick!>2147483647));
+  const disabled=!allowed||finite||context?.session.continuous===false||loading||write.pending||!context||contextChanged||confirmFresh||write.status===409||Boolean(write.recovery)||Boolean(write.result)||context.session.status==='COMPLETE'||context.availability==='BUSY'||(operation==='absence'&&(!valid||returnTick!>2147483647));
   async function submit(){
     if(disabled||!context)return;
     const body={revision:context.session.revision,reason:reason.trim()||(operation==='absence'?'Temporary absence':'Returned early')};
     await write.run(operation==='absence'?{kind:'absence',sessionId:session.id,technicianIndex:technician,basisTick:base!,body:{...body,durationTicks:ticks}}:{kind:'return',sessionId:session.id,technicianIndex:technician,basisTick:base!,body});
   }
   return <section className="sim-health-section sim-availability-controls" aria-label={`T${technician+1} availability controls`}>
-    <button ref={button} className="sim-button" aria-expanded={expanded} disabled={!allowed||session.status==='COMPLETE'||write.pending||loading||row?.availability==='BUSY'} onClick={()=>{if(expanded){setExpanded(false);controller.current?.abort();button.current?.focus();}else void load();}}>{row?.availability==='ABSENT'?'Return now':'Mark temporarily absent'}</button>
+    <button ref={button} className="sim-button" aria-expanded={expanded} disabled={!allowed||finite||session.status==='COMPLETE'||write.pending||loading||row?.availability==='BUSY'} onClick={()=>{if(expanded){setExpanded(false);controller.current?.abort();button.current?.focus();}else void load();}}>{row?.availability==='ABSENT'?'Return now':'Mark temporarily absent'}</button>
     {row?.availability==='BUSY'&&<p className="sim-footnote">Finish the active repair before starting an absence.</p>}
     {!allowed&&<p className="sim-footnote">ADMIN or ENGINEER permission is required to change availability.</p>}
     {session.status==='COMPLETE'&&<p className="sim-footnote">Completed sessions cannot change availability.</p>}
-    {write.recovery&&<div className="sim-inspection-note"><p>An earlier {write.recovery.kind} request for T{technician+1} at t{write.recovery.basisTick} needs recovery. Its original revision, body and key are retained.</p><button className="sim-button" disabled={!allowed||write.pending||loading} onClick={()=>{if(write.recovery)void write.run(write.recovery);}}>Recover previous availability change</button><button className="sim-button" disabled={write.pending||loading} onClick={()=>{write.reset();void load(true);}}>Review a new availability change</button></div>}
+    {finite&&session.status!=='COMPLETE'&&<p className="sim-footnote">Availability changes require a continuous simulation.</p>}
+    {write.recovery&&<div className="sim-inspection-note"><p>An earlier {write.recovery.kind} request for T{technician+1} at t{write.recovery.basisTick} needs recovery. Its original revision, body and key are retained.</p><button className="sim-button" disabled={!allowed||finite||write.pending||loading} onClick={()=>{if(write.recovery)void write.run(write.recovery);}}>Recover previous availability change</button><button className="sim-button" disabled={finite||write.pending||loading} onClick={()=>{write.reset();void load(true);}}>Review a new availability change</button></div>}
     {expanded&&<div ref={fields} className="sim-incident-form">
       {loading&&<p role="status">Pausing playback and reading the latest workforce…</p>}
       {error&&<div role="alert" className="sim-error"><p>{error}</p><button className="sim-button" onClick={()=>void load(confirmFresh)}>Retry availability context</button></div>}
@@ -92,7 +94,7 @@ export function TechnicianAvailabilityForm({session,technician,read,prepare,exec
         {!write.result&&<button className="research-primary" disabled={disabled}>{write.pending?'Updating availability…':operation==='return'?'Confirm return now':'Confirm temporary absence'}</button>}
       </form>}
     </div>}
-    {write.error&&<div role="alert" className="sim-error"><p>{write.error}</p>{write.status===409?<button className="sim-button" onClick={()=>void load(true)}>Refresh availability context</button>:<button className="sim-button" disabled={write.pending||!allowed} onClick={()=>{if(write.recovery)void write.run(write.recovery);else void submit();}}>Retry availability change</button>}</div>}
+    {write.error&&<div role="alert" className="sim-error"><p>{write.error}</p>{write.status===409?<button className="sim-button" onClick={()=>void load(true)}>Refresh availability context</button>:<button className="sim-button" disabled={write.pending||!allowed||finite} onClick={()=>{if(write.recovery)void write.run(write.recovery);else void submit();}}>Retry availability change</button>}</div>}
     {write.result&&<div role="status" className="sim-situation-success"><p>Availability updated from server. Playback is paused; the previous proposal is closed.</p><button className="sim-button" onClick={()=>{write.reset();setExpanded(false);setContext(undefined);setReason('');button.current?.focus();}}>Done</button></div>}
   </section>;
 }
